@@ -165,7 +165,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
       <textarea id="dropText" placeholder="Paste text from an email, web form, text message…"></textarea>
-      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button></div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><select id="fillWhich" title="Which sheet Quick fill makes"><option value="detect">Auto-detect</option><option value="quote">Com quote</option><option value="auto">Com auto quote</option><option value="both">Both</option></select><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button></div>
       <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
       <div class="msg" id="fillMsg"></div>
     </div>
@@ -575,12 +575,15 @@ const zipOf=a=>{const m=String(a||'').match(/\b(\d{5})(?:-\d{4})?\b(?!.*\b\d{5}\
 const VEH_KEYS=['year','make','model','body','vin','value','gvw','radius'];
 function fillVehicleZips(v){const z=zipOf(v.garaging_address)||zipOf(v.mailing_address);if(!z)return;
   for(let n=1;n<=6;n++)if(!v[`v${n}_use`]&&VEH_KEYS.some(k=>String(v[`v${n}_${k}`]||'').trim()))v[`v${n}_use`]=z}
+// without Claude (basic mode): the sheets the picker asks for, built from the lead's fields
+async function basicSheets(n,which){if(!n)return '';const as=which==='auto'||which==='both'?await makeAutoSheet(null,true):'';
+  return (which==='auto'?'':await makeQuoteSheet(null))+as}
 // Build "<client> com auto quote sheet.pdf" from what was pasted (now if saved, else on Save)
-async function makeAutoSheet(q){
-  if(!assets||!q||typeof q!=='object')return '';
+async function makeAutoSheet(q,force){
+  if(!assets)return '';if(!q||typeof q!=='object'){if(!force)return '';q={}}
   try{
     const v={};for(const [k] of AUTO_KEYS){const x=q[k];if(x!=null&&String(x).trim())v[k]=String(x).trim()}
-    if(!Object.keys(v).length)return '';
+    if(!Object.keys(v).length&&!force)return '';
     const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
     v.client_name=v.client_name||$('company').value.trim()||person;
     v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
@@ -728,6 +731,7 @@ function apply(o){
 const sampleErr=c=>({not_granted:'Claude wasn’t allowed to read it, so only the basics were filled.',rate_limited:'Too many requests, try again in a moment.',prompt_too_large:'That’s too much text. Paste just the lead’s part.',cancelled:'Stopped.',image_rejected:'That picture couldn’t be read.'})[c]||'Claude couldn’t read it'+(c?` (${c})`:'')+', so only the basics were filled.';
 async function quickFill(text,images,label){
   const m=$('fillMsg');m.className='msg';
+  const which=$('fillWhich').value;
   const prompt=`You are filling in an insurance agency's lead form from ${images?'the attached picture':'the content below'}${label?` (from a file named "${label}")`:''}.
 Reply with only a JSON object {"lead":{...},"quote":{...},"auto":{...},"autoOnly":false}.
 "lead" has these string keys: firstName, lastName, company, phone, email, leadType, leadDate, leadSource.
@@ -739,7 +743,7 @@ Reply with only a JSON object {"lead":{...},"quote":{...},"auto":{...},"autoOnly
 - leadSource: where the lead came from if stated: one of ${JSON.stringify(LEAD_SOURCES)} if one clearly fits, otherwise as stated, else "".
 "quote" fills the agency's commercial quote sheet. Use only these keys, each a string, and leave out anything not stated (never guess):
 ${QS_KEYS.map(([k,l])=>k+' = '+l).join('\n')}
-"auto" fills the agency's commercial auto quote sheet. Include it only when the customer wants commercial auto insurance or lists drivers or vehicles; otherwise use {}. Use only these keys, each a string, and leave out anything not stated (never guess):
+"auto" fills the agency's commercial auto quote sheet. ${which==='detect'?'Include it only when the customer wants commercial auto insurance or lists drivers or vehicles; otherwise use {}.':which==='quote'?'Always use {}.':'Always fill it with whatever applies.'} Use only these keys, each a string, and leave out anything not stated (never guess):
 ${AUTO_PROMPT}
 In "auto", split each driver's name into first and last, put the business's street address in garaging_address (and mailing_address too), and map a stated "no claims" into claims.
 "autoOnly" is true when commercial auto is the only insurance the customer is asking for.
@@ -749,13 +753,16 @@ ${text?'\nContent:\n"""\n'+text.slice(0,40000)+'\n"""':''}`;
     fillCtl=new AbortController();$('fillStop').hidden=false;$('fillBtn').disabled=true;m.textContent='Claude is reading it…';
     try{const o=await sample.json(prompt,{modelTier:'quick',signal:fillCtl.signal,...(images?{images}:{})});
       const lead=o&&typeof o==='object'?(o.lead&&typeof o.lead==='object'?o.lead:o):{};
-      const n=apply(lead);const as=n?await makeAutoSheet(o&&o.auto):'';const qs=n&&!(as&&o.autoOnly===true)?await makeQuoteSheet(o&&o.quote):'';
+      const n=apply(lead),au=o&&o.auto;
+      // the sheet picker wins; Auto-detect makes the auto sheet when Claude found auto info, and skips the com quote sheet when auto is all they want
+      const as=!n||which==='quote'?'':await makeAutoSheet(au,which!=='detect');
+      const qs=n&&(which==='quote'||which==='both'||(which==='detect'&&!(as&&o.autoOnly===true)))?await makeQuoteSheet(o&&o.quote):'';
       m.className='msg ok';m.textContent=n?`Filled ${n} field${n===1?'':'s'}${qs}${as}. Check them, then Save.`:'Couldn’t find lead details in that.';
-    }catch(e){if(text){const n=apply(regexFill(text));const qs=n?await makeQuoteSheet(null):'';m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} field${n===1?'':'s'}${qs}.`:'')}else{m.className='msg err';m.textContent=sampleErr(e.code)}}
+    }catch(e){if(text){const n=apply(regexFill(text));const qs=await basicSheets(n,which);m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} field${n===1?'':'s'}${qs}.`:'')}else{m.className='msg err';m.textContent=sampleErr(e.code)}}
     $('fillStop').hidden=true;$('fillBtn').disabled=false;fillCtl=null;
   }else{
     if(!text){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t available in this view.';return}
-    const n=apply(regexFill(text));const qs=n?await makeQuoteSheet(null):'';m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} field${n===1?'':'s'} (basic mode)${qs}. Check them, then Save.`:'Couldn’t find lead details in that.';
+    const n=apply(regexFill(text));const qs=await basicSheets(n,which);m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} field${n===1?'':'s'} (basic mode)${qs}. Check them, then Save.`:'Couldn’t find lead details in that.';
   }
 }
 $('fillStop').onclick=()=>fillCtl&&fillCtl.abort();
