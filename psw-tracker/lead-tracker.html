@@ -325,7 +325,7 @@ function render(){
   opts($('fType'),types,'All lead types');opts($('fAssign'),agents,'Everyone');
   $('typeList').innerHTML=[...new Set([...LEAD_TYPES,...types])].map(x=>`<option value="${esc(x)}">`).join('');
   $('assignList').innerHTML=agents.map(x=>`<option value="${esc(x)}">`).join('');
-  $('sourceList').innerHTML=[...new Set([...LEAD_SOURCES,...uniq('leadSource')])].map(x=>`<option value="${esc(x)}">`).join('');
+  $('sourceList').innerHTML=LEAD_SOURCES.map(x=>`<option value="${esc(x)}">`).join('');  // only the set choices, same as the com quote sheet
   const q=$('q').value.trim().toLowerCase(),qd=q.replace(/\D/g,''),ft=$('fType').value,fa=$('fAssign').value;
   let rows=leads.filter(l=>{
     if(ft&&l.leadType!==ft)return false;if(fa&&l.assignedTo!==fa)return false;
