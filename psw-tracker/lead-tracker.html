@@ -444,7 +444,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-17',FONT_MARK='psw-font-embedded';
+const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-18',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -500,7 +500,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
     opts.forEach((o,i)=>{rg.addOptionToPage(o,page,{x:x+i*sp,y:y-14,width:12,height:12,borderColor:line,borderWidth:0.8,backgroundColor:rgb(1,1,1)});text(o,x+i*sp+17,9.5,font)});
     if(opts.includes(pick))rg.select(pick)};
   const text=(t,x,size,f,color)=>page.drawText(String(t),{x,y:y-size-2,size,font:f||font,color:color||ink});
-  let secN=0;const section=t=>{need(40);y-=6;page.drawRectangle({x:L,y:y-15,width:R-L,height:15,color:band});text(String.fromCharCode(65+secN++)+'. '+t.toUpperCase(),L+6,9,bold,rgb(0.12,0.37,0.75));y-=19};
+  let secN=0;const section=(t,tag)=>{need(40);y-=6;page.drawRectangle({x:L,y:y-15,width:R-L,height:15,color:band});text((tag||String.fromCharCode(65+secN++))+'. '+t.toUpperCase(),L+6,9,bold,rgb(0.12,0.37,0.75));y-=19};
   // boxes start just past the longest item name on the sheet
   const labels=[];for(const s of SECS){(s.fields||[]).forEach(f=>labels.push((f.n?f.n+(f.pair&&f.label2?'a. ':'. '):'')+f.label));(s.bldg||[]).forEach(f=>labels.push(f.n+'. '+f.label));
     (s.rowgrid||[]).forEach(g=>g.nums.forEach((n,i)=>labels.push(n+'. '+g.label+' '+(i+1))));(s.excess||[]).forEach(r=>labels.push(r.n+'. '+r.label))}
@@ -513,7 +513,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
     text(TITLE,lx,14,bold);y-=19;text(AGENCY_CONTACT,lx,9,font,muted);y-=24};
   newPage=()=>{page=doc.addPage([W,H]);page.drawRectangle({x:0,y:0,width:W,height:H,color:pageBg});y=H-40;header()};
   newPage();
-  for(const s of SECS){if(s.cont){}else if(s.table)need(40+12+(s.table.cols2?52:19)*s.table.rows);if(s.grid)need(40+13+19*s.grid.rows.length);if(s.bldg)need(40+13+19*s.bldg.length);if(!s.cont)section(s.title);
+  for(const s of SECS){if(s.cont){}else if(s.table)need(40+12+(s.table.cols2?52:19)*s.table.rows);if(s.grid)need(40+13+19*s.grid.rows.length);if(!s.cont&&!s.bldg)section(s.title);
     if(s.grid){const g=s.grid,cw=(R-L-LW-6*(g.count-1))/g.count;need(14);for(let c=1;c<=g.count;c++)text(g.label+' '+c,L+LW+(c-1)*(cw+6),8,bold,muted);y-=13;
       for(const r of g.rows){need(19);text(r.label,L+4,8.5,font,muted);for(let c=1;c<=g.count;c++)field(`${g.prefix}${c}_${r.k}`,v[`${g.prefix}${c}_${r.k}`],L+LW+(c-1)*(cw+6),cw,16);y-=19}}
     if(s.table){const t=s.table,gap=4;
@@ -531,8 +531,13 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
       if(f.radio){need(19);text(label,L+4,8.5,font,muted);radios('f_'+f.k,v[f.k],f.radio,L+LW,R-L-LW);y-=19;continue}
       if(f.opts){need(19);text(label,L+4,8.5,font,muted);combo('f_'+f.k,v[f.k],f.opts,L+LW,R-L-LW,16);y-=19;continue}
       row(label,'f_'+f.k,v[f.k],f.area)}
-    if(s.bldg){const cw=(R-L-LW-12)/3;need(14);[1,2,3].forEach(b=>text('Building '+b,L+LW+(b-1)*(cw+6),8,bold,muted));y-=13;
-      for(const f of s.bldg){need(19);text(f.n+'. '+f.label,L+4,8.5,font,muted);[1,2,3].forEach(b=>field(`b${b}_${f.k}`,v[`b${b}_${f.k}`],L+LW+(b-1)*(cw+6),cw,16));y-=19}}
+    // building info fills the rest of the page as D1, then carries on at the top of the next page as D2 (Building 1-3 headings over both)
+    if(s.bldg){const cw=(R-L-LW-12)/3,head=()=>{[1,2,3].forEach(b=>text('Building '+b,L+LW+(b-1)*(cw+6),8,bold,muted));y-=13};
+      const fit=Math.floor((y-6-19-13-36)/19),letter=String.fromCharCode(65+secN++);let rows=[s.bldg];
+      if(fit>=s.bldg.length||fit<3){if(fit<s.bldg.length)newPage();section(s.title,letter);head()}
+      else{section(s.title,letter+'1');head();rows=[s.bldg.slice(0,fit),s.bldg.slice(fit)]}
+      rows.forEach((part,i)=>{if(i){newPage();section(s.title,letter+'2');head()}
+      for(const f of part){text(f.n+'. '+f.label,L+4,8.5,font,muted);[1,2,3].forEach(b=>field(`b${b}_${f.k}`,v[`b${b}_${f.k}`],L+LW+(b-1)*(cw+6),cw,16));y-=19}})}
     for(const g of s.rowgrid||[]){const gap=4,tot=g.cols.reduce((a,c)=>a+c.w,0),avail=R-L-LW-gap*(g.cols.length-1),xs=[],ws=g.cols.map(c=>avail*c.w/tot);let x=L+LW;g.cols.forEach((c,i)=>{xs.push(x);x+=ws[i]+gap});
       need(14);g.cols.forEach((c,i)=>text(c.label,xs[i],8,bold,muted));y-=13;
       g.nums.forEach((n,i)=>{need(19);text(n+'. '+g.label+' '+(i+1),L+4,8.5,font,muted);g.cols.forEach((c,j)=>field(`${g.prefix}${i+1}_${c.k}`,v[`${g.prefix}${i+1}_${c.k}`],xs[j],ws[j],16));y-=19});
