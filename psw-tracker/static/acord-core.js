@@ -124,14 +124,23 @@
   function parseQuotePdfFields(fields) {
     const data = {};
     DATA_FIELDS.forEach(([k]) => data[k] = '');
-    const BPART = { address: 'address', yr: 'year_built', sqft: 'sqft', const: 'construction', roof: 'roof' };
+    const BPART = { address: 'address', yr: 'year_built', sqft: 'sqft', const: 'construction', roof: 'roof', dwelling: 'dwelling', bpp: 'bpp', rents: 'rents' };
+    let first = '', last = '';
     for (const [name, raw] of Object.entries(fields)) {
       const v = clean(raw); if (!v) continue;
       let m;
-      if ((m = name.match(/^f_(\w+)$/)) && m[1] in data) data[m[1]] = v;
+      if (name === 'f_contact_first') first = v;
+      else if (name === 'f_contact_last') last = v;
+      else if ((m = name.match(/^f_(\w+)$/)) && m[1] in data) data[m[1]] = v;
       else if ((m = name.match(/^b([123])_(\w+)$/)) && BPART[m[2]]) data[`bldg${m[1]}_${BPART[m[2]]}`] = v;
     }
-    return finishQuoteData(data);
+    if (first || last) data.contact_name = [first, last].filter(Boolean).join(' ');
+    const out = finishQuoteData(data);
+    // building 1 amounts go on the 140's coverage lines (Dwelling, BPP, and Loss of Rents in place of BI/EE)
+    if (data.bldg1_dwelling) out.p_amt1 = data.bldg1_dwelling;
+    if (data.bldg1_bpp) out.p_amt2 = data.bldg1_bpp;
+    if (data.bldg1_rents) { out.p_subj3 = 'Loss of Rents'; out.p_amt3 = data.bldg1_rents; }
+    return out;
   }
 
   function finishQuoteData(data) {

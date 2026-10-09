@@ -422,9 +422,9 @@ const CLASS_COLS=[{k:'code',label:'Class code',w:.75},{k:'desc',label:'Class des
 const OWNER_COLS=[{k:'first',label:'First name',w:1.2},{k:'last',label:'Last name',w:1.2},{k:'dob',label:'Birth date',w:.9},{k:'pct',label:'% owned',w:.65},{k:'title',label:'Title',w:1}];
 const QS_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
- {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Copr/Part/LLC'},{k:'contact_name',n:4,label:'Contact name'},{k:'phone',n:5,label:'Phone Number'},{k:'email',n:6,label:'Email Address'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date'},{k:'exp_date',n:13,label:'EXP Date'}]},
+ {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Copr/Part/LLC'},{k:'contact_first',n:4,label:'Contact first name'},{k:'contact_last',n:5,label:'Contact last name'},{k:'phone',n:5,label:'Phone Number'},{k:'email',n:6,label:'Email Address'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date'},{k:'exp_date',n:13,label:'EXP Date'}]},
  {title:'Company info',fields:[{k:'currently_insured',n:14,label:'Currently insured?',label2:'Current price',pair:'current_carrier_price'},{k:'year_started',n:16,label:'Year biz started',label2:'Years exp',pair:'years_experience'},{k:'gross_receipts',n:18,label:'Gross Rec',label2:'Payroll',pair:'payroll'},{k:'full_time',n:20,label:'# Full time emp',label2:'# Part time emp',pair:'part_time'},{k:'claims',n:22,label:'Any claims'},{k:'claims_detail',n:1,label:'Claims details',area:1}]},
- {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'}]},
+ {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'},{k:'dwelling',n:28,label:'Dwelling amount',money:1},{k:'bpp',n:29,label:'BPP/TI',money:1},{k:'rents',n:30,label:'Loss of rents',money:1}]},
  {title:'Workers comp',fields:[{k:'tax_id',n:29,label:'Tax ID'}],rowgrid:[{prefix:'o',nums:[30,31,32,33],label:'Owner',cols:OWNER_COLS,total:'pct'},{prefix:'cc',nums:[34,35,36,37],label:'Class',cols:CLASS_COLS}]},
  {title:'Umbrella / Excess',excess:[{k:'auto',n:38,label:'Auto excess'},{k:'gl',n:39,label:'GL excess'},{k:'wc',n:40,label:'WC excess'}]},
  {title:'AI / Waiver of sub',rowgrid:[{prefix:'ai',nums:[1,2,3,4],label:'AI',cols:[{k:'name',label:'Name',w:1},{k:'address',label:'Address',w:1.6}]}]}];
@@ -647,11 +647,13 @@ async function makeQuoteSheet(q){
     const v={};if(q&&typeof q==='object')for(const [k] of QS_KEYS){const x=q[k];if(x!=null&&String(x).trim())v[k]=String(x).trim()}
     const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
     v.client_name=v.client_name||$('company').value.trim()||person;
-    v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
+    if(v.contact_name&&!v.contact_first&&!v.contact_last){const nm=v.contact_name.split(/\s+/);v.contact_first=nm[0];v.contact_last=nm.slice(1).join(' ')}delete v.contact_name;
+    if(!v.contact_first&&!v.contact_last){v.contact_first=$('firstName').value.trim();v.contact_last=$('lastName').value.trim()}v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
     const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
     let eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);
     if(eff){v.eff_date=mdy(eff);if(!parseMdy(v.exp_date))v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()))}
     ['gross_receipts','payroll'].forEach(k=>{if(v[k])v[k]=fmtMoney(v[k])});
+    QS_SECTIONS.forEach(s=>(s.bldg||[]).forEach(f=>f.money&&[1,2,3].forEach(b=>{const k=`b${b}_${f.k}`;if(v[k])v[k]=fmtMoney(v[k])})));
     const bytes=await buildQuotePdf(v);
     const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com quote sheet.pdf`;
     const file=new File([bytes],name,{type:'application/pdf'});
@@ -720,7 +722,7 @@ ${QS_KEYS.map(([k,l])=>k+' = '+l).join('\n')}
 ${AUTO_PROMPT}
 In "auto", split each driver's name into first and last, put the business's street address in garaging_address (and mailing_address too), and map a stated "no claims" into claims.
 "autoOnly" is true when commercial auto is the only insurance the customer is asking for.
-Use "" or omit for anything not present. Example: {"lead":{"firstName":"Jane","lastName":"Doe","company":"Up Cleaning LLC","phone":"5551234567","email":"jane@up.com","leadType":"Commercial","leadDate":""},"quote":{"client_name":"Up Cleaning LLC","contact_name":"Jane Doe","description":"residential cleaning","gross_receipts":"$50,000"}}
+Use "" or omit for anything not present. Example: {"lead":{"firstName":"Jane","lastName":"Doe","company":"Up Cleaning LLC","phone":"5551234567","email":"jane@up.com","leadType":"Commercial","leadDate":""},"quote":{"client_name":"Up Cleaning LLC","contact_first":"Jane","contact_last":"Doe","description":"residential cleaning","gross_receipts":"$50,000"}}
 ${text?'\nContent:\n"""\n'+text.slice(0,40000)+'\n"""':''}`;
   if(sample){
     fillCtl=new AbortController();$('fillStop').hidden=false;$('fillBtn').disabled=true;m.textContent='Claude is reading it…';
@@ -740,8 +742,9 @@ $('fillBtn').onclick=()=>{const t=$('dropText').value.trim();if(!t){$('fillMsg')
 function quoteFill(q){
   // PSW quote sheet PDF: read its own form fields directly, no Claude needed
   const o={company:q.f_client_name,phone:q.f_phone,email:q.f_email,leadSource:q.f_lead_source};
-  const nm=String(q.f_contact_name||'').trim().split(/\s+/).filter(Boolean);
-  if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}
+  if(q.f_contact_first||q.f_contact_last){o.firstName=String(q.f_contact_first||'').trim();o.lastName=String(q.f_contact_last||'').trim()}
+  else{const nm=String(q.f_contact_name||'').trim().split(/\s+/).filter(Boolean);  // quote sheets saved before the name was split
+  if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}}
   const d=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(q.f_lead_date||'').trim());
   if(d)o.leadDate=`${d[3]}-${pad(d[1])}-${pad(d[2])}`;
   if(!$('leadType').value){const t=[q.f_description,q.f_detailed_description,q.f_client_name].join(' ');
@@ -756,7 +759,7 @@ async function takeFile(f){
   if(isImg){if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures isn’t available in this view. Paste the text instead.';return}return quickFill('',f,f.name)}
   let t='';try{t=(await fileText(f)).trim()}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
   if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}
-  if(lastFields.f_client_name||lastFields.f_contact_name){const n=quoteFill(lastFields);lastFields={};m.className='msg ok';
+  if(lastFields.f_client_name||lastFields.f_contact_first||lastFields.f_contact_last||lastFields.f_contact_name){const n=quoteFill(lastFields);lastFields={};m.className='msg ok';
     m.textContent=`Quote sheet read: filled ${n} field${n===1?'':'s'}. `+(saved?'It’s attached to this lead; hit Save to keep the changes.':(assets?'Check them, then Save; the quote sheet is attached when you save.':'Check them, then Save.'));return}
   $('dropText').value=t.slice(0,4000);
   quickFill(t,null,f.name);
