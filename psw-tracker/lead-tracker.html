@@ -444,7 +444,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-16',FONT_MARK='psw-font-embedded';
+const AUTO_LAYOUT='psw-auto-layout-21',QS_LAYOUT='psw-qs-layout-17',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -549,7 +549,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
 }
 
 const AUTO_SECTIONS=[
- {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
+ {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:[...LEAD_SOURCES,'Internet']}]},
  {title:'Owner info',fields:[{k:'owner_first',n:1,label:'Name (first / last)',pair:'owner_last'},{k:'owner_address',n:2,label:'Address'},{k:'owner_dob',n:3,label:'Birthdate'},{k:'owner_ssn',n:4,label:'SS#'},{k:'owner_daily_ops',n:5,label:'Involved in daily ops'}]},
  {title:'Company info',fields:[{k:'client_name',n:6,label:'Company Name'},{k:'contact_name',n:7,label:'Contact name'},{k:'dba',n:8,label:'DBA'},{k:'entity_type',n:9,label:'Bus structure'},{k:'phone',n:10,label:'Phone Number'},{k:'email',n:11,label:'Email'},{k:'mailing_address',n:12,label:'Mailing Address'},{k:'garaging_address',n:13,label:'Business Address'},{k:'description',n:14,label:'Business desc'},{k:'dot_number',n:15,label:'DOT Number'},{k:'ca_number',n:16,label:'CA #'},{k:'eff_date',n:17,label:'EFF Date'}]},
  {title:'Drivers',table:{prefix:'d',rows:6,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'dl',label:'DL #',w:1.25},{k:'cdl',label:'CDL',w:.6,opts:['Yes','No']},{k:'cdl_yrs',label:'Yrs CDL',w:.6},{k:'activity',label:'Driving activity',w:1.5}]}},
@@ -641,6 +641,7 @@ async function upgradeAuto(f){
       if(v[`d${n}_mvr`]&&!v[`d${n}_activity`])v[`d${n}_activity`]=v[`d${n}_mvr`];
       if(v[`ai${n}`]&&!v[`ai${n}_name`])v[`ai${n}_name`]=v[`ai${n}`];
     }
+    if(!auto&&v.contact_name&&!v.contact_first&&!v.contact_last){const p=v.contact_name.trim().split(/\s+/);v.contact_first=p.shift();v.contact_last=p.join(' ')}  // sheets made before the name was split
     if(auto)fillVehicleZips(v);
     const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):await buildQuotePdf(v);
     if(!(await PDFLib.PDFDocument.load(bytes)).getKeywords()?.includes(FONT_MARK))return false; // font unavailable: keep the original
