@@ -239,7 +239,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="supSec">
       <h3>Supplementals/Forms</h3>
       <div class="small" style="margin-bottom:8px">Fills the form from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
-      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button></div>
+      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button><button class="pri" data-sup="sl2">SL2</button></div>
       <div class="msg" id="supMsg"></div>
     </div>
 
@@ -1290,7 +1290,10 @@ const SUPS={'burns-gl':{file:'tpl-burns-gl.pdf',suffix:'Burns GL sup',fill:(g,to
     'fill_55':g('f_payroll')?amt(g('f_payroll')):'','fill_56':g('f_gross_receipts')?amt(g('f_gross_receipts')):'',
     'Name of Applicant':[g('o1_first'),g('o1_last')].filter(Boolean).join(' '),'Title':g('o1_title'),'Date':mdy(today)}}},
   // CA D-1 surplus lines notice: only needs the insured's name, so it also works from the lead's company when there's no quote sheet yet
-  'd1':{file:'tpl-d1.pdf',suffix:'D1',noSheet:true,fill:(g,today)=>({'Date':mdy(today),'Insured':g('f_client_name')})}};
+  'd1':{file:'tpl-d1.pdf',suffix:'D1',noSheet:true,fill:(g,today)=>({'Date':mdy(today),'Insured':g('f_client_name')})},
+  // SL-2 diligent search report: Alex's filled form with the insurers, licensee and signature kept; 2A name, 2B = quote sheet item 8, declinations this month
+  'sl2':{file:'tpl-sl2.pdf',suffix:'SL2',noSheet:true,fill:(g,today)=>{const my=`${pad(today.getMonth()+1)}/${today.getFullYear()}`;
+    return {'Name of Insured':g('f_client_name'),'Description of Risk':g('f_description'),'Declination 1':my,'Declination 2':my,'Declination 3':my,'Date':mdy(today)}}}};
 $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data-sup]');if(!btn||!cur||!cur.id)return;const S=SUPS[btn.dataset.sup],m=$('supMsg'),label=btn.textContent;
   const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
   if(!qs&&!S.noSheet){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
