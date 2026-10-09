@@ -165,7 +165,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
       <textarea id="dropText" placeholder="Paste text from an email, web form, text message…"></textarea>
-      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">New quote sheet</button><button class="pri" id="newAuto">New com auto quote sheet</button></div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button></div>
       <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
       <div class="msg" id="fillMsg"></div>
     </div>
@@ -216,7 +216,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="sec" id="fileSec">
       <h3>Files</h3>
-      <div class="row" id="upRow"><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
+      <div class="drop row" id="upRow" style="padding:10px 12px;margin-bottom:8px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
       <div class="msg" id="fileMsg"></div>
       <ul class="files" id="files"></ul>
     </div>
@@ -229,18 +229,18 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="msg" id="mailMsg"></div>
     </div>
 
-    <div class="sec" id="supSec">
-      <h3>Supplementals</h3>
-      <div class="small" style="margin-bottom:8px">Fills the supplemental from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
-      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><label style="display:flex;gap:6px;align-items:center;margin:0;font-weight:400;font-size:14px;color:var(--ink)"><input type="checkbox" id="supSubsNA" style="width:auto;margin:0">Subcontractors N/A</label></div>
-      <div class="msg" id="supMsg"></div>
-    </div>
-
     <div class="sec" id="acordSec">
       <h3>ACORD forms</h3>
       <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
       <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="140">Create 140</button><button class="pri" data-acord="131">Create 131</button></div>
       <div class="msg" id="acordMsg"></div>
+    </div>
+
+    <div class="sec" id="supSec">
+      <h3>Supplementals</h3>
+      <div class="small" style="margin-bottom:8px">Fills the supplemental from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
+      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button></div>
+      <div class="msg" id="supMsg"></div>
     </div>
 
     <div class="sec" id="bindSec">
@@ -307,7 +307,7 @@ const leadsCol=db.collection('leads');
 
 let view='leads',pending=[],leads=[],sortK='leadDate',sortDir=-1,cur=null,curUnsub=null,contacts=[],names={};
 const AGENTS=['Alex K','Paul M','Victor Q','Anna C','Patricia G'];
-const LEAD_SOURCES=['Baker','PSW client','AI search','PSW web','Other','Victor','Shai','Paul'];
+const LEAD_SOURCES=['Baker','PSW client','AI search','PSW web','Other','Victor','Shai','Paul','Internet'];
 const LEAD_TYPES=['Commercial','Personal','Workers comp','Referral','Renewal','Golf sim','Xmas lights','Party bus'];
 const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','email','leadType','leadNotes','leadSource','xDate'];
 
@@ -325,7 +325,7 @@ function render(){
   opts($('fType'),types,'All lead types');opts($('fAssign'),agents,'Everyone');
   $('typeList').innerHTML=[...new Set([...LEAD_TYPES,...types])].map(x=>`<option value="${esc(x)}">`).join('');
   $('assignList').innerHTML=agents.map(x=>`<option value="${esc(x)}">`).join('');
-  $('sourceList').innerHTML=[...new Set([...LEAD_SOURCES,...uniq('leadSource')])].map(x=>`<option value="${esc(x)}">`).join('');
+  $('sourceList').innerHTML=LEAD_SOURCES.map(x=>`<option value="${esc(x)}">`).join('');  // only the set choices, same as the com quote sheet
   const q=$('q').value.trim().toLowerCase(),qd=q.replace(/\D/g,''),ft=$('fType').value,fa=$('fAssign').value;
   let rows=leads.filter(l=>{
     if(ft&&l.leadType!==ft)return false;if(fa&&l.assignedTo!==fa)return false;
@@ -379,7 +379,7 @@ function openLead(l){
   $('cAt').value=nowLocal();$('cNote').value='';fillMeta();
   pending=[];showKeep();$('dropText').value='';$('fillMsg').textContent='';
   const has=!!l;
-  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('supSubsNA').checked=false;$('acordMsg').textContent='';
+  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each');
   $('log').innerHTML=has?'':'';renderFiles();
@@ -424,7 +424,7 @@ const QS_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
  {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Corp/LLC/Part',radio:['Individual','Corporation','LLC','Partnership']},{k:'contact_first',n:4,label:'Contact first name',label2:'Contact last name',pair:'contact_last'},{k:'phone',n:5,label:'Phone Number',label2:'Email Address',pair:'email'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Company info',fields:[{k:'currently_insured',n:14,label:'Currently insured?',label2:'Current price',pair:'current_carrier_price'},{k:'year_started',n:16,label:'Year biz started',label2:'Years exp',pair:'years_experience'},{k:'gross_receipts',n:18,label:'Gross Rec',label2:'Payroll',pair:'payroll'},{k:'full_time',n:20,label:'# Full time emp',label2:'# Part time emp',pair:'part_time'},{k:'claims',n:22,label:'Any claims'},{k:'claims_detail',n:1,label:'Claims details',area:1}]},
- {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'},{k:'dwelling',n:28,label:'Dwelling amount',money:1},{k:'bpp',n:29,label:'BPP/TI',money:1},{k:'rents',n:30,label:'Loss of rents',money:1}]},
+ {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'},{k:'dwelling',n:28,label:'Dwelling amount',money:1},{k:'bpp',n:29,label:'BPP/TI',money:1},{k:'rents',n:30,label:'Loss of rents',money:1},{k:'wiring',n:31,label:'Wiring update'},{k:'roofup',n:32,label:'Roof update'},{k:'plumbing',n:33,label:'Plumbing update'},{k:'heating',n:34,label:'Heating update'}]},
  {title:'Workers comp',fields:[{k:'tax_id',n:29,label:'Tax ID'}],rowgrid:[{prefix:'o',nums:[30,31,32,33],label:'Owner',cols:OWNER_COLS,total:'pct'},{prefix:'cc',nums:[34,35,36,37],label:'Class',cols:CLASS_COLS}]},
  {title:'Umbrella / Excess',excess:[{k:'auto',n:38,label:'Auto excess'},{k:'gl',n:39,label:'GL excess'},{k:'wc',n:40,label:'WC excess'}]},
  {title:'AI / Waiver of sub',rowgrid:[{prefix:'ai',nums:[1,2,3,4],label:'AI',cols:[{k:'name',label:'Name',w:1},{k:'address',label:'Address',w:1.6}]}]}];
@@ -444,7 +444,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-16',FONT_MARK='psw-font-embedded';
+const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-17',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -513,7 +513,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
     text(TITLE,lx,14,bold);y-=19;text(AGENCY_CONTACT,lx,9,font,muted);y-=24};
   newPage=()=>{page=doc.addPage([W,H]);page.drawRectangle({x:0,y:0,width:W,height:H,color:pageBg});y=H-40;header()};
   newPage();
-  for(const s of SECS){if(s.cont){}else if(s.table)need(40+12+(s.table.cols2?52:19)*s.table.rows);if(s.grid)need(40+13+19*s.grid.rows.length);if(!s.cont)section(s.title);
+  for(const s of SECS){if(s.cont){}else if(s.table)need(40+12+(s.table.cols2?52:19)*s.table.rows);if(s.grid)need(40+13+19*s.grid.rows.length);if(s.bldg)need(40+13+19*s.bldg.length);if(!s.cont)section(s.title);
     if(s.grid){const g=s.grid,cw=(R-L-LW-6*(g.count-1))/g.count;need(14);for(let c=1;c<=g.count;c++)text(g.label+' '+c,L+LW+(c-1)*(cw+6),8,bold,muted);y-=13;
       for(const r of g.rows){need(19);text(r.label,L+4,8.5,font,muted);for(let c=1;c<=g.count;c++)field(`${g.prefix}${c}_${r.k}`,v[`${g.prefix}${c}_${r.k}`],L+LW+(c-1)*(cw+6),cw,16);y-=19}}
     if(s.table){const t=s.table,gap=4;
@@ -594,7 +594,7 @@ async function makeAutoSheet(q){
     addPending(file);return `, and a com auto quote sheet is ready to attach when you save`;
   }catch(e){return ` (the com auto quote sheet couldn’t be made: ${e.message||'error'})`}
 }
-// "New quote sheet" / "New com auto quote sheet": start one from the lead's details, attach it, and open it to fill in
+// "Com quote" / "Com auto quote" buttons: start one from the lead's details, attach it, and open it to fill in
 async function newSheet(kind){
   const m=$('fillMsg');m.className='msg';
   if(!assets){m.className='msg err';m.textContent='You have view-only access, so you can’t add files.';return}
@@ -641,6 +641,7 @@ async function upgradeAuto(f){
       if(v[`d${n}_mvr`]&&!v[`d${n}_activity`])v[`d${n}_activity`]=v[`d${n}_mvr`];
       if(v[`ai${n}`]&&!v[`ai${n}_name`])v[`ai${n}_name`]=v[`ai${n}`];
     }
+    if(!auto&&v.contact_name&&!v.contact_first&&!v.contact_last){const p=v.contact_name.trim().split(/\s+/);v.contact_first=p.shift();v.contact_last=p.join(' ')}  // sheets made before the name was split
     if(auto)fillVehicleZips(v);
     const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):await buildQuotePdf(v);
     if(!(await PDFLib.PDFDocument.load(bytes)).getKeywords()?.includes(FONT_MARK))return false; // font unavailable: keep the original
@@ -859,11 +860,17 @@ function renderFiles(){
   const fs=(cur&&cur.files)||[];
   $('files').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
-$('fileIn').onchange=async()=>{
-  const list=[...$('fileIn').files];$('fileIn').value='';if(!list.length)return;if(!(await ensureSaved()))return;
+async function addFiles(list){
+  if(!list.length||!assets)return;if(!(await ensureSaved()))return;
   const m=$('fileMsg');m.className='msg';
   for(const f of list)await uploadOne(f);
-};
+}
+$('fileIn').onchange=()=>{const list=[...$('fileIn').files];$('fileIn').value='';addFiles(list)};
+// drag files from the computer onto the Files box to attach them to this lead
+{const fz=$('upRow');
+['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(assets)fz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+fz.addEventListener('drop',e=>addFiles([...(e.dataTransfer.files||[])]));}
 // Some computers' PDF uploads are refused by file storage; then the PDF is stored as base64 text and decoded when read back
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function storeBytes(buf,type){
@@ -1268,7 +1275,6 @@ try{if(localStorage.getItem('psw-view')==='tasks')setView('tasks')}catch(_){}
 
 /* ---------- supplementals: carrier forms filled from the lead's quote sheet (template = supporting file) ---------- */
 // section 10 (subcontractors) answers on the Burns sup, cleared when Subcontractors N/A is ticked
-const BURNS_SUB_FIELDS=['undefined_15','undefined_16','undefined_17','hold harmless','subcontractor policies','undefined_19','casual labor','leased employees','workers comp','undefined_18','compensation ins'];
 // "123 Main St Ste 4, Fresno, CA 93701" -> ['123 Main St Ste 4','Fresno, CA 93701']; without commas, splits after the street type (St, Ave...) and any unit
 function splitAddr(a){a=String(a||'').replace(/\s+/g,' ').trim();if(!a)return['',''];
   const c=a.indexOf(',');if(c>0&&!/^[a-z]{2}\.?\s*\d{5}/i.test(a.slice(c+1).trim()))return[a.slice(0,c).trim(),a.slice(c+1).trim()];
@@ -1294,8 +1300,6 @@ $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data
     const r=await fetch(S.file);if(!r.ok)throw new Error('the form template is missing');
     const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.fill(g,today);
     for(const [k,v] of Object.entries(vals)){if(!v)continue;try{form.getTextField(k).setText(String(v))}catch(_){}}
-    if(btn.dataset.sup==='burns-gl'&&$('supSubsNA').checked){try{form.getCheckBox('Subcontractors NA').check()}catch(_){}
-      for(const n of BURNS_SUB_FIELDS){try{const fl=form.getField(n);if(fl instanceof PDFLib.PDFRadioGroup)fl.clear();else if(fl instanceof PDFLib.PDFTextField)fl.setText('')}catch(_){}}}
     form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica));
     const client=(g('f_client_name')||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',name=`${client} ${S.suffix}.pdf`;
     const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
