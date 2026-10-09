@@ -21,7 +21,35 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          tar czf - --exclude='__pycache__' psw-tracker | ssh -i ~/.ssh/deploy_key -o BatchMode=yes deploy@"$DEPLOY_HOST" | tee deploy.log
-          grep -q '== App is running' deploy.log
+          [ -n "$DEPLOY_HOST" ] || { echo "::error::Secret DEPLOY_HOST is missing or empty"; exit 1; }
+          [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "::error::Secret DEPLOY_KNOWN_HOSTS is missing or empty"; exit 1; }
+          [ -n "$DEPLOY_KEY" ] || { echo "::error::Secret DEPLOY_KEY is missing or empty"; exit 1; }
+          # Copying from a Windows terminal can add carriage returns, trailing spaces or join the key into one line.
+          python3 - <<'PY'
+          import os, re
+          k = os.environ["DEPLOY_KEY"].replace("\r", "")
+          m = re.search(r"-----BEGIN ([A-Z ]+)-----(.*?)-----END \1-----", k, re.S)
+          if not m:
+              print("::error::DEPLOY_KEY has no BEGIN/END lines; copy every line from -----BEGIN to -----END")
+              raise SystemExit(1)
+          body = re.sub(r"\s+", "", m.group(2))
+          lines = [body[i:i + 70] for i in range(0, len(body), 70)]
+          open(os.path.expanduser("~/.ssh/deploy_key"), "w").write(
+              f"-----BEGIN {m.group(1)}-----\n" + "\n".join(lines) + f"\n-----END {m.group(1)}-----\n")
+          kh = " ".join(os.environ["DEPLOY_KNOWN_HOSTS"].replace("\r", "").split())
+          open(os.path.expanduser("~/.ssh/known_hosts"), "w").write(kh + "\n")
+          PY
+          chmod 600 ~/.ssh/deploy_key
+          HOST="$(echo "$DEPLOY_HOST" | tr -d '[:space:]')"
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1 || { echo "::error::DEPLOY_KEY is not a valid private key; run setup-deploy.sh again and recopy it"; exit 1; }
+          ssh-keygen -F "$HOST" >/dev/null || { echo "::error::DEPLOY_KNOWN_HOSTS does not start with the DEPLOY_HOST address ($HOST)"; exit 1; }
+          set +e
+          tar czf - --exclude='__pycache__' psw-tracker | ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=20 deploy@"$HOST" > deploy.log 2> ssh.err
+          rc=$?
+          set -e
+          cat deploy.log
+          if ! grep -q '== App is running' deploy.log; then
+            echo "::error::Install did not finish (ssh exit $rc): $(tail -c 600 ssh.err | tr '\n' ' ') $(tail -c 600 deploy.log | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "::notice::Installed on the server. $(grep 'Backed up to' deploy.log || true)"
