@@ -239,7 +239,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="supSec">
       <h3>Supplementals</h3>
       <div class="small" style="margin-bottom:8px">Fills the supplemental from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
-      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><label style="display:flex;gap:6px;align-items:center;margin:0;font-weight:400;font-size:14px;color:var(--ink)"><input type="checkbox" id="supSubsNA" style="width:auto;margin:0">Subcontractors N/A</label></div>
+      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button></div>
       <div class="msg" id="supMsg"></div>
     </div>
 
@@ -379,7 +379,7 @@ function openLead(l){
   $('cAt').value=nowLocal();$('cNote').value='';fillMeta();
   pending=[];showKeep();$('dropText').value='';$('fillMsg').textContent='';
   const has=!!l;
-  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('supSubsNA').checked=false;$('acordMsg').textContent='';
+  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each');
   $('log').innerHTML=has?'':'';renderFiles();
@@ -1269,7 +1269,6 @@ try{if(localStorage.getItem('psw-view')==='tasks')setView('tasks')}catch(_){}
 
 /* ---------- supplementals: carrier forms filled from the lead's quote sheet (template = supporting file) ---------- */
 // section 10 (subcontractors) answers on the Burns sup, cleared when Subcontractors N/A is ticked
-const BURNS_SUB_FIELDS=['undefined_15','undefined_16','undefined_17','hold harmless','subcontractor policies','undefined_19','casual labor','leased employees','workers comp','undefined_18','compensation ins'];
 // "123 Main St Ste 4, Fresno, CA 93701" -> ['123 Main St Ste 4','Fresno, CA 93701']; without commas, splits after the street type (St, Ave...) and any unit
 function splitAddr(a){a=String(a||'').replace(/\s+/g,' ').trim();if(!a)return['',''];
   const c=a.indexOf(',');if(c>0&&!/^[a-z]{2}\.?\s*\d{5}/i.test(a.slice(c+1).trim()))return[a.slice(0,c).trim(),a.slice(c+1).trim()];
@@ -1295,8 +1294,6 @@ $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data
     const r=await fetch(S.file);if(!r.ok)throw new Error('the form template is missing');
     const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.fill(g,today);
     for(const [k,v] of Object.entries(vals)){if(!v)continue;try{form.getTextField(k).setText(String(v))}catch(_){}}
-    if(btn.dataset.sup==='burns-gl'&&$('supSubsNA').checked){try{form.getCheckBox('Subcontractors NA').check()}catch(_){}
-      for(const n of BURNS_SUB_FIELDS){try{const fl=form.getField(n);if(fl instanceof PDFLib.PDFRadioGroup)fl.clear();else if(fl instanceof PDFLib.PDFTextField)fl.setText('')}catch(_){}}}
     form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica));
     const client=(g('f_client_name')||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',name=`${client} ${S.suffix}.pdf`;
     const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
