@@ -238,8 +238,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 
     <div class="sec" id="supSec">
       <h3>Supplementals/Forms</h3>
-      <div class="small" style="margin-bottom:8px">Fills the supplemental from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
-      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button></div>
+      <div class="small" style="margin-bottom:8px">Fills the form from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
+      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button></div>
       <div class="msg" id="supMsg"></div>
     </div>
 
@@ -1288,14 +1288,17 @@ const SUPS={'burns-gl':{file:'tpl-burns-gl.pdf',suffix:'Burns GL sup',fill:(g,to
   return {'Applicants Name 1':g('f_client_name'),'Applicants Name 2':ma[0],'Applicants Name 3':ma[1],'Location Address 1':la[0],'Location Address 2':la[1],
     'Time in business':y!=null?`${y} yr${y===1?'':'s'}`:yr,'Years of experience':g('f_years_experience'),
     'fill_55':g('f_payroll')?amt(g('f_payroll')):'','fill_56':g('f_gross_receipts')?amt(g('f_gross_receipts')):'',
-    'Name of Applicant':[g('o1_first'),g('o1_last')].filter(Boolean).join(' '),'Title':g('o1_title'),'Date':mdy(today)}}}};
+    'Name of Applicant':[g('o1_first'),g('o1_last')].filter(Boolean).join(' '),'Title':g('o1_title'),'Date':mdy(today)}}},
+  // CA D-1 surplus lines notice: only needs the insured's name, so it also works from the lead's company when there's no quote sheet yet
+  'd1':{file:'tpl-d1.pdf',suffix:'D1',noSheet:true,fill:(g,today)=>({'Date':mdy(today),'Insured':g('f_client_name')})}};
 $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data-sup]');if(!btn||!cur||!cur.id)return;const S=SUPS[btn.dataset.sup],m=$('supMsg'),label=btn.textContent;
   const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
-  if(!qs){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
-  btn.disabled=true;btn.textContent='Working…';m.className='msg';m.textContent=`Reading ${qs.name}…`;
+  if(!qs&&!S.noSheet){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
+  btn.disabled=true;btn.textContent='Working…';m.className='msg';m.textContent='Working…';
   try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
-    let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the quote sheet file is missing')}
-    const q=await PDFLib.PDFDocument.load(raw),fields={};for(const fl of q.getForm().getFields())if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';else if(fl instanceof PDFLib.PDFRadioGroup||fl instanceof PDFLib.PDFDropdown)fields[fl.getName()]=[].concat(fl.getSelected()||'')[0]||'';
+    const fields={};if(qs){m.textContent=`Reading ${qs.name}…`;let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the quote sheet file is missing')}
+    const q=await PDFLib.PDFDocument.load(raw);for(const fl of q.getForm().getFields())if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';else if(fl instanceof PDFLib.PDFRadioGroup||fl instanceof PDFLib.PDFDropdown)fields[fl.getName()]=[].concat(fl.getSelected()||'')[0]||'';}
+    if(!String(fields.f_client_name||'').trim())fields.f_client_name=fresh.company||[fresh.firstName,fresh.lastName].filter(Boolean).join(' ');
     const g=k=>String(fields[k]||'').replace(/\s+/g,' ').trim(),today=new Date();
     const r=await fetch(S.file);if(!r.ok)throw new Error('the form template is missing');
     const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.fill(g,today);
