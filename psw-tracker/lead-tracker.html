@@ -444,7 +444,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-18',FONT_MARK='psw-font-embedded';
+const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -533,7 +533,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
       row(label,'f_'+f.k,v[f.k],f.area)}
     // building info fills the rest of the page as D1, then carries on at the top of the next page as D2 (Building 1-3 headings over both)
     if(s.bldg){const cw=(R-L-LW-12)/3,head=()=>{[1,2,3].forEach(b=>text('Building '+b,L+LW+(b-1)*(cw+6),8,bold,muted));y-=13};
-      const fit=Math.floor((y-6-19-13-36)/19),letter=String.fromCharCode(65+secN++);let rows=[s.bldg];
+      const upd=s.bldg.findIndex(f=>f.k==='wiring'),fit=Math.min(Math.floor((y-6-19-13-36)/19),upd<0?99:upd),letter=String.fromCharCode(65+secN++);let rows=[s.bldg];
       if(fit>=s.bldg.length||fit<3){if(fit<s.bldg.length)newPage();section(s.title,letter);head()}
       else{section(s.title,letter+'1');head();rows=[s.bldg.slice(0,fit),s.bldg.slice(fit)]}
       rows.forEach((part,i)=>{if(i){newPage();section(s.title,letter+'2');head()}
@@ -628,6 +628,11 @@ async function newSheet(kind){
 // An auto sheet made with an older layout is rebuilt in the current one, keeping every value already typed in
 // (also rebuilds any quote sheet made before the font was embedded)
 const sheetChecked=new Set();
+// a dropdown whose choices read "code description" (SL2 line 2C): the list shows both, the box shows only the picked code
+function codeOnly(sel){const o=[...sel.options].filter(x=>x.value);if(!o.length||!o.every(x=>x.text.startsWith(x.value+' ')))return;
+  o.forEach(x=>x.dataset.full=x.text);const short=()=>o.forEach(x=>{x.text=x.selected?x.value:x.dataset.full});
+  const full=()=>o.forEach(x=>{x.text=x.dataset.full});short();
+  sel.addEventListener('mousedown',full);sel.addEventListener('focus',full);sel.addEventListener('change',short);sel.addEventListener('blur',short)}
 function sheetValues(doc){const v={};for(const fl of doc.getForm().getFields())if(fl instanceof PDFLib.PDFTextField){const t=fl.getText();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFDropdown){const t=fl.getSelected()[0];if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFRadioGroup){const t=fl.getSelected();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFCheckBox){if(fl.isChecked())v[fl.getName()]='Yes'}return v}
 const sheetKind=n=>/ com auto quote sheet\.pdf$/i.test(n)?'auto':/ com quote sheet\.pdf$/i.test(n)?'qs':'';
 async function upgradeAuto(f){
@@ -949,6 +954,7 @@ async function openEditor(f){
         const al=document.createElement('div');al.className='annotationLayer';al.style.setProperty('--scale-factor',scale);wrap.appendChild(al);
         const layer=new pdfjsLib.AnnotationLayer({div:al,page,viewport:vp.clone({dontFlip:true}),accessibilityManager:null,annotationCanvasMap:null});
         await layer.render({annotations:anns,page,viewport:vp.clone({dontFlip:true}),linkService:LINKS,downloadManager:null,renderForms:true,annotationStorage:ed.pdf.annotationStorage,imageResourcesPath:'',enableScripting:false,hasJSActions:false,fieldObjects:null});
+        al.querySelectorAll('select').forEach(codeOnly);
       }
       ed.pdf.annotationStorage.onSetModified=()=>{ed&&(ed.dirty=true)};
       edMsg(fillable?'Type into the blue boxes to edit. Use “+ Add text” to write anywhere else. Then hit Save to lead.':'Use “+ Add text”, then click where you want to type. Hit Save to lead when done.');
