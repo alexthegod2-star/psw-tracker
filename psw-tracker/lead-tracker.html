@@ -422,7 +422,7 @@ const CLASS_COLS=[{k:'code',label:'Class code',w:.75},{k:'desc',label:'Class des
 const OWNER_COLS=[{k:'first',label:'First name',w:1.2},{k:'last',label:'Last name',w:1.2},{k:'dob',label:'Birth date',w:.9},{k:'pct',label:'% owned',w:.65},{k:'title',label:'Title',w:1}];
 const QS_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Copr/Part/LLC'},{k:'contact_first',n:4,label:'Contact first name',label2:'Contact last name',pair:'contact_last'},{k:'phone',n:5,label:'Phone Number',label2:'Email Address',pair:'email'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
+ {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Corp/LLC/Part',radio:['Individual','Corporation','LLC','Partnership']},{k:'contact_first',n:4,label:'Contact first name',label2:'Contact last name',pair:'contact_last'},{k:'phone',n:5,label:'Phone Number',label2:'Email Address',pair:'email'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Company info',fields:[{k:'currently_insured',n:14,label:'Currently insured?',label2:'Current price',pair:'current_carrier_price'},{k:'year_started',n:16,label:'Year biz started',label2:'Years exp',pair:'years_experience'},{k:'gross_receipts',n:18,label:'Gross Rec',label2:'Payroll',pair:'payroll'},{k:'full_time',n:20,label:'# Full time emp',label2:'# Part time emp',pair:'part_time'},{k:'claims',n:22,label:'Any claims'},{k:'claims_detail',n:1,label:'Claims details',area:1}]},
  {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'},{k:'dwelling',n:28,label:'Dwelling amount',money:1},{k:'bpp',n:29,label:'BPP/TI',money:1},{k:'rents',n:30,label:'Loss of rents',money:1}]},
  {title:'Workers comp',fields:[{k:'tax_id',n:29,label:'Tax ID'}],rowgrid:[{prefix:'o',nums:[30,31,32,33],label:'Owner',cols:OWNER_COLS,total:'pct'},{prefix:'cc',nums:[34,35,36,37],label:'Class',cols:CLASS_COLS}]},
@@ -494,6 +494,11 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
   // dropdown you can also type into (Lead Source): picks the matching choice, or keeps any other value as typed
   const combo=(name,value,opts,x,w,h)=>{const dd=form.createDropdown(name);dd.addOptions(opts);dd.enableEditing();const t=clean(value).trim(),m=opts.find(o=>o.toLowerCase()===t.toLowerCase());if(t)dd.select(m||t);
     dd.addToPage(page,{x,y:y-h,width:w,height:h,font,borderColor:line,borderWidth:0.6,backgroundColor:rgb(1,1,1)});dd.setFontSize(10)};
+  // click-one buttons (Ind/Corp/LLC/Part): one radio group, the matching choice picked from the value
+  const radios=(name,value,opts,x,w)=>{const rg=form.createRadioGroup(name),sp=w/opts.length,t=String(value||'').toLowerCase().replace(/[^a-z]/g,'');
+    const pick=/llc/.test(t)?'LLC':/corp|inc/.test(t)?'Corporation':/part/.test(t)?'Partnership':/ind|sole/.test(t)?'Individual':'';
+    opts.forEach((o,i)=>{rg.addOptionToPage(o,page,{x:x+i*sp,y:y-14,width:12,height:12,borderColor:line,borderWidth:0.8,backgroundColor:rgb(1,1,1)});text(o,x+i*sp+17,9.5,font)});
+    if(opts.includes(pick))rg.select(pick)};
   const text=(t,x,size,f,color)=>page.drawText(String(t),{x,y:y-size-2,size,font:f||font,color:color||ink});
   let secN=0;const section=t=>{need(40);y-=6;page.drawRectangle({x:L,y:y-15,width:R-L,height:15,color:band});text(String.fromCharCode(65+secN++)+'. '+t.toUpperCase(),L+6,9,bold,rgb(0.12,0.37,0.75));y-=19};
   // boxes start just past the longest item name on the sheet
@@ -523,6 +528,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
       if(f.pair&&f.label2){need(19);text((f.n?f.n+'a. ':'')+f.label,L+4,8.5,font,muted);const l2=(f.n?f.n+'b. ':'')+f.label2,lw=Math.max(92,font.widthOfTextAtSize(l2,8.5)+8),w=(R-L-LW-lw-6)/2;
         field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
       if(f.pair){need(19);text(label,L+4,8.5,font,muted);const w=(R-L-LW-6)/2;field('f_'+f.k,v[f.k],L+LW,w,16);field('f_'+f.pair,v[f.pair],L+LW+w+6,w,16);y-=19;continue}
+      if(f.radio){need(19);text(label,L+4,8.5,font,muted);radios('f_'+f.k,v[f.k],f.radio,L+LW,R-L-LW);y-=19;continue}
       if(f.opts){need(19);text(label,L+4,8.5,font,muted);combo('f_'+f.k,v[f.k],f.opts,L+LW,R-L-LW,16);y-=19;continue}
       row(label,'f_'+f.k,v[f.k],f.area)}
     if(s.bldg){const cw=(R-L-LW-12)/3;need(14);[1,2,3].forEach(b=>text('Building '+b,L+LW+(b-1)*(cw+6),8,bold,muted));y-=13;
@@ -617,7 +623,7 @@ async function newSheet(kind){
 // An auto sheet made with an older layout is rebuilt in the current one, keeping every value already typed in
 // (also rebuilds any quote sheet made before the font was embedded)
 const sheetChecked=new Set();
-function sheetValues(doc){const v={};for(const fl of doc.getForm().getFields())if(fl instanceof PDFLib.PDFTextField){const t=fl.getText();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFDropdown){const t=fl.getSelected()[0];if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFCheckBox){if(fl.isChecked())v[fl.getName()]='Yes'}return v}
+function sheetValues(doc){const v={};for(const fl of doc.getForm().getFields())if(fl instanceof PDFLib.PDFTextField){const t=fl.getText();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFDropdown){const t=fl.getSelected()[0];if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFRadioGroup){const t=fl.getSelected();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFCheckBox){if(fl.isChecked())v[fl.getName()]='Yes'}return v}
 const sheetKind=n=>/ com auto quote sheet\.pdf$/i.test(n)?'auto':/ com quote sheet\.pdf$/i.test(n)?'qs':'';
 async function upgradeAuto(f){
   try{
@@ -1072,7 +1078,7 @@ $('acordSec').addEventListener('click',async e=>{
     await acordReady();const C=window.AcordCore;
     let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the quote sheet file is missing')}
     const pdf=await PDFLib.PDFDocument.load(raw),fields={},checks={};
-    for(const fl of pdf.getForm().getFields()){if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';else if(fl instanceof PDFLib.PDFCheckBox)checks[fl.getName()]=fl.isChecked()}
+    for(const fl of pdf.getForm().getFields()){if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';else if(fl instanceof PDFLib.PDFCheckBox)checks[fl.getName()]=fl.isChecked();else if(fl instanceof PDFLib.PDFRadioGroup||fl instanceof PDFLib.PDFDropdown)fields[fl.getName()]=[].concat(fl.getSelected()||'')[0]||''}
     if(!('f_client_name' in fields))throw new Error(`${qs.name} isn’t a PSW quote sheet`);
     {const cd=String(fields.f_claims_detail||'').trim();if(cd&&!String(fields.f_claims||'').includes(cd))fields.f_claims=[String(fields.f_claims||'').trim(),cd].filter(Boolean).join(' - ')}
     for(let i=1;i<=4;i++){const t=[fields[`ai${i}_name`],fields[`ai${i}_address`]].map(x=>String(x||'').trim()).filter(Boolean).join(', ');if(t&&!fields['f_ai'+i])fields['f_ai'+i]=t}
@@ -1283,7 +1289,7 @@ $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data
   btn.disabled=true;btn.textContent='Working…';m.className='msg';m.textContent=`Reading ${qs.name}…`;
   try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
     let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the quote sheet file is missing')}
-    const q=await PDFLib.PDFDocument.load(raw),fields={};for(const fl of q.getForm().getFields())if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';
+    const q=await PDFLib.PDFDocument.load(raw),fields={};for(const fl of q.getForm().getFields())if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';else if(fl instanceof PDFLib.PDFRadioGroup||fl instanceof PDFLib.PDFDropdown)fields[fl.getName()]=[].concat(fl.getSelected()||'')[0]||'';
     const g=k=>String(fields[k]||'').replace(/\s+/g,' ').trim(),today=new Date();
     const r=await fetch(S.file);if(!r.ok)throw new Error('the form template is missing');
     const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.fill(g,today);
