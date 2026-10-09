@@ -1,0 +1,27 @@
+# Installs the tracker on the server whenever main changes (after a pull request is merged).
+# Needs repo secrets DEPLOY_HOST, DEPLOY_KNOWN_HOSTS, DEPLOY_KEY from  sudo bash psw-tracker/deploy/setup-deploy.sh
+name: Deploy to server
+on:
+  push:
+    branches: [main]
+    paths: ["psw-tracker/**"]
+  workflow_dispatch:
+concurrency: deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the page
+        run: python3 psw-tracker/make_index.py
+      - name: Send to server and install
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          tar czf - --exclude='__pycache__' psw-tracker | ssh -i ~/.ssh/deploy_key -o BatchMode=yes deploy@"$DEPLOY_HOST" | tee deploy.log
+          grep -q '== App is running' deploy.log

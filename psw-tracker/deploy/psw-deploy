@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Installs a tracker update sent by the GitHub deploy step:  tar czf - psw-tracker | ssh deploy@SERVER
+# The deploy login's key can run only this (see setup-deploy.sh). install.sh backs up the database first.
+set -euo pipefail
+W="$(mktemp -d /tmp/psw-deploy.XXXXXX)"
+trap 'rm -rf "$W"' EXIT
+head -c 30000000 > "$W/update.tar.gz"
+tar xzf "$W/update.tar.gz" -C "$W" --no-same-owner --no-same-permissions
+[ -f "$W/psw-tracker/install.sh" ] || { echo "!! update has no psw-tracker/install.sh"; exit 1; }
+echo "== Deploy started $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+bash "$W/psw-tracker/install.sh"
+echo "== Deploy finished"

@@ -1,0 +1,1297 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PSW Lead Tracker</title>
+<style>
+:root{--panel:#eef5ff;--drbg:#d5e5f9;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#171e27;--drbg:#0f141a;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}}
+:root[data-theme="dark"]{--panel:#171e27;--drbg:#0f141a;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:none;margin:0 auto;padding:20px 24px 60px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+h1{font-size:22px;margin:0}
+.sub{color:var(--mute);font-size:13px}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+button.danger{color:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{min-height:70px;resize:vertical}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:4px;font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.bar input{flex:1 1 220px;width:auto}
+.bar select{flex:0 1 180px;width:auto}
+.tablewrap{background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--line)}
+td:nth-child(7){word-break:break-word;min-width:105px}td:nth-child(5){min-width:80px}td:nth-child(4){min-width:70px}
+td:first-child,td:nth-child(3),td:nth-child(6),td:nth-child(10),td:last-child{white-space:nowrap}
+th{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em;cursor:pointer;user-select:none;background:var(--card);position:sticky;top:0}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--soft)}
+tbody tr:last-child td{border-bottom:none}
+.cdot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.15);padding:0;margin-right:8px;vertical-align:-3px;cursor:pointer;display:inline-block}
+.cdot.yes{background:#1f9d55}.cdot.no{background:#d64545}
+.tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
+.cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
+.mbg.on{display:flex}
+.mbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(380px,100%);box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.mbox h3{margin:0 0 6px;font-size:18px}.mbox p{margin:0 0 16px;color:var(--mute)}
+.mbox .row{justify-content:flex-end}
+button.delrow{padding:3px 8px;font-size:12px}
+#contactSec button[data-q].done{background:var(--ok);border-color:var(--ok)}
+.chip{display:inline-block;background:var(--chip);border-radius:999px;padding:2px 9px;font-size:12px}
+.empty{padding:48px 16px;text-align:center;color:var(--mute)}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px}
+.cards{display:none}
+@media (max-width:1100px){.wrap{padding-left:12px;padding-right:12px}th,td{padding:8px 5px}}
+@media (max-width:720px){.tablewrap{display:none}.cards{display:grid;gap:10px}}
+.lc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}
+.lc .t{font-weight:600}.lc .m{color:var(--mute);font-size:13px}
+/* drawer */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:5}
+.ov.on{display:block}
+.dr{position:fixed;top:0;right:0;height:100%;width:min(680px,100%);background:var(--drbg);border-left:1px solid var(--line);z-index:6;transform:translateX(100%);transition:transform .2s;overflow-y:auto}
+.dr.on{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:1}
+.dh h2{margin:0;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.db{padding:16px;display:grid;gap:16px}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.sec h3{margin:0 0 10px;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.grid{grid-template-columns:1fr}}
+.full{grid-column:1/-1}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.log{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.log li{border:1px solid var(--line);border-radius:10px;padding:10px}
+.log .when{font-weight:600}.log .how{margin-left:6px}
+.log .by{color:var(--mute);font-size:12px}
+.log .note{margin-top:4px;white-space:pre-wrap}
+.files{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.files li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.files .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.files .sz{color:var(--mute);font-size:12px}
+a.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+.mpick{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}.mpick label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;color:var(--ink);margin:0;cursor:pointer}
+.mpick input{width:auto;flex:none;margin:0}.brow{display:flex;gap:8px;align-items:center;font-size:14px}.brow label{margin:0;font-weight:400;font-size:14px;color:var(--ink);cursor:pointer}.nab{padding:1px 7px;font-size:11px;font-weight:600;border-radius:6px;color:var(--mute)}.nab.on{background:var(--mute);color:var(--card);border-color:var(--mute)}.brow.isna label{color:var(--mute);text-decoration:line-through}.mpick label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.small{font-size:12px;color:var(--mute)}
+.tabs{display:flex;gap:6px;margin:0 0 12px}.tab{border-radius:999px;padding:6px 16px;font-weight:600}.tab.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}.tab .chip{margin-left:4px}.tab.on .chip{background:rgba(255,255,255,.25);color:inherit}
+.tdone{width:18px;height:18px;margin:0;cursor:pointer;vertical-align:-4px}
+tr.isdone td,.tli.isdone .tt{color:var(--mute)}tr.isdone .tt,.tli.isdone .tt{text-decoration:line-through}
+.due-over{color:var(--bad);font-weight:600}.due-today{color:#b26b00;font-weight:600}
+.pri-High{background:#fde2e1;color:#9b1c1c}.pri-Low{background:var(--chip);color:var(--mute)}
+a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
+.tasks{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.tli{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}.tli .tt{flex:1;min-width:0;cursor:pointer}.tli .small{white-space:nowrap}
+#taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
+.msg{font-size:13px;margin-top:6px}
+.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+.confirm{display:none;background:var(--soft);border:1px solid var(--bad);border-radius:10px;padding:10px;margin-top:8px}
+.confirm.on{display:block}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:12px;background:var(--card)}
+.drop.over{border-color:var(--acc);background:var(--soft)}
+.drop textarea{min-height:64px;border-style:solid}
+.drop label[hidden]{display:none!important}#keepWrap{display:flex}
+.drop .hint{font-size:13px;color:var(--mute);margin-bottom:8px}
+.ed{position:fixed;inset:0;background:var(--bg);z-index:8;display:none;flex-direction:column}
+.ed.on{display:flex}
+.edh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+.edh .nm{flex:1 1 200px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edh button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}
+.edb{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.pg{position:relative;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);flex:none}
+.pg canvas,.pg img{display:block}
+.adding .pg{cursor:crosshair}
+.tn{position:absolute;z-index:5;min-width:40px;padding:0 2px;color:#000;background:rgba(255,235,59,.35);border:1px dashed #b58900;font-family:Helvetica,Arial,sans-serif;line-height:1.15;white-space:pre;outline:none}
+.tn:focus{background:rgba(255,235,59,.6)}
+.edtxt{width:min(900px,100%);flex:1;min-height:60vh;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
+.edmsg{font-size:13px;color:var(--mute)}
+.annotationLayer{position:absolute;top:0;left:0;pointer-events:none;transform-origin:0 0;z-index:3}
+.annotationLayer section{position:absolute;text-align:initial;pointer-events:auto;box-sizing:border-box;transform-origin:0 0}
+.annotationLayer .linkAnnotation>a{position:absolute;inset:0}
+.annotationLayer .textWidgetAnnotation :is(input,textarea),.annotationLayer .choiceWidgetAnnotation select{background:rgba(0,54,255,.10);border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px;vertical-align:top}
+.annotationLayer .textWidgetAnnotation textarea{resize:none}
+.annotationLayer .textWidgetAnnotation :is(input,textarea):focus,.annotationLayer .choiceWidgetAnnotation select:focus{background:rgba(0,54,255,.04);border-color:#1f5fbf;outline:none}
+.annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{width:100%;height:100%;margin:0;accent-color:#1f5fbf}
+.annotationLayer .popupAnnotation,.annotationLayer .popupTriggerArea{display:none}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
+</style>
+
+<div class="wrap">
+  <header>
+    <div><h1>PSW Lead Tracker</h1><div class="sub" id="count">Loading leads…</div></div>
+    <button class="pri" id="newBtn">+ New lead</button>
+  </header>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button></nav>
+  <div id="leadsView">
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search name, company, phone, email">
+    <select id="fType"><option value="">All lead types</option></select>
+    <select id="fAssign"><option value="">Everyone</option></select>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th data-k="leadDate">Lead date</th><th data-k="assignedTo">Assigned to</th><th data-k="firstName">First</th><th data-k="lastName">Last</th>
+        <th data-k="company">Company</th><th data-k="phone">Phone</th><th data-k="email">Email</th><th data-k="leadType">Lead type</th>
+        <th data-k="lastContacted">Last contacted</th><th data-k="xDate">X date</th><th data-k="howContacted">How</th><th data-k="nfiles">Files</th><th></th>
+      </tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden><b>No leads yet</b>Click “+ New lead” to add your first one.</div>
+  </div>
+  <div class="cards" id="cards"></div>
+  </div>
+  <div id="tasksView" hidden>
+    <div class="bar">
+      <input id="tq" type="search" placeholder="Search tasks or lead names">
+      <select id="tfAssign"><option value="">Everyone</option></select>
+      <select id="tfStatus"><option value="open">Open tasks</option><option value="done">Done</option><option value="all">All tasks</option></select>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th style="width:44px">Done</th><th>Task</th><th>First</th><th>Last</th><th>Company</th><th>Lead</th><th>Assigned to</th><th>Due</th><th>Priority</th><th>Notes</th></tr></thead>
+        <tbody id="ttb"></tbody>
+      </table>
+      <div class="empty" id="tempty" hidden></div>
+    </div>
+    <div class="cards" id="tcards"></div>
+  </div>
+</div>
+
+<div class="ov" id="ov"></div>
+<aside class="dr" id="dr" aria-hidden="true">
+  <div class="dh"><h2 id="dTitle">New lead</h2><div class="row"><button id="saveBtn" class="pri">Save</button><button class="danger" id="delTop">Delete</button><button id="closeBtn">Close</button></div></div>
+  <div class="db">
+    <div class="drop" id="drop">
+      <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
+      <textarea id="dropText" placeholder="Paste text from an email, web form, text message…"></textarea>
+      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">New quote sheet</button><button class="pri" id="newAuto">New com auto quote sheet</button></div>
+      <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
+      <div class="msg" id="fillMsg"></div>
+    </div>
+
+    <div class="sec">
+      <h3>Lead info</h3>
+      <div class="grid">
+        <div><label for="leadDate">Date of lead</label><input id="leadDate" type="date"></div>
+        <div><label for="leadSource">Lead source</label><input id="leadSource" list="sourceList" placeholder="Pick or type a source"></div>
+        <div class="full"><label for="assignedTo">Assigned to</label><input id="assignedTo" list="assignList" placeholder="Pick an agent"></div>
+        <div><label for="firstName">First name</label><input id="firstName"></div>
+        <div><label for="lastName">Last name</label><input id="lastName"></div>
+        <div class="full"><label for="company">Company name</label><input id="company"></div>
+        <div><label for="phone">Phone number</label><input id="phone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="email">Email</label><input id="email" type="email"></div>
+        <div><label for="leadType">Lead type</label><input id="leadType" list="typeList" placeholder="Pick or type a lead type"></div>
+        <div><label>Last contacted</label><input id="lastShow" disabled placeholder="Set by contact log"></div>
+        <div><label for="xDate">X date</label><input id="xDate" inputmode="numeric" placeholder="MM/DD/YYYY" title="When their current policy expires"></div>
+        <div class="full"><label for="leadNotes">Notes</label><textarea id="leadNotes" placeholder="Anything to remember about this lead"></textarea></div>
+      </div>
+      <div class="msg" id="saveMsg"></div>
+    </div>
+
+    <div class="sec" id="contactSec">
+      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button></h3>
+      <div class="grid">
+        <div><label for="cAt">Date / time</label><input id="cAt" type="datetime-local"></div>
+        <div><label for="cHow">How contacted</label>
+          <select id="cHow"><option>Phone call</option><option>Email</option><option>Text</option><option>Phone + text</option><option>Phone + text + email</option><option>Voicemail</option><option>In person</option><option>Other</option></select></div>
+        <div class="full"><label for="cNote">Notes</label><textarea id="cNote" placeholder="What was discussed, next steps…"></textarea></div>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="logBtn">Add contact</button><span class="small" id="logHint"></span></div>
+      <div class="small" style="margin:12px 0 6px;font-weight:600">Quick log (uses the time now, plus any notes above)</div>
+      <div class="row" id="quickLog">
+        <button class="pri" data-q="First text" data-how="Text">First text</button><button class="pri" data-q="Follow up text" data-how="Text">Follow up text</button><button class="pri" data-q="Follow up text 2" data-how="Text">Follow up text 2</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="pri" data-q="First email" data-how="Email">First email</button><button class="pri" data-q="Follow up email" data-how="Email">Follow up email</button><button class="pri" data-q="Email 3" data-how="Email">Email 3</button>
+      </div>
+      <div class="msg" id="logMsg"></div>
+      <ul class="log" id="log"></ul>
+    </div>
+
+    <div class="sec" id="taskSec">
+      <h3 style="display:flex;align-items:center;justify-content:space-between;gap:10px">Tasks <button type="button" id="leadTaskBtn">+ Add task</button></h3>
+      <ul class="tasks" id="leadTasks"></ul>
+      <div class="small" id="leadTasksNone">No tasks for this lead yet.</div>
+    </div>
+    <div class="sec" id="fileSec">
+      <h3>Files</h3>
+      <div class="row" id="upRow"><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
+      <div class="msg" id="fileMsg"></div>
+      <ul class="files" id="files"></ul>
+    </div>
+
+    <div class="sec" id="mailSec">
+      <h3>Email</h3>
+      <div class="small" style="margin-bottom:8px">Tick the files to send, then pick who it goes to. Email customer sends a quote sheet for them to finish; drop it in Quick fill when it comes back. A new Outlook email opens to them, and the ticked files are saved to your computer so you can drag them into it.</div>
+      <div class="mpick" id="mailPick"></div>
+      <div class="row" id="mailBtns"></div>
+      <div class="msg" id="mailMsg"></div>
+    </div>
+
+    <div class="sec" id="supSec">
+      <h3>Supplementals</h3>
+      <div class="small" style="margin-bottom:8px">Fills the supplemental from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
+      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><label style="display:flex;gap:6px;align-items:center;margin:0;font-weight:400;font-size:14px;color:var(--ink)"><input type="checkbox" id="supSubsNA" style="width:auto;margin:0">Subcontractors N/A</label></div>
+      <div class="msg" id="supMsg"></div>
+    </div>
+
+    <div class="sec" id="acordSec">
+      <h3>ACORD forms</h3>
+      <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
+      <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="140">Create 140</button><button class="pri" data-acord="131">Create 131</button></div>
+      <div class="msg" id="acordMsg"></div>
+    </div>
+
+    <div class="sec" id="bindSec">
+      <h3>Binding docs checklist</h3>
+      <div class="mpick" id="bindList"></div>
+      <div class="msg" id="bindMsg"></div>
+    </div>
+
+    <div class="sec" id="delSec">
+      <button class="danger" id="delBtn">Delete this lead</button>
+    </div>
+  </div>
+</aside>
+<datalist id="assignList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
+<div class="ed" id="ed" aria-hidden="true">
+  <div class="edh"><span class="nm" id="edName"></span>
+    <button id="edAdd" title="Click on the page to type text">+ Add text</button>
+    <button class="pri" id="edLead" hidden title="Copy the client name, contact, phone, email, lead date and source from this sheet into the lead">Fill lead info</button><button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button id="edClose">Close</button></div>
+  <div class="edh" style="padding-top:6px;padding-bottom:6px"><span class="edmsg" id="edMsg"></span></div>
+  <div class="edb" id="edBody"></div>
+</div>
+<div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
+<div class="mbg" id="taskDlg" role="dialog" aria-modal="true" aria-labelledby="taskTitleH"><div class="mbox" id="taskBox">
+  <h3 id="taskTitleH">New task</h3>
+  <div class="grid">
+    <div class="full"><label for="tTitle">Task</label><input id="tTitle" placeholder="e.g. Send GL quote to carrier"></div>
+    <div><label for="tFirst">First name</label><input id="tFirst"></div>
+    <div><label for="tLast">Last name</label><input id="tLast"></div>
+    <div class="full"><label for="tCompany">Company name</label><input id="tCompany"></div>
+    <div><label for="tAssign">Assigned to</label><select id="tAssign"></select></div>
+    <div><label for="tDue">Due date</label><input id="tDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
+    <div><label for="tPri">Priority</label><select id="tPri"><option>Normal</option><option>High</option><option>Low</option></select></div>
+    <div><label for="tLead">Lead</label><select id="tLead"></select></div>
+    <div class="full"><label for="tNotes">Notes</label><textarea id="tNotes"></textarea></div>
+  </div>
+  <div class="msg" id="taskMsg"></div>
+  <div class="row"><button class="danger" id="tDel" style="margin-right:auto">Delete task</button><button id="tCancel">Cancel</button><button class="pri" id="tSave">Save task</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(async()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const nowLocal=()=>{const d=new Date();return todayISO()+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
+const fmtDate=s=>{if(!s)return '';const m=/^(\d{4})-(\d\d)-(\d\d)/.exec(s);return m?`${m[2]}/${m[3]}/${m[1]}`:s};
+const fmtDT=s=>{if(!s)return '';const d=new Date(s);if(isNaN(d))return s;return d.toLocaleString([], {month:'2-digit',day:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit'})};
+// typed date (010126, 01012026, 1/1/26) -> 2026-01-01; anything else is kept as typed
+const typedISO=v=>{v=String(v||'').trim();if(/^\d{4}-\d\d-\d\d$/.test(v))return v;let m=/^(\d\d)(\d\d)(\d\d(?:\d\d)?)$/.exec(v)||/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d\d(?:\d\d)?)$/.exec(v);if(!m)return v;const mo=+m[1],d=+m[2],y=m[3].length===2?2000+ +m[3]:+m[3];const t=new Date(y,mo-1,d);if(t.getMonth()!==mo-1||t.getDate()!==d)return v;return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`};
+const fmtPhone=v=>{const d=String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6)}`:v};
+const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
+const toast=t=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)};
+const errText=e=>{const c=e&&e.code;return ({permission_denied:'You only have view access to this tracker.',too_large:'That file is too big (20 MB max).',unsupported_type:'That file type can’t be stored. Use PDF, an image, CSV or text.',rate_limited:'Too many changes at once, try again in a moment.',quota_or_state:'File storage is full.',not_granted:'This view can’t do that.'})[c]||('Something went wrong'+(c?` (${c})`:'')+'. Try again.')};
+
+let db=null,assets=null,dl=null,user=null,me=null;
+try{db=await window.claude.use('db')}catch(e){}
+try{assets=await window.claude.use('assets')}catch(e){}
+try{dl=await window.claude.use('downloads')}catch(e){}
+try{user=await window.claude.use('user');me=user&&await user.id()}catch(e){}
+if(!db){$('count').textContent='The lead database isn’t available in this view.';$('newBtn').disabled=true;return}
+const leadsCol=db.collection('leads');
+
+let view='leads',pending=[],leads=[],sortK='leadDate',sortDir=-1,cur=null,curUnsub=null,contacts=[],names={};
+const AGENTS=['Alex K','Paul M','Victor Q','Anna C','Patricia G'];
+const LEAD_SOURCES=['Baker','Victor','PSW client','PSW web','Paul'];
+const LEAD_TYPES=['Commercial','Personal','Workers comp','Referral','Renewal','Golf sim','Xmas lights','Party bus'];
+const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','email','leadType','leadNotes','leadSource','xDate'];
+
+/* ---------- list ---------- */
+leadsCol.onSnapshot(s=>{
+  leads=s.docs.map(d=>({id:d.id,...d.data()}));
+  render();renderTasks();
+  if(cur&&cur.id){const l=leads.find(x=>x.id===cur.id);if(l){cur=l;fillMeta();renderFiles()}}
+},e=>{$('count').textContent=errText(e)});
+
+function opts(sel,vals,first){const v=sel.value;sel.innerHTML=`<option value="">${first}</option>`+vals.map(x=>`<option>${esc(x)}</option>`).join('');sel.value=vals.includes(v)?v:''}
+function uniq(k){return [...new Set(leads.map(l=>(l[k]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
+function render(){
+  const types=uniq('leadType'),people=uniq('assignedTo'),agents=[...new Set([...AGENTS,...people])];
+  opts($('fType'),types,'All lead types');opts($('fAssign'),agents,'Everyone');
+  $('typeList').innerHTML=[...new Set([...LEAD_TYPES,...types])].map(x=>`<option value="${esc(x)}">`).join('');
+  $('assignList').innerHTML=agents.map(x=>`<option value="${esc(x)}">`).join('');
+  $('sourceList').innerHTML=[...new Set([...LEAD_SOURCES,...uniq('leadSource')])].map(x=>`<option value="${esc(x)}">`).join('');
+  const q=$('q').value.trim().toLowerCase(),qd=q.replace(/\D/g,''),ft=$('fType').value,fa=$('fAssign').value;
+  let rows=leads.filter(l=>{
+    if(ft&&l.leadType!==ft)return false;if(fa&&l.assignedTo!==fa)return false;
+    if(!q)return true;
+    const hay=[l.firstName,l.lastName,l.company,l.email,l.phone,l.assignedTo,l.leadType].join(' ').toLowerCase();
+    return hay.includes(q)||(qd.length>=3&&String(l.phone||'').replace(/\D/g,'').includes(qd));
+  });
+  rows.sort((a,b)=>{const va=sortK==='nfiles'?(a.files||[]).length:String(a[sortK]||''),vb=sortK==='nfiles'?(b.files||[]).length:String(b[sortK]||'');
+    if(va===vb)return String(b.createdAt||'').localeCompare(String(a.createdAt||''));
+    if(va===''||va===0&&sortK!=='nfiles')return 1;if(vb===''||vb===0&&sortK!=='nfiles')return -1;
+    return (va<vb?-1:1)*sortDir});
+  if(view==='leads')$('count').textContent=leads.length?`${rows.length} of ${leads.length} lead${leads.length===1?'':'s'}`:'No leads yet';
+  $('empty').hidden=leads.length>0;
+  if(leads.length&&!rows.length){$('empty').hidden=false;$('empty').innerHTML='<b>No matches</b>Try a different search or filter.'}
+  else $('empty').innerHTML='<b>No leads yet</b>Click “+ New lead” to add your first one.';
+  $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td>${esc(l.assignedTo)}</td><td>${dot(l)}${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(l.phone)}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
+  $('cards').innerHTML=rows.map(l=>`<div class="lc" data-id="${esc(l.id)}"><button class="danger delrow" style="float:right" data-del-lead="${esc(l.id)}">Delete</button><div class="t">${dot(l)}${esc([l.firstName,l.lastName].filter(Boolean).join(' ')||'(no name)')}${l.company?' · '+esc(l.company):''}</div><div class="m">${esc(fmtDate(l.leadDate))}${l.assignedTo?' · '+esc(l.assignedTo):''}${l.leadType?' · '+esc(l.leadType):''}</div><div class="m">${l.lastContacted?'Last contact '+esc(fmtDT(l.lastContacted))+' ('+esc(l.howContacted)+')':'Not contacted yet'}${l.xDate?' · X date '+esc(fmtDate(l.xDate)):''}</div></div>`).join('');
+  document.querySelectorAll('th').forEach(th=>th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.k===sortK?(sortDir>0?' ▲':' ▼'):''));
+}
+['q','fType','fAssign'].forEach(id=>$(id).addEventListener('input',render));
+document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=/Date|Contacted|nfiles/.test(k)?-1:1}render()});
+const made=l=>l.contactMade===true;
+const dot=l=>`<button class="cdot ${made(l)?'yes':'no'}" data-dot="${esc(l.id)}" title="${made(l)?'Contact made (click to mark no contact)':'No contact yet (click to mark contact made)'}" aria-label="${made(l)?'Contact made':'No contact'}"></button>`;
+const openFromRow=e=>{const dlb=e.target.closest('[data-del-lead]');if(dlb){e.stopPropagation();askDelete(dlb.dataset.delLead);return}const d=e.target.closest('[data-dot]');if(d){e.stopPropagation();toggleMade(d.dataset.dot);return}const r=e.target.closest('[data-id]');if(r)openLead(leads.find(l=>l.id===r.dataset.id))};
+$('tb').addEventListener('click',openFromRow);$('cards').addEventListener('click',openFromRow);
+
+
+async function toggleMade(id){
+  const l=leads.find(x=>x.id===id);if(!l)return;
+  try{await leadsCol.doc(id).update({contactMade:!made(l)})}catch(e){toast(errText(e))}
+}
+
+/* ---------- drawer ---------- */
+function show(on){$('dr').classList.toggle('on',on);$('ov').classList.toggle('on',on);$('dr').setAttribute('aria-hidden',!on)}
+function closeLead(){show(false);if(curUnsub){curUnsub();curUnsub=null}cur=null}
+$('closeBtn').onclick=closeLead;$('ov').onclick=closeLead;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('dr').classList.contains('on'))closeLead()});
+$('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):openLead(null);
+
+function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact'}
+$('madeTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=!made(cur);try{await leadsCol.doc(cur.id).update({contactMade:on});cur.contactMade=on;showMade()}catch(e){toast(errText(e))}};
+function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').value=fmtDT(cur&&cur.lastContacted)}
+function openLead(l){
+  if(curUnsub){curUnsub();curUnsub=null}
+  cur=l?{...l}:null;contacts=[];
+  FIELDS.forEach(k=>$(k).value=l?(l[k]||''):'');
+  $('xDate').value=fmtDate($('xDate').value);
+  if(!l)$('leadDate').value=todayISO();
+  $('dTitle').textContent=l?([l.firstName,l.lastName].filter(Boolean).join(' ')||l.company||'Lead'):'New lead';
+  $('saveMsg').textContent='';$('logMsg').textContent='';$('fileMsg').textContent='';
+  $('cAt').value=nowLocal();$('cNote').value='';fillMeta();
+  pending=[];showKeep();$('dropText').value='';$('fillMsg').textContent='';
+  const has=!!l;
+  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('supSubsNA').checked=false;$('acordMsg').textContent='';
+  $('logHint').textContent='';
+  $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each');
+  $('log').innerHTML=has?'':'';renderFiles();
+  if(has){
+    curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
+  }
+  show(true);setTimeout(()=>$(has?'cNote':'firstName').focus(),220);
+}
+$('phone').addEventListener('blur',()=>$('phone').value=fmtPhone($('phone').value));
+$('xDate').addEventListener('blur',()=>$('xDate').value=fmtDate(typedISO($('xDate').value)));
+
+async function ensureSaved(){
+  if(cur&&cur.id)return true;
+  const keep={note:$('cNote').value,how:$('cHow').value,at:$('cAt').value,text:$('dropText').value};
+  await $('saveBtn').onclick();
+  if(!cur||!cur.id)return false;
+  $('cNote').value=keep.note;$('cHow').value=keep.how;$('cAt').value=keep.at;$('dropText').value=keep.text;return true;
+}
+$('saveBtn').onclick=async()=>{
+  const m=$('saveMsg');m.className='msg';m.textContent='Saving…';
+  $('phone').value=fmtPhone($('phone').value);
+  const data={};FIELDS.forEach(k=>data[k]=$(k).value.trim());
+  data.xDate=typedISO(data.xDate);$('xDate').value=fmtDate(data.xDate);
+  $('saveBtn').disabled=true;
+  try{
+    if(cur&&cur.id){await leadsCol.doc(cur.id).update(data);Object.assign(cur,data);
+      if(pending.length&&assets&&$('keepFile').checked){const pf=pending;pending=[];showKeep();for(const f of pf)await uploadOne(f)}}
+    else{data.createdAt=new Date().toISOString();data.files=[];data.lastContacted='';data.howContacted='';if(me)data.createdBy=me;
+      const ref=await leadsCol.add(data);const pf=$('keepFile').checked?pending:[];openLead({id:ref.id,...data});if(assets)for(const f of pf)await uploadOne(f)}
+    $('dTitle').textContent=[data.firstName,data.lastName].filter(Boolean).join(' ')||data.company||'Lead';
+    m.className='msg ok';m.textContent='Saved.';toast('Lead saved');
+  }catch(e){m.className='msg err';m.textContent=errText(e)}
+  $('saveBtn').disabled=false;
+};
+
+
+
+/* ---------- quote sheet PDF (same layout and field names as the Quote Sheet tool) ---------- */
+const CLASS_COLS=[{k:'code',label:'Class code',w:.75},{k:'desc',label:'Class description',w:2.3},{k:'ft',label:'FT emp',w:.55},{k:'pt',label:'PT emp',w:.55},{k:'payroll',label:'Payroll',w:1}];
+const OWNER_COLS=[{k:'first',label:'First name',w:1.2},{k:'last',label:'Last name',w:1.2},{k:'dob',label:'Birth date',w:.9},{k:'pct',label:'% owned',w:.65},{k:'title',label:'Title',w:1}];
+const QS_SECTIONS=[
+ {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
+ {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Copr/Part/LLC'},{k:'contact_name',n:4,label:'Contact name'},{k:'phone',n:5,label:'Phone Number'},{k:'email',n:6,label:'Email Address'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date'},{k:'exp_date',n:13,label:'EXP Date'}]},
+ {title:'Company info',fields:[{k:'currently_insured',n:14,label:'Currently insured?',label2:'Current price',pair:'current_carrier_price'},{k:'year_started',n:16,label:'Year biz started',label2:'Years exp',pair:'years_experience'},{k:'gross_receipts',n:18,label:'Gross Rec',label2:'Payroll',pair:'payroll'},{k:'full_time',n:20,label:'# Full time emp',label2:'# Part time emp',pair:'part_time'},{k:'claims',n:22,label:'Any claims'},{k:'claims_detail',n:1,label:'Claims details',area:1}]},
+ {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'}]},
+ {title:'Workers comp',fields:[{k:'tax_id',n:29,label:'Tax ID'}],rowgrid:[{prefix:'o',nums:[30,31,32,33],label:'Owner',cols:OWNER_COLS,total:'pct'},{prefix:'cc',nums:[34,35,36,37],label:'Class',cols:CLASS_COLS}]},
+ {title:'Umbrella / Excess',excess:[{k:'auto',n:38,label:'Auto excess'},{k:'gl',n:39,label:'GL excess'},{k:'wc',n:40,label:'WC excess'}]},
+ {title:'AI / Waiver of sub',rowgrid:[{prefix:'ai',nums:[1,2,3,4],label:'AI',cols:[{k:'name',label:'Name',w:1},{k:'address',label:'Address',w:1.6}]}]}];
+// items are numbered 1, 2, 3... straight through the sheet (two-box rows are Na / Nb)
+{let c=0;QS_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>{if(f.n)f.n=++c});(s.bldg||[]).forEach(f=>f.n=++c);(s.rowgrid||[]).forEach(g=>{g.nums=g.nums.map(()=>++c)});(s.excess||[]).forEach(r=>r.n=++c)})}
+const QS_KEYS=[];
+// % owned boxes -> number; total shows under the % column
+const pctNum=x=>{const m=String(x||'').replace(/,/g,'').match(/-?\d+(\.\d+)?/);return m?+m[0]:null};
+const pctTotal=get=>{let t=0,any=false;for(let i=1;i<=4;i++){const n=pctNum(get(i));if(n!=null){t+=n;any=true}}return any?(Math.round(t*100)/100)+'%':''};
+QS_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>f.pair&&QS_KEYS.push([f.pair,{current_carrier_price:'current comp/current price',years_experience:'Years exp in business',payroll:'Payroll',part_time:'# Part time employees'}[f.pair]||f.pair]));(s.fields||[]).forEach(f=>QS_KEYS.push([f.k,f.pair?{currently_insured:'currently insured?',year_started:'Year biz started',gross_receipts:'Gross Rec',full_time:'# Full time employees'}[f.k]||f.label:f.label+(f.k==='entity_type'?' (Individual, Corporation, Partnership or LLC)':f.k==='line_of_business'?' (BOP, GL, WC, GL + WC, Property or Package)':f.k==='client_note'?' (website)':/date/.test(f.k)?' (MM/DD/YYYY)':f.k==='owner1'?' (e.g. "Name MM/DD/YYYY 100%")':f.k==='client_name'?' (business name)':'')]));
+  (s.bldg||[]).forEach(f=>[1,2,3].forEach(b=>QS_KEYS.push([`b${b}_${f.k}`,`Building ${b} ${f.label}`])));
+  (s.rowgrid||[]).forEach(g=>g.nums.forEach((n,i)=>g.cols.forEach(c=>QS_KEYS.push([`${g.prefix}${i+1}_${c.k}`,`${g.label} ${i+1} ${c.label}`+(c.k==='dob'?' (MM/DD/YYYY)':c.k==='pct'?' (number only, e.g. 50)':c.k==='code'?' (WC class code, 4 digits)':'')]))))});
+const mdy=d=>`${pad(d.getMonth()+1)}/${pad(d.getDate())}/${d.getFullYear()}`;
+function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/);
+  if(m){const y=m[3].length===2?2000+ +m[3]:+m[3];const d=new Date(y,m[1]-1,+m[2]);return d.getMonth()===m[1]-1?d:null}
+  const iso=String(v||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})/);return iso?new Date(+iso[1],iso[2]-1,+iso[3]):null}
+function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
+  let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
+const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
+const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-16',FONT_MARK='psw-font-embedded';
+// Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
+let fontBytes=null;
+async function sheetFonts(doc,notesOnly){
+  try{
+    if(!window.fontkit)await loadJs('fontkit.umd.min.js');
+    if(!fontBytes){const [a,b]=await Promise.all(['LiberationSans-Regular.ttf','LiberationSans-Bold.ttf'].map(async u=>{const r=await fetch(u);if(!r.ok)throw new Error('font missing');return r.arrayBuffer()}));fontBytes=[a,b]}
+    doc.registerFontkit(window.fontkit);
+    if(notesOnly)return {font:await doc.embedFont(fontBytes[0],{subset:true}),embedded:true};
+    return {font:await doc.embedFont(fontBytes[0],{subset:false}),bold:await doc.embedFont(fontBytes[1],{subset:true}),embedded:true};
+  }catch(e){if(notesOnly)return {font:await doc.embedFont(PDFLib.StandardFonts.Helvetica),embedded:false};return {font:await doc.embedFont(PDFLib.StandardFonts.Helvetica),bold:await doc.embedFont(PDFLib.StandardFonts.HelveticaBold),embedded:false}}
+}
+async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURANCE QUOTE SHEET',SUBJ='psw-quote-sheet'){
+  await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
+  // phone always (###)###-####; client name is one box now, so an old website/note box moves into the description
+  v={...v};if(v.phone)v.phone=fmtPhone(v.phone);
+  if(v.owner_name&&!v.owner_first&&!v.owner_last){const p=String(v.owner_name).trim().split(/\s+/);v.owner_first=p.shift()||'';v.owner_last=p.join(' ')}delete v.owner_name;
+  if(String(v.client_note||'').trim()){const k=SECS===AUTO_SECTIONS?'description':'detailed_description',note=String(v.client_note).trim();if(!String(v[k]||'').includes(note))v[k]=[String(v[k]||'').trim(),note].filter(Boolean).join(' - ')}delete v.client_note;
+  // the old Contractor section (items 38-41) became Umbrella / Excess: keep any old answers in the detailed description
+  {const old=[38,39,40,41].map(n=>[v[`c${n}_l`],v[`c${n}_v`]].map(x=>String(x||'').trim()).filter(Boolean).join(': ')).filter(Boolean);[38,39,40,41].forEach(n=>{delete v[`c${n}_l`];delete v[`c${n}_v`]});
+   ['umb_type','umb_limit','umb_underlying','umb_current'].forEach(k=>{if(String(v[k]||'').trim())old.push(String(v[k]).trim());delete v[k]});
+   if(old.length&&SECS!==AUTO_SECTIONS){const t=old.join('; ');if(!String(v.detailed_description||'').includes(t))v.detailed_description=[String(v.detailed_description||'').trim(),t].filter(Boolean).join(' - ')}}
+  // items 30-33 were one 'name/bd/% owned' box each; split them into Owner N first / last / birth date / % owned
+  for(let i=1;i<=4;i++){const o=String(v['owner'+i]||'').trim();delete v['owner'+i];if(!o||[`o${i}_first`,`o${i}_last`].some(k=>String(v[k]||'').trim()))continue;
+    let t=o;const pm=t.match(/(\d{1,3}(?:\.\d+)?)\s*%/);if(pm){v[`o${i}_pct`]=pm[1];t=t.replace(pm[0],' ')}
+    const dm=t.match(/\b\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}\b/);if(dm){v[`o${i}_dob`]=dm[0];t=t.replace(dm[0],' ')}
+    const nm=t.replace(/[\/|,;]+/g,' ').trim().split(/\s+/).filter(Boolean);v[`o${i}_first`]=nm.shift()||'';v[`o${i}_last`]=nm.join(' ')}
+  // items 34-37 were one 'class code' box each; a leading 4-digit code splits from its description
+  for(let i=1;i<=4;i++){const o=String(v['class_code'+i]||'').trim();delete v['class_code'+i];if(!o||[`cc${i}_code`,`cc${i}_desc`].some(k=>String(v[k]||'').trim()))continue;
+    const m=o.match(/^(\d{4})\s*[-–:]?\s*(.*)$/);v[`cc${i}_code`]=m?m[1]:o;if(m&&m[2])v[`cc${i}_desc`]=m[2]}
+  // AI 1-4 were one box each; the old text goes in the name box
+  for(let i=1;i<=4;i++){const o=String(v['ai'+i]||'').trim();delete v['ai'+i];if(o&&![`ai${i}_name`,`ai${i}_address`].some(k=>String(v[k]||'').trim()))v[`ai${i}_name`]=o}
+  for(let i=1;i<=4;i++){const n=pctNum(v[`o${i}_pct`]);if(n!=null)v[`o${i}_pct`]=n+'%'}
+  v.o_pct_total=pctTotal(i=>v[`o${i}_pct`]);
+  ['auto','gl','wc'].forEach(k=>{const e=parseMdy(v[`x_${k}_eff`]);if(e){v[`x_${k}_eff`]=mdy(e);if(!String(v[`x_${k}_exp`]||'').trim())v[`x_${k}_exp`]=mdy(new Date(e.getFullYear()+1,e.getMonth(),e.getDate()))}});
+  const {PDFDocument,StandardFonts,rgb}=PDFLib;
+  const doc=await PDFDocument.create();doc.setTitle(TITLE.replace(/^PACIFIC SOUTHWEST INSURANCE/,'PSW'));doc.setSubject(SUBJ);
+  const {font,bold,embedded}=await sheetFonts(doc),form=doc.getForm();
+  doc.setKeywords([SECS===AUTO_SECTIONS?AUTO_LAYOUT:QS_LAYOUT,...(embedded?[FONT_MARK]:[])]);
+  const W=612,H=792,L=36,R=W-36,ink=rgb(0.11,0.14,0.19),muted=rgb(0.4,0.44,0.52),line=rgb(0.75,0.78,0.83),band=rgb(0.8,0.87,0.96),pageBg=rgb(0.9,0.95,1);
+  let page,y,newPage=()=>{page=doc.addPage([W,H]);y=H-40};const need=h=>{if(y-h<36)newPage()};
+  const clean=x=>[...String(x||'')].map(ch=>{try{font.encodeText(ch);return ch}catch(_){return ' '}}).join('');
+  const field=(name,value,x,w,h,multi)=>{value=clean(value);const tf=form.createTextField(name);if(multi)tf.enableMultiline();tf.setText(value);
+    tf.addToPage(page,{x,y:y-h,width:w,height:h,font,borderColor:line,borderWidth:0.6,backgroundColor:rgb(1,1,1)});
+    const fit=value&&!multi?(w-6)/font.widthOfTextAtSize(value,1):99;tf.setFontSize(multi?9:Math.max(6,Math.min(10,Math.floor(fit*10)/10)))};
+  const drop=(name,value,opts,x,w,h)=>{const dd=form.createDropdown(name);dd.addOptions(opts);const m=opts.find(o=>o.toLowerCase()===String(value||'').trim().toLowerCase()||(String(value||'').trim().toLowerCase()[0]===o.toLowerCase()[0]&&String(value||'').trim().length<=3));if(m)dd.select(m);
+    dd.addToPage(page,{x,y:y-h,width:w,height:h,font,borderColor:line,borderWidth:0.6,backgroundColor:rgb(1,1,1)});dd.setFontSize(9)};
+  const text=(t,x,size,f,color)=>page.drawText(String(t),{x,y:y-size-2,size,font:f||font,color:color||ink});
+  let secN=0;const section=t=>{need(40);y-=6;page.drawRectangle({x:L,y:y-15,width:R-L,height:15,color:band});text(String.fromCharCode(65+secN++)+'. '+t.toUpperCase(),L+6,9,bold,rgb(0.12,0.37,0.75));y-=19};
+  // boxes start just past the longest item name on the sheet
+  const labels=[];for(const s of SECS){(s.fields||[]).forEach(f=>labels.push((f.n?f.n+(f.pair&&f.label2?'a. ':'. '):'')+f.label));(s.bldg||[]).forEach(f=>labels.push(f.n+'. '+f.label));
+    (s.rowgrid||[]).forEach(g=>g.nums.forEach((n,i)=>labels.push(n+'. '+g.label+' '+(i+1))));(s.excess||[]).forEach(r=>labels.push(r.n+'. '+r.label))}
+  const LW=Math.min(170,Math.max(70,...labels.map(t=>font.widthOfTextAtSize(String(t),8.5)))+18);const row=(label,name,value,multi)=>{const h=multi?30:16;need(h+3);text(label,L+4,8.5,font,muted);field(name,value,L+LW,R-L-LW,h,multi);y-=h+3};
+  // header: agency logo (supporting file psw-logo.png, when published) left of the title, agency email + phone under it
+  // the header block (logo + title + contact) is centered and repeats at the top of every page
+  let logo=null;try{const r=await fetch('psw-logo.png');if(r.ok)logo=await doc.embedPng(await r.arrayBuffer())}catch(_){}
+  const header=()=>{const lh=36,lw=logo?Math.min(120,logo.width*lh/logo.height):0,gap=logo?10:0,tw=Math.max(bold.widthOfTextAtSize(TITLE,14),font.widthOfTextAtSize(AGENCY_CONTACT,9)),x0=(W-(lw+gap+tw))/2;
+    if(logo)page.drawImage(logo,{x:x0,y:y-lh+4,width:lw,height:lw*logo.height/logo.width});const lx=x0+lw+gap;
+    text(TITLE,lx,14,bold);y-=19;text(AGENCY_CONTACT,lx,9,font,muted);y-=24};
+  newPage=()=>{page=doc.addPage([W,H]);page.drawRectangle({x:0,y:0,width:W,height:H,color:pageBg});y=H-40;header()};
+  newPage();
+  for(const s of SECS){if(s.cont){}else if(s.table)need(40+12+(s.table.cols2?52:19)*s.table.rows);if(s.grid)need(40+13+19*s.grid.rows.length);if(!s.cont)section(s.title);
+    if(s.grid){const g=s.grid,cw=(R-L-LW-6*(g.count-1))/g.count;need(14);for(let c=1;c<=g.count;c++)text(g.label+' '+c,L+LW+(c-1)*(cw+6),8,bold,muted);y-=13;
+      for(const r of g.rows){need(19);text(r.label,L+4,8.5,font,muted);for(let c=1;c<=g.count;c++)field(`${g.prefix}${c}_${r.k}`,v[`${g.prefix}${c}_${r.k}`],L+LW+(c-1)*(cw+6),cw,16);y-=19}}
+    if(s.table){const t=s.table,gap=4;
+      const lay=cols=>{const tot=cols.reduce((a,c)=>a+c.w,0),avail=R-L-20-gap*(cols.length-1);const xs=[];let x=L+20;cols.forEach(c=>{xs.push(x);x+=avail*c.w/tot+gap});return {xs,ws:cols.map(c=>avail*c.w/tot)}};
+      const A=lay(t.cols),B=t.cols2?lay(t.cols2):null;
+      const put=(c,r,x,w)=>{const nm=`${t.prefix}${r}_${c.k}`;c.opts?drop(nm,v[nm],c.opts,x,w,16):field(nm,v[nm],x,w,16)};
+      need(14);t.cols.forEach((c,i)=>text(c.label,A.xs[i],7.5,bold,muted));y-=12;
+      for(let r=1;r<=t.rows;r++){need(B?51:19);text(r+'.',L+4,8.5,bold,muted);
+        t.cols.forEach((c,i)=>put(c,r,A.xs[i],A.ws[i]));y-=18;
+        if(B){y+=1;t.cols2.forEach((c,i)=>text(c.label,B.xs[i],7,font,muted));y-=11;t.cols2.forEach((c,i)=>put(c,r,B.xs[i],B.ws[i]));y-=23}else y-=1}}
+    if(s.fields)for(const f of s.fields){if(f.col)continue;const label=(f.n?f.n+'. ':'')+f.label;
+      if(f.pair&&f.label2){need(19);text((f.n?f.n+'a. ':'')+f.label,L+4,8.5,font,muted);const l2=(f.n?f.n+'b. ':'')+f.label2,lw=Math.max(92,font.widthOfTextAtSize(l2,8.5)+8),w=(R-L-LW-lw-6)/2;
+        field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
+      if(f.pair){need(19);text(label,L+4,8.5,font,muted);const w=(R-L-LW-6)/2;field('f_'+f.k,v[f.k],L+LW,w,16);field('f_'+f.pair,v[f.pair],L+LW+w+6,w,16);y-=19;continue}
+      row(label,'f_'+f.k,v[f.k],f.area)}
+    if(s.bldg){const cw=(R-L-LW-12)/3;need(14);[1,2,3].forEach(b=>text('Building '+b,L+LW+(b-1)*(cw+6),8,bold,muted));y-=13;
+      for(const f of s.bldg){need(19);text(f.n+'. '+f.label,L+4,8.5,font,muted);[1,2,3].forEach(b=>field(`b${b}_${f.k}`,v[`b${b}_${f.k}`],L+LW+(b-1)*(cw+6),cw,16));y-=19}}
+    for(const g of s.rowgrid||[]){const gap=4,tot=g.cols.reduce((a,c)=>a+c.w,0),avail=R-L-LW-gap*(g.cols.length-1),xs=[],ws=g.cols.map(c=>avail*c.w/tot);let x=L+LW;g.cols.forEach((c,i)=>{xs.push(x);x+=ws[i]+gap});
+      need(14);g.cols.forEach((c,i)=>text(c.label,xs[i],8,bold,muted));y-=13;
+      g.nums.forEach((n,i)=>{need(19);text(n+'. '+g.label+' '+(i+1),L+4,8.5,font,muted);g.cols.forEach((c,j)=>field(`${g.prefix}${i+1}_${c.k}`,v[`${g.prefix}${i+1}_${c.k}`],xs[j],ws[j],16));y-=19});
+      if(g.total){const pi=g.cols.findIndex(c=>c.k===g.total);need(19);text('Total % owned',xs[pi]-68,8.5,bold,muted);field('o_pct_total',v.o_pct_total,xs[pi],ws[pi],16);y-=19}
+      y-=4}
+    if(s.excess){const cb=14,gap=6,x0=L+LW+cb+gap,avail=R-x0-gap*3,wp=avail*0.36,wd=avail*0.22,wm=avail-wp-wd*2,xs=[x0,x0+wp+gap,x0+wp+wd+gap*2,x0+wp+wd*2+gap*3];
+      need(14);[['Use',L+LW-2],['Policy number',xs[0]],['Eff date',xs[1]],['Exp date',xs[2]],['Premium',xs[3]]].forEach(([t,x])=>text(t,x,8,bold,muted));y-=13;
+      for(const r of s.excess){need(19);text(r.n+'. '+r.label,L+4,8.5,font,muted);const p=`x_${r.k}_`;
+        const c=form.createCheckBox(p+'on');c.addToPage(page,{x:L+LW,y:y-cb-1,width:cb,height:cb,borderColor:line,borderWidth:0.8,backgroundColor:rgb(1,1,1)});if(/^(yes|true|on|x)$/i.test(String(v[p+'on']||'')))c.check();
+        field(p+'pol',v[p+'pol'],xs[0],wp,16);field(p+'eff',v[p+'eff'],xs[1],wd,16);field(p+'exp',v[p+'exp'],xs[2],wd,16);field(p+'prem',v[p+'prem'],xs[3],wm,16);y-=19}}
+    if(s.pairs)for(const n of s.pairs){need(19);text(n+'.',L+4,8.5,font,muted);field(`c${n}_l`,v[`c${n}_l`],L+24,LW-30,16);field(`c${n}_v`,v[`c${n}_v`],L+LW,R-L-LW,16);y-=19}}
+  {const ps=doc.getPages();ps.forEach((pg,i)=>{const t=`Page ${i+1} of ${ps.length}`;pg.drawText(t,{x:(W-font.widthOfTextAtSize(t,8.5))/2,y:18,size:8.5,font,color:muted})})}
+  form.updateFieldAppearances(font);return await doc.save();
+}
+
+const AUTO_SECTIONS=[
+ {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
+ {title:'Owner info',fields:[{k:'owner_first',n:1,label:'Name (first / last)',pair:'owner_last'},{k:'owner_address',n:2,label:'Address'},{k:'owner_dob',n:3,label:'Birthdate'},{k:'owner_ssn',n:4,label:'SS#'},{k:'owner_daily_ops',n:5,label:'Involved in daily ops'}]},
+ {title:'Company info',fields:[{k:'client_name',n:6,label:'Company Name'},{k:'contact_name',n:7,label:'Contact name'},{k:'dba',n:8,label:'DBA'},{k:'entity_type',n:9,label:'Bus structure'},{k:'phone',n:10,label:'Phone Number'},{k:'email',n:11,label:'Email'},{k:'mailing_address',n:12,label:'Mailing Address'},{k:'garaging_address',n:13,label:'Business Address'},{k:'description',n:14,label:'Business desc'},{k:'dot_number',n:15,label:'DOT Number'},{k:'ca_number',n:16,label:'CA #'},{k:'eff_date',n:17,label:'EFF Date'}]},
+ {title:'Drivers',table:{prefix:'d',rows:6,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'dl',label:'DL #',w:1.25},{k:'cdl',label:'CDL',w:.6,opts:['Yes','No']},{k:'cdl_yrs',label:'Yrs CDL',w:.6},{k:'activity',label:'Driving activity',w:1.5}]}},
+ {title:'Vehicles',table:{prefix:'v',rows:6,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'body',label:'Body type',w:1},{k:'vin',label:'VIN',w:2.2},{k:'value',label:'Value',w:1.1},{k:'use',label:'Zip code',w:1.25}],
+   cols2:[{k:'gvw',label:'GVW',w:1},{k:'radius',label:'Radius',w:1},{k:'usage',label:'Use',w:1,opts:['Biz Only','Both']}]}},
+ {title:'Operations',fields:[{k:'states',n:18,label:'States driven in'},{k:'cargo',n:19,label:'What is hauled / carried'},{k:'cross_state',n:20,label:'Cross state lines?'},{k:'filings',n:21,label:'Filings?'}]},
+ {title:'Coverages',fields:[{k:'liability_limit',n:22,label:'Liability'},{k:'um_uim',n:23,label:'UM'},{k:'med_pay',n:24,label:'Med'},{k:'comp_ded',n:25,label:'Comp'},{k:'coll_ded',n:26,label:'Coll'},{k:'cargo_limit',n:27,label:'Cargo'},{k:'hired_nonowned',n:28,label:'Hired / Non Owned'},{k:'rental_towing',n:29,label:'Rental / towing'},{k:'gl_quote',n:30,label:'GL quote?'}]},
+ {title:'Underwriting',fields:[{k:'currently_insured',n:31,label:'Current ins?'},{k:'current_carrier_price',n:32,label:'Current carrier / price'},{k:'per_com_prior',n:33,label:'Per / com prior?'},{k:'years_prior',n:34,label:'Years prior'},{k:'prior_limits',n:35,label:'Limits for prior'},{k:'gl_in_force',n:36,label:'GL in force?'},{k:'add_ins',n:37,label:'Add ins?'},{k:'waiver_sub',n:38,label:'Waiver of sub?'},{k:'year_started',n:39,label:'Yr bus established'}]},
+ {title:'Loss history',fields:[{k:'claims',n:40,label:'Claims last 3-5 yrs',area:1}]},
+ {title:'AI / Lienholders',table:{prefix:'ai',rows:6,cols:[{k:'name',label:'Name',w:2},{k:'address',label:'Address',w:2.4},{k:'city',label:'City',w:1.4},{k:'state',label:'State',w:.6}]}}];
+const AUTO_KEYS=[];
+AUTO_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>f.pair?AUTO_KEYS.push([f.k,'Owner first name'],[f.pair,'Owner last name']):AUTO_KEYS.push([f.k,f.label+(f.k==='entity_type'?' (Individual, Corporation, Partnership or LLC)':/date|dob/.test(f.k)?' (MM/DD/YYYY)':f.k==='client_note'?' (website)':f.k==='client_name'?' (business name)':f.k==='garaging_address'?' (where the vehicles are kept)':'')]));
+  if(s.table){const t=s.table,who=t.prefix==='d'?'Driver':t.prefix==='v'?'Vehicle':'AI/lienholder';
+    for(let r=1;r<=t.rows;r++)[...t.cols,...(t.cols2||[])].forEach(c=>AUTO_KEYS.push([`${t.prefix}${r}_${c.k}`,`${who} ${r} ${c.label}`+(c.k==='dob'?' (MM/DD/YYYY)':c.k==='activity'?' (driving record, e.g. "Clean, no tickets or accidents 5 yrs")':c.k==='use'?' (where it is garaged)':c.opts?' ('+c.opts.join(' or ')+')':'')]))}});
+const AUTO_PROMPT=AUTO_SECTIONS.map(s=>s.table?(t=>`${t.prefix}N_<col> for ${t.prefix==='d'?'driver':t.prefix==='v'?'vehicle':'additional insured / lienholder'} N (N = 1 to ${t.rows}), cols: `+[...t.cols,...(t.cols2||[])].map(c=>`${c.k} = ${c.label}`+(c.k==='dob'?' (MM/DD/YYYY)':c.k==='activity'?' (driving record, e.g. "Clean, no tickets or accidents 5 yrs")':c.k==='use'?' (zip code where it is garaged)':c.k==='model'?' (model only; VIN goes in vin)':c.opts?' ('+c.opts.join(' or ')+')':'')).join('; '))(s.table):AUTO_KEYS.filter(([k])=>(s.fields||[]).some(f=>f.k===k||f.pair===k)).map(([k,l])=>k+' = '+l).join('\n')).join('\n');
+// a vehicle's zip comes from the business address unless one was given
+const zipOf=a=>{const m=String(a||'').match(/\b(\d{5})(?:-\d{4})?\b(?!.*\b\d{5}\b)/s);return m?m[1]:''};
+const VEH_KEYS=['year','make','model','body','vin','value','gvw','radius'];
+function fillVehicleZips(v){const z=zipOf(v.garaging_address)||zipOf(v.mailing_address);if(!z)return;
+  for(let n=1;n<=6;n++)if(!v[`v${n}_use`]&&VEH_KEYS.some(k=>String(v[`v${n}_${k}`]||'').trim()))v[`v${n}_use`]=z}
+// Build "<client> com auto quote sheet.pdf" from what was pasted (now if saved, else on Save)
+async function makeAutoSheet(q){
+  if(!assets||!q||typeof q!=='object')return '';
+  try{
+    const v={};for(const [k] of AUTO_KEYS){const x=q[k];if(x!=null&&String(x).trim())v[k]=String(x).trim()}
+    if(!Object.keys(v).length)return '';
+    const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
+    v.client_name=v.client_name||$('company').value.trim()||person;
+    v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
+    const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
+    const eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);if(eff)v.eff_date=mdy(eff);
+    for(let n=1;n<=6;n++){
+      if(v[`v${n}_value`])v[`v${n}_value`]=fmtMoney(v[`v${n}_value`]);
+      const d=v[`v${n}_vin`]&&decodeVin(v[`v${n}_vin`]);
+      if(d){v[`v${n}_vin`]=d.vin;if(!v[`v${n}_year`]&&d.year)v[`v${n}_year`]=d.year;if(!v[`v${n}_make`]&&d.make)v[`v${n}_make`]=d.make}
+    }
+    fillVehicleZips(v);
+    const bytes=await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet');
+    const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com auto quote sheet.pdf`;
+    const file=new File([bytes],name,{type:'application/pdf'});
+    if(cur&&cur.id){return (await uploadOne(file))?`, and the com auto quote sheet is filled and attached`:`, but the com auto quote sheet couldn’t be attached (see Files below)`}
+    addPending(file);return `, and a com auto quote sheet is ready to attach when you save`;
+  }catch(e){return ` (the com auto quote sheet couldn’t be made: ${e.message||'error'})`}
+}
+// "New quote sheet" / "New com auto quote sheet": start one from the lead's details, attach it, and open it to fill in
+async function newSheet(kind){
+  const m=$('fillMsg');m.className='msg';
+  if(!assets){m.className='msg err';m.textContent='You have view-only access, so you can’t add files.';return}
+  if(!(await ensureSaved()))return;
+  const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':' com quote sheet.pdf';
+  const fresh=leads.find(l=>l.id===cur.id)||cur;
+  const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
+  if(have){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
+  if(have){m.textContent=`This lead already has ${have.name}. Opening it.`;openEditor(have);return}
+  const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
+  const v={client_name:$('company').value.trim()||person,contact_name:person,phone:fmtPhone($('phone').value),email:$('email').value.trim(),lead_source:$('leadSource').value.trim()};
+  const ld=parseMdy($('leadDate').value)||new Date(),eff=new Date();
+  v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
+  if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
+  const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
+  const b=$(auto?'newAuto':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
+  try{
+    const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):await buildQuotePdf(v);
+    if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){
+      const f=(cur.files||[]).find(x=>x.name===name);m.className='msg ok';m.textContent=`${name} is attached. Fill it in, then hit Save to lead.`;if(f)openEditor(f)}
+    else{m.className='msg err';m.textContent=$('fileMsg').textContent}
+  }catch(e){m.className='msg err';m.textContent='Couldn’t make it: '+(e.message||e.code||'error')}
+  b.disabled=false;
+}
+
+// An auto sheet made with an older layout is rebuilt in the current one, keeping every value already typed in
+// (also rebuilds any quote sheet made before the font was embedded)
+const sheetChecked=new Set();
+function sheetValues(doc){const v={};for(const fl of doc.getForm().getFields())if(fl instanceof PDFLib.PDFTextField){const t=fl.getText();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFDropdown){const t=fl.getSelected()[0];if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFCheckBox){if(fl.isChecked())v[fl.getName()]='Yes'}return v}
+const sheetKind=n=>/ com auto quote sheet\.pdf$/i.test(n)?'auto':/ com quote sheet\.pdf$/i.test(n)?'qs':'';
+async function upgradeAuto(f){
+  try{
+    const auto=sheetKind(f.name)==='auto';
+    await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
+    let raw;try{raw=await fileBytes(f)}catch(_){return false}
+    const doc=await PDFLib.PDFDocument.load(raw);
+    const kw=doc.getKeywords()||'';if(!/^psw-(auto-)?quote-sheet$/.test(doc.getSubject()||''))return false;
+    if(kw.includes(FONT_MARK)&&kw.includes(auto?AUTO_LAYOUT:QS_LAYOUT))return false;
+    const v=sheetValues(doc);
+    for(let n=1;n<=6;n++){
+      const ymm=v[`v${n}_ymm`];if(ymm&&!v[`v${n}_year`]){const p=ymm.trim().split(/\s+/);if(/^\d{2,4}$/.test(p[0]))v[`v${n}_year`]=p.shift();if(p.length)v[`v${n}_make`]=p.shift();if(p.length)v[`v${n}_model`]=p.join(' ')}
+      const nm=v[`d${n}_name`];if(nm&&!v[`d${n}_first`]){const p=nm.trim().split(/\s+/);v[`d${n}_first`]=p.shift();v[`d${n}_last`]=p.join(' ')}
+      if(v[`d${n}_license`]&&!v[`d${n}_dl`])v[`d${n}_dl`]=v[`d${n}_license`];
+      if(v[`d${n}_mvr`]&&!v[`d${n}_activity`])v[`d${n}_activity`]=v[`d${n}_mvr`];
+      if(v[`ai${n}`]&&!v[`ai${n}_name`])v[`ai${n}_name`]=v[`ai${n}`];
+    }
+    if(auto)fillVehicleZips(v);
+    const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):await buildQuotePdf(v);
+    if(!(await PDFLib.PDFDocument.load(bytes)).getKeywords()?.includes(FONT_MARK))return false; // font unavailable: keep the original
+    return await uploadOne(new File([bytes],f.name,{type:'application/pdf'}));
+  }catch(e){return false}
+}
+
+$('newQs').onclick=()=>newSheet('qs');$('newAuto').onclick=()=>newSheet('auto');
+
+// Build "<client> com quote sheet.pdf" from what was pasted, and attach it to the lead (now if saved, else on Save)
+async function makeQuoteSheet(q){
+  if(!assets)return '';
+  try{
+    const v={};if(q&&typeof q==='object')for(const [k] of QS_KEYS){const x=q[k];if(x!=null&&String(x).trim())v[k]=String(x).trim()}
+    const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
+    v.client_name=v.client_name||$('company').value.trim()||person;
+    v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
+    const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
+    let eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);
+    if(eff){v.eff_date=mdy(eff);if(!parseMdy(v.exp_date))v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()))}
+    ['gross_receipts','payroll'].forEach(k=>{if(v[k])v[k]=fmtMoney(v[k])});
+    const bytes=await buildQuotePdf(v);
+    const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com quote sheet.pdf`;
+    const file=new File([bytes],name,{type:'application/pdf'});
+    if(cur&&cur.id){return (await uploadOne(file))?`, and the quote sheet is filled and attached`:`, but the quote sheet couldn’t be attached (see Files below)`}
+    addPending(file);return `, and a quote sheet is ready to attach when you save`;
+  }catch(e){return ` (the quote sheet couldn’t be made: ${e.message||'error'})`}
+}
+function addPending(f){pending=pending.filter(x=>x.name!==f.name);pending.push(f);showKeep()}
+function showKeep(){$('keepWrap').hidden=!(assets&&pending.length);$('keepName').textContent=pending.map(f=>f.name).join(' and ')}
+
+/* ---------- quick fill (paste text or drop a file) ---------- */
+let sample=null,sLimits=null,fillCtl=null,lastFields={};
+try{window.claude.use('sample').then(async x=>{sample=x;if(x)sLimits=await x.limits().catch(()=>null)}).catch(()=>{})}catch(e){}
+const CDN='https://cdnjs.cloudflare.com/ajax/libs/';
+const loaded={};
+const loadJs=src=>loaded[src]||(loaded[src]=new Promise((res,rej)=>{const t=document.createElement('script');t.src=src;t.onload=res;t.onerror=()=>{delete loaded[src];rej(new Error('Could not load a file reader. Check your connection.'))};document.head.appendChild(t)}));
+async function fileText(f){
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  if(ext==='pdf'||f.type==='application/pdf'){
+    await loadJs(CDN+'pdf.js/3.11.174/pdf.min.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';
+    const doc=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;
+    let out=[];lastFields={};
+    for(let i=1;i<=Math.min(doc.numPages,15);i++){const pg=await doc.getPage(i);
+      const tc=await pg.getTextContent();out.push(tc.items.map(x=>x.str+(x.hasEOL?'\n':' ')).join(''));
+      try{const an=await pg.getAnnotations();an.forEach(a=>{if(a.fieldName&&a.fieldValue&&typeof a.fieldValue==='string'){out.push(`${a.fieldName}: ${a.fieldValue}`);lastFields[a.fieldName]=a.fieldValue}})}catch(_){}}
+    return out.join('\n');
+  }
+  if(ext==='docx'){await loadJs(CDN+'mammoth/1.6.0/mammoth.browser.min.js');return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
+  if(['xlsx','xls','xlsm'].includes(ext)){await loadJs(CDN+'xlsx/0.18.5/xlsx.full.min.js');const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});return wb.SheetNames.map(n=>XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n')}
+  if(ext==='doc')throw new Error('Old .doc files can’t be read. Save it as .docx or PDF first.');
+  return await f.text();
+}
+function regexFill(t){
+  const o={};const g=(re)=>{const m=re.exec(t);return m?m[1].trim():''};
+  o.email=g(/([\w.+-]+@[\w-]+\.[\w.-]+)/);
+  o.phone=g(/(\(?\b\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}\b)/);
+  const nm=g(/(?:^|\n)\s*(?:full\s*)?name\s*[:\-]\s*([^\n]+)/i);
+  if(nm){const p=nm.split(/\s+/);o.firstName=p[0];o.lastName=p.slice(1).join(' ')}
+  o.firstName=o.firstName||g(/first\s*name\s*[:\-]\s*([^\n]+)/i);o.lastName=o.lastName||g(/last\s*name\s*[:\-]\s*([^\n]+)/i);
+  o.company=g(/(?:company|business|dba|insured|client)(?:\s*name)?\s*[:\-]\s*([^\n]+)/i);
+  return o;
+}
+function apply(o){
+  let n=0;
+  const set=(k,v)=>{v=String(v||'').trim();if(!v)return;if(k==='phone')v=fmtPhone(v);if(k==='leadDate'&&!/^\d{4}-\d\d-\d\d$/.test(v))return;$(k).value=v;n++};
+  ['firstName','lastName','company','phone','email','leadType','leadDate'].forEach(k=>set(k,o[k]));
+  if(String(o.leadSource||'').trim()&&!$('leadSource').value.trim()){$('leadSource').value=String(o.leadSource).trim();n++}
+  return n;
+}
+const sampleErr=c=>({not_granted:'Claude wasn’t allowed to read it, so only the basics were filled.',rate_limited:'Too many requests, try again in a moment.',prompt_too_large:'That’s too much text. Paste just the lead’s part.',cancelled:'Stopped.',image_rejected:'That picture couldn’t be read.'})[c]||'Claude couldn’t read it'+(c?` (${c})`:'')+', so only the basics were filled.';
+async function quickFill(text,images,label){
+  const m=$('fillMsg');m.className='msg';
+  const prompt=`You are filling in an insurance agency's lead form from ${images?'the attached picture':'the content below'}${label?` (from a file named "${label}")`:''}.
+Reply with only a JSON object {"lead":{...},"quote":{...},"auto":{...},"autoOnly":false}.
+"lead" has these string keys: firstName, lastName, company, phone, email, leadType, leadDate, leadSource.
+- firstName/lastName: the prospective customer (the person wanting insurance), not the agent or sender's signature unless they are the customer.
+- company: the customer's business name, including LLC/Inc if shown.
+- phone: the customer's phone, digits as written.
+- leadType: one of ${JSON.stringify(LEAD_TYPES)} if one clearly fits (e.g. a golf simulator business is "Golf sim", Christmas/holiday light installers are "Xmas lights", a party bus or limo operator is "Party bus"), otherwise "".
+- leadDate: YYYY-MM-DD only if the content states when the lead or inquiry came in, else "".
+- leadSource: where the lead came from if stated: one of ${JSON.stringify(LEAD_SOURCES)} if one clearly fits, otherwise as stated, else "".
+"quote" fills the agency's commercial quote sheet. Use only these keys, each a string, and leave out anything not stated (never guess):
+${QS_KEYS.map(([k,l])=>k+' = '+l).join('\n')}
+"auto" fills the agency's commercial auto quote sheet. Include it only when the customer wants commercial auto insurance or lists drivers or vehicles; otherwise use {}. Use only these keys, each a string, and leave out anything not stated (never guess):
+${AUTO_PROMPT}
+In "auto", split each driver's name into first and last, put the business's street address in garaging_address (and mailing_address too), and map a stated "no claims" into claims.
+"autoOnly" is true when commercial auto is the only insurance the customer is asking for.
+Use "" or omit for anything not present. Example: {"lead":{"firstName":"Jane","lastName":"Doe","company":"Up Cleaning LLC","phone":"5551234567","email":"jane@up.com","leadType":"Commercial","leadDate":""},"quote":{"client_name":"Up Cleaning LLC","contact_name":"Jane Doe","description":"residential cleaning","gross_receipts":"$50,000"}}
+${text?'\nContent:\n"""\n'+text.slice(0,40000)+'\n"""':''}`;
+  if(sample){
+    fillCtl=new AbortController();$('fillStop').hidden=false;$('fillBtn').disabled=true;m.textContent='Claude is reading it…';
+    try{const o=await sample.json(prompt,{modelTier:'quick',signal:fillCtl.signal,...(images?{images}:{})});
+      const lead=o&&typeof o==='object'?(o.lead&&typeof o.lead==='object'?o.lead:o):{};
+      const n=apply(lead);const as=n?await makeAutoSheet(o&&o.auto):'';const qs=n&&!(as&&o.autoOnly===true)?await makeQuoteSheet(o&&o.quote):'';
+      m.className='msg ok';m.textContent=n?`Filled ${n} field${n===1?'':'s'}${qs}${as}. Check them, then Save.`:'Couldn’t find lead details in that.';
+    }catch(e){if(text){const n=apply(regexFill(text));const qs=n?await makeQuoteSheet(null):'';m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} field${n===1?'':'s'}${qs}.`:'')}else{m.className='msg err';m.textContent=sampleErr(e.code)}}
+    $('fillStop').hidden=true;$('fillBtn').disabled=false;fillCtl=null;
+  }else{
+    if(!text){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t available in this view.';return}
+    const n=apply(regexFill(text));const qs=n?await makeQuoteSheet(null):'';m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} field${n===1?'':'s'} (basic mode)${qs}. Check them, then Save.`:'Couldn’t find lead details in that.';
+  }
+}
+$('fillStop').onclick=()=>fillCtl&&fillCtl.abort();
+$('fillBtn').onclick=()=>{const t=$('dropText').value.trim();if(!t){$('fillMsg').className='msg err';$('fillMsg').textContent='Paste some text first, or drop a file.';return}quickFill(t,null,'')};
+function quoteFill(q){
+  // PSW quote sheet PDF: read its own form fields directly, no Claude needed
+  const o={company:q.f_client_name,phone:q.f_phone,email:q.f_email,leadSource:q.f_lead_source};
+  const nm=String(q.f_contact_name||'').trim().split(/\s+/).filter(Boolean);
+  if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}
+  const d=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(q.f_lead_date||'').trim());
+  if(d)o.leadDate=`${d[3]}-${pad(d[1])}-${pad(d[2])}`;
+  if(!$('leadType').value){const t=[q.f_description,q.f_detailed_description,q.f_client_name].join(' ');
+    o.leadType=/golf/i.test(t)?'Golf sim':/christmas|xmas|holiday\s*light/i.test(t)?'Xmas lights':/party\s*bus|limo/i.test(t)?'Party bus':'Commercial'}
+  return apply(o);
+}
+async function takeFile(f){
+  const m=$('fillMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
+  const saved=!!(cur&&cur.id)&&assets&&attachable(f);
+  if(saved)uploadOne(f);else if(assets&&attachable(f))addPending(f);
+  const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);
+  if(isImg){if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures isn’t available in this view. Paste the text instead.';return}return quickFill('',f,f.name)}
+  let t='';try{t=(await fileText(f)).trim()}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
+  if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}
+  if(lastFields.f_client_name||lastFields.f_contact_name){const n=quoteFill(lastFields);lastFields={};m.className='msg ok';
+    m.textContent=`Quote sheet read: filled ${n} field${n===1?'':'s'}. `+(saved?'It’s attached to this lead; hit Save to keep the changes.':(assets?'Check them, then Save; the quote sheet is attached when you save.':'Check them, then Save.'));return}
+  $('dropText').value=t.slice(0,4000);
+  quickFill(t,null,f.name);
+}
+$('dropFile').onchange=()=>{const f=$('dropFile').files[0];$('dropFile').value='';if(f)takeFile(f)};
+const dz=$('drop');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&dz.contains(e.relatedTarget))return;dz.classList.remove('over')}));
+dz.addEventListener('drop',e=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)return takeFile(f);const t=e.dataTransfer.getData('text/plain');if(t){$('dropText').value=t;quickFill(t,null,'')}});
+
+/* ---------- contact log ---------- */
+async function renderLog(){
+  document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{const done=contacts.some(c=>c.step===b.dataset.q);b.classList.toggle('done',done);b.textContent=(done?'✓ ':'')+b.dataset.q});
+  const sorted=[...contacts].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+  const ids=[...new Set(sorted.map(c=>c.by).filter(id=>id&&!(id in names)))];
+  if(ids.length&&user){try{const ps=await user.profiles(ids);ps.forEach(p=>names[p.id]=p.isMe?'You':(p.name||''))}catch(e){}}
+  $('log').innerHTML=sorted.length?sorted.map(c=>`<li data-cid="${esc(c.id)}"><div class="row" style="justify-content:space-between"><div><span class="when">${esc(fmtDT(c.at))}</span><span class="chip how">${esc(c.how)}</span></div><button class="small" data-del="${esc(c.id)}" style="padding:2px 8px">Remove</button></div>${c.by&&names[c.by]?`<div class="by">Logged by ${esc(names[c.by])}</div>`:''}${c.notes?`<div class="note">${esc(c.notes)}</div>`:''}</li>`).join(''):'<li class="small">No contacts logged yet.</li>';
+}
+async function syncLatest(){
+  // lead's Last contacted / How contacted always mirror the newest entry by date/time
+  const top=[...contacts].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];
+  const patch={lastContacted:top?top.at:'',howContacted:top?top.how:''};
+  if(cur.lastContacted!==patch.lastContacted||cur.howContacted!==patch.howContacted){await leadsCol.doc(cur.id).update(patch);Object.assign(cur,patch);fillMeta()}
+}
+let quickStep='';
+document.addEventListener('click',async e=>{const b=e.target.closest('#contactSec button[data-q]');if(!b)return;if(!(await ensureSaved()))return;
+  $('cHow').value=b.dataset.how;$('cAt').value=nowLocal();quickStep=b.dataset.q;try{await $('logBtn').onclick()}finally{quickStep=''}});
+$('logBtn').onclick=async()=>{
+  if(!(await ensureSaved()))return;const m=$('logMsg');
+  const at=$('cAt').value;if(!at){m.className='msg err';m.textContent='Pick a date and time.';return}
+  const entry={at:new Date(at).toISOString(),how:$('cHow').value,notes:$('cNote').value.trim(),createdAt:new Date().toISOString()};if(me)entry.by=me;if(quickStep){entry.step=quickStep;entry.notes=quickStep+(entry.notes?' - '+entry.notes:'')}
+  $('logBtn').disabled=true;m.className='msg';m.textContent='Adding…';
+  try{const ref=await leadsCol.doc(cur.id).collection('contacts').add(entry);
+    if(!contacts.some(c=>c.id===ref.id))contacts.push({id:ref.id,...entry});
+    await syncLatest();$('cNote').value='';$('cAt').value=nowLocal();m.className='msg ok';m.textContent=quickStep?`${quickStep} logged.`:'Contact added.';renderLog();
+  }catch(e){m.className='msg err';m.textContent=errText(e)}
+  $('logBtn').disabled=false;
+};
+$('log').addEventListener('click',async e=>{
+  const id=e.target.dataset.del;if(!id)return;
+  if(e.target.dataset.armed!=='1'){e.target.dataset.armed='1';e.target.textContent='Confirm remove';setTimeout(()=>{if(e.target.isConnected){e.target.dataset.armed='';e.target.textContent='Remove'}},4000);return}
+  try{await leadsCol.doc(cur.id).collection('contacts').doc(id).delete();contacts=contacts.filter(c=>c.id!==id);await syncLatest();renderLog()}
+  catch(err){$('logMsg').className='msg err';$('logMsg').textContent=errText(err)}
+});
+
+/* ---------- email ---------- */
+// Add more people here: {label, to}
+const MAIL_TO=[{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Jennifer/RENAISSANCE',to:'Jennifer.Magee@renaissanceins.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'}];
+let mailSel=new Set(),mailLead=null;
+function renderMail(){
+  if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
+  const fs=(cur&&cur.files)||[];
+  $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
+  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">Email ${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a>`;
+}
+$('mailPick').addEventListener('change',e=>{const id=e.target.dataset.mf;if(!id)return;e.target.checked?mailSel.add(id):mailSel.delete(id)});
+function mailClient(){const v=k=>$(k).value.trim(),nm=[v('firstName'),v('lastName')].filter(Boolean).join(' ');return {nm,co:v('company')}}
+function copyText(t){
+  try{navigator.clipboard.writeText(t).catch(()=>{})}catch(_){}
+  try{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok||!!navigator.clipboard}catch(_){return !!navigator.clipboard}
+}
+$('mailBtns').addEventListener('click',async e=>{
+  const a=e.target.closest('[data-mail]');if(!a)return;
+  const cust=a.dataset.mail==='cust',{nm,co}=mailClient(),who=co||nm||'New client';
+  if(cust&&!$('email').value.trim()){e.preventDefault();const m=$('mailMsg');m.className='msg err';m.textContent='Add the customer’s email in Lead info first.';return}
+  const r=cust?{label:$('firstName').value.trim(),to:$('email').value.trim()}:MAIL_TO[+a.dataset.mail];
+  const files=((cur&&cur.files)||[]).filter(f=>mailSel.has(f.id));
+  const first=r.label.split('/')[0];
+  const subject=cust?`Quote information - ${who}`:`QUOTE ${co||nm}`.trim();
+  const body=cust?`Hi${first?' '+first:''},\n\nPlease fill out the attached quote sheet and send it back to me. I filled in what I have so far.`:`Hi ${first},\n\nPlease quote`;
+  a.href=`mailto:${r.to}?subject=${encodeURIComponent(subject)}`; // no body, so Outlook adds the signature
+  const copied=copyText(body),paste=copied?' The greeting is copied: click in the email and press Ctrl+V.':'';
+  const m=$('mailMsg');m.className='msg';
+  if(!files.length){m.textContent=`Opening a new email to ${r.to}.${paste}`;return}
+  if(!dl){m.className='msg err';m.textContent=`Opening a new email to ${r.to}. Saving files isn't available here, so use Save in Files.`;return}
+  m.textContent=`Opening a new email to ${r.to}.${paste} Saving ${files.length} file${files.length>1?'s':''} for you to drag into it…`;
+  setTimeout(async()=>{let ok=0;
+    for(const f of files){try{const b=await fileBytes(f);await dl.save({filename:f.name,data:b});ok++}catch(err){if(err&&err.code==='declined')continue;m.className='msg err';m.textContent=`${f.name}: ${errText(err)}`;return}}
+    m.className='msg ok';m.textContent=ok?`Saved ${ok} file${ok>1?'s':''}. Drag ${ok>1?'them':'it'} from your Downloads folder into the email to ${r.to}.${paste}`:'No files were saved.';
+  },0);
+});
+
+/* ---------- files ---------- */
+const EXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',csv:'text/csv',txt:'text/plain'};
+function renderFiles(){
+  renderMail();
+  const fs=(cur&&cur.files)||[];
+  $('files').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+}
+$('fileIn').onchange=async()=>{
+  const list=[...$('fileIn').files];$('fileIn').value='';if(!list.length)return;if(!(await ensureSaved()))return;
+  const m=$('fileMsg');m.className='msg';
+  for(const f of list)await uploadOne(f);
+};
+// Some computers' PDF uploads are refused by file storage; then the PDF is stored as base64 text and decoded when read back
+const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+async function storeBytes(buf,type){
+  try{return await assets.upload(new Blob([buf],{type}),{type})}
+  catch(e){if(!e||e.code!=='unsupported_type'||type!=='application/pdf')throw e;
+    const r=await assets.upload(new Blob([toB64(buf)],{type:'text/plain'}),{type:'text/plain'});return {...r,enc:'b64'}}}
+async function fileBytes(f){const res=await fetch('/_blob/'+f.id);if(!res.ok)throw new Error('missing');const b=await res.arrayBuffer();
+  return f.enc==='b64'?Uint8Array.from(atob(new TextDecoder().decode(b).trim()),c=>c.charCodeAt(0)):new Uint8Array(b)}
+const attachable=f=>!!EXT[(f.name.split('.').pop()||'').toLowerCase()];
+async function uploadOne(f){
+  const m=$('fileMsg');
+  {const nn=f.name.replace(/( com (?:auto )?quote sheet)(?:\s*\(\d+\)|[\s_-]*(?:filled|completed?|signed))+\.pdf$/i,'$1.pdf');if(nn!==f.name)f=new File([f],nn,{type:f.type})} // a returned copy replaces the original
+  const ext=(f.name.split('.').pop()||'').toLowerCase(),type=EXT[ext];
+  if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;return}
+  m.className='msg';m.textContent=`Uploading ${f.name}…`;
+  // send a plain copy of the bytes (not the File object), and say what was sent if storage refuses it
+  let buf;try{buf=await f.arrayBuffer()}catch(_){m.className='msg err';m.textContent=`${f.name}: couldn’t read the file. Try again.`;return false}
+  const head=new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0,8))).replace(/[^\x20-\x7e]/g,'.');
+  if(type==='application/pdf'&&!head.startsWith('%PDF')){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF (it starts with “${head}”), so it can’t be stored.`;return false}
+  try{const r=await storeBytes(buf,type);
+    const fresh=leads.find(l=>l.id===cur.id)||cur,entry={id:r.id,name:f.name,type,size:r.sizeBytes,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{})};
+    const old=/ (com quote sheet|com auto quote sheet|125|126|125 126|130|140)\.pdf$/i.test(f.name)?(fresh.files||[]).find(x=>x.name===f.name):null; // a new quote sheet replaces the old one
+    const files=old?(fresh.files||[]).map(x=>x===old?entry:x):[...(fresh.files||[]),entry];
+    await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();m.className='msg ok';m.textContent=old?`${f.name} updated.`:`${f.name} attached.`;
+    if(old){try{await assets.delete(old.id)}catch(_){}}
+    return true;
+  }catch(e){m.className='msg err';m.textContent=`${f.name}: ${errText(e)}`;return false}
+}
+$('files').addEventListener('click',async e=>{
+  const sv=e.target.dataset.save,rm=e.target.dataset.rm,op=e.target.dataset.open,m=$('fileMsg');
+  if(op){const f=(cur.files||[]).find(x=>x.id===op);if(f)openEditor(f);return}
+  if(sv){const f=(cur.files||[]).find(x=>x.id===sv);try{const b=await fileBytes(f);await dl.save({filename:f.name,data:b})}catch(err){if(err&&err.code!=='declined'){m.className='msg err';m.textContent=errText(err)}}}
+  if(rm){
+    if(e.target.dataset.armed!=='1'){e.target.dataset.armed='1';e.target.textContent='Confirm';setTimeout(()=>{if(e.target.isConnected){e.target.dataset.armed='';e.target.textContent='Remove'}},4000);return}
+    try{const fresh=leads.find(l=>l.id===cur.id)||cur;const files=(fresh.files||[]).filter(x=>x.id!==rm);
+      await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();try{await assets.delete(rm)}catch(_){}}
+    catch(err){m.className='msg err';m.textContent=errText(err)}
+  }
+});
+
+
+/* ---------- open / edit an attachment, save it back to the lead ---------- */
+let ed=null; // {f, kind, bytes, pdf, notes:[]}
+const edMsg=(t,c)=>{$('edMsg').textContent=t;$('edMsg').style.color=c==='err'?'var(--bad)':c==='ok'?'var(--ok)':''};
+async function loadPdfJs(){await loadJs(CDN+'pdf.js/3.11.174/pdf.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js'}
+const LINKS={externalLinkEnabled:true,getDestinationHash:()=>'#',getAnchorUrl:()=>'#',addLinkAttributes(a,url){a.href=url;a.target='_blank';a.rel='noopener noreferrer'},isPageVisible:()=>true,isPageCached:()=>true,goToDestination(){},navigateTo(){},executeNamedAction(){},executeSetOCGState(){},cachePageRef(){},goToPage(){}};
+function closeEditor(){$('ed').classList.remove('on');$('ed').setAttribute('aria-hidden','true');$('edBody').innerHTML='';if(ed&&ed.pdf)ed.pdf.destroy();ed=null}
+$('edClose').onclick=()=>{if(ed&&ed.dirty&&$('edClose').dataset.armed!=='1'){$('edClose').dataset.armed='1';$('edClose').textContent='Close without saving?';setTimeout(()=>{$('edClose').dataset.armed='';$('edClose').textContent='Close'},4000);return}$('edClose').dataset.armed='';$('edClose').textContent='Close';closeEditor()};
+async function openEditor(f){
+  if(sheetKind(f.name)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}
+  const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
+  ed={f,kind,notes:[],fields:[],dirty:false};
+  $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
+  $('edSave').hidden=!assets;$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text';$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+  edMsg('Opening…');
+  try{
+    ed.bytes=await fileBytes(f);
+    const W=Math.min(980,$('edBody').clientWidth-32);
+    if(kind==='pdf'){
+      await loadPdfJs();
+      ed.pdf=await pdfjsLib.getDocument({data:ed.bytes.slice(),standardFontDataUrl:CDN+'pdf.js/3.11.174/standard_fonts/'}).promise;
+      let fillable=false;
+      for(let i=1;i<=ed.pdf.numPages;i++){
+        const page=await ed.pdf.getPage(i),base=page.getViewport({scale:1}),scale=W/base.width,vp=page.getViewport({scale});
+        const wrap=document.createElement('div');wrap.className='pg';wrap.style.width=vp.width+'px';wrap.style.height=vp.height+'px';wrap.dataset.page=i-1;wrap.dataset.scale=scale;wrap.dataset.h=base.height;
+        const cv=document.createElement('canvas'),dpr=window.devicePixelRatio||1;cv.width=Math.floor(vp.width*dpr);cv.height=Math.floor(vp.height*dpr);cv.style.width=vp.width+'px';cv.style.height=vp.height+'px';
+        wrap.appendChild(cv);$('edBody').appendChild(wrap);
+        await page.render({canvasContext:cv.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null,annotationMode:pdfjsLib.AnnotationMode.ENABLE_FORMS,annotationStorage:ed.pdf.annotationStorage}).promise;
+        const anns=await page.getAnnotations({intent:'display'});
+        anns.forEach(a=>{if(a.fieldName){fillable=true;ed.fields.push({id:a.id,name:a.fieldName,check:!!a.checkBox,radio:!!a.radioButton,btn:a.buttonValue,choice:a.fieldType==='Ch'})}});
+        const al=document.createElement('div');al.className='annotationLayer';al.style.setProperty('--scale-factor',scale);wrap.appendChild(al);
+        const layer=new pdfjsLib.AnnotationLayer({div:al,page,viewport:vp.clone({dontFlip:true}),accessibilityManager:null,annotationCanvasMap:null});
+        await layer.render({annotations:anns,page,viewport:vp.clone({dontFlip:true}),linkService:LINKS,downloadManager:null,renderForms:true,annotationStorage:ed.pdf.annotationStorage,imageResourcesPath:'',enableScripting:false,hasJSActions:false,fieldObjects:null});
+      }
+      ed.pdf.annotationStorage.onSetModified=()=>{ed&&(ed.dirty=true)};
+      edMsg(fillable?'Type into the blue boxes to edit. Use “+ Add text” to write anywhere else. Then hit Save to lead.':'Use “+ Add text”, then click where you want to type. Hit Save to lead when done.');
+    }else if(kind==='img'){
+      const url=URL.createObjectURL(new Blob([ed.bytes],{type:f.type}));const img=new Image();img.src=url;await img.decode();
+      const scale=Math.min(1,W/img.naturalWidth);const wrap=document.createElement('div');wrap.className='pg';wrap.dataset.page=0;wrap.dataset.scale=scale;
+      img.style.width=img.naturalWidth*scale+'px';wrap.appendChild(img);$('edBody').appendChild(wrap);ed.img=img;
+      edMsg('Use “+ Add text”, then click on the picture where you want to type. Hit Save to lead when done.');
+    }else{
+      const ta=document.createElement('textarea');ta.className='edtxt';ta.value=new TextDecoder().decode(ed.bytes);ta.oninput=()=>ed.dirty=true;$('edBody').appendChild(ta);ed.ta=ta;
+      edMsg('Edit the text, then hit Save to lead.');
+    }
+  }catch(e){edMsg(e&&e.message==='missing'?'This file is no longer stored.':'Couldn’t open this file'+(e&&e.message?` (${e.message})`:'')+'.','err')}
+}
+// "Fill lead info": the quote sheet's client details go into the lead, then the lead is saved
+$('edLead').onclick=async()=>{
+  if(!ed||!cur)return;const q={};
+  document.querySelectorAll('#edBody .annotationLayer [name^="f_"]').forEach(el=>{if(el.value&&el.value.trim())q[el.name]=el.value.trim()});
+  const n=quoteFill(q);if(!n){edMsg('This sheet has no client name, contact, phone or email filled in yet.','err');return}
+  $('edLead').disabled=true;await $('saveBtn').onclick();$('edLead').disabled=false;
+  const ok=$('saveMsg').classList.contains('ok');edMsg(ok?`Filled ${n} lead field${n===1?'':'s'} from this sheet and saved the lead.`:$('saveMsg').textContent,ok?'ok':'err');
+};
+// excess eff/exp dates tidy to MM/DD/YYYY; exp fills in one year after eff (until you type your own)
+$('edBody').addEventListener('focusout',e=>{const el=e.target,m=el&&/^x_(auto|gl|wc)_(eff|exp)$/.exec(el.name||'');if(!m)return;
+  const put=(x,v)=>{if(x.value===v)return;x.value=v;x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}))};
+  const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))put(el,fmtDate(iso));
+  if(m[2]==='exp'){el.dataset.auto='';return}
+  const d=parseMdy(el.value),ex=document.querySelector(`#edBody .annotationLayer [name="x_${m[1]}_exp"]`);
+  if(d&&ex&&(!ex.value.trim()||ex.dataset.auto==='1')){put(ex,mdy(new Date(d.getFullYear()+1,d.getMonth(),d.getDate())));ex.dataset.auto='1'}});
+// % owned: tidy to N% and keep the total under the column current
+$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/^o[1-4]_pct$/.test(el.name||''))return;
+  const put=(x,v)=>{if(!x||x.value===v)return;x.value=v;x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}))};
+  const n=pctNum(el.value);if(n!=null)put(el,n+'%');const q=k=>document.querySelector(`#edBody .annotationLayer [name="${k}"]`);
+  put(q('o_pct_total'),pctTotal(i=>(q(`o${i}_pct`)||{}).value))});
+// phone boxes on a quote sheet tidy to (###)###-#### when you leave them
+$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||el.name!=='f_phone')return;const v=fmtPhone(el.value.trim());if(v!==el.value){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
+$('edAdd').onclick=()=>{const on=!$('edAdd').classList.contains('on');$('edAdd').classList.toggle('on',on);$('ed').classList.toggle('adding',on)};
+$('edBody').addEventListener('click',e=>{
+  if(!ed||!$('ed').classList.contains('adding'))return;
+  const pg=e.target.closest('.pg');if(!pg||e.target.classList.contains('tn')||e.target.closest('section'))return;
+  const r=pg.getBoundingClientRect(),scale=+pg.dataset.scale,size=11;
+  const n=document.createElement('div');n.className='tn';n.contentEditable='true';
+  n.style.left=Math.max(0,Math.min(e.clientX-r.left,r.width-140))+'px';n.style.top=(e.clientY-r.top-size*scale*0.6)+'px';n.style.fontSize=size*scale+'px';
+  pg.appendChild(n);ed.notes.push(n);ed.dirty=true;n.focus();
+  n.addEventListener('blur',()=>{if(!n.textContent.trim()){n.remove();ed.notes=ed.notes.filter(x=>x!==n)}});
+  $('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+});
+function liveNotes(){return ed.notes.filter(n=>n.isConnected&&n.innerText.trim()).map(n=>{const pg=n.parentElement;return {page:+pg.dataset.page,scale:+pg.dataset.scale,h:+pg.dataset.h,x:parseFloat(n.style.left),y:parseFloat(n.style.top),text:n.innerText.replace(/\n$/,'')}})}
+async function buildEdited(){
+  if(ed.kind==='text')return new Blob([ed.ta.value],{type:ed.f.type});
+  const notes=liveNotes();
+  if(ed.kind==='img'){
+    const img=ed.img,cv=document.createElement('canvas');cv.width=img.naturalWidth;cv.height=img.naturalHeight;const c=cv.getContext('2d');c.drawImage(img,0,0);
+    for(const n of notes){const fs=11/n.scale;c.font=`${fs}px Helvetica, Arial, sans-serif`;c.fillStyle='#000';c.textBaseline='top';n.text.split('\n').forEach((l,i)=>c.fillText(l,n.x/n.scale+2,n.y/n.scale+1+i*fs*1.15))}
+    const type=/jpe?g|webp/.test(ed.f.type)?ed.f.type:'image/png';
+    return await new Promise(r=>cv.toBlob(b=>r(b),type,0.92));
+  }
+  // write edited form values with pdf-lib (works for merged and parent/kid fields alike)
+  await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
+  const doc=await PDFLib.PDFDocument.load(ed.bytes.slice(),{ignoreEncryption:true}),st=ed.pdf.annotationStorage;
+  let form=null;try{form=doc.getForm()}catch(_){}
+  if(form)for(const fd of ed.fields){
+    const v=st.getRawValue?st.getRawValue(fd.id):st.getValue(fd.id,{});if(!v||!('value' in v))continue;
+    try{const fl=form.getField(fd.name);
+      if(fd.radio){if(v.value===true||v.value===fd.btn)fl.select(fd.btn)}
+      else if(fd.check){(v.value===true||(typeof v.value==='string'&&v.value!=='Off'))?fl.check():fl.uncheck()}
+      else if(fd.choice){const x=Array.isArray(v.value)?v.value[0]:v.value;if(x!=null)fl.select(String(x))}
+      else fl.setText(String(v.value??''));
+    }catch(_){}
+  }
+  let bytes,out=doc;
+  // PSW quote sheets are rebuilt from their values so they keep one embedded font (no symbols in other viewers)
+  const subj=doc.getSubject()||'';
+  if(form&&/^psw-(auto-)?quote-sheet$/.test(subj)){try{const v=sheetValues(doc),auto=subj==='psw-auto-quote-sheet';
+    const nb=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):await buildQuotePdf(v);
+    const nd=await PDFLib.PDFDocument.load(nb);if(nd.getPageCount()===doc.getPageCount()&&(nd.getKeywords()||'').includes(FONT_MARK))out=nd}catch(_){}}
+  {
+    const font=out===doc?await doc.embedFont(PDFLib.StandardFonts.Helvetica):(await sheetFonts(out,true)).font,pages=out.getPages();
+    for(const n of notes){const pg=pages[n.page],size=11;
+      n.text.split('\n').forEach((l,i)=>{const safe=[...l].map(ch=>{try{font.encodeText(ch);return ch}catch(_){return '?'}}).join('');
+        pg.drawText(safe,{x:n.x/n.scale+2,y:n.h-(n.y/n.scale)-size-i*size*1.15+1,size,font,color:PDFLib.rgb(0,0,0)})})}
+    if(out!==doc)bytes=await out.save();
+    else try{bytes=await doc.save()}catch(_){if(form)form.acroForm.dict.set(PDFLib.PDFName.of('NeedAppearances'),PDFLib.PDFBool.True);bytes=await doc.save({updateFieldAppearances:false})}
+  }
+  return new Blob([bytes],{type:'application/pdf'});
+}
+$('edSave').onclick=async()=>{
+  if(!ed||!ed.bytes||!cur||!cur.id)return;const b=$('edSave');b.disabled=true;edMsg('Saving…');
+  try{
+    const blob=await buildEdited(),old=ed.f;
+    const r=await storeBytes(await blob.arrayBuffer(),blob.type);
+    const fresh=leads.find(l=>l.id===cur.id)||cur;
+    const files=(fresh.files||[]).map(x=>x.id===old.id?{...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})}:x);
+    if(!files.some(x=>x.id===r.id))files.push({...old,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',editedAt:new Date().toISOString()});
+    await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();
+    try{await assets.delete(old.id)}catch(_){}
+    ed.f=files.find(x=>x.id===r.id);ed.dirty=false;edMsg('Saved to the lead.','ok');toast(`${old.name} saved`);
+    // reopen from the saved copy so further edits build on it
+    const keep=ed.f;closeEditor();await openEditor(keep);edMsg('Saved to the lead. You can keep editing.','ok');
+  }catch(e){edMsg(e&&e.code?errText(e):'Couldn’t save'+(e&&e.message?` (${e.message})`:'')+'.','err')}
+  b.disabled=false;
+};
+$('edDl').onclick=async()=>{if(!ed||!ed.bytes)return;try{const blob=await buildEdited();await dl.save({filename:ed.f.name,data:new Uint8Array(await blob.arrayBuffer())})}catch(e){if(e&&e.code!=='declined')edMsg(e.code?errText(e):'Couldn’t download.','err')}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed').classList.contains('on')){e.stopImmediatePropagation();$('edClose').click()}},true);
+
+
+/* ---------- ACORD forms from the lead's quote sheet (same engine as the ACORD Filler) ---------- */
+let acordTpl=null;
+async function acordReady(){
+  await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');await loadJs('acord-core.js');
+  if(!acordTpl){const r=await fetch('acord-templates.json');if(!r.ok)throw new Error('ACORD templates missing');acordTpl=await r.json()}
+}
+const b64bytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let tpl131=null;
+async function acord131Tpl(){if(!tpl131){const r=await fetch('tpl131.pdf');if(!r.ok)throw new Error('ACORD 131 template missing');tpl131=new Uint8Array(await r.arrayBuffer())}return tpl131}
+/* ACORD 131 umbrella: client info from the quote sheet, underlying lines only for the excess rows (38 auto, 39 GL, 40 WC) that are checked */
+const EXCESS_131={auto:{auto_csl:'1,000,000'},gl:{gl_occ:'1,000,000',gl_aggr:'2,000,000',gl_prod:'2,000,000',gl_pers:'1,000,000',gl_damage:'100,000',gl_med:'5,000'},wc:{wc_acc:'1,000,000',wc_dis_ee:'1,000,000',wc_dis_pol:'1,000,000'}};
+function build131(C,data,fields,checks,today){
+  const cl=s=>String(s||'').replace(/\s+/g,' ').trim();
+  const amt=s=>{const m=cl(s).match(/^\$?\s*[\d,.]+\s*(k|m|mil|million|thousand)?\b/i),n=m?C.parseMoney(m[0]):null;return n!=null?n.toLocaleString('en-US'):cl(s)};
+  const prop=cl(data.property_address),addr=(/^(same|same as .*|sam|ditto|n\/?a)\.?$/i.test(prop)?'':prop)||cl(data.bldg1_address)||cl(data.mailing_address),name=cl(data.client_name);
+  const v={date:C.fmtDate(today),eff_date:data.eff_date,named_insured:name,loc1_name:name,loc1_location:addr,loc1_desc:cl(data.description),loc1_payroll:amt(data.payroll),loc1_gross:amt(data.gross_receipts)},rows=[];
+  for(const k of ['auto','gl','wc']){
+    if(!checks[`x_${k}_on`])continue;rows.push(k);
+    const eff=cl(fields[`x_${k}_eff`]);
+    Object.assign(v,{[k+'_prem']:cl(fields[`x_${k}_prem`]).replace(/^\$\s*/,''),[k+'_policy']:cl(fields[`x_${k}_pol`]),[k+'_eff']:eff,[k+'_exp']:cl(fields[`x_${k}_exp`])||(eff?C.addYear(eff,today):'')},EXCESS_131[k]);
+  }
+  v.notes=rows.length?[]:['no Umbrella / Excess rows are checked on the quote sheet, so the underlying insurance lines are blank'];
+  return v;
+}
+$('acordSec').addEventListener('click',async e=>{
+  const forms=e.target.dataset.acord;if(!forms||!cur||!cur.id)return;
+  const m=$('acordMsg'),btn=e.target,label=btn.textContent;
+  const fresh=leads.find(l=>l.id===cur.id)||cur;
+  const qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
+  if(!qs){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
+  document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=true);btn.textContent='Working…';m.className='msg';m.textContent=`Reading ${qs.name}…`;
+  try{
+    await acordReady();const C=window.AcordCore;
+    let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the quote sheet file is missing')}
+    const pdf=await PDFLib.PDFDocument.load(raw),fields={},checks={};
+    for(const fl of pdf.getForm().getFields()){if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';else if(fl instanceof PDFLib.PDFCheckBox)checks[fl.getName()]=fl.isChecked()}
+    if(!('f_client_name' in fields))throw new Error(`${qs.name} isn’t a PSW quote sheet`);
+    {const cd=String(fields.f_claims_detail||'').trim();if(cd&&!String(fields.f_claims||'').includes(cd))fields.f_claims=[String(fields.f_claims||'').trim(),cd].filter(Boolean).join(' - ')}
+    for(let i=1;i<=4;i++){const t=[fields[`ai${i}_name`],fields[`ai${i}_address`]].map(x=>String(x||'').trim()).filter(Boolean).join(', ');if(t&&!fields['f_ai'+i])fields['f_ai'+i]=t}
+    const titles=[];for(let i=1;i<=4;i++){const g=k=>String(fields[`o${i}_${k}`]||'').trim(),pc=pctNum(g('pct'));const t=[g('first'),g('last'),g('dob'),pc!=null?pc+'%':''].filter(Boolean).join(' ');if(t&&!fields['f_owner'+i])fields['f_owner'+i]=t;if(t)titles.push(g('title'))}
+    const cls=[];for(let i=1;i<=4;i++){const g=k=>String(fields[`cc${i}_${k}`]||'').trim(),r={code:g('code'),desc:g('desc'),ft:g('ft'),pt:g('pt'),payroll:g('payroll')};if(Object.values(r).some(Boolean)){cls.push(r);fields['f_class_code'+cls.length]=[r.code,r.desc].filter(Boolean).join(' ')}}
+    const data=C.parseQuotePdfFields(fields),today=new Date();
+    const rd=C.resolveDates(data,today);data.eff_date_original=data.eff_date;data.eff_date=rd.eff;data.exp_date=rd.exp;
+    const list=forms.split(','),filled=[];let v;
+    if(forms==='131'){v=build131(C,data,fields,checks,today);filled.push(await C.fillPdf(await acord131Tpl(),'131',v,PDFLib))}
+    else{v=C.buildValues(data,Object.assign({},C.DEFAULT_SETTINGS),{today,customer_id:''});if(v['130'])titles.forEach((t,i)=>{if(t)v['130'][`ind${i+1}_title`]=t});
+      if(v['130'])cls.forEach((r,i)=>{const a=v['130'],k=`r${i+1}_`,pm=r.payroll.match(/^\$?\s*[\d,.]+\s*(k|m|mil|million|thousand)?\b/i),pn=pm?C.parseMoney(pm[0]):null;
+        a[k+'loc']='1';a[k+'class']=r.code;if(r.desc)a[k+'desc']=r.desc;if(r.ft)a[k+'ft']=r.ft;if(r.pt)a[k+'pt']=r.pt;if(r.payroll)a[k+'payroll']=pn!=null?pn.toLocaleString('en-US'):r.payroll});for(const f of list)filled.push(await C.fillPdf(b64bytes(acordTpl[f]),f,v[f],PDFLib))}
+    const bytes=filled.length>1?await C.mergePdfs(filled,PDFLib):filled[0];
+    const client=(data.client_name||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client';
+    const name=`${client} ${list.join(' ')}.pdf`;
+    const ok=await uploadOne(new File([bytes],name,{type:'application/pdf'}));
+    if(ok){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(v.notes&&v.notes.length?`<div class="small" style="margin-top:4px">Heads up: ${v.notes.map(esc).join(' · ')}</div>`:'')}
+    else{m.className='msg err';m.textContent=$('fileMsg').textContent}
+  }catch(err){m.className='msg err';m.textContent='Couldn’t make the ACORD: '+(err.message||err.code||'error')}
+  document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=false);btn.textContent=label;
+});
+
+
+/* ---------- VIN reader: fills year + make from the VIN itself (the page can't reach outside websites) ---------- */
+const WMI={'1FA':'Ford','1FB':'Ford','1FC':'Ford','1FD':'Ford','1FM':'Ford','1FT':'Ford','1FU':'Freightliner','1FV':'Freightliner','2FT':'Ford','3FT':'Ford','3FA':'Ford','NM0':'Ford','1ZV':'Ford','1LN':'Lincoln','5LM':'Lincoln',
+'1G1':'Chevrolet','1GC':'Chevrolet','1GB':'Chevrolet','1GN':'Chevrolet','2GC':'Chevrolet','3GC':'Chevrolet','3GN':'Chevrolet','1GT':'GMC','1GD':'GMC','1GK':'GMC','2GT':'GMC','3GT':'GMC','1G6':'Cadillac','1GY':'Cadillac','2G1':'Chevrolet','1GJ':'GMC',
+'1C4':'Chrysler/Jeep','1C6':'Ram','3C6':'Ram','3C7':'Ram','2C4':'Chrysler','2C3':'Chrysler','1C3':'Chrysler','3D7':'Dodge/Ram','1D7':'Dodge','1B7':'Dodge','2B3':'Dodge','2D4':'Dodge','1D4':'Dodge','3D4':'Dodge','1J4':'Jeep','1J8':'Jeep','3C4':'Chrysler','2C7':'Ram',
+'1XK':'Kenworth','1NK':'Kenworth','2NK':'Kenworth','1XP':'Peterbilt','2XP':'Peterbilt','1NP':'Peterbilt','1HT':'International','1HS':'International','3HS':'International','3HA':'International','3HT':'International','1HV':'International','1M1':'Mack','1M2':'Mack','4V4':'Volvo Trucks','4V5':'Volvo Trucks','4VG':'Volvo Trucks','4V1':'Volvo Trucks','4VL':'Volvo Trucks','3AK':'Freightliner','4UZ':'Freightliner','5PV':'Hino','2AY':'Hino','JHB':'Hino','JHH':'Hino','JAL':'Isuzu','4KL':'Isuzu','54D':'Isuzu','JAA':'Isuzu','JNA':'UD Trucks','1BA':'Blue Bird','4DR':'IC Bus','4UG':'Thomas','1T7':'Thomas','4RK':'Nova Bus','5FY':'New Flyer','1TU':'Thor',
+'JT2':'Toyota','JT3':'Toyota','JT4':'Toyota','JTD':'Toyota','JTE':'Toyota','JTM':'Toyota','JTN':'Toyota','JTK':'Toyota','4T1':'Toyota','4T3':'Toyota','4T4':'Toyota','5TD':'Toyota','5TF':'Toyota','5TE':'Toyota','2T1':'Toyota','2T3':'Toyota','JTH':'Lexus','2T2':'Lexus','JTJ':'Lexus',
+'JHM':'Honda','1HG':'Honda','2HG':'Honda','2HK':'Honda','5J6':'Honda','5FN':'Honda','19X':'Honda','JH4':'Acura','19U':'Acura','5J8':'Acura',
+'JN1':'Nissan','JN8':'Nissan','1N4':'Nissan','1N6':'Nissan','3N1':'Nissan','3N6':'Nissan','5N1':'Nissan','JNK':'Infiniti','5BZ':'Nissan',
+'JM1':'Mazda','JM3':'Mazda','3MZ':'Mazda','KMH':'Hyundai','5NP':'Hyundai','KM8':'Hyundai','5NM':'Hyundai','KMF':'Hyundai','KNA':'Kia','KND':'Kia','5XY':'Kia','3KP':'Kia','KNM':'Kia',
+'WDB':'Mercedes-Benz','WDD':'Mercedes-Benz','WDC':'Mercedes-Benz','W1K':'Mercedes-Benz','W1N':'Mercedes-Benz','4JG':'Mercedes-Benz','55S':'Mercedes-Benz','WD3':'Mercedes-Benz','WD4':'Mercedes-Benz','W1Y':'Mercedes-Benz','W1W':'Mercedes-Benz','WDY':'Freightliner','WDP':'Dodge',
+'WBA':'BMW','WBS':'BMW','WBX':'BMW','5UX':'BMW','5YM':'BMW','WVW':'Volkswagen','WVG':'Volkswagen','WV1':'Volkswagen','WV2':'Volkswagen','3VW':'Volkswagen','1VW':'Volkswagen','WAU':'Audi','WA1':'Audi','YV1':'Volvo','YV4':'Volvo','7JR':'Volvo',
+'JF1':'Subaru','JF2':'Subaru','4S3':'Subaru','4S4':'Subaru','5YJ':'Tesla','7SA':'Tesla','7G2':'Tesla','JA3':'Mitsubishi','JA4':'Mitsubishi','ML3':'Mitsubishi','JS1':'Suzuki','JS2':'Suzuki','SAL':'Land Rover','SAJ':'Jaguar','ZFA':'Fiat','3C3':'Fiat','ZAR':'Alfa Romeo','WP0':'Porsche','WP1':'Porsche','1GG':'Isuzu','7FA':'Honda','5UM':'BMW','1FUJ':'Freightliner'};
+const WMI2={'1F':'Ford','2F':'Ford','3F':'Ford','1G':'GM','2G':'GM','3G':'GM','1C':'Chrysler','2C':'Chrysler','3C':'Chrysler','JT':'Toyota','JH':'Honda','JN':'Nissan','JM':'Mazda','KM':'Hyundai','KN':'Kia','WD':'Mercedes-Benz','WB':'BMW','WV':'Volkswagen','JA':'Isuzu/Mitsubishi','JF':'Subaru','YV':'Volvo'};
+function vinCheck(v){const map='0123456789.ABCDEFGH..JKLMN.P.R..STUVWXYZ',w=[8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+  const val=ch=>/\d/.test(ch)?+ch:({A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,J:1,K:2,L:3,M:4,N:5,P:7,R:9,S:2,T:3,U:4,V:5,W:6,X:7,Y:8,Z:9})[ch];
+  let sum=0;for(let i=0;i<17;i++){const x=val(v[i]);if(x==null)return false;sum+=x*w[i]}const c=sum%11;return (c===10?'X':String(c))===v[8]}
+function decodeVin(raw){
+  const v=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(v.length!==17||/[IOQ]/.test(v))return null;
+  const codes='ABCDEFGHJKLMNPRSTVWXY123456789',i=codes.indexOf(v[9]);
+  let year=null;if(i>=0){year=1980+i;if(/[A-Z]/.test(v[6])||year+30<=new Date().getFullYear()+1)year+=30;if(year>new Date().getFullYear()+1)year-=30}
+  const make=WMI[v.slice(0,3)]||WMI2[v.slice(0,2)]||'';
+  return {vin:v,year:year?String(year):'',make,valid:/^[1-5]/.test(v)?vinCheck(v):true};
+}
+function setPdfInput(name,val){const el=document.querySelector(`.annotationLayer [name="${name}"]`);if(!el||el.value.trim())return false;el.value=val;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur',{bubbles:true}));return true}
+$('edBody').addEventListener('input',e=>{
+  const nm=e.target&&e.target.name||'',m=/^v(\d)_vin$/.exec(nm);if(!m)return;
+  const d=decodeVin(e.target.value);if(!d)return;
+  const n=m[1],filled=[];
+  if(d.year&&setPdfInput(`v${n}_year`,d.year))filled.push(d.year);
+  if(d.make&&setPdfInput(`v${n}_make`,d.make))filled.push(d.make);
+  const link=`https://vpic.nhtsa.dot.gov/decoder/Decoder?VIN=${d.vin}`;
+  const show=extra=>{$('edMsg').style.color=d.valid?'':'var(--bad)';
+    $('edMsg').innerHTML=(d.valid?'':'This VIN’s check digit doesn’t add up, so double-check it. ')+(filled.length?`Vehicle ${n}: filled ${esc(filled.join(', '))}. `:'')+(extra||`<a href="${link}" target="_blank" rel="noopener">Look up model, body and GVW on NHTSA</a>`)};
+  show();
+  // try NHTSA's free VIN API directly; if this view blocks outside sites, the link above stays
+  if(vinAsked[d.vin])return;vinAsked[d.vin]=1;
+  const ctl=new AbortController();setTimeout(()=>ctl.abort(),8000);
+  fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${d.vin}?format=json`,{signal:ctl.signal}).then(r=>r.json()).then(j=>{
+    const x=(j&&j.Results&&j.Results[0])||{};const t=k=>String(x[k]||'').trim();
+    const make=t('Make')?t('Make').replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase()):'';
+    const gvw=t('GVWR').replace(/^Class\s*\w+:\s*/i,'');
+    const got=[[`v${n}_year`,t('ModelYear')],[`v${n}_make`,make],[`v${n}_model`,[t('Model'),t('Trim')].filter(Boolean).join(' ')],[`v${n}_body`,t('BodyClass')],[`v${n}_gvw`,gvw]];
+    for(const [k,val] of got)if(val&&setPdfInput(k,val))filled.push(val);
+    show(`Details from NHTSA. <a href="${link}" target="_blank" rel="noopener">See the full NHTSA report</a>`);
+  }).catch(()=>{});
+});
+const vinAsked={};
+$('edBody').addEventListener('input',e=>{
+  const nm=e.target&&e.target.name||'';if(!document.querySelector('.annotationLayer [name="v1_use"]'))return;
+  const val=k=>{const el=document.querySelector(`.annotationLayer [name="${k}"]`);return el?el.value:''};
+  const z=zipOf(val('f_garaging_address'))||zipOf(val('f_mailing_address'));if(!z)return;
+  const rows=/^f_(garaging|mailing)_address$/.test(nm)?[1,2,3,4,5,6]:(m=>m?[+m[1]]:[])(/^v(\d)_(year|make|model|body|vin|value|gvw|radius)$/.exec(nm));
+  for(const n of rows)if(VEH_KEYS.some(k=>val(`v${n}_${k}`).trim()))setPdfInput(`v${n}_use`,z);
+});
+
+/* ---------- binding docs checklist (saved on the lead as binding:{key:true | 'na'}) ---------- */
+const BIND_DOCS=[['acords','ACORDs'],['supplemental','Supplemental'],['d1','D1'],['sl2','SL2'],['tria','TRIA'],['financing','Financing'],['ins_pay_psw','Ins pay to PSW'],['psw_pay_ga','PSW pay to GA']];
+function renderBind(){const b=(cur&&cur.binding)||{};
+  $('bindList').innerHTML=BIND_DOCS.map(([k,l])=>{const na=b[k]==='na';return `<div class="brow${na?' isna':''}"><input type="checkbox" id="bind_${k}" data-bind="${k}"${b[k]===true?' checked':''}><button type="button" class="nab${na?' on':''}" data-na="${k}" title="Not applicable">NA</button><label for="bind_${k}">${esc(l)}</label></div>`}).join('')}
+async function saveBind(k,val){const m=$('bindMsg');if(!(await ensureSaved())){renderBind();return}
+  const binding={...((leads.find(l=>l.id===cur.id)||cur).binding||{}),[k]:val};
+  try{await leadsCol.doc(cur.id).update({binding});cur.binding=binding;m.textContent=''}catch(err){m.className='msg err';m.textContent=errText(err)}renderBind()}
+$('bindList').addEventListener('change',e=>{const k=e.target.dataset.bind;if(k)saveBind(k,e.target.checked)});
+$('bindList').addEventListener('click',e=>{const bt=e.target.closest('[data-na]');if(!bt)return;const k=bt.dataset.na;saveBind(k,((cur&&cur.binding)||{})[k]==='na'?false:'na')});
+
+/* ---------- delete lead (pop-up asks first) ---------- */
+let delTarget=null;
+function askDelete(id){const l=leads.find(x=>x.id===id)||(cur&&cur.id===id?cur:null);if(!l)return;delTarget=l;
+  const nm=[l.firstName,l.lastName].filter(Boolean).join(' ')||l.company||'this lead';
+  $('askText').textContent=`Delete ${nm}${l.company&&nm!==l.company?' ('+l.company+')':''}, its contact log and its ${(l.files||[]).length} file${(l.files||[]).length===1?'':'s'} for everyone? This can’t be undone.`;
+  $('askDel').classList.add('on');$('askNo').focus()}
+function closeAsk(){$('askDel').classList.remove('on');delTarget=null}
+$('askNo').onclick=closeAsk;
+$('askDel').addEventListener('click',e=>{if(e.target===$('askDel'))closeAsk()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('askDel').classList.contains('on')){e.stopImmediatePropagation();closeAsk()}},true);
+$('askYes').onclick=async()=>{
+  const l=delTarget;if(!l)return;$('askYes').disabled=true;$('askYes').textContent='Deleting…';
+  try{
+    const ref=leadsCol.doc(l.id),cs=await ref.collection('contacts').get();
+    for(const c of cs.docs)await ref.collection('contacts').doc(c.id).delete();
+    await ref.delete();
+    if(assets)for(const f of (l.files||[])){try{await assets.delete(f.id)}catch(_){}}
+    if(cur&&cur.id===l.id)closeLead();
+    closeAsk();toast('Lead deleted');
+  }catch(e){closeAsk();toast(errText(e))}
+  $('askYes').disabled=false;$('askYes').textContent='Yes';
+};
+$('delBtn').onclick=()=>cur&&cur.id&&askDelete(cur.id);
+$('delTop').onclick=()=>cur&&cur.id&&askDelete(cur.id);
+
+// Chrome filters a pick list by what's already typed, so clicking a filled box showed only the matching option.
+// Clear it while the list is open (old value stays as the placeholder) and put it back if nothing new is picked.
+document.querySelectorAll('input[list]').forEach(i=>{
+  const ph=i.placeholder;
+  i.addEventListener('mousedown',()=>{if(i.value&&!i.dataset.prev){i.dataset.prev=i.value;i.placeholder=i.value;i.value=''}});
+  i.addEventListener('input',()=>{delete i.dataset.prev;i.placeholder=ph});
+  i.addEventListener('blur',()=>{if(i.dataset.prev!==undefined){if(!i.value)i.value=i.dataset.prev;delete i.dataset.prev}i.placeholder=ph});
+});
+
+
+/* ---------- task manager: tasks/<id> {title, assignedTo, due YYYY-MM-DD, priority, leadId, notes, done, doneAt, createdAt, createdBy} ---------- */
+const TASK_AGENTS=[...AGENTS,'Oliver A'];
+const tasksCol=db.collection('tasks');let tasks=[],editTask=null;
+const leadName=l=>l?([l.firstName,l.lastName].filter(Boolean).join(' ')||l.company||'(no name)')+(l.company&&(l.firstName||l.lastName)?' · '+l.company:''):'';
+const dueCls=t=>!t.due||t.done?'':t.due<todayISO()?'due-over':t.due===todayISO()?'due-today':'';
+const dueTxt=t=>t.due?fmtDate(t.due)+(t.done?'':t.due<todayISO()?' (overdue)':t.due===todayISO()?' (today)':''):'';
+const PRI_ORDER={High:0,Normal:1,Low:2};
+const taskSort=(a,b)=>(!!a.done-!!b.done)||(a.done?String(b.doneAt||'').localeCompare(String(a.doneAt||'')):0)||((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0)||((PRI_ORDER[a.priority]??1)-(PRI_ORDER[b.priority]??1))||String(a.createdAt||'').localeCompare(String(b.createdAt||''));
+tasksCol.onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks();renderLeadTasks()},e=>{$('tempty').hidden=false;$('tempty').textContent=errText(e)});
+function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));$('leadsView').hidden=v!=='leads';$('tasksView').hidden=v!=='tasks';
+  $('newBtn').textContent=v==='tasks'?'+ New task':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks()}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
+// the header button makes a task while the Tasks tab is showing
+function renderTasks(){
+  const open=tasks.filter(t=>!t.done).length;$('taskCount').textContent=open;
+  if(view==='tasks')$('count').textContent=tasks.length?`${open} open task${open===1?'':'s'}, ${tasks.length-open} done`:'No tasks yet';
+  const agents=[...new Set([...TASK_AGENTS,...tasks.map(t=>(t.assignedTo||'').trim()).filter(Boolean)])];opts($('tfAssign'),agents,'Everyone');
+  const q=$('tq').value.trim().toLowerCase(),fa=$('tfAssign').value,st=$('tfStatus').value;
+  const rows=tasks.filter(t=>{if(st==='open'&&t.done)return false;if(st==='done'&&!t.done)return false;if(fa&&t.assignedTo!==fa)return false;
+    if(!q)return true;const l=leads.find(x=>x.id===t.leadId);return [t.title,t.notes,t.assignedTo,t.firstName,t.lastName,t.company,leadName(l)].join(' ').toLowerCase().includes(q)}).sort(taskSort);
+  const lk=t=>{const l=t.leadId&&leads.find(x=>x.id===t.leadId);return l?`<a class="ln" data-open-lead="${esc(l.id)}">${esc(leadName(l))}</a>`:''};
+  const pri=t=>t.priority&&t.priority!=='Normal'?`<span class="chip pri-${esc(t.priority)}">${esc(t.priority)}</span>`:'<span class="small">Normal</span>';
+  $('ttb').innerHTML=rows.map(t=>`<tr data-task="${esc(t.id)}" class="${t.done?'isdone':''}"><td><input type="checkbox" class="tdone" data-done="${esc(t.id)}"${t.done?' checked':''} aria-label="Done"></td><td class="tt">${esc(t.title||'(untitled)')}</td><td>${esc(t.firstName)}</td><td>${esc(t.lastName)}</td><td>${esc(t.company)}</td><td>${lk(t)}</td><td>${esc(t.assignedTo)}</td><td class="${dueCls(t)}">${esc(dueTxt(t))}</td><td>${pri(t)}</td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.notes)}</td></tr>`).join('');
+  $('tcards').innerHTML=rows.map(t=>`<div class="lc tli${t.done?' isdone':''}" data-task="${esc(t.id)}"><input type="checkbox" class="tdone" data-done="${esc(t.id)}"${t.done?' checked':''} aria-label="Done"><div style="flex:1;min-width:0"><div class="tt t">${esc(t.title||'(untitled)')}</div><div class="m">${[esc([t.firstName,t.lastName].filter(Boolean).join(' ')),esc(t.company),lk(t),esc(t.assignedTo),t.due?`<span class="${dueCls(t)}">${esc(dueTxt(t))}</span>`:'',t.priority==='High'?pri(t):''].filter(Boolean).join(' · ')}</div></div></div>`).join('');
+  const te=$('tempty');te.hidden=rows.length>0;te.innerHTML=tasks.length?'<b>No matching tasks</b>Try a different filter.':'<b>No tasks yet</b>Click “+ New task” to add one, or add one from a lead.';
+}
+['tq','tfAssign','tfStatus'].forEach(id=>$(id).addEventListener('input',renderTasks));
+async function setDone(id,on){const t=tasks.find(x=>x.id===id);if(!t)return;try{await tasksCol.doc(id).update({done:on,doneAt:on?new Date().toISOString():''});if(on)toast('Task done')}catch(e){toast(errText(e));renderTasks();renderLeadTasks()}}
+const onTaskClick=e=>{const ol=e.target.closest('[data-open-lead]');if(ol){e.stopPropagation();const l=leads.find(x=>x.id===ol.dataset.openLead);if(l)openLead(l);return}
+  if(e.target.closest('[data-done]'))return;const r=e.target.closest('[data-task]');if(r)openTask(tasks.find(t=>t.id===r.dataset.task))};
+const onTaskChange=e=>{const c=e.target.closest('[data-done]');if(c)setDone(c.dataset.done,c.checked)};
+['ttb','tcards','leadTasks'].forEach(id=>{$(id).addEventListener('click',onTaskClick);$(id).addEventListener('change',onTaskChange)});
+function renderLeadTasks(){if(!cur||!cur.id){$('leadTasks').innerHTML='';$('leadTasksNone').hidden=false;return}
+  const rows=tasks.filter(t=>t.leadId===cur.id).sort(taskSort);$('leadTasksNone').hidden=rows.length>0;
+  $('leadTasks').innerHTML=rows.map(t=>`<li class="tli${t.done?' isdone':''}" data-task="${esc(t.id)}"><input type="checkbox" class="tdone" data-done="${esc(t.id)}"${t.done?' checked':''} aria-label="Done"><span class="tt">${esc(t.title||'(untitled)')}</span><span class="small">${esc(t.assignedTo)}</span><span class="small ${dueCls(t)}">${esc(dueTxt(t))}</span></li>`).join('')}
+$('leadTaskBtn').onclick=async()=>{if(!(await ensureSaved()))return;openTask(null,{leadId:cur.id,assignedTo:cur.assignedTo||'',firstName:cur.firstName||'',lastName:cur.lastName||'',company:cur.company||''})};
+// picking a lead fills empty first / last name boxes from it
+$('tLead').addEventListener('change',()=>{const l=leads.find(x=>x.id===$('tLead').value);if(!l)return;if(!$('tFirst').value.trim())$('tFirst').value=l.firstName||'';if(!$('tLast').value.trim())$('tLast').value=l.lastName||'';if(!$('tCompany').value.trim())$('tCompany').value=l.company||''});
+function openTask(t,preset){editTask=t||null;const v=t||preset||{};
+  $('taskTitleH').textContent=t?'Edit task':'New task';$('tTitle').value=v.title||'';$('tFirst').value=v.firstName||'';$('tLast').value=v.lastName||'';$('tCompany').value=v.company||'';$('tDue').value=fmtDate(v.due||'');$('tPri').value=v.priority||'Normal';$('tNotes').value=v.notes||'';
+  const agents=[...new Set([...TASK_AGENTS,...tasks.map(x=>(x.assignedTo||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
+  $('tAssign').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('tAssign').value=v.assignedTo||'';
+  const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
+  $('tLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('');$('tLead').value=v.leadId||'';
+  $('tDel').hidden=!t;$('tDel').textContent='Delete task';delete $('tDel').dataset.arm;$('taskMsg').textContent='';$('tSave').disabled=false;
+  $('taskDlg').classList.add('on');setTimeout(()=>$('tTitle').focus(),30)}
+function closeTask(){$('taskDlg').classList.remove('on');editTask=null}
+$('tCancel').onclick=closeTask;$('taskDlg').addEventListener('click',e=>{if(e.target===$('taskDlg'))closeTask()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('taskDlg').classList.contains('on')){e.stopImmediatePropagation();closeTask()}},true);
+// due date types as MM/DD/YYYY: slashes go in as you type the digits
+$('tDue').addEventListener('input',e=>{const el=e.target;if(e.inputType&&e.inputType.startsWith('delete'))return;const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d});
+$('tDue').addEventListener('blur',()=>{const iso=typedISO($('tDue').value);if(/^\d{4}-\d\d-\d\d$/.test(iso))$('tDue').value=fmtDate(iso)});
+$('tTitle').addEventListener('keydown',e=>{if(e.key==='Enter')$('tSave').click()});
+$('tSave').onclick=async()=>{const m=$('taskMsg'),title=$('tTitle').value.trim();if(!title){m.className='msg err';m.textContent='Give the task a name.';$('tTitle').focus();return}
+  const raw=$('tDue').value.trim(),iso=raw?typedISO(raw):'';if(raw&&!/^\d{4}-\d\d-\d\d$/.test(iso)){m.className='msg err';m.textContent='Type the due date as MM/DD/YYYY.';$('tDue').focus();return}
+  const data={title,firstName:$('tFirst').value.trim(),lastName:$('tLast').value.trim(),company:$('tCompany').value.trim(),assignedTo:$('tAssign').value,due:iso,priority:$('tPri').value,leadId:$('tLead').value,notes:$('tNotes').value.trim()};
+  $('tSave').disabled=true;m.className='msg';m.textContent='Saving…';
+  try{if(editTask)await tasksCol.doc(editTask.id).update(data);else{data.done=false;data.doneAt='';data.createdAt=new Date().toISOString();if(me)data.createdBy=me;await tasksCol.add(data)}
+    closeTask();toast('Task saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('tSave').disabled=false}};
+$('tDel').onclick=async()=>{const b=$('tDel');if(!editTask)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to delete';return}
+  try{await tasksCol.doc(editTask.id).delete();closeTask();toast('Task deleted')}catch(e){$('taskMsg').className='msg err';$('taskMsg').textContent=errText(e)}};
+try{if(localStorage.getItem('psw-view')==='tasks')setView('tasks')}catch(_){}
+
+/* ---------- supplementals: carrier forms filled from the lead's quote sheet (template = supporting file) ---------- */
+// section 10 (subcontractors) answers on the Burns sup, cleared when Subcontractors N/A is ticked
+const BURNS_SUB_FIELDS=['undefined_15','undefined_16','undefined_17','hold harmless','subcontractor policies','undefined_19','casual labor','leased employees','workers comp','undefined_18','compensation ins'];
+// "123 Main St Ste 4, Fresno, CA 93701" -> ['123 Main St Ste 4','Fresno, CA 93701']; without commas, splits after the street type (St, Ave...) and any unit
+function splitAddr(a){a=String(a||'').replace(/\s+/g,' ').trim();if(!a)return['',''];
+  const c=a.indexOf(',');if(c>0&&!/^[a-z]{2}\.?\s*\d{5}/i.test(a.slice(c+1).trim()))return[a.slice(0,c).trim(),a.slice(c+1).trim()];
+  const m=a.match(/^(p\.?\s*o\.?\s*box\s*\d+|.*?\b(?:st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|way|ct|court|pl|place|pkwy|parkway|hwy|highway|cir|circle|ter|terrace|trl|trail)\.?(?:\s+(?:ste|suite|apt|unit|bldg|#)\.?\s*#?\s*[\w-]+)?)\s+(.+)$/i);
+  return m?[m[1],m[2]]:[a,'']}
+const SUPS={'burns-gl':{file:'tpl-burns-gl.pdf',suffix:'Burns GL sup',fill:(g,today)=>{
+  const prop=g('f_property_address'),loc=/^(same|same as .*|sam|ditto|n\/?a)\.?$/i.test(prop)?'':prop;
+  const yr=g('f_year_started'),y=/^\d{4}$/.test(yr)?today.getFullYear()-(+yr):null;
+  const amt=x=>{const m=x.replace(/,/g,'').match(/^\$?\s*(\d+(?:\.\d+)?)\s*(k|m|mil)?\b/i);if(!m)return x;let n=+m[1];if(/k/i.test(m[2]||''))n*=1000;else if(m[2])n*=1e6;return Math.round(n).toLocaleString('en-US')};
+  const ma=splitAddr(g('f_mailing_address')),la=splitAddr(loc||g('f_bldg1_address')||g('b1_address')||g('f_mailing_address'));
+  return {'Applicants Name 1':g('f_client_name'),'Applicants Name 2':ma[0],'Applicants Name 3':ma[1],'Location Address 1':la[0],'Location Address 2':la[1],
+    'Time in business':y!=null?`${y} yr${y===1?'':'s'}`:yr,'Years of experience':g('f_years_experience'),
+    'fill_55':g('f_payroll')?amt(g('f_payroll')):'','fill_56':g('f_gross_receipts')?amt(g('f_gross_receipts')):'',
+    'Name of Applicant':[g('o1_first'),g('o1_last')].filter(Boolean).join(' '),'Title':g('o1_title'),'Date':mdy(today)}}}};
+$('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data-sup]');if(!btn||!cur||!cur.id)return;const S=SUPS[btn.dataset.sup],m=$('supMsg'),label=btn.textContent;
+  const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
+  if(!qs){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
+  btn.disabled=true;btn.textContent='Working…';m.className='msg';m.textContent=`Reading ${qs.name}…`;
+  try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
+    let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the quote sheet file is missing')}
+    const q=await PDFLib.PDFDocument.load(raw),fields={};for(const fl of q.getForm().getFields())if(fl instanceof PDFLib.PDFTextField)fields[fl.getName()]=fl.getText()||'';
+    const g=k=>String(fields[k]||'').replace(/\s+/g,' ').trim(),today=new Date();
+    const r=await fetch(S.file);if(!r.ok)throw new Error('the form template is missing');
+    const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.fill(g,today);
+    for(const [k,v] of Object.entries(vals)){if(!v)continue;try{form.getTextField(k).setText(String(v))}catch(_){}}
+    if(btn.dataset.sup==='burns-gl'&&$('supSubsNA').checked){try{form.getCheckBox('Subcontractors NA').check()}catch(_){}
+      for(const n of BURNS_SUB_FIELDS){try{const fl=form.getField(n);if(fl instanceof PDFLib.PDFRadioGroup)fl.clear();else if(fl instanceof PDFLib.PDFTextField)fl.setText('')}catch(_){}}}
+    form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica));
+    const client=(g('f_client_name')||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',name=`${client} ${S.suffix}.pdf`;
+    const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
+    if(ok){m.className='msg ok';m.textContent=`${name} is attached under Files.`}else{m.className='msg err';m.textContent=$('fileMsg').textContent}
+  }catch(err){m.className='msg err';m.textContent='Couldn’t make the supplemental: '+(err.message||err.code||'error')}
+  btn.disabled=false;btn.textContent=label});
+})();
+</script>
+
+
+
+</body></html>
