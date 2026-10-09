@@ -145,6 +145,14 @@
     if (data.bldg1_roofup) out.p_roof_yr = data.bldg1_roofup;
     if (data.bldg1_plumbing) out.p_plumbing_yr = data.bldg1_plumbing;
     if (data.bldg1_heating) out.p_heating_yr = data.bldg1_heating;
+    // building 2 fills page 2 of the 140 the same way
+    if (data.bldg2_dwelling) out.p2_amt1 = data.bldg2_dwelling;
+    if (data.bldg2_bpp) out.p2_amt2 = data.bldg2_bpp;
+    if (data.bldg2_rents) { out.p2_subj3 = 'Loss of Rents'; out.p2_amt3 = data.bldg2_rents; }
+    if (data.bldg2_wiring) out.p2_wiring_yr = data.bldg2_wiring;
+    if (data.bldg2_roofup) out.p2_roof_yr = data.bldg2_roofup;
+    if (data.bldg2_plumbing) out.p2_plumbing_yr = data.bldg2_plumbing;
+    if (data.bldg2_heating) out.p2_heating_yr = data.bldg2_heating;
     return out;
   }
 
@@ -152,7 +160,7 @@
     data.gl_gross_receipts = data.gross_receipts;
     data.interest = 'Owner';
     if (!data.subout && /nosub/.test(norm(data.payroll))) data.subout = '$0';
-    Object.assign(data, { p_bldg_desc: 'main building', p_subj1: 'Dwelling', p_amt1: '', p_subj2: 'BPP', p_amt2: '', p_subj3: 'BI/EE', p_amt3: '', p_hydrant: '', p_station: '', p_stories: '', p_basements: '', p_wiring_yr: '', p_roof_yr: '', p_plumbing_yr: '', p_heating_yr: '', p_exp_right: '', p_exp_left: '', p_exp_front: '', p_exp_rear: '', p_burglar: 'NA', p_fire_prot: 'NA' });
+    Object.assign(data, { p_bldg_desc: 'main building', p_subj1: 'Dwelling', p_amt1: '', p_subj2: 'BPP', p_amt2: '', p_subj3: 'BI/EE', p_amt3: '', p_hydrant: '', p_station: '', p_stories: '', p_basements: '', p_wiring_yr: '', p_roof_yr: '', p_plumbing_yr: '', p_heating_yr: '', p_exp_right: '', p_exp_left: '', p_exp_front: '', p_exp_rear: '', p_burglar: 'NA', p_fire_prot: 'NA', p2_subj1: 'Dwelling', p2_amt1: '', p2_subj2: 'BPP', p2_amt2: '', p2_subj3: 'BI/EE', p2_amt3: '', p2_wiring_yr: '', p2_roof_yr: '', p2_plumbing_yr: '', p2_heating_yr: '' });
     return data;
   }
 
@@ -414,7 +422,21 @@
       sign_date: todayS, producer_name: '', producer_license: S.producer_license, national_producer: S.national_producer_number,
     });
     [1, 2, 3].forEach(i => { if (clean(d['p_subj' + i]) || clean(d['p_amt' + i])) { v140[`s${i}_subject`] = clean(d['p_subj' + i]); v140[`s${i}_amount`] = amt(d['p_amt' + i]); } });
-    if (clean(d.bldg2_address)) { const a2 = parseAddress(d.bldg2_address); Object.assign(v140, { p2_prem_num: '2', p2_bldg_num: '1', p2_street: fullAddr(a2) || a2.raw }); }
+    // building 2 goes on page 2, laid out like building 1 on page 1
+    const b2 = ['address', 'year_built', 'sqft', 'construction', 'roof'].some(k => clean(d['bldg2_' + k])) || ['p2_amt1', 'p2_amt2', 'p2_amt3', 'p2_wiring_yr', 'p2_roof_yr', 'p2_plumbing_yr', 'p2_heating_yr'].some(k => clean(d[k]));
+    if (b2) {
+      const a2 = parseAddress(d.bldg2_address || '');
+      Object.assign(v140, {
+        p2_prem_num: '2', p2_bldg_num: '1', p2_street: fullAddr(a2) || a2.raw || '', p2_bldg_desc: 'building 2',
+        p2_construction: clean(d.bldg2_construction), p2_yr_built: clean(d.bldg2_year_built),
+        p2_total_area: clean(d.bldg2_sqft) ? (money(parseMoney(d.bldg2_sqft)) || clean(d.bldg2_sqft)) : '',
+        p2_roof_type: clean(d.bldg2_roof),
+        p2_wiring_yr: clean(d.p2_wiring_yr), p2_roofing_yr: clean(d.p2_roof_yr), p2_plumbing_yr: clean(d.p2_plumbing_yr), p2_heating_yr: clean(d.p2_heating_yr),
+        p2_imp_wiring: !!clean(d.p2_wiring_yr), p2_imp_roofing: !!clean(d.p2_roof_yr), p2_imp_plumbing: !!clean(d.p2_plumbing_yr), p2_imp_heating: !!clean(d.p2_heating_yr),
+        p2_burglar_type: clean(d.p_burglar), p2_fire_protection: clean(d.p_fire_prot),
+      });
+      [1, 2, 3].forEach(i => { v140[`p2s${i}_subject`] = clean(d['p2_subj' + i]) || ['Dwelling', 'BPP', 'BI/EE'][i - 1]; v140[`p2s${i}_amount`] = amt(d['p2_amt' + i]); });
+    }
 
     return { '125': v125, '126': v126, '130': v130, '140': v140, notes };
   }
@@ -430,7 +452,8 @@
     for (const [k, val] of Object.entries(values)) {
       if (val === '' || val == null || val === false) continue;
       const re = new RegExp(`^a${form}_p\\d+_${k}$`);
-      const targets = Object.keys(byName).filter(n => n === `a${form}_${k}` || re.test(n));
+      // an exact field name wins; the per-page pattern is only for fields repeated on every page (customer ID)
+      const targets = byName[`a${form}_${k}`] ? [`a${form}_${k}`] : Object.keys(byName).filter(n => re.test(n));
       for (const n of targets) {
         const fld = byName[n];
         if (fld instanceof L.PDFCheckBox) { if (val) fld.check(); continue; }
