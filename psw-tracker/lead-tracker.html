@@ -421,7 +421,7 @@ $('saveBtn').onclick=async()=>{
 const CLASS_COLS=[{k:'code',label:'Class code',w:.75},{k:'desc',label:'Class description',w:2.3},{k:'ft',label:'FT emp',w:.55},{k:'pt',label:'PT emp',w:.55},{k:'payroll',label:'Payroll',w:1}];
 const OWNER_COLS=[{k:'first',label:'First name',w:1.2},{k:'last',label:'Last name',w:1.2},{k:'dob',label:'Birth date',w:.9},{k:'pct',label:'% owned',w:.65},{k:'title',label:'Title',w:1}];
 const QS_SECTIONS=[
- {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
+ {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
  {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Copr/Part/LLC'},{k:'contact_first',n:4,label:'Contact first name',label2:'Contact last name',pair:'contact_last'},{k:'phone',n:5,label:'Phone Number',label2:'Email Address',pair:'email'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Company info',fields:[{k:'currently_insured',n:14,label:'Currently insured?',label2:'Current price',pair:'current_carrier_price'},{k:'year_started',n:16,label:'Year biz started',label2:'Years exp',pair:'years_experience'},{k:'gross_receipts',n:18,label:'Gross Rec',label2:'Payroll',pair:'payroll'},{k:'full_time',n:20,label:'# Full time emp',label2:'# Part time emp',pair:'part_time'},{k:'claims',n:22,label:'Any claims'},{k:'claims_detail',n:1,label:'Claims details',area:1}]},
  {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'},{k:'dwelling',n:28,label:'Dwelling amount',money:1},{k:'bpp',n:29,label:'BPP/TI',money:1},{k:'rents',n:30,label:'Loss of rents',money:1}]},
@@ -491,6 +491,9 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
     const fit=value&&!multi?(w-6)/font.widthOfTextAtSize(value,1):99;tf.setFontSize(multi?9:Math.max(6,Math.min(10,Math.floor(fit*10)/10)))};
   const drop=(name,value,opts,x,w,h)=>{const dd=form.createDropdown(name);dd.addOptions(opts);const m=opts.find(o=>o.toLowerCase()===String(value||'').trim().toLowerCase()||(String(value||'').trim().toLowerCase()[0]===o.toLowerCase()[0]&&String(value||'').trim().length<=3));if(m)dd.select(m);
     dd.addToPage(page,{x,y:y-h,width:w,height:h,font,borderColor:line,borderWidth:0.6,backgroundColor:rgb(1,1,1)});dd.setFontSize(9)};
+  // dropdown you can also type into (Lead Source): picks the matching choice, or keeps any other value as typed
+  const combo=(name,value,opts,x,w,h)=>{const dd=form.createDropdown(name);dd.addOptions(opts);dd.enableEditing();const t=clean(value).trim(),m=opts.find(o=>o.toLowerCase()===t.toLowerCase());if(t)dd.select(m||t);
+    dd.addToPage(page,{x,y:y-h,width:w,height:h,font,borderColor:line,borderWidth:0.6,backgroundColor:rgb(1,1,1)});dd.setFontSize(10)};
   const text=(t,x,size,f,color)=>page.drawText(String(t),{x,y:y-size-2,size,font:f||font,color:color||ink});
   let secN=0;const section=t=>{need(40);y-=6;page.drawRectangle({x:L,y:y-15,width:R-L,height:15,color:band});text(String.fromCharCode(65+secN++)+'. '+t.toUpperCase(),L+6,9,bold,rgb(0.12,0.37,0.75));y-=19};
   // boxes start just past the longest item name on the sheet
@@ -520,6 +523,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
       if(f.pair&&f.label2){need(19);text((f.n?f.n+'a. ':'')+f.label,L+4,8.5,font,muted);const l2=(f.n?f.n+'b. ':'')+f.label2,lw=Math.max(92,font.widthOfTextAtSize(l2,8.5)+8),w=(R-L-LW-lw-6)/2;
         field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
       if(f.pair){need(19);text(label,L+4,8.5,font,muted);const w=(R-L-LW-6)/2;field('f_'+f.k,v[f.k],L+LW,w,16);field('f_'+f.pair,v[f.pair],L+LW+w+6,w,16);y-=19;continue}
+      if(f.opts){need(19);text(label,L+4,8.5,font,muted);combo('f_'+f.k,v[f.k],f.opts,L+LW,R-L-LW,16);y-=19;continue}
       row(label,'f_'+f.k,v[f.k],f.area)}
     if(s.bldg){const cw=(R-L-LW-12)/3;need(14);[1,2,3].forEach(b=>text('Building '+b,L+LW+(b-1)*(cw+6),8,bold,muted));y-=13;
       for(const f of s.bldg){need(19);text(f.n+'. '+f.label,L+4,8.5,font,muted);[1,2,3].forEach(b=>field(`b${b}_${f.k}`,v[`b${b}_${f.k}`],L+LW+(b-1)*(cw+6),cw,16));y-=19}}
@@ -679,7 +683,7 @@ async function fileText(f){
     let out=[];lastFields={};
     for(let i=1;i<=Math.min(doc.numPages,15);i++){const pg=await doc.getPage(i);
       const tc=await pg.getTextContent();out.push(tc.items.map(x=>x.str+(x.hasEOL?'\n':' ')).join(''));
-      try{const an=await pg.getAnnotations();an.forEach(a=>{if(a.fieldName&&a.fieldValue&&typeof a.fieldValue==='string'){out.push(`${a.fieldName}: ${a.fieldValue}`);lastFields[a.fieldName]=a.fieldValue}})}catch(_){}}
+      try{const an=await pg.getAnnotations();an.forEach(a=>{const fv=Array.isArray(a.fieldValue)?a.fieldValue[0]:a.fieldValue;if(a.fieldName&&fv&&typeof fv==='string'){out.push(`${a.fieldName}: ${fv}`);lastFields[a.fieldName]=fv}})}catch(_){}}
     return out.join('\n');
   }
   if(ext==='docx'){await loadJs(CDN+'mammoth/1.6.0/mammoth.browser.min.js');return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
