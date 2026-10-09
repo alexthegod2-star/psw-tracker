@@ -10,8 +10,9 @@ IP="$(curl -fsS --max-time 3 http://169.254.169.254/metadata/v1/interfaces/publi
 HOST="${PSW_HOST:-${IP//./-}.sslip.io}"
 
 echo "== Installing packages"
-apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-venv sqlite3 caddy >/dev/null
+# wait for the server's automatic security updates to let go of apt instead of failing the deploy
+apt-get -o DPkg::Lock::Timeout=600 update -qq
+DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y -qq python3-venv sqlite3 caddy >/dev/null
 
 echo "== App user and folders"
 id psw >/dev/null 2>&1 || useradd --system --home-dir "$DATA" --shell /usr/sbin/nologin psw
