@@ -216,7 +216,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="sec" id="fileSec">
       <h3>Files</h3>
-      <div class="row" id="upRow"><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
+      <div class="drop row" id="upRow" style="padding:10px 12px;margin-bottom:8px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
       <div class="msg" id="fileMsg"></div>
       <ul class="files" id="files"></ul>
     </div>
@@ -860,11 +860,17 @@ function renderFiles(){
   const fs=(cur&&cur.files)||[];
   $('files').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
-$('fileIn').onchange=async()=>{
-  const list=[...$('fileIn').files];$('fileIn').value='';if(!list.length)return;if(!(await ensureSaved()))return;
+async function addFiles(list){
+  if(!list.length||!assets)return;if(!(await ensureSaved()))return;
   const m=$('fileMsg');m.className='msg';
   for(const f of list)await uploadOne(f);
-};
+}
+$('fileIn').onchange=()=>{const list=[...$('fileIn').files];$('fileIn').value='';addFiles(list)};
+// drag files from the computer onto the Files box to attach them to this lead
+{const fz=$('upRow');
+['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(assets)fz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+fz.addEventListener('drop',e=>addFiles([...(e.dataTransfer.files||[])]));}
 // Some computers' PDF uploads are refused by file storage; then the PDF is stored as base64 text and decoded when read back
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function storeBytes(buf,type){
