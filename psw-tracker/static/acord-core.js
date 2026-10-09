@@ -436,7 +436,8 @@
         let size = (fld.acroField.getDefaultAppearance() || '').match(/([\d.]+)\s+Tf/); size = size ? parseFloat(size[1]) : 10;
         if (!fld.isMultiline()) {
           while (size > 6 && helv.widthOfTextAtSize(text, size) > r.width - 4) size -= 0.5;
-          size = Math.min(size, Math.max(6, r.height - 2));
+          // the 140's boxes are short; let its text use the full box height so it reads at the same size as the coverage lines
+          size = Math.min(size, Math.max(6, form === '140' ? r.height : r.height - 2));
         } else {
           const lines = text.split('\n');
           const est = () => lines.reduce((a, ln) => a + Math.max(1, Math.ceil(helv.widthOfTextAtSize(ln, size) / (r.width - 6))), 0) * size * 1.17;
