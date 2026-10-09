@@ -576,8 +576,11 @@ const VEH_KEYS=['year','make','model','body','vin','value','gvw','radius'];
 function fillVehicleZips(v){const z=zipOf(v.garaging_address)||zipOf(v.mailing_address);if(!z)return;
   for(let n=1;n<=6;n++)if(!v[`v${n}_use`]&&VEH_KEYS.some(k=>String(v[`v${n}_${k}`]||'').trim()))v[`v${n}_use`]=z}
 // without Claude (basic mode): the sheets the picker asks for, built from the lead's fields
-async function basicSheets(n,which){if(!n)return '';const as=which==='auto'||which==='both'?await makeAutoSheet(null,true):'';
-  return (which==='auto'?'':await makeQuoteSheet(null))+as}
+async function basicSheets(n,which,f){if(!n)return '';f=f||{};
+  const wantA=which==='auto'||which==='both'||(which==='detect'&&hasAuto(f.auto)),wantQ=which==='quote'||which==='both'||(which==='detect'&&!(wantA&&f.autoOnly));
+  const as=wantA?await makeAutoSheet(f.auto||null,true):'';return (wantQ?await makeQuoteSheet(f.quote||null):'')+as}
+// basic (no Claude) read: labeled web-form answers first, then the simple patterns
+function basicRead(text){const f=formFill(text),o=regexFill(text);if(f)for(const [k,v] of Object.entries(f.lead))if(v)o[k]=v;return {lead:o,f}}
 // Build "<client> com auto quote sheet.pdf" from what was pasted (now if saved, else on Save)
 async function makeAutoSheet(q,force){
   if(!assets)return '';if(!q||typeof q!=='object'){if(!force)return '';q={}}
@@ -721,6 +724,51 @@ function regexFill(t){
   o.company=g(/(?:company|business|dba|insured|client)(?:\s*name)?\s*[:\-]\s*([^\n]+)/i);
   return o;
 }
+// web-form emails ("Label" line, then the answer on an indented line): read every answer by its label, no Claude needed
+function formFill(t){
+  const L=String(t||'').replace(/\r/g,'').split('\n'),ind=x=>/^[ \t\u00a0]+\S/.test(x),pairs=[];
+  for(let i=0;i<L.length;i++){if(!ind(L[i]))continue;let k=i-1;while(k>=0&&(!L[k].trim()||ind(L[k])))k--;if(k<0)continue;
+    let v=L[i].replace(/^[\s\u00a0•·*-]+/,'').trim();const label=L[k].trim();
+    if(/address/i.test(label))for(let j=i+1;j<L.length&&L[j].trim()&&!ind(L[j]);j++){const x=L[j].trim();if(!/^(united states|usa|map it)$/i.test(x))v+=', '+x}
+    // more answers under the same label (bullet lists)
+    const prev=pairs.length&&pairs[pairs.length-1];if(prev&&prev.i===k)prev.v+=', '+v;else pairs.push({label,v,i:k})}
+  if(pairs.length<3)return null;
+  const lead={},quote={},auto={},seek=[];let biz='',drv=1,veh=1;
+  const yn=v=>/^(y|yes)\b/i.test(v)?'Yes':/^(n|no)\b/i.test(v)?'No':v,num=(l,d)=>{const m=l.match(/#\s*(\d+)/);return m?+m[1]:d};
+  const dmy=v=>{const m=v.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/);return m?`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3].length===2?'19'+m[3]:m[3]}`:v};
+  const ent=v=>/llc|limited liability/i.test(v)?'LLC':/corp|inc\b/i.test(v)?'Corporation':/partner/i.test(v)?'Partnership':/individual|sole/i.test(v)?'Individual':v;
+  for(const {label:l,v} of pairs){if(!v)continue;
+    if(/driving record/i.test(l)){auto['d'+num(l,drv)+'_activity']=v;continue}
+    if(/^driver\b|driver\s*#/i.test(l)){drv=num(l,drv);const d='d'+drv+'_';
+      if(/birth|dob/i.test(l))auto[d+'dob']=dmy(v);else if(/licen[cs]e/i.test(l))auto[d+'dl']=v;
+      else{const p=v.split(/\s+/);auto[d+'first']=p[0];auto[d+'last']=p.slice(1).join(' ')}continue}
+    if(/commercial driver|\bcdl\b/i.test(l)){auto['d'+drv+'_cdl']=yn(v);continue}
+    if(/^vehicle\b|vehicle\s*#/i.test(l)){veh=num(l,veh);const k='v'+veh+'_';
+      if(/worth|value/i.test(l))auto[k+'value']=v;
+      else if(/equipment/i.test(l))auto[k+'body']=(auto[k+'body']?auto[k+'body']+', ':'')+'equip '+v;
+      else{const vin=v.match(/\b[A-HJ-NPR-Z0-9]{17}\b/i);if(vin)auto[k+'vin']=vin[0].toUpperCase();const rest=v.replace(vin?vin[0]:'','').trim();
+        const m=rest.match(/^((?:19|20)\d\d)\s+(\S+)\s*(.*)$/);if(m){auto[k+'year']=m[1];auto[k+'make']=m[2];if(m[3])auto[k+'model']=m[3]}}
+      continue}
+    if(/^(full |your |contact )?name$/i.test(l)){const p=v.split(/\s+/);lead.firstName=p[0];lead.lastName=p.slice(1).join(' ');quote.contact_first=lead.firstName;quote.contact_last=lead.lastName;auto.owner_first=lead.firstName;auto.owner_last=lead.lastName;auto.contact_name=v}
+    else if(/business name|dba|company/i.test(l)){lead.company=v;quote.client_name=auto.client_name=v}
+    else if(/address/i.test(l)){quote.mailing_address=auto.mailing_address=auto.garaging_address=v}
+    else if(/e-?mail/i.test(l)){lead.email=quote.email=auto.email=v}
+    else if(/phone/i.test(l)){lead.phone=quote.phone=auto.phone=v}
+    else if(/structure|entity/i.test(l))quote.entity_type=auto.entity_type=ent(v);
+    else if(/current insurance|currently insured|insurance that is in force/i.test(l))quote.currently_insured=auto.currently_insured=yn(v);
+    else if(/type of business/i.test(l))biz=biz?biz+', '+v:v;
+    else if(/gross receipts|revenue|annual sales/i.test(l))quote.gross_receipts=v;
+    else if(/describe your business|business description|description of/i.test(l))quote.description=auto.description=v;
+    else if(/types? of insurance|coverage (you are )?seeking|seeking/i.test(l))seek.push(...v.split(/,\s*/));
+    else if(/year.*(start|establish|founded)/i.test(l))quote.year_started=auto.year_started=v;
+    else if(/how many employees|number of employees/i.test(l))quote.full_time=v;
+    else if(/claims|losses/i.test(l))quote.claims=auto.claims=v}
+  if(biz){quote.description=quote.description?`${biz}: ${quote.description}`:biz;auto.description=quote.description;
+    const lt=LEAD_TYPES.find(x=>x.toLowerCase()===biz.toLowerCase());if(lt)lead.leadType=lt}
+  if(!lead.leadType&&(lead.company||quote.description))lead.leadType='Commercial';
+  return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
+}
+const hasAuto=a=>!!a&&Object.keys(a).some(k=>/^[dv]\d+_/.test(k));
 function apply(o){
   let n=0;
   const set=(k,v)=>{v=String(v||'').trim();if(!v)return;if(k==='phone')v=fmtPhone(v);if(k==='leadDate'&&!/^\d{4}-\d\d-\d\d$/.test(v))return;$(k).value=v;n++};
@@ -758,11 +806,11 @@ ${text?'\nContent:\n"""\n'+text.slice(0,40000)+'\n"""':''}`;
       const as=!n||which==='quote'?'':await makeAutoSheet(au,which!=='detect');
       const qs=n&&(which==='quote'||which==='both'||(which==='detect'&&!(as&&o.autoOnly===true)))?await makeQuoteSheet(o&&o.quote):'';
       m.className='msg ok';m.textContent=n?`Filled ${n} field${n===1?'':'s'}${qs}${as}. Check them, then Save.`:'Couldn’t find lead details in that.';
-    }catch(e){if(text){const n=apply(regexFill(text));const qs=await basicSheets(n,which);m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} field${n===1?'':'s'}${qs}.`:'')}else{m.className='msg err';m.textContent=sampleErr(e.code)}}
+    }catch(e){if(text){const b=basicRead(text),n=apply(b.lead);const qs=await basicSheets(n,which,b.f);m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} field${n===1?'':'s'}${qs}.`:'')}else{m.className='msg err';m.textContent=sampleErr(e.code)}}
     $('fillStop').hidden=true;$('fillBtn').disabled=false;fillCtl=null;
   }else{
     if(!text){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t available in this view.';return}
-    const n=apply(regexFill(text));const qs=await basicSheets(n,which);m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} field${n===1?'':'s'} (basic mode)${qs}. Check them, then Save.`:'Couldn’t find lead details in that.';
+    const b=basicRead(text),n=apply(b.lead);const qs=await basicSheets(n,which,b.f);m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} field${n===1?'':'s'} (basic mode)${qs}. Check them, then Save.`:'Couldn’t find lead details in that.';
   }
 }
 $('fillStop').onclick=()=>fillCtl&&fillCtl.abort();
