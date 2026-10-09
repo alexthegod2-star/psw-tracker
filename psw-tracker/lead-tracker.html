@@ -165,7 +165,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
       <textarea id="dropText" placeholder="Paste text from an email, web form, text message…"></textarea>
-      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">New quote sheet</button><button class="pri" id="newAuto">New com auto quote sheet</button></div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button></div>
       <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
       <div class="msg" id="fillMsg"></div>
     </div>
@@ -594,7 +594,7 @@ async function makeAutoSheet(q){
     addPending(file);return `, and a com auto quote sheet is ready to attach when you save`;
   }catch(e){return ` (the com auto quote sheet couldn’t be made: ${e.message||'error'})`}
 }
-// "New quote sheet" / "New com auto quote sheet": start one from the lead's details, attach it, and open it to fill in
+// "Com quote" / "Com auto quote" buttons: start one from the lead's details, attach it, and open it to fill in
 async function newSheet(kind){
   const m=$('fillMsg');m.className='msg';
   if(!assets){m.className='msg err';m.textContent='You have view-only access, so you can’t add files.';return}
