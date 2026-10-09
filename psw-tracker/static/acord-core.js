@@ -124,7 +124,7 @@
   function parseQuotePdfFields(fields) {
     const data = {};
     DATA_FIELDS.forEach(([k]) => data[k] = '');
-    const BPART = { address: 'address', yr: 'year_built', sqft: 'sqft', const: 'construction', roof: 'roof', dwelling: 'dwelling', bpp: 'bpp', rents: 'rents' };
+    const BPART = { address: 'address', yr: 'year_built', sqft: 'sqft', const: 'construction', roof: 'roof', dwelling: 'dwelling', bpp: 'bpp', rents: 'rents', wiring: 'wiring', roofup: 'roofup', plumbing: 'plumbing', heating: 'heating' };
     let first = '', last = '';
     for (const [name, raw] of Object.entries(fields)) {
       const v = clean(raw); if (!v) continue;
@@ -140,6 +140,11 @@
     if (data.bldg1_dwelling) out.p_amt1 = data.bldg1_dwelling;
     if (data.bldg1_bpp) out.p_amt2 = data.bldg1_bpp;
     if (data.bldg1_rents) { out.p_subj3 = 'Loss of Rents'; out.p_amt3 = data.bldg1_rents; }
+    // building 1 update years go on the 140's Building Improvements (which also ticks each box)
+    if (data.bldg1_wiring) out.p_wiring_yr = data.bldg1_wiring;
+    if (data.bldg1_roofup) out.p_roof_yr = data.bldg1_roofup;
+    if (data.bldg1_plumbing) out.p_plumbing_yr = data.bldg1_plumbing;
+    if (data.bldg1_heating) out.p_heating_yr = data.bldg1_heating;
     return out;
   }
 
