@@ -306,7 +306,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
   </div>
 </aside>
-<datalist id="assignList"></datalist><datalist id="lobList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
+<datalist id="assignList"></datalist><datalist id="lobList"></datalist><datalist id="coList"></datalist><datalist id="gaList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
 <div class="ed" id="ed" aria-hidden="true">
   <div class="edh"><span class="nm" id="edName"></span>
     <button id="edAdd" title="Click on the page to type text">+ Add text</button>
@@ -358,8 +358,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <h3 id="polTitleH">Policy</h3>
   <div class="grid">
     <div><label for="ppLine">Line of business</label><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"></div>
-    <div><label for="ppCarrier">General Agent</label><input id="ppCarrier" data-pp="carrier"></div>
-    <div><label for="ppCompany">Company</label><input id="ppCompany" data-pp="company"></div>
+    <div><label for="ppCarrier">General Agent</label><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"></div>
+    <div><label for="ppCompany">Company</label><input id="ppCompany" data-pp="company" list="coList" autocomplete="off" placeholder="Type or pick"></div>
     <div><label for="ppNumber">Policy #</label><input id="ppNumber" data-pp="number"></div>
     <div><label for="ppEff">Eff date</label><input id="ppEff" data-pp="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="ppExp">Exp date</label><input id="ppExp" data-pp="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
@@ -1595,12 +1595,17 @@ const LOBS=['Personal Auto','Personal Home','Rental Dwelling','Earthquake','DIC'
 // line of business: type to narrow the list and pick; an older typed-in value (e.g. "GL") is kept as is
 const setLob=(el,v)=>{el.value=String(v||'').trim()};
 $('lobList').innerHTML=LOBS.map(x=>`<option value="${esc(x)}">`).join('');
-// leaving the box with a partial word picks the one line it matches ("work" -> Workers Comp)
-document.addEventListener('change',e=>{const el=e.target;if(!el||el.getAttribute('list')!=='lobList')return;const v=el.value.trim().toLowerCase();if(!v)return;
-  const hit=LOBS.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(LOBS.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(LOBS.filter(x=>x.toLowerCase().includes(v)));
+// policy General Agent and Company lists (A-Z); other names can still be typed
+const COMPANIES=['Kemper','Progressive','Bristol West','Mercury/SmartChoice','Aspire','Safeway','Crum and Forster','Richmond National','Ategrity'].sort((a,b)=>a.localeCompare(b));
+$('coList').innerHTML=COMPANIES.map(x=>`<option value="${esc(x)}">`).join('');
+const GAS=['Greenwood General','Baker and Bonds','Burns and Wilcox'].sort((a,b)=>a.localeCompare(b));
+$('gaList').innerHTML=GAS.map(x=>`<option value="${esc(x)}">`).join('');
+// leaving a line of business, GA or company box with a partial word picks the one it matches ("work" -> Workers Comp)
+document.addEventListener('change',e=>{const el=e.target,L=el&&{lobList:LOBS,coList:COMPANIES,gaList:GAS}[el.getAttribute&&el.getAttribute('list')];if(!L)return;const v=el.value.trim().toLowerCase();if(!v)return;
+  const hit=L.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().includes(v)));
   if(hit&&hit!==el.value)el.value=hit},true);
 const polRow=p=>{p=p||{};const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input data-p="line" list="lobList" autocomplete="off" placeholder="Type or pick"></td><td><input data-p="carrier"></td><td><input data-p="company"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
+  tr.innerHTML=`<td><input data-p="line" list="lobList" autocomplete="off" placeholder="Type or pick"></td><td><input data-p="carrier" list="gaList" autocomplete="off"></td><td><input data-p="company" list="coList" autocomplete="off"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
   for(const k of ['carrier','company','number','premium','notes'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';setLob(tr.querySelector('[data-p=line]'),p.line);
   for(const k of ['eff','exp'])tr.querySelector(`[data-p=${k}]`).value=fmtDate(p[k]||'');
   $('polRows').appendChild(tr)};
