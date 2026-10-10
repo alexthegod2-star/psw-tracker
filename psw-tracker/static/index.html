@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/claude-shim.js"></script></head><body><!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>PSW Lead Tracker</title>
+<title>Pacific Southwest Insurance Services Database</title>
 <style>
 :root{--panel:#eef5ff;--drbg:#d5e5f9;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#171e27;--drbg:#0f141a;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}}
@@ -9,6 +9,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-ap
 .wrap{max-width:none;margin:0 auto;padding:20px 24px 60px}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
 h1{font-size:22px;margin:0}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}.brand img{height:52px;width:auto;flex:none}
+@media (max-width:520px){.brand img{height:40px}h1{font-size:18px}}
 .sub{color:var(--mute);font-size:13px}
 button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
@@ -137,7 +139,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 
 <div class="wrap">
   <header>
-    <div><h1>PSW Lead Tracker</h1><div class="sub" id="count">Loading leads…</div></div>
+    <div class="brand"><img src="psw-logo.png" alt="PSW logo" onerror="this.remove()"><div><h1>PACIFIC SOUTHWEST INSURANCE SERVICES DATABASE</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <button class="pri" id="newBtn">+ New lead</button>
   </header>
   <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button></nav>
