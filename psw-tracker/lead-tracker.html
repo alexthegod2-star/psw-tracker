@@ -1596,7 +1596,7 @@ const LOBS=['Personal Auto','Personal Home','Rental Dwelling','Earthquake','DIC'
 const setLob=(el,v)=>{el.value=String(v||'').trim()};
 $('lobList').innerHTML=LOBS.map(x=>`<option value="${esc(x)}">`).join('');
 // policy General Agent and Company lists (A-Z); other names can still be typed
-const COMPANIES=['Kemper','Progressive','Bristol West','Mercury/SmartChoice','Aspire','Safeway','Crum and Forster','Richmond National','Ategrity'].sort((a,b)=>a.localeCompare(b));
+const COMPANIES=['Kemper','Progressive','Bristol West','Mercury/SmartChoice','Aspire','Safeway','Crum and Forster','Richmond National','Ategrity','Bamboo/Incline Casualty','Lightspeed'].sort((a,b)=>a.localeCompare(b));
 $('coList').innerHTML=COMPANIES.map(x=>`<option value="${esc(x)}">`).join('');
 const GAS=['Greenwood General','Baker and Bonds','Burns and Wilcox'].sort((a,b)=>a.localeCompare(b));
 $('gaList').innerHTML=GAS.map(x=>`<option value="${esc(x)}">`).join('');
