@@ -1114,9 +1114,9 @@ $('files').addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.
   const dt=e.dataTransfer;dt.effectAllowed='copy';li.classList.add('dragging');
   if(!slot||!slot.file){toast('Still loading that file, try again in a second.');dt.setData('text/plain',f.name);return}
   const url=f.enc==='b64'?slot.url:new URL('/_blob/'+f.id,location.href).href;
+  // only the file itself goes along: with a plain-text name in the drag too, Outlook pastes the name instead of attaching the file
   try{dt.setData('DownloadURL',`${slot.file.type}:${f.name.replace(/:/g,'-')}:${url}`)}catch(_){}
-  try{dt.items.add(slot.file)}catch(_){}
-  dt.setData('text/plain',f.name);dt.setData('application/x-psw-file',f.id)});
+  dt.setData('application/x-psw-file',f.id)});
 $('files').addEventListener('dragend',e=>{const li=e.target.closest&&e.target.closest('li[data-drag]');if(li)li.classList.remove('dragging')});
 // drag files from the computer onto the Files box to attach them to this lead (a file dragged from this same list is ignored)
 {const fz=$('upRow'),own=e=>[...(e.dataTransfer.types||[])].includes('application/x-psw-file');
