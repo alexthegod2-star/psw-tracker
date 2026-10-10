@@ -91,7 +91,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 #c2Box{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#c2Box .mpick{max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px}#c2Box .mpick .small{margin-left:auto}
 #txBox{width:min(520px,100%)}
 #clientBox{background:var(--drbg);width:95vw;max-width:100%;height:calc(100vh - 32px);max-height:calc(100vh - 32px);overflow-y:auto;padding:24px 28px}#clientBox #clNotes{min-height:140px}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
-.poltab input,.poltab select{width:100%;min-width:70px;padding:5px 6px}.poltab select{min-width:150px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
+.poltab input,.poltab select{width:100%;min-width:70px;padding:5px 6px}.poltab select,.poltab [data-p=line]{min-width:150px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
 #polBox{width:min(680px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}.poltab td{padding:3px 4px}.poltab th{position:static;background:#cdebd5;color:#2f5d3e}.poltab th:first-child{border-top-left-radius:11px}.poltab th:last-child{border-top-right-radius:11px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .poltab th{background:#1f3a2b;color:#b9e3c6}}:root[data-theme="dark"] .poltab th{background:#1f3a2b;color:#b9e3c6}
 .bsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 14px}.bsum div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.bsum span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em}.bsum b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}.bsum .hl{border-color:var(--acc);background:var(--soft)}
@@ -306,7 +306,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
   </div>
 </aside>
-<datalist id="assignList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
+<datalist id="assignList"></datalist><datalist id="lobList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
 <div class="ed" id="ed" aria-hidden="true">
   <div class="edh"><span class="nm" id="edName"></span>
     <button id="edAdd" title="Click on the page to type text">+ Add text</button>
@@ -357,7 +357,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
   <h3 id="polTitleH">Policy</h3>
   <div class="grid">
-    <div><label for="ppLine">Line of business</label><select id="ppLine" data-pp="line"></select></div>
+    <div><label for="ppLine">Line of business</label><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"></div>
     <div><label for="ppCarrier">General Agent</label><input id="ppCarrier" data-pp="carrier"></div>
     <div><label for="ppCompany">Company</label><input id="ppCompany" data-pp="company"></div>
     <div><label for="ppNumber">Policy #</label><input id="ppNumber" data-pp="number"></div>
@@ -1586,10 +1586,15 @@ function renderClients(){
 ['ctb','ccards'].forEach(id=>$(id).addEventListener('click',e=>{const r=e.target.closest('[data-client]');if(r)openClient(clients.find(c=>c.id===r.dataset.client))}));
 // policy rows: dates type as MM/DD/YYYY, exp fills in a year after eff
 const LOBS=['Personal Auto','Personal Home','Rental Dwelling','Earthquake','DIC','Secondary Home','Commercial Auto','Commercial Property','General Liability','Workers Comp','Umbrella/Excess','CSLB Bond','BOP'];
-// line of business dropdown; an older typed-in value (e.g. "GL") stays as its own choice so nothing is lost
-const setLob=(sel,v)=>{v=String(v||'').trim();sel.innerHTML='<option value="">Pick one</option>'+[...LOBS,...(v&&!LOBS.includes(v)?[v]:[])].map(x=>`<option>${esc(x)}</option>`).join('');sel.value=v};
+// line of business: type to narrow the list and pick; an older typed-in value (e.g. "GL") is kept as is
+const setLob=(el,v)=>{el.value=String(v||'').trim()};
+$('lobList').innerHTML=LOBS.map(x=>`<option value="${esc(x)}">`).join('');
+// leaving the box with a partial word picks the one line it matches ("work" -> Workers Comp)
+document.addEventListener('change',e=>{const el=e.target;if(!el||el.getAttribute('list')!=='lobList')return;const v=el.value.trim().toLowerCase();if(!v)return;
+  const hit=LOBS.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(LOBS.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(LOBS.filter(x=>x.toLowerCase().includes(v)));
+  if(hit&&hit!==el.value)el.value=hit},true);
 const polRow=p=>{p=p||{};const tr=document.createElement('tr');
-  tr.innerHTML=`<td><select data-p="line"></select></td><td><input data-p="carrier"></td><td><input data-p="company"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
+  tr.innerHTML=`<td><input data-p="line" list="lobList" autocomplete="off" placeholder="Type or pick"></td><td><input data-p="carrier"></td><td><input data-p="company"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
   for(const k of ['carrier','company','number','premium','notes'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';setLob(tr.querySelector('[data-p=line]'),p.line);
   for(const k of ['eff','exp'])tr.querySelector(`[data-p=${k}]`).value=fmtDate(p[k]||'');
   $('polRows').appendChild(tr)};
