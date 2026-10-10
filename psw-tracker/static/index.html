@@ -44,6 +44,7 @@ tbody tr:last-child td{border-bottom:none}
 .mbox h3{margin:0 0 6px;font-size:18px}.mbox p{margin:0 0 16px;color:var(--mute)}
 .mbox .row{justify-content:flex-end}
 button.delrow{padding:3px 8px;font-size:12px}
+#contactSec .grid3{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:560px){#contactSec .grid3{grid-template-columns:1fr 1fr}}
 #contactSec button[data-q].done{background:var(--ok);border-color:var(--ok)}
 .chip{display:inline-block;background:var(--chip);border-radius:999px;padding:2px 9px;font-size:12px}
 .empty{padding:48px 16px;text-align:center;color:var(--mute)}
@@ -251,8 +252,14 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       </div>
       <div class="row" style="margin-top:8px"><button class="pri" id="logBtn">Add contact</button><button id="textBtn">Text customer</button><span class="small" id="logHint"></span></div>
       <div class="small" style="margin:12px 0 6px;font-weight:600">Quick log (uses the time now, plus any notes above)</div>
+      <div class="grid3" style="margin-bottom:8px">
+        <div><label for="txLob">Line of biz</label><input id="txLob" list="typeList" placeholder="e.g. Petting zoo"></div>
+        <div><label for="txEst">Estimate</label><input id="txEst" placeholder="$3,500-$4,000"></div>
+        <div><label for="txCov">Type of cov</label><input id="txCov" placeholder="general liability"></div>
+        <div><label for="txTerm">Term</label><input id="txTerm" placeholder="the year"></div>
+      </div>
       <div class="row" id="quickLog">
-        <button class="pri" data-q="First text" data-label="First text petting zoo" data-how="Text">First text petting zoo</button><button class="pri" data-q="Follow up text" data-how="Text">Follow up text</button><button class="pri" data-q="Follow up text 2" data-how="Text">Follow up text 2</button>
+        <button class="pri" data-q="First text" data-how="Text">First text</button><button class="pri" data-q="Follow up text" data-how="Text">Follow up text</button><button class="pri" data-q="Follow up text 2" data-how="Text">Follow up text 2</button>
       </div>
       <div class="row" style="margin-top:6px">
         <button class="pri" data-q="First email" data-how="Email">First email</button><button class="pri" data-q="Follow up email" data-how="Email">Follow up email</button><button class="pri" data-q="Email 3" data-how="Email">Email 3</button>
@@ -453,7 +460,7 @@ let view='leads',pending=[],leads=[],sortK='leadDate',sortDir=-1,cur=null,curUns
 const AGENTS=['Alex K','Paul M','Victor Q','Anna C','Patricia G'];
 const LEAD_SOURCES=['Baker','PSW client','AI search','PSW web','Other','Victor','Shai','Paul','Internet'];
 const LEAD_TYPES=['Commercial','Personal','Workers comp','Referral','Renewal','Golf sim','Xmas lights','Party bus','Petting zoo'];
-const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','homePhone','workPhone','email','leadType','leadNotes','leadSource','xDate'];
+const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','homePhone','workPhone','email','leadType','leadNotes','leadSource','xDate','txLob','txEst','txCov','txTerm'];
 
 /* ---------- list ---------- */
 leadsCol.onSnapshot(s=>{
@@ -517,7 +524,7 @@ function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').valu
 function openLead(l){
   if(curUnsub){curUnsub();curUnsub=null}
   cur=l?{...l}:null;contacts=[];
-  FIELDS.forEach(k=>$(k).value=l?(l[k]||''):'');
+  FIELDS.forEach(k=>$(k).value=l?(l[k]||''):'');if(!$('txTerm').value)$('txTerm').value='the year'; // Term starts as "the year"
   $('xDate').value=fmtDate($('xDate').value);
   if(!l)$('leadDate').value=todayISO();
   $('dTitle').textContent=l?([l.firstName,l.lastName].filter(Boolean).join(' ')||l.company||'Lead'):'New lead';
@@ -1024,9 +1031,11 @@ async function syncLatest(){
 }
 let quickStep='';
 // First text: copies Alex's first-text message (filled from the lead) and opens a new Google Messages chat; on a phone it opens the texting app with it filled in
-const FIRST_TEXT='Hi {first}, I received your insurance request for your {lead} I have an estimate of $3,500-$4,000 for general liability for the year.  Let me know if you want a firm quote.  If you have any questions call me. Alex K Pacific Southwest Ins Serv.';
-const firstText=()=>{const lead=[$('leadType').value.trim(),$('company').value.trim()].filter(Boolean).join(' ');
-  return FIRST_TEXT.replace('{first}',$('firstName').value.trim()||'there').replace(lead?'{lead}':' for your {lead}',lead?lead:'.')};
+// Alex's wording; the Line of biz, Estimate, Type of cov and Term boxes above the button fill it in (a blank box keeps the usual wording; 2,000-2,500 becomes $2,000-$2,500)
+const FIRST_TEXT='Hi {first}, I received your insurance request for your {lead} I have an estimate of {est} for {cov} for {term}.  Let me know if you want a firm quote.  If you have any questions feel free to call me anytime.  Alex K Pacific Southwest Ins Serv.';
+const firstText=()=>{const lead=[$('txLob').value.trim()||$('leadType').value.trim(),$('company').value.trim()].filter(Boolean).join(', ');
+  const est=$('txEst').value.trim().replace(/(^|[-–]\s*)(\d)/g,'$1$$$2')||'$3,500-$4,000',cov=$('txCov').value.trim()||'general liability',term=$('txTerm').value.trim()||'the year';
+  return FIRST_TEXT.replace('{first}',$('firstName').value.trim()||'there').replace(lead?'{lead}':' for your {lead}',lead?lead:'.').replace('{est}',est).replace('{cov}',cov).replace('{term}',term)};
 function sendFirstText(){const msg=firstText(),d=$('phone').value.replace(/\D/g,''),num=d.length===10?'+1'+d:d;
   if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){location.href=`sms:${num}${/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?'}body=${encodeURIComponent(msg)}`;return}
   navigator.clipboard.writeText(msg).then(()=>toast('First text copied: paste the number in To, then paste the message'),()=>toast('Couldn’t copy the message'));
