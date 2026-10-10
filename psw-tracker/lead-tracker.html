@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>PSW Lead Tracker</title>
+<title>Pacific Southwest Insurance Services Database</title>
 <style>
 :root{--panel:#eef5ff;--drbg:#d5e5f9;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#171e27;--drbg:#0f141a;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}}
@@ -9,6 +9,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-ap
 .wrap{max-width:none;margin:0 auto;padding:20px 24px 60px}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
 h1{font-size:22px;margin:0}
+header{display:grid;grid-template-columns:1fr auto 1fr}header>#newBtn{justify-self:end}
+.brand{grid-column:2;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0}.brand img{height:52px;width:auto;flex:none}
+@media (max-width:900px){header{grid-template-columns:1fr}.brand{grid-column:1}header>#newBtn{justify-self:center}}
+@media (max-width:520px){.brand img{height:40px}h1{font-size:18px}}
 .sub{color:var(--mute);font-size:13px}
 button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
@@ -72,6 +76,7 @@ button.delrow{padding:3px 8px;font-size:12px}
 .files li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .files .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .files .sz{color:var(--mute);font-size:12px}
+.files li[draggable=true]{cursor:grab}.files li.dragging{opacity:.5}.files .grip{color:var(--mute);font-size:16px;line-height:1;cursor:grab;user-select:none}
 a.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
 .mpick{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}.mpick label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;color:var(--ink);margin:0;cursor:pointer}
 .mpick input{width:auto;flex:none;margin:0}.brow{display:flex;gap:8px;align-items:center;font-size:14px}.brow label{margin:0;font-weight:400;font-size:14px;color:var(--ink);cursor:pointer}.nab{padding:1px 7px;font-size:11px;font-weight:600;border-radius:6px;color:var(--mute)}.nab.on{background:var(--mute);color:var(--card);border-color:var(--mute)}.brow.isna label{color:var(--mute);text-decoration:line-through}.mpick label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -85,8 +90,9 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .tasks{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.tli{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}.tli .tt{flex:1;min-width:0;cursor:pointer}.tli .small{white-space:nowrap}
 #c2Box{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#c2Box .mpick{max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px}#c2Box .mpick .small{margin-left:auto}
 #txBox{width:min(520px,100%)}
-#clientBox{width:min(820px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
-.poltab input{width:100%;min-width:70px;padding:5px 6px}.poltab td{padding:3px 4px}.poltab th{position:static}
+#clientBox{width:95vw;max-width:100%;height:calc(100vh - 32px);max-height:calc(100vh - 32px);overflow-y:auto;padding:24px 28px}#clientBox #clNotes{min-height:140px}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
+.poltab input{width:100%;min-width:70px;padding:5px 6px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
+#polBox{width:min(680px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}.poltab td{padding:3px 4px}.poltab th{position:static}
 .bsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 14px}.bsum div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.bsum span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em}.bsum b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}.bsum .hl{border-color:var(--acc);background:var(--soft)}
 .bmon{margin:0 0 18px}.bmh{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;margin:0 0 6px}.bmh h3{margin:0;font-size:16px}.bmh .sp{flex:1}.bmh button{padding:4px 12px}
 .bwrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
@@ -136,7 +142,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 
 <div class="wrap">
   <header>
-    <div><h1>PSW Lead Tracker</h1><div class="sub" id="count">Loading leads…</div></div>
+    <div class="brand"><img src="psw-logo.png" alt="PSW logo" onerror="this.remove()"><div><h1>PACIFIC SOUTHWEST INSURANCE SERVICES DATABASE</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <button class="pri" id="newBtn">+ New lead</button>
   </header>
   <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button></nav>
@@ -150,7 +156,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <table>
       <thead><tr>
         <th data-k="leadDate">Lead date</th><th data-k="assignedTo">Assigned to</th><th data-k="firstName">First</th><th data-k="lastName">Last</th>
-        <th data-k="company">Company</th><th data-k="phone">Phone</th><th data-k="email">Email</th><th data-k="leadType">Lead type</th>
+        <th data-k="company">Company</th><th data-k="phone">Cell</th><th data-k="email">Email</th><th data-k="leadType">Lead type</th>
         <th data-k="lastContacted">Last contacted</th><th data-k="xDate">X date</th><th data-k="howContacted">How</th><th data-k="nfiles">Files</th><th></th>
       </tr></thead>
       <tbody id="tb"></tbody>
@@ -222,8 +228,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
         <div><label for="firstName">First name</label><input id="firstName"></div>
         <div><label for="lastName">Last name</label><input id="lastName"></div>
         <div class="full"><label for="company">Company name</label><input id="company"></div>
-        <div><label for="phone">Phone number</label><input id="phone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="phone">Cell phone number</label><input id="phone" inputmode="tel" placeholder="(###)###-####"></div>
         <div><label for="email">Email</label><input id="email" type="email"></div>
+        <div><label for="homePhone">Home number</label><input id="homePhone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="workPhone">Work number</label><input id="workPhone" inputmode="tel" placeholder="(###)###-####"></div>
         <div><label for="leadType">Lead type</label><input id="leadType" list="typeList" placeholder="Pick or type a lead type"></div>
         <div><label>Last contacted</label><input id="lastShow" disabled placeholder="Set by contact log"></div>
         <div><label for="xDate">X date</label><input id="xDate" inputmode="numeric" placeholder="MM/DD/YYYY" title="When their current policy expires"></div>
@@ -345,6 +353,20 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="msg" id="clientMsg"></div>
   <div class="row"><button class="danger" id="clDel" style="margin-right:auto">Delete client</button><button id="clCancel">Cancel</button><button class="pri" id="clSave">Save client</button></div>
 </div></div>
+<div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
+  <h3 id="polTitleH">Policy</h3>
+  <div class="grid">
+    <div><label for="ppLine">Line</label><input id="ppLine" data-pp="line" placeholder="GL, WC, Auto…"></div>
+    <div><label for="ppCarrier">Carrier</label><input id="ppCarrier" data-pp="carrier"></div>
+    <div><label for="ppNumber">Policy #</label><input id="ppNumber" data-pp="number"></div>
+    <div><label for="ppPremium">Premium</label><input id="ppPremium" data-pp="premium" placeholder="$"></div>
+    <div><label for="ppEff">Eff date</label><input id="ppEff" data-pp="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
+    <div><label for="ppExp">Exp date</label><input id="ppExp" data-pp="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
+    <div class="full"><label for="ppNotes">Notes</label><textarea id="ppNotes" data-pp="notes" placeholder="Coverages, limits, deductibles, anything about this policy"></textarea></div>
+  </div>
+  <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
+  <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Done</button></div>
+</div></div>
 <div class="mbg" id="binDlg" role="dialog" aria-modal="true" aria-labelledby="binTitleH"><div class="mbox" id="binBox">
   <h3 id="binTitleH">Add sale</h3>
   <div class="grid">
@@ -427,7 +449,7 @@ let view='leads',pending=[],leads=[],sortK='leadDate',sortDir=-1,cur=null,curUns
 const AGENTS=['Alex K','Paul M','Victor Q','Anna C','Patricia G'];
 const LEAD_SOURCES=['Baker','PSW client','AI search','PSW web','Other','Victor','Shai','Paul','Internet'];
 const LEAD_TYPES=['Commercial','Personal','Workers comp','Referral','Renewal','Golf sim','Xmas lights','Party bus','Petting zoo'];
-const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','email','leadType','leadNotes','leadSource','xDate'];
+const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','homePhone','workPhone','email','leadType','leadNotes','leadSource','xDate'];
 
 /* ---------- list ---------- */
 leadsCol.onSnapshot(s=>{
@@ -448,8 +470,8 @@ function render(){
   let rows=leads.filter(l=>{
     if(ft&&l.leadType!==ft)return false;if(fa&&l.assignedTo!==fa)return false;
     if(!q)return true;
-    const hay=[l.firstName,l.lastName,l.company,l.email,l.phone,l.assignedTo,l.leadType].join(' ').toLowerCase();
-    return hay.includes(q)||(qd.length>=3&&String(l.phone||'').replace(/\D/g,'').includes(qd));
+    const hay=[l.firstName,l.lastName,l.company,l.email,l.phone,l.homePhone,l.workPhone,l.assignedTo,l.leadType].join(' ').toLowerCase();
+    return hay.includes(q)||(qd.length>=3&&[l.phone,l.homePhone,l.workPhone].some(x=>String(x||'').replace(/\D/g,'').includes(qd)));
   });
   rows.sort((a,b)=>{const va=sortK==='nfiles'?(a.files||[]).length:String(a[sortK]||''),vb=sortK==='nfiles'?(b.files||[]).length:String(b[sortK]||'');
     if(va===vb)return String(b.createdAt||'').localeCompare(String(a.createdAt||''));
@@ -501,14 +523,14 @@ function openLead(l){
   const has=!!l;
   $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
-  $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each');
+  $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each. Drag a file out to your desktop or an email.');
   $('log').innerHTML=has?'':'';renderFiles();
   if(has){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
   show(true);setTimeout(()=>$(has?'cNote':'firstName').focus(),220);
 }
-$('phone').addEventListener('blur',()=>$('phone').value=fmtPhone($('phone').value));
+['phone','homePhone','workPhone'].forEach(k=>$(k).addEventListener('blur',()=>$(k).value=fmtPhone($(k).value)));
 $('xDate').addEventListener('blur',()=>$('xDate').value=fmtDate(typedISO($('xDate').value)));
 
 async function ensureSaved(){
@@ -520,7 +542,7 @@ async function ensureSaved(){
 }
 $('saveBtn').onclick=async()=>{
   const m=$('saveMsg');m.className='msg';m.textContent='Saving…';
-  $('phone').value=fmtPhone($('phone').value);
+  ['phone','homePhone','workPhone'].forEach(k=>$(k).value=fmtPhone($(k).value));
   const data={};FIELDS.forEach(k=>data[k]=$(k).value.trim());
   data.xDate=typedISO(data.xDate);$('xDate').value=fmtDate(data.xDate);
   $('saveBtn').disabled=true;
@@ -1072,7 +1094,8 @@ const EXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jp
 function renderFiles(){
   renderMail();
   const fs=(cur&&cur.files)||[];
-  $('files').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+  warmFiles(fs);
+  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
 async function addFiles(list){
   if(!list.length||!assets)return;if(!(await ensureSaved()))return;
@@ -1080,11 +1103,25 @@ async function addFiles(list){
   for(const f of list)await uploadOne(f);
 }
 $('fileIn').onchange=()=>{const list=[...$('fileIn').files];$('fileIn').value='';addFiles(list)};
-// drag files from the computer onto the Files box to attach them to this lead
-{const fz=$('upRow');
-['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(assets)fz.classList.add('over')}));
-['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
-fz.addEventListener('drop',e=>addFiles([...(e.dataTransfer.files||[])]));}
+// Drag a file out of the lead: the bytes are fetched ahead of time because a drag has to be set up instantly.
+// Chrome/Edge save it where it's dropped (desktop, a folder, an email); web pages like Outlook on the web get the file itself.
+const dragCache=new Map(); // file id -> {file, url}
+function warmFiles(fs){for(const f of fs){if(dragCache.has(f.id))continue;const slot={};dragCache.set(f.id,slot);
+  fileBytes(f).then(b=>{const type=f.type||EXT[(f.name.split('.').pop()||'').toLowerCase()]||'application/octet-stream';slot.file=new File([b],f.name,{type});slot.url=URL.createObjectURL(slot.file)}).catch(()=>dragCache.delete(f.id))}}
+$('files').addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.closest('li[data-drag]');if(!li)return;
+  const f=((cur&&cur.files)||[]).find(x=>x.id===li.dataset.drag),slot=f&&dragCache.get(f.id);if(!f)return;
+  const dt=e.dataTransfer;dt.effectAllowed='copy';li.classList.add('dragging');
+  if(!slot||!slot.file){toast('Still loading that file, try again in a second.');dt.setData('text/plain',f.name);return}
+  const url=f.enc==='b64'?slot.url:new URL('/_blob/'+f.id,location.href).href;
+  try{dt.setData('DownloadURL',`${slot.file.type}:${f.name.replace(/:/g,'-')}:${url}`)}catch(_){}
+  try{dt.items.add(slot.file)}catch(_){}
+  dt.setData('text/plain',f.name);dt.setData('application/x-psw-file',f.id)});
+$('files').addEventListener('dragend',e=>{const li=e.target.closest&&e.target.closest('li[data-drag]');if(li)li.classList.remove('dragging')});
+// drag files from the computer onto the Files box to attach them to this lead (a file dragged from this same list is ignored)
+{const fz=$('upRow'),own=e=>[...(e.dataTransfer.types||[])].includes('application/x-psw-file');
+['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{if(own(e))return;e.preventDefault();if(assets)fz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{if(own(e))return;e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+fz.addEventListener('drop',e=>{if(!own(e))addFiles([...(e.dataTransfer.files||[])])});}
 // Some computers' PDF uploads are refused by file storage; then the PDF is stored as base64 text and decoded when read back
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function storeBytes(buf,type){
@@ -1493,7 +1530,7 @@ $('tDel').onclick=async()=>{const b=$('tDel');if(!editTask)return;if(!b.dataset.
   try{await tasksCol.doc(editTask.id).delete();closeTask();toast('Task deleted')}catch(e){$('taskMsg').className='msg err';$('taskMsg').textContent=errText(e)}};
 
 /* ---------- PSW clients: clients/<id> {company, dba, firstName, lastName, phone, email, address, agent, since YYYY-MM-DD, leadId, notes,
-   policies:[{line, carrier, number, eff, exp (YYYY-MM-DD), premium}], createdAt, createdBy} ---------- */
+   policies:[{line, carrier, number, eff, exp (YYYY-MM-DD), premium, notes}], createdAt, createdBy} ---------- */
 const clientsCol=db.collection('clients');let clients=[],editClient=null;
 const clientName=c=>c.company||[c.firstName,c.lastName].filter(Boolean).join(' ')||'(no name)';
 const nextRenew=c=>(c.policies||[]).map(p=>p.exp).filter(x=>x&&x>=todayISO()).sort()[0]||'';
@@ -1516,12 +1553,29 @@ function renderClients(){
 ['ctb','ccards'].forEach(id=>$(id).addEventListener('click',e=>{const r=e.target.closest('[data-client]');if(r)openClient(clients.find(c=>c.id===r.dataset.client))}));
 // policy rows: dates type as MM/DD/YYYY, exp fills in a year after eff
 const polRow=p=>{p=p||{};const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input data-p="line" placeholder="GL, WC, Auto…"></td><td><input data-p="carrier"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"></td><td><button class="danger" data-prm title="Remove policy">✕</button></td>`;
-  for(const k of ['line','carrier','number','premium'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';
+  tr.innerHTML=`<td><input data-p="line" placeholder="GL, WC, Auto…"></td><td><input data-p="carrier"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
+  for(const k of ['line','carrier','number','premium','notes'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';
   for(const k of ['eff','exp'])tr.querySelector(`[data-p=${k}]`).value=fmtDate(p[k]||'');
   $('polRows').appendChild(tr)};
-$('polAdd').onclick=()=>{polRow();const r=$('polRows').lastElementChild;r&&r.querySelector('input').focus()};
-$('polRows').addEventListener('click',e=>{const b=e.target.closest('[data-prm]');if(b)b.closest('tr').remove()});
+$('polAdd').onclick=()=>{let r=$('polRows').lastElementChild;if(!r||[...r.querySelectorAll('[data-p]')].some(x=>x.value.trim())){polRow();r=$('polRows').lastElementChild}openPolicy(r,true)}; // a blank row is reused
+$('polRows').addEventListener('click',e=>{const b=e.target.closest('[data-prm]');if(b){b.closest('tr').remove();return}const o=e.target.closest('[data-popen]');if(o)openPolicy(o.closest('tr'))});
+// policy pop-up: edits one row of the client's policy table (kept in the row until Save client)
+let polTr=null,polNew=false;const PP=['line','carrier','number','premium','eff','exp','notes'];
+function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;for(const k of PP)document.querySelector(`#polBox [data-pp=${k}]`).value=tr.querySelector(`[data-p=${k}]`).value;
+  const t=[tr.querySelector('[data-p=line]').value.trim(),tr.querySelector('[data-p=carrier]').value.trim()].filter(Boolean).join(' · ');
+  $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
+  $('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
+function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll('[data-p]')].some(x=>x.value.trim()))polTr.remove();$('polDlg').classList.remove('on');polTr=null}
+$('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#polBox [data-pp=${k}]`).value.trim();
+  for(const k of PP){let v=g(k);if((k==='eff'||k==='exp')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);polTr.querySelector(`[data-p=${k}]`).value=v}
+  closePolicy(true)};
+$('ppCancel').onclick=()=>closePolicy(false);
+$('ppDel').onclick=()=>{const b=$('ppDel');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to remove';return}if(polTr)polTr.remove();polTr=null;closePolicy(true)};
+$('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
+$('polBox').addEventListener('input',e=>{const el=e.target;if(!(el.dataset.pp==='eff'||el.dataset.pp==='exp'))return;if(e.inputType&&e.inputType.startsWith('delete'))return;slashDate(el)});
+$('polBox').addEventListener('focusout',e=>{const el=e.target;if(el.dataset.pp==='premium'&&el.value.trim()){el.value=fmtMoney(el.value);return}
+  if(!(el.dataset.pp==='eff'||el.dataset.pp==='exp'))return;const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso);
+  if(el.dataset.pp==='eff'&&/^\d{4}-/.test(iso)&&!$('ppExp').value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);$('ppExp').value=fmtDate(d.toISOString().slice(0,10))}});
 const slashDate=el=>{const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d};
 $('clientBox').addEventListener('input',e=>{const el=e.target;if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;if(e.inputType&&e.inputType.startsWith('delete'))return;slashDate(el)});
 $('clientBox').addEventListener('focusout',e=>{const el=e.target;
@@ -1542,7 +1596,7 @@ function openClient(c,preset){editClient=c||null;const v=c||preset||{};
   $('clientDlg').classList.add('on');setTimeout(()=>$('clCompany').focus(),30)}
 function closeClient(){$('clientDlg').classList.remove('on');editClient=null}
 $('clCancel').onclick=closeClient;$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
 $('clSave').onclick=async()=>{const m=$('clientMsg');
   const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtPhone($('clPhone').value),email:$('clEmail').value.trim(),
     address:$('clAddress').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim()};
@@ -1550,7 +1604,7 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
   data.since=iso($('clSince').value,'Client since');
   data.policies=[...$('polRows').rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-p=${k}]`).value.trim();
-    return {line:g('line'),carrier:g('carrier'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):''}}).filter(p=>Object.values(p).some(Boolean));
+    return {line:g('line'),carrier:g('carrier'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',notes:g('notes')}}).filter(p=>Object.values(p).some(Boolean));
   if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(', ')} as MM/DD/YYYY.`;return}
   $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
   try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;await clientsCol.add(data)}
