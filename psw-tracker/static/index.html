@@ -588,7 +588,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const PAUTO_LAYOUT='psw-pauto-layout-1',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
+const PAUTO_LAYOUT='psw-pauto-layout-2',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -711,7 +711,7 @@ const AUTO_SECTIONS=[
  {title:'AI / Lienholders',table:{prefix:'ai',rows:6,cols:[{k:'name',label:'Name',w:2},{k:'address',label:'Address',w:2.4},{k:'city',label:'City',w:1.4},{k:'state',label:'State',w:.6}]}}];
 // personal auto quote sheet: same look as the commercial sheets, with personal auto questions
 const PAUTO_SECTIONS=[
- {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
+ {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
  {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation',label2:'Education',pair:'education'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date'}]},
  {title:'Drivers',table:{prefix:'d',rows:5,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'rel',label:'Relation',w:.8},{k:'dl',label:'DL #',w:1.25},{k:'dl_state',label:'DL st',w:.5},{k:'yrs_lic',label:'Yrs lic',w:.55}],
    cols2:[{k:'activity',label:'Tickets / accidents (3-5 yrs)',w:3},{k:'dui',label:'DUI?',w:.8,opts:['No','Yes']},{k:'filing',label:'SR22 / FR44',w:1,opts:['None','SR22','FR44']}]}},
