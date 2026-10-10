@@ -712,7 +712,7 @@ const AUTO_SECTIONS=[
 // personal auto quote sheet: same look as the commercial sheets, with personal auto questions
 const PAUTO_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation',label2:'Education',pair:'education'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date'}]},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate'},{k:'ins_sex',n:3,label:'Sex',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation',label2:'Education',pair:'education'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date'}]},
  {title:'Drivers',table:{prefix:'d',rows:5,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'rel',label:'Relation',w:.8},{k:'dl',label:'DL #',w:1.25},{k:'dl_state',label:'DL st',w:.5},{k:'yrs_lic',label:'Yrs lic',w:.55}],
    cols2:[{k:'activity',label:'Tickets / accidents (3-5 yrs)',w:3},{k:'dui',label:'DUI?',w:.8,opts:['No','Yes']},{k:'filing',label:'SR22 / FR44',w:1,opts:['None','SR22','FR44']}]}},
  {title:'Vehicles',table:{prefix:'v',rows:5,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'vin',label:'VIN',w:2.2},{k:'zip',label:'Garage zip',w:.85}],
@@ -721,6 +721,7 @@ const PAUTO_SECTIONS=[
  {title:'Current insurance',fields:[{k:'currently_insured',n:13,label:'Insured now?',label2:'Current carrier',pair:'current_carrier'},{k:'current_limits',n:14,label:'Current limits',label2:'Current price',pair:'current_price'},{k:'years_insured',n:15,label:'Years insured',label2:'Lapse in coverage?',pair:'lapse'},{k:'current_exp',n:16,label:'Policy expires'}]},
  {title:'Discounts',fields:[{k:'discounts',n:17,label:'Discounts',area:1}]},
  {title:'Notes',fields:[{k:'notes',n:18,label:'Notes',area:1}]}];
+{let c=0;PAUTO_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>{if(f.n)f.n=++c}))} // items numbered 1, 2, 3... straight through
 const AUTO_KEYS=[];
 AUTO_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>f.pair?AUTO_KEYS.push([f.k,'Owner first name'],[f.pair,'Owner last name']):AUTO_KEYS.push([f.k,f.label+(f.k==='entity_type'?' (Individual, Corporation, Partnership or LLC)':/date|dob/.test(f.k)?' (MM/DD/YYYY)':f.k==='client_note'?' (website)':f.k==='client_name'?' (business name)':f.k==='garaging_address'?' (where the vehicles are kept)':'')]));
   if(s.table){const t=s.table,who=t.prefix==='d'?'Driver':t.prefix==='v'?'Vehicle':'AI/lienholder';
