@@ -588,7 +588,8 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const PAUTO_LAYOUT='psw-pauto-layout-3',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
+const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
+const PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -670,7 +671,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
         if(B){y+=1;t.cols2.forEach((c,i)=>text(c.label,B.xs[i],7,font,muted));y-=11;t.cols2.forEach((c,i)=>put(c,r,B.xs[i],B.ws[i]));y-=23}else y-=1}}
     if(s.fields)for(const f of s.fields){if(f.col)continue;const label=(f.n?f.n+'. ':'')+f.label;
       if(f.pair&&f.label2){need(19);text((f.n?f.n+'a. ':'')+f.label,L+4,8.5,font,muted);const l2=(f.n?f.n+'b. ':'')+f.label2,lw=Math.max(92,font.widthOfTextAtSize(l2,8.5)+8),w=(R-L-LW-lw-6)/2;
-        field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
+        f.opts?combo('f_'+f.k,v[f.k],f.opts,L+LW,w,16):field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);f.opts2?combo('f_'+f.pair,v[f.pair],f.opts2,L+LW+w+6+lw,w,16):field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
       if(f.pair){need(19);text(label,L+4,8.5,font,muted);const w=(R-L-LW-6)/2;field('f_'+f.k,v[f.k],L+LW,w,16);field('f_'+f.pair,v[f.pair],L+LW+w+6,w,16);y-=19;continue}
       if(f.radio){need(19);text(label,L+4,8.5,font,muted);radios('f_'+f.k,v[f.k],f.radio,L+LW,R-L-LW);y-=19;continue}
       if(f.opts){need(19);text(label,L+4,8.5,font,muted);combo('f_'+f.k,v[f.k],f.opts,L+LW,R-L-LW,16);y-=19;continue}
@@ -717,7 +718,7 @@ const PAUTO_SECTIONS=[
    cols2:[{k:'activity',label:'Tickets / accidents (3-5 yrs)',w:3},{k:'dui',label:'DUI?',w:.8,opts:['No','Yes']},{k:'filing',label:'SR22 / FR44',w:1,opts:['None','SR22','FR44']}]}},
  {title:'Vehicles',table:{prefix:'v',rows:5,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'vin',label:'VIN',w:2.2},{k:'zip',label:'Garage zip',w:.85}],
    cols2:[{k:'use',label:'Use',w:.9,opts:['Commute','Pleasure','Business','Rideshare']},{k:'miles',label:'Annual miles',w:.8},{k:'owned',label:'Owned',w:.9,opts:['Owned','Financed','Leased']},{k:'driver',label:'Main driver',w:.9},{k:'lien',label:'Lienholder / lessor',w:1.6}]}},
- {title:'Coverages',fields:[{k:'bi_limit',n:9,label:'Bodily injury',label2:'Property damage',pair:'pd_limit'},{k:'um_uim',n:10,label:'UM / UIM',label2:'Med pay',pair:'med_pay'},{k:'comp_ded',n:11,label:'Comp ded',label2:'Coll ded',pair:'coll_ded'},{k:'rental',n:12,label:'Rental',label2:'Towing',pair:'towing'}]},
+ {title:'Coverages',fields:[{k:'bi_limit',n:9,label:'Bodily injury',label2:'Property damage',pair:'pd_limit',opts:PAUTO_LIMITS,opts2:['15','25','50','100']},{k:'um_uim',n:10,label:'UM / UIM',label2:'Med pay',pair:'med_pay',opts:PAUTO_LIMITS,opts2:['None','5000']},{k:'comp_ded',n:11,label:'Comp ded',label2:'Coll ded',pair:'coll_ded',opts:PAUTO_DEDS,opts2:PAUTO_DEDS},{k:'rental',n:12,label:'Rental',label2:'Towing',pair:'towing',opts:['Yes','No'],opts2:['Yes','No']}]},
  {title:'Current insurance',fields:[{k:'currently_insured',n:13,label:'Insured now?',label2:'Current carrier',pair:'current_carrier'},{k:'current_limits',n:14,label:'Current limits',label2:'Current price',pair:'current_price'},{k:'years_insured',n:15,label:'Years insured',label2:'Lapse in coverage?',pair:'lapse'},{k:'current_exp',n:16,label:'Policy expires'}]},
  {title:'Discounts',fields:[{k:'discounts',n:17,label:'Discounts',area:1}]},
  {title:'Notes',fields:[{k:'notes',n:18,label:'Notes',area:1}]}];
