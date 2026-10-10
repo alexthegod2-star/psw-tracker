@@ -524,7 +524,7 @@ function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').valu
 function openLead(l){
   if(curUnsub){curUnsub();curUnsub=null}
   cur=l?{...l}:null;contacts=[];
-  FIELDS.forEach(k=>$(k).value=l?(l[k]||''):'');
+  FIELDS.forEach(k=>$(k).value=l?(l[k]||''):'');if(!$('txTerm').value)$('txTerm').value='the year'; // Term starts as "the year"
   $('xDate').value=fmtDate($('xDate').value);
   if(!l)$('leadDate').value=todayISO();
   $('dTitle').textContent=l?([l.firstName,l.lastName].filter(Boolean).join(' ')||l.company||'Lead'):'New lead';
