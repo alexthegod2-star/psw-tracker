@@ -31,6 +31,7 @@ tbody tr:hover{background:var(--soft)}
 tbody tr:last-child td{border-bottom:none}
 .cdot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.15);padding:0;margin-right:8px;vertical-align:-3px;cursor:pointer;display:inline-block}
 .cdot.yes{background:#1f9d55}.cdot.no{background:#d64545}
+.sold{display:inline-block;background:#1f9d55;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
@@ -84,6 +85,19 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .tasks{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.tli{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}.tli .tt{flex:1;min-width:0;cursor:pointer}.tli .small{white-space:nowrap}
 #clientBox{width:min(820px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
 .poltab input{width:100%;min-width:70px;padding:5px 6px}.poltab td{padding:3px 4px}.poltab th{position:static}
+.bsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 14px}.bsum div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.bsum span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em}.bsum b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}.bsum .hl{border-color:var(--acc);background:var(--soft)}
+.bmon{margin:0 0 18px}.bmh{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;margin:0 0 6px}.bmh h3{margin:0;font-size:16px}.bmh .sp{flex:1}.bmh button{padding:4px 12px}
+.bwrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+.btab{border-collapse:collapse;width:100%;min-width:1100px;font-size:13px;font-variant-numeric:tabular-nums}.btab th{position:static;cursor:default;white-space:nowrap;padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}.btab td{padding:7px 5px;white-space:nowrap}
+.btab .n{text-align:right}.btab .c{text-align:center}.btab .nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}.btab th.nm{font-weight:inherit}.btab .num{color:var(--mute);width:28px}
+.btab .calc{color:var(--mute)}.btab .tm{font-weight:700}.btab .neg{color:var(--bad)}.btab td.up{text-transform:uppercase;font-size:12px}
+.btab tfoot td{border-top:2px solid var(--line);border-bottom:none;font-weight:700;background:var(--soft)}.btab tfoot tr{cursor:default}
+.btab th:nth-child(2),.btab td:nth-child(2){position:sticky;left:0;background:var(--card);z-index:1}.btab tbody tr:hover td:nth-child(2){background:var(--soft)}.btab tfoot td:nth-child(2){background:var(--soft)}
+.bpaid{width:17px;height:17px;margin:0;cursor:pointer;accent-color:var(--ok)}
+#binBox{width:min(720px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#binBox .grid{grid-template-columns:repeat(3,1fr);margin-top:8px}@media (max-width:560px){#binBox .grid{grid-template-columns:1fr 1fr}}#binBox>.row{justify-content:flex-end;margin-top:14px}
+.bchk{display:flex;gap:8px;align-items:center;padding-top:20px}.bchk input{width:auto;flex:none;margin:0;accent-color:var(--ok)}.bchk label{margin:0;font-size:14px;color:var(--ink);font-weight:400;cursor:pointer}
+.bcalc{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:12px;background:var(--soft);border-radius:10px;padding:10px}.bcalc span{display:block;font-size:11px;color:var(--mute)}.bcalc b{font-variant-numeric:tabular-nums}
+#bpBox{width:min(640px,100%)}#bpBox textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:12px}#bpBox .row{margin-top:10px}#bpBox .row select,#bpBox .row input{width:auto}
 #taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
 .msg{font-size:13px;margin-top:6px}
 .msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
@@ -123,7 +137,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><h1>PSW Lead Tracker</h1><div class="sub" id="count">Loading leads…</div></div>
     <button class="pri" id="newBtn">+ New lead</button>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW clients <span class="chip" id="clientCount">0</span></button></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -172,6 +186,17 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="cards" id="ccards"></div>
   </div>
+  <div id="binderView" hidden>
+    <div class="bar">
+      <select id="bYear" aria-label="Year"></select>
+      <input id="bq" type="search" placeholder="Search name, type, company">
+      <button id="bPaste">Paste from Excel</button>
+      <button id="bCsv">Download for Excel</button>
+    </div>
+    <div class="bsum" id="bSum"></div>
+    <div id="bMonths"></div>
+    <div class="empty" id="bempty" hidden></div>
+  </div>
 </div>
 
 <div class="ov" id="ov"></div>
@@ -206,7 +231,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
 
     <div class="sec" id="contactSec">
-      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button></h3>
+      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button></h3>
       <div class="grid">
         <div><label for="cAt">Date / time</label><input id="cAt" type="datetime-local"></div>
         <div><label for="cHow">How contacted</label>
@@ -237,14 +262,6 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <ul class="files" id="files"></ul>
     </div>
 
-    <div class="sec" id="mailSec">
-      <h3>Email</h3>
-      <div class="small" style="margin-bottom:8px">Tick the files to send, then pick who it goes to. Email customer sends a quote sheet for them to finish; drop it in Quick fill when it comes back. A new Outlook email opens to them, and the ticked files are saved to your computer so you can drag them into it.</div>
-      <div class="mpick" id="mailPick"></div>
-      <div class="row" id="mailBtns"></div>
-      <div class="msg" id="mailMsg"></div>
-    </div>
-
     <div class="sec" id="acordSec">
       <h3>ACORD forms</h3>
       <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
@@ -255,8 +272,16 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="supSec">
       <h3>Supplementals/Forms</h3>
       <div class="small" style="margin-bottom:8px">Fills the form from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
-      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button><button class="pri" data-sup="sl2">SL2</button><select id="sl2Code" title="SL2 line 2(C): type of insurance code"><option value="">SL2 2(C) code…</option></select></div>
+      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button><button class="pri" data-sup="sl2">SL2</button></div>
       <div class="msg" id="supMsg"></div>
+    </div>
+
+    <div class="sec" id="mailSec">
+      <h3>Email</h3>
+      <div class="small" style="margin-bottom:8px">Tick the files to send, then pick who it goes to. Email customer sends a quote sheet for them to finish; drop it in Quick fill when it comes back. A new Outlook email opens to them, and the ticked files are saved to your computer so you can drag them into it.</div>
+      <div class="mpick" id="mailPick"></div>
+      <div class="row" id="mailBtns"></div>
+      <div class="msg" id="mailMsg"></div>
     </div>
 
     <div class="sec" id="bindSec">
@@ -316,6 +341,38 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="msg" id="clientMsg"></div>
   <div class="row"><button class="danger" id="clDel" style="margin-right:auto">Delete client</button><button id="clCancel">Cancel</button><button class="pri" id="clSave">Save client</button></div>
 </div></div>
+<div class="mbg" id="binDlg" role="dialog" aria-modal="true" aria-labelledby="binTitleH"><div class="mbox" id="binBox">
+  <h3 id="binTitleH">New sale</h3>
+  <div class="grid">
+    <div class="full"><label for="bnName">Name</label><input id="bnName" placeholder="Client, or a note like “pay to Doug”"></div>
+    <div><label for="bnMo">Binder month</label><select id="bnMo"></select></div>
+    <div><label for="bnEff">Eff date</label><input id="bnEff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
+    <div><label for="bnExp">Exp date</label><input id="bnExp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
+    <div><label for="bnType">Type</label><input id="bnType" list="bnTypes" placeholder="GL, WC, Auto…"></div>
+    <div><label for="bnCo">Company</label><input id="bnCo" list="bnCos" placeholder="Carrier or wholesaler"></div>
+    <div><label for="bnTerm">Term</label><input id="bnTerm" inputmode="numeric" placeholder="1" title="Terms in a year: 1 for annual, 2 for 6-month"></div>
+    <div><label for="bnPrem">Premium</label><input id="bnPrem" inputmode="decimal" placeholder="$"></div>
+    <div><label for="bnPct">Com %</label><input id="bnPct" inputmode="decimal" placeholder="%"></div>
+    <div><label for="bnBf">BF</label><input id="bnBf" inputmode="decimal" placeholder="$ (minus for money out)"></div>
+    <div><label for="bnFin">Finance</label><input id="bnFin" placeholder="Finance co. or amount"></div>
+    <div><label for="bnSplit">Split %</label><input id="bnSplit" inputmode="decimal" placeholder="Blank = 100%"></div>
+    <div class="bchk"><input type="checkbox" id="bnComPaid"><label for="bnComPaid">Com paid</label></div>
+    <div class="bchk"><input type="checkbox" id="bnBfPaid"><label for="bnBfPaid">BF paid</label></div>
+    <div class="full"><label for="bnNotes">Notes</label><textarea id="bnNotes"></textarea></div>
+  </div>
+  <datalist id="bnTypes"></datalist><datalist id="bnCos"></datalist>
+  <div class="bcalc" id="bnCalc"></div>
+  <div class="msg" id="binMsg"></div>
+  <div class="row"><button class="danger" id="bnDel" style="margin-right:auto">Delete</button><button id="bnCancel">Cancel</button><button id="bnSaveAdd">Save + add another</button><button class="pri" id="bnSave">Save</button></div>
+</div></div>
+<div class="mbg" id="bpDlg" role="dialog" aria-modal="true" aria-labelledby="bpTitleH"><div class="mbox" id="bpBox">
+  <h3 id="bpTitleH">Paste from Excel</h3>
+  <p>Copy rows from your binder sheet and paste them here, with or without the header row. A month total row like “July” puts the rows above it in that month. COMM, YR COMM and the totals are worked out again, so you don’t need to fix them.</p>
+  <textarea id="bpText" placeholder="Paste rows here"></textarea>
+  <div class="row"><label for="bpMo" style="margin:0">Rows with no month row go in</label><select id="bpMo"></select></div>
+  <div class="msg" id="bpMsg"></div>
+  <div class="row" style="justify-content:flex-end"><button id="bpCancel">Cancel</button><button class="pri" id="bpGo">Add rows</button></div>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -334,7 +391,7 @@ const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/
 const toast=t=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)};
 const errText=e=>{const c=e&&e.code;return ({permission_denied:'You only have view access to this tracker.',too_large:'That file is too big (20 MB max).',unsupported_type:'That file type can’t be stored. Use PDF, an image, CSV or text.',rate_limited:'Too many changes at once, try again in a moment.',quota_or_state:'File storage is full.',not_granted:'This view can’t do that.'})[c]||('Something went wrong'+(c?` (${c})`:'')+'. Try again.')};
 
-let db=null,assets=null,dl=null,user=null,me=null;
+let db=null,assets=null,dl=null,user=null,me=null;let binderOn=false,binCol=null,binder=[],editBin=null;
 try{db=await window.claude.use('db')}catch(e){}
 try{assets=await window.claude.use('assets')}catch(e){}
 try{dl=await window.claude.use('downloads')}catch(e){}
@@ -385,7 +442,7 @@ function render(){
 ['q','fType','fAssign'].forEach(id=>$(id).addEventListener('input',render));
 document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=/Date|Contacted|nfiles/.test(k)?-1:1}render()});
 const made=l=>l.contactMade===true;
-const dot=l=>`<button class="cdot ${made(l)?'yes':'no'}" data-dot="${esc(l.id)}" title="${made(l)?'Contact made (click to mark no contact)':'No contact yet (click to mark contact made)'}" aria-label="${made(l)?'Contact made':'No contact'}"></button>`;
+const dot=l=>l.sold===true?'<span class="sold" title="Sold">SOLD</span>':`<button class="cdot ${made(l)?'yes':'no'}" data-dot="${esc(l.id)}" title="${made(l)?'Contact made (click to mark no contact)':'No contact yet (click to mark contact made)'}" aria-label="${made(l)?'Contact made':'No contact'}"></button>`;
 const openFromRow=e=>{const dlb=e.target.closest('[data-del-lead]');if(dlb){e.stopPropagation();askDelete(dlb.dataset.delLead);return}const d=e.target.closest('[data-dot]');if(d){e.stopPropagation();toggleMade(d.dataset.dot);return}const r=e.target.closest('[data-id]');if(r)openLead(leads.find(l=>l.id===r.dataset.id))};
 $('tb').addEventListener('click',openFromRow);$('cards').addEventListener('click',openFromRow);
 
@@ -400,9 +457,11 @@ function show(on){$('dr').classList.toggle('on',on);$('ov').classList.toggle('on
 function closeLead(){show(false);if(curUnsub){curUnsub();curUnsub=null}cur=null}
 $('closeBtn').onclick=closeLead;$('ov').onclick=closeLead;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('dr').classList.contains('on'))closeLead()});
-$('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):view==='clients'?openClient(null,{}):openLead(null);
+$('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):view==='clients'?openClient(null,{}):view==='binder'?openBin(null,{month:monKey(new Date())}):openLead(null);
 
-function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact'}
+function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact';
+  const so=!!(cur&&cur.sold===true),st=$('soldTgl');st.setAttribute('aria-checked',so);st.firstChild.className='cdot '+(so?'yes':'no');$('soldTxt').textContent=so?'Sold':'Not sold'}
+$('soldTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=cur.sold!==true;try{await leadsCol.doc(cur.id).update({sold:on});cur.sold=on;showMade();toast(on?'Marked sold':'Marked not sold')}catch(e){toast(errText(e))}};
 $('madeTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=!made(cur);try{await leadsCol.doc(cur.id).update({contactMade:on});cur.contactMade=on;showMade()}catch(e){toast(errText(e))}};
 function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').value=fmtDT(cur&&cur.lastContacted)}
 function openLead(l){
@@ -1274,8 +1333,8 @@ const dueTxt=t=>t.due?fmtDate(t.due)+(t.done?'':t.due<todayISO()?' (overdue)':t.
 const PRI_ORDER={High:0,Normal:1,Low:2};
 const taskSort=(a,b)=>(!!a.done-!!b.done)||(a.done?String(b.doneAt||'').localeCompare(String(a.doneAt||'')):0)||((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0)||((PRI_ORDER[a.priority]??1)-(PRI_ORDER[b.priority]??1))||String(a.createdAt||'').localeCompare(String(b.createdAt||''));
 tasksCol.onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks();renderLeadTasks()},e=>{$('tempty').hidden=false;$('tempty').textContent=errText(e)});
-function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));$('leadsView').hidden=v!=='leads';$('tasksView').hidden=v!=='tasks';$('clientsView').hidden=v!=='clients';
-  $('newBtn').textContent=v==='tasks'?'+ New task':v==='clients'?'+ New client':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks();renderClients()}
+function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));$('leadsView').hidden=v!=='leads';$('tasksView').hidden=v!=='tasks';$('clientsView').hidden=v!=='clients';$('binderView').hidden=v!=='binder';
+  $('newBtn').textContent=v==='tasks'?'+ New task':v==='clients'?'+ New client':v==='binder'?'+ New sale':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks();renderClients();renderBinder()}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 // the header button makes a task while the Tasks tab is showing
 function renderTasks(){
@@ -1397,7 +1456,124 @@ $('toClient').onclick=async()=>{if(!(await ensureSaved()))return;const have=clie
   const l={...cur,...Object.fromEntries(['firstName','lastName','company','phone','email','assignedTo'].map(k=>[k,$(k).value.trim()]))};
   const id=cur.id;closeLead();setView('clients');
   openClient(have||null,{company:l.company,firstName:l.firstName,lastName:l.lastName,phone:l.phone,email:l.email,agent:l.assignedTo,leadId:id,since:todayISO()})};
-try{const v=localStorage.getItem('psw-view');if(v==='tasks'||v==='clients')setView(v)}catch(_){}
+// ---------- private binder log: only its owner sees the tab, and the server refuses everyone else (private/<username>/...) ----------
+const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+try{const r=await fetch('/api/auth/me',{credentials:'same-origin'});if(r.ok){const u=await r.json();if(u.binder&&u.username){binderOn=true;binCol=db.collection('private').doc(u.username).collection('binder');
+  $('binderTab').textContent=`${String(u.name||u.username).trim().split(/\s+/)[0]} binder`;$('binderTab').hidden=false}}}catch(_){}
+const bNum=v=>{let s=String(v??'').trim();if(!s)return null;const neg=/^\(.*\)$/.test(s)||/^-/.test(s.replace(/^\$/,''))||/^\$-/.test(s);s=s.replace(/[^\d.]/g,'');if(!s)return null;const n=parseFloat(s);return isNaN(n)?null:neg?-n:n};
+const bPct=v=>{const n=bNum(v);if(n==null)return null;return !/%/.test(String(v))&&Math.abs(n)>0&&Math.abs(n)<1?+(n*100).toFixed(4):n};
+const r2=n=>Math.round(n*100)/100;
+const bMoney=n=>n==null||n===''?'':`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const bPctTxt=n=>n==null?'':`${String(n).includes('.')&&String(n).split('.')[1].length>1?n:(+n).toFixed(1)}%`;
+const monKey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
+const monName=k=>{const m=/^(\d{4})-(\d\d)$/.exec(k||'');return m?`${MON[+m[2]-1]} ${m[1]}`:'No month'};
+// COMM = premium x com %; YR COMM = COMM x term; split % is your share (blank = 100%); TOTAL MADE = com split + BF split
+function bCalc(r){const comm=r.premium==null||r.comPct==null?null:r2(r.premium*r.comPct/100),yr=comm==null?null:r2(comm*(r.term||1)),sp=r.splitPct==null?100:r.splitPct;
+  const comSplit=yr==null?null:r2(yr*sp/100),bfSplit=r.bf==null?null:r2(r.bf*sp/100);return {comm,yr,comSplit,bfSplit,total:r2((comSplit||0)+(bfSplit||0))}}
+const monOpts=sel=>{const now=new Date(),ks=new Set([sel,...binder.map(b=>b.month)].filter(Boolean));for(let i=-24;i<=3;i++)ks.add(monKey(new Date(now.getFullYear(),now.getMonth()+i,1)));
+  return [...ks].sort().reverse().map(k=>`<option value="${esc(k)}"${k===sel?' selected':''}>${esc(monName(k))}</option>`).join('')};
+if(binCol)binCol.onSnapshot(s=>{binder=s.docs.map(d=>({id:d.id,...d.data()}));renderBinder()},e=>{$('bempty').hidden=false;$('bempty').textContent=errText(e)});
+function renderBinder(){if(!binderOn)return;
+  const cy=String(new Date().getFullYear()),years=[...new Set([cy,...binder.map(b=>(b.month||'').slice(0,4)).filter(Boolean)])].sort().reverse();
+  const ys=$('bYear'),keep=ys.value||cy;ys.innerHTML=years.map(y=>`<option>${y}</option>`).join('');ys.value=years.includes(keep)?keep:cy;const year=ys.value;
+  const q=$('bq').value.trim().toLowerCase();
+  const inYear=binder.filter(b=>(b.month||'').startsWith(year));
+  const rows=inYear.filter(b=>!q||[b.name,b.type,b.carrier,b.finance,b.notes].join(' ').toLowerCase().includes(q));
+  if(view==='binder')$('count').textContent=`${inYear.length} entr${inYear.length===1?'y':'ies'} in ${year}`;
+  const tot=list=>list.reduce((a,b)=>{const c=bCalc(b);a.premium+=b.premium||0;a.comm+=c.comm||0;a.yr+=c.yr||0;a.bf+=b.bf||0;a.comSplit+=c.comSplit||0;a.bfSplit+=c.bfSplit||0;a.total+=c.total;
+    if(!b.comPaid)a.owed+=c.comSplit||0;if(!b.bfPaid&&(c.bfSplit||0)>0)a.owed+=c.bfSplit;if(b.premium)a.n++;return a},{premium:0,comm:0,yr:0,bf:0,comSplit:0,bfSplit:0,total:0,owed:0,n:0});
+  const T=tot(rows),cm=monKey(new Date()),M=tot(rows.filter(b=>b.month===cm));
+  $('bSum').innerHTML=[['Policies written',T.n,0],['Premium',bMoney(r2(T.premium)),0],['Yr comm',bMoney(r2(T.yr)),0],['Broker fees',bMoney(r2(T.bf)),0],[`Made in ${year}`,bMoney(r2(T.total)),1],
+    ...(year===cy?[[`Made in ${MON[new Date().getMonth()]}`,bMoney(r2(M.total)),0]]:[]),['Not paid yet',bMoney(r2(T.owed)),0]].map(([l,v,h])=>`<div${h?' class="hl"':''}><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('');
+  const by={};rows.forEach(b=>(by[b.month||'']=by[b.month||'']||[]).push(b));
+  const neg=n=>n!=null&&n<0?' neg':'';
+  const head='<thead><tr><th class="num">#</th><th class="nm">Name</th><th>Eff date</th><th>Exp date</th><th>Type</th><th>Com</th><th class="n">Term</th><th class="n">Premium</th><th class="n">Com %</th><th class="n">Comm</th><th class="n">Yr comm</th><th class="n">BF</th><th>Finance</th><th class="n">Split %</th><th class="n">Com split</th><th class="n">BF split</th><th class="n">Total made</th><th class="c">Com paid</th><th class="c">BF paid</th></tr></thead>';
+  $('bMonths').innerHTML=Object.keys(by).sort().reverse().map(k=>{const list=by[k].sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||'')),t=tot(list);
+    const body=list.map((b,i)=>{const c=bCalc(b),pd=v=>v&&/^\d{4}-/.test(v)?` title="Paid ${esc(fmtDate(v))}"`:'';return `<tr data-bin="${esc(b.id)}"><td class="num">${i+1}</td><td class="nm" title="${esc(b.name)}">${esc(b.name)}</td><td>${esc(fmtDate(b.eff))}</td><td>${esc(fmtDate(b.exp))}</td><td class="up">${esc(b.type)}</td><td class="up">${esc(b.carrier)}</td>
+      <td class="n">${b.premium!=null?esc(b.term||1):''}</td><td class="n">${bMoney(b.premium)}</td><td class="n">${bPctTxt(b.comPct)}</td><td class="n calc">${bMoney(c.comm)}</td><td class="n calc">${bMoney(c.yr)}</td><td class="n${neg(b.bf)}">${bMoney(b.bf)}</td><td>${esc(b.finance)}</td>
+      <td class="n">${bPctTxt(b.splitPct)}</td><td class="n calc">${b.splitPct==null?'':bMoney(c.comSplit)}</td><td class="n calc">${b.splitPct==null?'':bMoney(c.bfSplit)}</td><td class="n tm${neg(c.total)}">${bMoney(c.total)}</td>
+      <td class="c"><input type="checkbox" class="bpaid" data-k="comPaid" aria-label="Com paid"${b.comPaid?' checked':''}${pd(b.comPaid)}></td><td class="c"><input type="checkbox" class="bpaid" data-k="bfPaid" aria-label="BF paid"${b.bfPaid?' checked':''}${pd(b.bfPaid)}></td></tr>`}).join('');
+    const nm=k?MON[+k.slice(5)-1]:'No month',hasSp=list.some(b=>b.splitPct!=null);
+    return `<section class="bmon"><div class="bmh"><h3>${esc(monName(k))}</h3><span class="small">${list.length} entr${list.length===1?'y':'ies'}</span><span class="sp"></span><span>Made <b>${bMoney(r2(t.total))}</b></span><button data-badd="${esc(k)}">+ Add to ${esc(nm)}</button></div>
+      <div class="bwrap"><table class="btab">${head}<tbody>${body}</tbody><tfoot><tr><td></td><td>${esc(nm)} total</td><td></td><td></td><td></td><td></td><td></td><td class="n">${bMoney(r2(t.premium))}</td><td></td><td class="n">${bMoney(r2(t.comm))}</td><td class="n">${bMoney(r2(t.yr))}</td><td class="n${neg(t.bf)}">${bMoney(r2(t.bf))}</td><td></td><td></td><td class="n">${hasSp?bMoney(r2(t.comSplit)):''}</td><td class="n">${hasSp?bMoney(r2(t.bfSplit)):''}</td><td class="n">${bMoney(r2(t.total))}</td><td></td><td></td></tr></tfoot></table></div></section>`}).join('');
+  const be=$('bempty');be.hidden=rows.length>0;be.innerHTML=inYear.length?'<b>Nothing matches</b>Try a different search.':`<b>No sales logged in ${esc(year)}</b>Click “+ New sale”, or “Paste from Excel” to bring in your sheet.`;
+}
+['bYear','bq'].forEach(id=>$(id).addEventListener('input',renderBinder));
+$('bMonths').addEventListener('click',async e=>{const p=e.target.closest('.bpaid');
+  if(p){e.stopPropagation();const id=p.closest('[data-bin]').dataset.bin;try{await binCol.doc(id).update({[p.dataset.k]:p.checked?todayISO():''});toast(p.checked?'Marked paid':'Marked not paid')}catch(err){p.checked=!p.checked;toast(errText(err))}return}
+  const a=e.target.closest('[data-badd]');if(a){openBin(null,{month:a.dataset.badd||monKey(new Date())});return}
+  const r=e.target.closest('[data-bin]');if(r)openBin(binder.find(b=>b.id===r.dataset.bin))});
+// sale dialog
+const BF=[['bnName','name'],['bnType','type'],['bnCo','carrier'],['bnFin','finance'],['bnNotes','notes']];
+function binForm(){const g=id=>$(id).value.trim();
+  return {name:g('bnName'),month:$('bnMo').value,eff:typedISO(g('bnEff')),exp:typedISO(g('bnExp')),type:g('bnType'),carrier:g('bnCo'),term:bNum(g('bnTerm'))||1,premium:bNum(g('bnPrem')),comPct:bPct(g('bnPct')),
+    bf:bNum(g('bnBf')),finance:g('bnFin'),splitPct:bPct(g('bnSplit')),notes:g('bnNotes')}}
+function binCalcShow(){const c=bCalc(binForm()),sp=bPct($('bnSplit').value.trim());
+  $('bnCalc').innerHTML=[['Comm',c.comm],['Yr comm',c.yr],...(sp==null?[]:[['Com split',c.comSplit],['BF split',c.bfSplit]]),['Total made',c.total]].map(([l,v])=>`<div><span>${l}</span><b>${bMoney(v)||'—'}</b></div>`).join('')}
+function openBin(b,preset){editBin=b||null;const v=b||preset||{};
+  $('binTitleH').textContent=b?'Edit sale':'New sale';BF.forEach(([id,k])=>$(id).value=v[k]||'');
+  $('bnMo').innerHTML=monOpts(v.month||monKey(new Date()));$('bnEff').value=fmtDate(v.eff||'');$('bnExp').value=fmtDate(v.exp||'');
+  $('bnTerm').value=v.term&&v.term!==1?v.term:'';$('bnPrem').value=v.premium!=null?bMoney(v.premium):'';$('bnPct').value=v.comPct!=null?v.comPct+'%':'';
+  $('bnBf').value=v.bf!=null?bMoney(v.bf):'';$('bnSplit').value=v.splitPct!=null?v.splitPct+'%':'';$('bnComPaid').checked=!!v.comPaid;$('bnBfPaid').checked=!!v.bfPaid;
+  $('bnTypes').innerHTML=[...new Set(['GL','WC','Com','Auto','Com auto','DIC','HO','Umbrella',...binder.map(x=>x.type)].filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
+  $('bnCos').innerHTML=[...new Set(binder.map(x=>x.carrier).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
+  $('bnDel').hidden=!b;$('bnDel').textContent='Delete';delete $('bnDel').dataset.arm;$('binMsg').textContent='';$('bnSave').disabled=$('bnSaveAdd').disabled=false;binCalcShow();
+  $('binDlg').classList.add('on');setTimeout(()=>$('bnName').focus(),30)}
+function closeBin(){$('binDlg').classList.remove('on');editBin=null}
+$('bnCancel').onclick=closeBin;$('binDlg').addEventListener('click',e=>{if(e.target===$('binDlg'))closeBin()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('binDlg').classList.contains('on')){e.stopImmediatePropagation();closeBin()}},true);
+$('binBox').addEventListener('input',e=>{const el=e.target;if((el.id==='bnEff'||el.id==='bnExp')&&!(e.inputType&&e.inputType.startsWith('delete')))slashDate(el);binCalcShow()});
+$('binBox').addEventListener('focusout',e=>{const el=e.target;
+  if((el.id==='bnPrem'||el.id==='bnBf')&&el.value.trim()){const n=bNum(el.value);if(n!=null)el.value=bMoney(n)}
+  if((el.id==='bnPct'||el.id==='bnSplit')&&el.value.trim()){const n=bPct(el.value);if(n!=null)el.value=n+'%'}
+  if(el.id==='bnEff'||el.id==='bnExp'){const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso)){el.value=fmtDate(iso);
+    if(el.id==='bnEff'&&!$('bnExp').value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);$('bnExp').value=fmtDate(d.toISOString().slice(0,10))}}}});
+async function saveBin(again){const m=$('binMsg'),d=binForm();
+  if(!d.name){m.className='msg err';m.textContent='Give it a name.';$('bnName').focus();return}
+  const bad=[['eff','Eff date'],['exp','Exp date']].filter(([k])=>d[k]&&!/^\d{4}-\d\d-\d\d$/.test(d[k])).map(x=>x[1]);
+  if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(' and ')} as MM/DD/YYYY.`;return}
+  const was=editBin||{};d.comPaid=$('bnComPaid').checked?(was.comPaid||todayISO()):'';d.bfPaid=$('bnBfPaid').checked?(was.bfPaid||todayISO()):'';
+  $('bnSave').disabled=$('bnSaveAdd').disabled=true;m.className='msg';m.textContent='Saving…';
+  try{if(editBin)await binCol.doc(editBin.id).update(d);else{d.createdAt=new Date().toISOString();await binCol.add(d)}
+    toast('Saved to binder');if(again)openBin(null,{month:d.month});else closeBin()}catch(e){m.className='msg err';m.textContent=errText(e);$('bnSave').disabled=$('bnSaveAdd').disabled=false}}
+$('bnSave').onclick=()=>saveBin(false);$('bnSaveAdd').onclick=()=>saveBin(true);
+$('bnDel').onclick=async()=>{const b=$('bnDel');if(!editBin)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to delete';return}
+  try{await binCol.doc(editBin.id).delete();closeBin();toast('Deleted')}catch(e){$('binMsg').className='msg err';$('binMsg').textContent=errText(e)}};
+// paste rows copied from the Excel binder sheet (same columns as the sheet; header row optional)
+const BCOLS={name:['name'],eff:['eff date','eff'],exp:['exp date','exp'],type:['type'],carrier:['com','company','carrier'],term:['term'],premium:['premium'],comPct:['com %','com%'],bf:['bf'],finance:['finance'],splitPct:['split %','split%','split'],comPaid:['com paid'],bfPaid:['bf paid']};
+const BDEF={name:1,eff:2,exp:3,type:4,carrier:5,term:6,premium:7,comPct:9,bf:12,finance:13,splitPct:14,comPaid:18,bfPaid:19};
+function parseBinder(text,defMonth){const lines=String(text||'').replace(/\r/g,'').split('\n').map(l=>l.split('\t'));let map=null;
+  const hi=lines.findIndex(c=>c.some(x=>x.trim().toLowerCase()==='name'));
+  if(hi>=0){const h=lines[hi].map(x=>x.trim().toLowerCase());map={};for(const[k,names]of Object.entries(BCOLS)){const i=h.findIndex(x=>names.includes(x));if(i>=0)map[k]=i}}
+  else{const first=lines.find(c=>c.some(x=>x.trim()));const shift=first&&first[0].trim()&&!/^\d+$/.test(first[0].trim())?-1:0;map=Object.fromEntries(Object.entries(BDEF).map(([k,i])=>[k,i+shift]))}
+  const out=[],pending=[],yr=(defMonth||'').slice(0,4)||String(new Date().getFullYear());
+  const paid=v=>{v=String(v||'').trim();if(!v||/^(no|n|0|false)$/i.test(v))return '';const iso=typedISO(v);return /^\d{4}-\d\d-\d\d$/.test(iso)?iso:'yes'};
+  lines.forEach((c,i)=>{if(i<=hi)return;const g=k=>map[k]==null?'':String(c[map[k]]??'').trim();const name=g('name');
+    if(!c.some(x=>x.trim()))return;
+    const mm=/^([a-z]{3,9})\.?(?:\s+(\d{4}))?(?:\s+total)?$/i.exec(name),mi=mm?MON.findIndex(x=>x.toLowerCase().startsWith(mm[1].toLowerCase().slice(0,3))&&x.toLowerCase().startsWith(mm[1].toLowerCase())):-1;
+    if(mi>=0&&!g('eff')&&!g('type')&&!g('carrier')){const k=`${mm[2]||yr}-${pad(mi+1)}`;pending.splice(0).forEach(r=>{r.month=k;out.push(r)});return}
+    if(!name||/^total/i.test(name))return;
+    const eff=typedISO(g('eff')),exp=typedISO(g('exp'));
+    pending.push({name,month:'',eff:/^\d{4}-/.test(eff)?eff:'',exp:/^\d{4}-/.test(exp)?exp:'',type:g('type'),carrier:g('carrier'),term:bNum(g('term'))||1,premium:bNum(g('premium')),comPct:bPct(g('comPct')),
+      bf:bNum(g('bf')),finance:g('finance'),splitPct:bPct(g('splitPct')),comPaid:paid(g('comPaid')),bfPaid:paid(g('bfPaid')),notes:''})});
+  pending.forEach(r=>{r.month=defMonth;out.push(r)});return out}
+const bpPreview=()=>{const rows=parseBinder($('bpText').value,$('bpMo').value),by={};rows.forEach(r=>by[r.month]=(by[r.month]||0)+1);
+  $('bpMsg').className='msg';$('bpMsg').textContent=rows.length?`Found ${rows.length} row${rows.length===1?'':'s'}: `+Object.entries(by).sort().map(([k,n])=>`${n} in ${monName(k)}`).join(', ')+'.':'';$('bpGo').disabled=!rows.length};
+$('bPaste').onclick=()=>{$('bpText').value='';$('bpMo').innerHTML=monOpts(monKey(new Date()));bpPreview();$('bpDlg').classList.add('on');setTimeout(()=>$('bpText').focus(),30)};
+$('bpText').addEventListener('input',bpPreview);$('bpMo').addEventListener('input',bpPreview);
+const closeBp=()=>$('bpDlg').classList.remove('on');$('bpCancel').onclick=closeBp;$('bpDlg').addEventListener('click',e=>{if(e.target===$('bpDlg'))closeBp()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('bpDlg').classList.contains('on')){e.stopImmediatePropagation();closeBp()}},true);
+$('bpGo').onclick=async()=>{const rows=parseBinder($('bpText').value,$('bpMo').value);if(!rows.length)return;$('bpGo').disabled=true;let n=0;const t0=Date.now();
+  try{for(const r of rows){r.createdAt=new Date(t0+n).toISOString();await binCol.add(r);n++;$('bpMsg').textContent=`Adding… ${n} of ${rows.length}`}
+    closeBp();const y=rows[0].month.slice(0,4);if(y)$('bYear').value=y;renderBinder();toast(`Added ${n} row${n===1?'':'s'} to your binder`)}
+  catch(e){$('bpMsg').className='msg err';$('bpMsg').textContent=`Added ${n}, then stopped: ${errText(e)}`;$('bpGo').disabled=false}};
+$('bCsv').onclick=async()=>{const year=$('bYear').value,list=binder.filter(b=>(b.month||'').startsWith(year)).sort((a,b)=>(a.month+(a.createdAt||'')).localeCompare(b.month+(b.createdAt||'')));
+  const q=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
+  const lines=[['Month','#','Name','Eff date','Exp date','Type','Com','Term','Premium','Com %','Comm','Yr comm','BF','Finance','Split %','Com split','BF split','Total made','Com paid','BF paid','Notes']];
+  let mk='',i=0;list.forEach(b=>{if(b.month!==mk){mk=b.month;i=0}const c=bCalc(b);lines.push([monName(b.month),++i,b.name,fmtDate(b.eff),fmtDate(b.exp),b.type,b.carrier,b.term||1,b.premium,b.comPct,c.comm,c.yr,b.bf,b.finance,b.splitPct,c.comSplit,c.bfSplit,c.total,fmtDate(b.comPaid),fmtDate(b.bfPaid),b.notes])});
+  const blob=new Blob(['﻿'+lines.map(l=>l.map(q).join(',')).join('\r\n')],{type:'text/csv'});const name=`Binder ${year}.csv`;
+  try{if(dl)await dl.save({filename:name,data:blob,mimeType:'text/csv'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()}}catch(e){toast(errText(e))}};
+try{const v=localStorage.getItem('psw-view');if(v==='tasks'||v==='clients'||(v==='binder'&&binderOn))setView(v)}catch(_){}
 
 /* ---------- supplementals: carrier forms filled from the lead's quote sheet (template = supporting file) ---------- */
 // section 10 (subcontractors) answers on the Burns sup, cleared when Subcontractors N/A is ticked
@@ -1419,10 +1595,7 @@ const SUPS={'burns-gl':{file:'tpl-burns-gl.pdf',suffix:'Burns GL sup',fill:(g,to
   'd1':{file:'tpl-d1.pdf',suffix:'D1',noSheet:true,fill:(g,today)=>({'Date':mdy(today),'Insured':g('f_client_name')})},
   // SL-2 diligent search report: Alex's filled form with the insurers, licensee and signature kept; 2A name, 2B = quote sheet item 8, declinations this month
   'sl2':{file:'tpl-sl2.pdf',suffix:'SL2',noSheet:true,fill:(g,today)=>{const my=`${pad(today.getMonth()+1)}/${today.getFullYear()}`;
-    return {'Name of Insured':g('f_client_name'),'Description of Risk':g('f_description'),'Coverage Code':$('sl2Code').value,'Declination 1':my,'Declination 2':my,'Declination 3':my,'Date':mdy(today)}}}};
-// SL-2 line 2(C) codes: the list shows code + description, the form gets only the code (the PDF's 2(C) is the same dropdown)
-const SL2_CODES=["050 Auto Liability-Private", "051 Auto Liability-Commercial", "100 Auto Physical Damage-Private", "101 Auto Physical Damage-Commercial", "150 Crime", "151 Crime-Kidnap & Ransom", "200 Combined Auto Liability & P.D.-Private", "201 Combined Auto Liability & P.D.-Comm.", "300 Excess Liability (Incl. Umbrella)", "350 Fidelity Surety & Bonds-Bonds", "351 Fidelity Surety & Bonds-Fidelity", "400 Fire-Single Family Dwelling, Duplex", "401 Fire-Commercial", "402 Fire-Homeowners", "403 Fire-Homeowners Multiple Peril", "404 Fire-Farm Owners Multiple Peril", "414 Residential Earthquake", "450 Inland Marine", "500 General Liability", "501 Gen. Liability-Pollution Legal Liability", "502 General Liability-Product Tampering", "510 Aviation", "550 Errors & Omissions-All Others", "551 Errors & Omission-Directors & Officers", "600 Malpractice-All Other", "606 Malpractice-Hospitals", "650 Miscellaneous", "651 Miscellaneous-Glass", "652 Miscellaneous-Boiler & Machinery", "653 Miscellaneous-Nuclear Risks", "655 Miscellaneous-Political Risks", "700 Accident", "701 Accident-Disability Income", "702 Accident-Group Health Ins.", "703 Accident-Ind. Health Ins.", "800 Garage Liability", "980 Excess Workers Compensation", "990 Commercial Property-All Risk", "994 Commercial Property-Special Multi-Peril", "996 Commercial Property-DIC", "997 Commercial Property-Earthquake", "998 Commercial Property-Terrorism", "999 Commercial Property-Special Multi-Peril w/Terrorism"];
-$('sl2Code').innerHTML+=SL2_CODES.map(x=>`<option value="${esc(x.split(' ')[0])}">${esc(x)}</option>`).join('');
+    return {'Name of Insured':g('f_client_name'),'Description of Risk':g('f_description'),'Declination 1':my,'Declination 2':my,'Declination 3':my,'Date':mdy(today)}}}};
 $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data-sup]');if(!btn||!cur||!cur.id)return;const S=SUPS[btn.dataset.sup],m=$('supMsg'),label=btn.textContent;
   const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
   if(!qs&&!S.noSheet){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
