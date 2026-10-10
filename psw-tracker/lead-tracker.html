@@ -243,7 +243,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="row" style="margin-top:8px"><button class="pri" id="logBtn">Add contact</button><button id="textBtn">Text customer</button><span class="small" id="logHint"></span></div>
       <div class="small" style="margin:12px 0 6px;font-weight:600">Quick log (uses the time now, plus any notes above)</div>
       <div class="row" id="quickLog">
-        <button class="pri" data-q="First text" data-how="Text">First text</button><button class="pri" data-q="Follow up text" data-how="Text">Follow up text</button><button class="pri" data-q="Follow up text 2" data-how="Text">Follow up text 2</button>
+        <button class="pri" data-q="First text" data-label="First text petting zoo" data-how="Text">First text petting zoo</button><button class="pri" data-q="Follow up text" data-how="Text">Follow up text</button><button class="pri" data-q="Follow up text 2" data-how="Text">Follow up text 2</button>
       </div>
       <div class="row" style="margin-top:6px">
         <button class="pri" data-q="First email" data-how="Email">First email</button><button class="pri" data-q="Follow up email" data-how="Email">Follow up email</button><button class="pri" data-q="Email 3" data-how="Email">Email 3</button>
@@ -499,7 +499,7 @@ function openLead(l){
   $('cAt').value=nowLocal();$('cNote').value='';fillMeta();
   pending=[];showKeep();$('dropText').value='';$('fillMsg').textContent='';
   const has=!!l;
-  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
+  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each');
   $('log').innerHTML=has?'':'';renderFiles();
@@ -968,7 +968,7 @@ dz.addEventListener('drop',e=>{const f=e.dataTransfer.files&&e.dataTransfer.file
 
 /* ---------- contact log ---------- */
 async function renderLog(){
-  document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{const done=contacts.some(c=>c.step===b.dataset.q);b.classList.toggle('done',done);b.textContent=(done?'✓ ':'')+b.dataset.q});
+  document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{const done=contacts.some(c=>c.step===b.dataset.q);b.classList.toggle('done',done);b.textContent=(done?'✓ ':'')+(b.dataset.label||b.dataset.q)});
   const sorted=[...contacts].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
   const ids=[...new Set(sorted.map(c=>c.by).filter(id=>id&&!(id in names)))];
   if(ids.length&&user){try{const ps=await user.profiles(ids);ps.forEach(p=>names[p.id]=p.isMe?'You':(p.name||''))}catch(e){}}
@@ -981,7 +981,15 @@ async function syncLatest(){
   if(cur.lastContacted!==patch.lastContacted||cur.howContacted!==patch.howContacted){await leadsCol.doc(cur.id).update(patch);Object.assign(cur,patch);fillMeta()}
 }
 let quickStep='';
-document.addEventListener('click',async e=>{const b=e.target.closest('#contactSec button[data-q]');if(!b)return;if(!(await ensureSaved()))return;
+// First text: copies Alex's first-text message (filled from the lead) and opens a new Google Messages chat; on a phone it opens the texting app with it filled in
+const FIRST_TEXT='Hi {first}, I received your insurance request for your {lead} I have an estimate of $3,500-$4,000 for general liability for the year.  Let me know if you want a firm quote.  If you have any questions call me. Alex K Pacific Southwest Ins Serv.';
+const firstText=()=>{const lead=[$('leadType').value.trim(),$('company').value.trim()].filter(Boolean).join(' ');
+  return FIRST_TEXT.replace('{first}',$('firstName').value.trim()||'there').replace(lead?'{lead}':' for your {lead}',lead?lead:'.')};
+function sendFirstText(){const msg=firstText(),d=$('phone').value.replace(/\D/g,''),num=d.length===10?'+1'+d:d;
+  if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){location.href=`sms:${num}${/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?'}body=${encodeURIComponent(msg)}`;return}
+  navigator.clipboard.writeText(msg).then(()=>toast('First text copied: paste the number in To, then paste the message'),()=>toast('Couldn’t copy the message'));
+  window.open('https://messages.google.com/web/conversations/new','psw-gmessages')}
+document.addEventListener('click',async e=>{const b=e.target.closest('#contactSec button[data-q]');if(!b)return;if(b.dataset.q==='First text')sendFirstText();if(!(await ensureSaved()))return;
   $('cHow').value=b.dataset.how;$('cAt').value=nowLocal();quickStep=b.dataset.q;try{await $('logBtn').onclick()}finally{quickStep=''}});
 $('logBtn').onclick=async()=>{
   if(!(await ensureSaved()))return;const m=$('logMsg');
