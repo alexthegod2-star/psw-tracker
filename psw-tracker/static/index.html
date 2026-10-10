@@ -214,7 +214,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
       <textarea id="dropText" placeholder="Paste text from an email, web form, text message…"></textarea>
-      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><select id="fillWhich" style="width:auto;flex:none" title="Which sheet Quick fill makes"><option value="detect">Auto-detect</option><option value="quote">Com quote</option><option value="auto">Com auto quote</option><option value="both">Both</option></select><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button></div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><select id="fillWhich" style="width:auto;flex:none" title="Which sheet Quick fill makes"><option value="detect">Auto-detect</option><option value="quote">Com quote</option><option value="auto">Com auto quote</option><option value="both">Both</option></select><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button><button class="pri" id="newPauto">Personal auto quote</button></div>
       <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
       <div class="msg" id="fillMsg"></div>
     </div>
@@ -587,7 +587,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
+const PAUTO_LAYOUT='psw-pauto-layout-1',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -625,7 +625,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
   const {PDFDocument,StandardFonts,rgb}=PDFLib;
   const doc=await PDFDocument.create();doc.setTitle(TITLE.replace(/^PACIFIC SOUTHWEST INSURANCE/,'PSW'));doc.setSubject(SUBJ);
   const {font,bold,embedded}=await sheetFonts(doc),form=doc.getForm();
-  doc.setKeywords([SECS===AUTO_SECTIONS?AUTO_LAYOUT:QS_LAYOUT,...(embedded?[FONT_MARK]:[])]);
+  doc.setKeywords([SECS===AUTO_SECTIONS?AUTO_LAYOUT:SECS===PAUTO_SECTIONS?PAUTO_LAYOUT:QS_LAYOUT,...(embedded?[FONT_MARK]:[])]);
   const W=612,H=792,L=36,R=W-36,ink=rgb(0.11,0.14,0.19),muted=rgb(0.4,0.44,0.52),line=rgb(0.75,0.78,0.83),band=rgb(0.8,0.87,0.96),pageBg=rgb(0.9,0.95,1);
   let page,y,newPage=()=>{page=doc.addPage([W,H]);y=H-40};const need=h=>{if(y-h<36)newPage()};
   const clean=x=>[...String(x||'')].map(ch=>{try{font.encodeText(ch);return ch}catch(_){return ' '}}).join('');
@@ -708,6 +708,18 @@ const AUTO_SECTIONS=[
  {title:'Underwriting',fields:[{k:'currently_insured',n:31,label:'Current ins?'},{k:'current_carrier_price',n:32,label:'Current carrier / price'},{k:'per_com_prior',n:33,label:'Per / com prior?'},{k:'years_prior',n:34,label:'Years prior'},{k:'prior_limits',n:35,label:'Limits for prior'},{k:'gl_in_force',n:36,label:'GL in force?'},{k:'add_ins',n:37,label:'Add ins?'},{k:'waiver_sub',n:38,label:'Waiver of sub?'},{k:'year_started',n:39,label:'Yr bus established'}]},
  {title:'Loss history',fields:[{k:'claims',n:40,label:'Claims last 3-5 yrs',area:1}]},
  {title:'AI / Lienholders',table:{prefix:'ai',rows:6,cols:[{k:'name',label:'Name',w:2},{k:'address',label:'Address',w:2.4},{k:'city',label:'City',w:1.4},{k:'state',label:'State',w:.6}]}}];
+// personal auto quote sheet: same look as the commercial sheets, with personal auto questions
+const PAUTO_SECTIONS=[
+ {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation',label2:'Education',pair:'education'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date'}]},
+ {title:'Drivers',table:{prefix:'d',rows:5,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'rel',label:'Relation',w:.8},{k:'dl',label:'DL #',w:1.25},{k:'dl_state',label:'DL st',w:.5},{k:'yrs_lic',label:'Yrs lic',w:.55}],
+   cols2:[{k:'activity',label:'Tickets / accidents (3-5 yrs)',w:3},{k:'dui',label:'DUI?',w:.8,opts:['No','Yes']},{k:'filing',label:'SR22 / FR44',w:1,opts:['None','SR22','FR44']}]}},
+ {title:'Vehicles',table:{prefix:'v',rows:5,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'vin',label:'VIN',w:2.2},{k:'zip',label:'Garage zip',w:.85}],
+   cols2:[{k:'use',label:'Use',w:.9,opts:['Commute','Pleasure','Business','Rideshare']},{k:'miles',label:'Annual miles',w:.8},{k:'owned',label:'Owned',w:.9,opts:['Owned','Financed','Leased']},{k:'driver',label:'Main driver',w:.9},{k:'lien',label:'Lienholder / lessor',w:1.6}]}},
+ {title:'Coverages',fields:[{k:'bi_limit',n:9,label:'Bodily injury',label2:'Property damage',pair:'pd_limit'},{k:'um_uim',n:10,label:'UM / UIM',label2:'Med pay',pair:'med_pay'},{k:'comp_ded',n:11,label:'Comp ded',label2:'Coll ded',pair:'coll_ded'},{k:'rental',n:12,label:'Rental',label2:'Towing',pair:'towing'}]},
+ {title:'Current insurance',fields:[{k:'currently_insured',n:13,label:'Insured now?',label2:'Current carrier',pair:'current_carrier'},{k:'current_limits',n:14,label:'Current limits',label2:'Current price',pair:'current_price'},{k:'years_insured',n:15,label:'Years insured',label2:'Lapse in coverage?',pair:'lapse'},{k:'current_exp',n:16,label:'Policy expires'}]},
+ {title:'Discounts',fields:[{k:'discounts',n:17,label:'Discounts',area:1}]},
+ {title:'Notes',fields:[{k:'notes',n:18,label:'Notes',area:1}]}];
 const AUTO_KEYS=[];
 AUTO_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>f.pair?AUTO_KEYS.push([f.k,'Owner first name'],[f.pair,'Owner last name']):AUTO_KEYS.push([f.k,f.label+(f.k==='entity_type'?' (Individual, Corporation, Partnership or LLC)':/date|dob/.test(f.k)?' (MM/DD/YYYY)':f.k==='client_note'?' (website)':f.k==='client_name'?' (business name)':f.k==='garaging_address'?' (where the vehicles are kept)':'')]));
   if(s.table){const t=s.table,who=t.prefix==='d'?'Driver':t.prefix==='v'?'Vehicle':'AI/lienholder';
@@ -753,20 +765,21 @@ async function newSheet(kind){
   const m=$('fillMsg');m.className='msg';
   if(!assets){m.className='msg err';m.textContent='You have view-only access, so you can’t add files.';return}
   if(!(await ensureSaved()))return;
-  const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':' com quote sheet.pdf';
+  const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':kind==='pauto'?' personal auto quote sheet.pdf':' com quote sheet.pdf';
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
-  if(have){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
+  if(have&&kind!=='pauto'){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
   if(have){m.textContent=`This lead already has ${have.name}. Opening it.`;openEditor(have);return}
   const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
   const v={client_name:$('company').value.trim()||person,contact_name:person,phone:fmtPhone($('phone').value),email:$('email').value.trim(),lead_source:$('leadSource').value.trim()};
   const ld=parseMdy($('leadDate').value)||new Date(),eff=new Date();
   v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
+  if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
   const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
-  const b=$(auto?'newAuto':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
+  const b=$(auto?'newAuto':kind==='pauto'?'newPauto':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
-    const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):await buildQuotePdf(v);
+    const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):kind==='pauto'?await buildQuotePdf(v,PAUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL AUTO QUOTE SHEET','psw-pauto-quote-sheet'):await buildQuotePdf(v);
     if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){
       const f=(cur.files||[]).find(x=>x.name===name);m.className='msg ok';m.textContent=`${name} is attached. Fill it in, then hit Save to lead.`;if(f)openEditor(f)}
     else{m.className='msg err';m.textContent=$('fileMsg').textContent}
@@ -808,7 +821,7 @@ async function upgradeAuto(f){
   }catch(e){return false}
 }
 
-$('newQs').onclick=()=>newSheet('qs');$('newAuto').onclick=()=>newSheet('auto');
+$('newQs').onclick=()=>newSheet('qs');$('newAuto').onclick=()=>newSheet('auto');$('newPauto').onclick=()=>newSheet('pauto');
 
 // Build "<client> com quote sheet.pdf" from what was pasted, and attach it to the lead (now if saved, else on Save)
 async function makeQuoteSheet(q){
@@ -1145,7 +1158,7 @@ async function uploadOne(f){
   if(type==='application/pdf'&&!head.startsWith('%PDF')){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF (it starts with “${head}”), so it can’t be stored.`;return false}
   try{const r=await storeBytes(buf,type);
     const fresh=leads.find(l=>l.id===cur.id)||cur,entry={id:r.id,name:f.name,type,size:r.sizeBytes,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{})};
-    const old=/ (com quote sheet|com auto quote sheet|125|126|125 126|130|140)\.pdf$/i.test(f.name)?(fresh.files||[]).find(x=>x.name===f.name):null; // a new quote sheet replaces the old one
+    const old=/ (com quote sheet|com auto quote sheet|personal auto quote sheet|125|126|125 126|130|140)\.pdf$/i.test(f.name)?(fresh.files||[]).find(x=>x.name===f.name):null; // a new quote sheet replaces the old one
     const files=old?(fresh.files||[]).map(x=>x===old?entry:x):[...(fresh.files||[]),entry];
     await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();m.className='msg ok';m.textContent=old?`${f.name} updated.`:`${f.name} attached.`;
     if(old){try{await assets.delete(old.id)}catch(_){}}
