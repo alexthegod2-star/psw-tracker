@@ -861,7 +861,8 @@ function regexFill(t){
   const o={};const g=(re)=>{const m=re.exec(t);return m?m[1].trim():''};
   o.email=g(/([\w.+-]+@[\w-]+\.[\w.-]+)/);
   o.phone=g(/(\(?\b\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}\b)/);
-  const nm=g(/(?:^|\n)\s*(?:full\s*)?name\s*[:\-]\s*([^\n]+)/i);
+  // "Name: Jane Doe", or a web form's "Name" line with the answer on the next line
+  const nm=g(/(?:^|\n)\s*(?:full\s*|your\s*)?name\s*[:\-]\s*([^\n]+)/i)||g(/(?:^|\n)[ \t]*(?:full\s*|your\s*)?name[ \t]*\n\s*([^\n]+)/i);
   if(nm){const p=nm.split(/\s+/);o.firstName=p[0];o.lastName=p.slice(1).join(' ')}
   o.firstName=o.firstName||g(/first\s*name\s*[:\-]\s*([^\n]+)/i);o.lastName=o.lastName||g(/last\s*name\s*[:\-]\s*([^\n]+)/i);
   o.company=g(/(?:company|business|dba|insured|client)(?:\s*name)?\s*[:\-]\s*([^\n]+)/i);
