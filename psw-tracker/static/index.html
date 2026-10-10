@@ -145,7 +145,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="brand"><img src="psw-logo.png" alt="PSW logo" onerror="this.remove()"><div><h1>PACIFIC SOUTHWEST INSURANCE SERVICES DATABASE</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <button class="pri" id="newBtn">+ New lead</button>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -220,7 +220,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
 
     <div class="sec">
-      <h3 style="display:flex;align-items:center;gap:10px">Lead info <button type="button" id="copyClient" style="padding:3px 12px;font-size:12px;font-weight:600;border-radius:999px">Copy to PSW client</button></h3>
+      <h3 style="display:flex;align-items:center;gap:10px">Lead info <button type="button" id="copyClient" style="padding:3px 12px;font-size:12px;font-weight:600;border-radius:999px">Copy to PSW Client</button></h3>
       <div class="grid">
         <div><label for="leadDate">Date of lead</label><input id="leadDate" type="date"></div>
         <div><label for="leadSource">Lead source</label><input id="leadSource" list="sourceList" placeholder="Pick or type a source"></div>
@@ -403,7 +403,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row" style="justify-content:flex-end"><button id="bpCancel">Cancel</button><button class="pri" id="bpGo">Add rows</button></div>
 </div></div>
 <div class="mbg" id="c2Dlg" role="dialog" aria-modal="true" aria-labelledby="c2TitleH"><div class="mbox" id="c2Box">
-  <h3 id="c2TitleH">Copy to PSW client</h3>
+  <h3 id="c2TitleH">Copy to PSW Client</h3>
   <p id="c2Info"></p>
   <div id="c2FilesWrap"><label>Files to copy to the client</label><div class="mpick" id="c2Files"></div></div>
   <div class="msg" id="c2Msg"></div>
@@ -1114,9 +1114,9 @@ $('files').addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.
   const dt=e.dataTransfer;dt.effectAllowed='copy';li.classList.add('dragging');
   if(!slot||!slot.file){toast('Still loading that file, try again in a second.');dt.setData('text/plain',f.name);return}
   const url=f.enc==='b64'?slot.url:new URL('/_blob/'+f.id,location.href).href;
+  // only the file itself goes along: with a plain-text name in the drag too, Outlook pastes the name instead of attaching the file
   try{dt.setData('DownloadURL',`${slot.file.type}:${f.name.replace(/:/g,'-')}:${url}`)}catch(_){}
-  try{dt.items.add(slot.file)}catch(_){}
-  dt.setData('text/plain',f.name);dt.setData('application/x-psw-file',f.id)});
+  dt.setData('application/x-psw-file',f.id)});
 $('files').addEventListener('dragend',e=>{const li=e.target.closest&&e.target.closest('li[data-drag]');if(li)li.classList.remove('dragging')});
 // drag files from the computer onto the Files box to attach them to this lead (a file dragged from this same list is ignored)
 {const fz=$('upRow'),own=e=>[...(e.dataTransfer.types||[])].includes('application/x-psw-file');
@@ -1548,7 +1548,7 @@ function renderClients(){
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
   $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(c.phone)}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td></tr>`).join('');
   $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(c.phone),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent)].filter(Boolean).join(' · ')}</div></div>`).join('');
-  const ce=$('cempty');ce.hidden=rows.length>0;ce.innerHTML=clients.length?'<b>No matching clients</b>Try a different search.':'<b>No clients yet</b>Click “+ New client”, or open a lead and click “→ PSW client”.';
+  const ce=$('cempty');ce.hidden=rows.length>0;ce.innerHTML=clients.length?'<b>No matching clients</b>Try a different search.':'<b>No clients yet</b>Click “+ New client”, or open a lead and click “→ PSW Client”.';
 }
 ['cq','cfAgent'].forEach(id=>$(id).addEventListener('input',renderClients));
 ['ctb','ccards'].forEach(id=>$(id).addEventListener('click',e=>{const r=e.target.closest('[data-client]');if(r)openClient(clients.find(c=>c.id===r.dataset.client))}));
@@ -1617,7 +1617,7 @@ $('clDel').onclick=async()=>{const b=$('clDel');if(!editClient)return;if(!b.data
   try{const gone=editClient.files||[];await clientsCol.doc(editClient.id).delete();if(assets)for(const f of gone){try{await assets.delete(f.id)}catch(_){}}closeClient();toast('Client deleted')}catch(e){$('clientMsg').className='msg err';$('clientMsg').textContent=errText(e)}};
 // client files: copies made from a lead's files (their own stored copies, so removing the lead's file leaves the client's)
 function renderClFiles(c){const fs=(c&&c.files)||[];
-  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use “Copy to PSW client” in a lead to bring files over.</li>'}
+  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use “Copy to PSW Client” in a lead to bring files over.</li>'}
 $('clFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.clopen||b.dataset.clsave||b.dataset.clrm,f=(editClient.files||[]).find(x=>x.id===id);if(!f)return;
   try{if(b.dataset.clrm){if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again';return}
       const files=(editClient.files||[]).filter(x=>x.id!==id);await clientsCol.doc(editClient.id).update({files});editClient.files=files;renderClFiles(editClient);try{await assets.delete(id)}catch(_){}return}
@@ -1643,8 +1643,8 @@ $('copyClient').onclick=async()=>{if(!(await ensureSaved()))return;const fresh=l
   if(!have&&!want.company&&!want.firstName&&!want.lastName){toast('Give the lead a name or company first.');return}
   c2={lead:l,have,fill,name:have?clientName(have):clientName(want),id:have?have.id:null};
   const miss=Object.keys(fill).filter(k=>k!=='leadId'||!have).map(k=>C2_LABELS[k]);
-  $('c2Info').innerHTML=have?`<b>${esc(c2.name)}</b> is already a PSW client. `+(miss.length?`This adds what it’s missing: ${esc(miss.join(', '))}. Nothing already there is changed.`:'It already has everything from this lead, so only the files you tick are added.')
-    :`This makes a new PSW client, <b>${esc(c2.name)}</b>, from this lead${qs?' and its quote sheet':''}.`;
+  $('c2Info').innerHTML=have?`<b>${esc(c2.name)}</b> is already a PSW Client. `+(miss.length?`This adds what it’s missing: ${esc(miss.join(', '))}. Nothing already there is changed.`:'It already has everything from this lead, so only the files you tick are added.')
+    :`This makes a new PSW Client, <b>${esc(c2.name)}</b>, from this lead${qs?' and its quote sheet':''}.`;
   const fs=fresh.files||[],got=f=>!!(have&&(have.files||[]).some(x=>x.name===f.name&&(x.size||0)===(f.size||0)));
   $('c2FilesWrap').hidden=!fs.length;
   $('c2Files').innerHTML=fs.map(f=>`<label><input type="checkbox" data-c2="${esc(f.id)}"${got(f)?'':' checked'}> ${esc(f.name)}<span class="small">${got(f)?'already on client':esc(fmtSize(f.size||0))}</span></label>`).join('');
@@ -1662,8 +1662,8 @@ $('c2Go').onclick=async()=>{if(!c2)return;const m=$('c2Msg'),src=(leads.find(x=>
     if(c2.have){const now=clients.find(c=>c.id===c2.have.id)||c2.have;await clientsCol.doc(now.id).update({...c2.fill,...(added.length?{files:[...(now.files||[]),...added]}:{})})}
     else{const ref=await clientsCol.add({...c2.fill,policies:[],notes:'',files:added,createdAt:new Date().toISOString(),...(me?{createdBy:me}:{})});c2.id=ref.id}
     m.className=failed.length?'msg err':'msg ok';
-    m.textContent=`${c2.have?'Updated':'Made'} ${c2.name} in PSW clients`+(added.length?` and copied ${added.length} file${added.length===1?'':'s'}`:'')+'.'+(failed.length?` Couldn’t copy: ${failed.join(', ')}.`:'');
-    $('c2Go').hidden=true;$('c2Open').hidden=false;$('c2Cancel').textContent='Close';toast('Copied to PSW client')}
+    m.textContent=`${c2.have?'Updated':'Made'} ${c2.name} in PSW Clients`+(added.length?` and copied ${added.length} file${added.length===1?'':'s'}`:'')+'.'+(failed.length?` Couldn’t copy: ${failed.join(', ')}.`:'');
+    $('c2Go').hidden=true;$('c2Open').hidden=false;$('c2Cancel').textContent='Close';toast('Copied to PSW Client')}
   catch(e){m.className='msg err';m.textContent=errText(e);$('c2Go').disabled=false}};
 $('c2Open').onclick=async()=>{const id=c2&&c2.id;closeC2();if(!id)return;let c=clients.find(x=>x.id===id);
   if(!c){try{const d=await clientsCol.doc(id).get();if(d.exists)c={id,...d.data()}}catch(_){}}
