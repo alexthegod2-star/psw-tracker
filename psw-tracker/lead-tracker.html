@@ -72,6 +72,7 @@ button.delrow{padding:3px 8px;font-size:12px}
 .files li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .files .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .files .sz{color:var(--mute);font-size:12px}
+.files li[draggable=true]{cursor:grab}.files li.dragging{opacity:.5}.files .grip{color:var(--mute);font-size:16px;line-height:1;cursor:grab;user-select:none}
 a.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
 .mpick{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}.mpick label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;color:var(--ink);margin:0;cursor:pointer}
 .mpick input{width:auto;flex:none;margin:0}.brow{display:flex;gap:8px;align-items:center;font-size:14px}.brow label{margin:0;font-weight:400;font-size:14px;color:var(--ink);cursor:pointer}.nab{padding:1px 7px;font-size:11px;font-weight:600;border-radius:6px;color:var(--mute)}.nab.on{background:var(--mute);color:var(--card);border-color:var(--mute)}.brow.isna label{color:var(--mute);text-decoration:line-through}.mpick label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -150,7 +151,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <table>
       <thead><tr>
         <th data-k="leadDate">Lead date</th><th data-k="assignedTo">Assigned to</th><th data-k="firstName">First</th><th data-k="lastName">Last</th>
-        <th data-k="company">Company</th><th data-k="phone">Phone</th><th data-k="email">Email</th><th data-k="leadType">Lead type</th>
+        <th data-k="company">Company</th><th data-k="phone">Cell</th><th data-k="email">Email</th><th data-k="leadType">Lead type</th>
         <th data-k="lastContacted">Last contacted</th><th data-k="xDate">X date</th><th data-k="howContacted">How</th><th data-k="nfiles">Files</th><th></th>
       </tr></thead>
       <tbody id="tb"></tbody>
@@ -222,8 +223,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
         <div><label for="firstName">First name</label><input id="firstName"></div>
         <div><label for="lastName">Last name</label><input id="lastName"></div>
         <div class="full"><label for="company">Company name</label><input id="company"></div>
-        <div><label for="phone">Phone number</label><input id="phone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="phone">Cell phone number</label><input id="phone" inputmode="tel" placeholder="(###)###-####"></div>
         <div><label for="email">Email</label><input id="email" type="email"></div>
+        <div><label for="homePhone">Home number</label><input id="homePhone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="workPhone">Work number</label><input id="workPhone" inputmode="tel" placeholder="(###)###-####"></div>
         <div><label for="leadType">Lead type</label><input id="leadType" list="typeList" placeholder="Pick or type a lead type"></div>
         <div><label>Last contacted</label><input id="lastShow" disabled placeholder="Set by contact log"></div>
         <div><label for="xDate">X date</label><input id="xDate" inputmode="numeric" placeholder="MM/DD/YYYY" title="When their current policy expires"></div>
@@ -427,7 +430,7 @@ let view='leads',pending=[],leads=[],sortK='leadDate',sortDir=-1,cur=null,curUns
 const AGENTS=['Alex K','Paul M','Victor Q','Anna C','Patricia G'];
 const LEAD_SOURCES=['Baker','PSW client','AI search','PSW web','Other','Victor','Shai','Paul','Internet'];
 const LEAD_TYPES=['Commercial','Personal','Workers comp','Referral','Renewal','Golf sim','Xmas lights','Party bus','Petting zoo'];
-const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','email','leadType','leadNotes','leadSource','xDate'];
+const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','homePhone','workPhone','email','leadType','leadNotes','leadSource','xDate'];
 
 /* ---------- list ---------- */
 leadsCol.onSnapshot(s=>{
@@ -448,8 +451,8 @@ function render(){
   let rows=leads.filter(l=>{
     if(ft&&l.leadType!==ft)return false;if(fa&&l.assignedTo!==fa)return false;
     if(!q)return true;
-    const hay=[l.firstName,l.lastName,l.company,l.email,l.phone,l.assignedTo,l.leadType].join(' ').toLowerCase();
-    return hay.includes(q)||(qd.length>=3&&String(l.phone||'').replace(/\D/g,'').includes(qd));
+    const hay=[l.firstName,l.lastName,l.company,l.email,l.phone,l.homePhone,l.workPhone,l.assignedTo,l.leadType].join(' ').toLowerCase();
+    return hay.includes(q)||(qd.length>=3&&[l.phone,l.homePhone,l.workPhone].some(x=>String(x||'').replace(/\D/g,'').includes(qd)));
   });
   rows.sort((a,b)=>{const va=sortK==='nfiles'?(a.files||[]).length:String(a[sortK]||''),vb=sortK==='nfiles'?(b.files||[]).length:String(b[sortK]||'');
     if(va===vb)return String(b.createdAt||'').localeCompare(String(a.createdAt||''));
@@ -501,14 +504,14 @@ function openLead(l){
   const has=!!l;
   $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
-  $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each');
+  $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each. Drag a file out to your desktop or an email.');
   $('log').innerHTML=has?'':'';renderFiles();
   if(has){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
   show(true);setTimeout(()=>$(has?'cNote':'firstName').focus(),220);
 }
-$('phone').addEventListener('blur',()=>$('phone').value=fmtPhone($('phone').value));
+['phone','homePhone','workPhone'].forEach(k=>$(k).addEventListener('blur',()=>$(k).value=fmtPhone($(k).value)));
 $('xDate').addEventListener('blur',()=>$('xDate').value=fmtDate(typedISO($('xDate').value)));
 
 async function ensureSaved(){
@@ -520,7 +523,7 @@ async function ensureSaved(){
 }
 $('saveBtn').onclick=async()=>{
   const m=$('saveMsg');m.className='msg';m.textContent='Saving…';
-  $('phone').value=fmtPhone($('phone').value);
+  ['phone','homePhone','workPhone'].forEach(k=>$(k).value=fmtPhone($(k).value));
   const data={};FIELDS.forEach(k=>data[k]=$(k).value.trim());
   data.xDate=typedISO(data.xDate);$('xDate').value=fmtDate(data.xDate);
   $('saveBtn').disabled=true;
@@ -1072,7 +1075,8 @@ const EXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jp
 function renderFiles(){
   renderMail();
   const fs=(cur&&cur.files)||[];
-  $('files').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+  warmFiles(fs);
+  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
 async function addFiles(list){
   if(!list.length||!assets)return;if(!(await ensureSaved()))return;
@@ -1080,11 +1084,25 @@ async function addFiles(list){
   for(const f of list)await uploadOne(f);
 }
 $('fileIn').onchange=()=>{const list=[...$('fileIn').files];$('fileIn').value='';addFiles(list)};
-// drag files from the computer onto the Files box to attach them to this lead
-{const fz=$('upRow');
-['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(assets)fz.classList.add('over')}));
-['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
-fz.addEventListener('drop',e=>addFiles([...(e.dataTransfer.files||[])]));}
+// Drag a file out of the lead: the bytes are fetched ahead of time because a drag has to be set up instantly.
+// Chrome/Edge save it where it's dropped (desktop, a folder, an email); web pages like Outlook on the web get the file itself.
+const dragCache=new Map(); // file id -> {file, url}
+function warmFiles(fs){for(const f of fs){if(dragCache.has(f.id))continue;const slot={};dragCache.set(f.id,slot);
+  fileBytes(f).then(b=>{const type=f.type||EXT[(f.name.split('.').pop()||'').toLowerCase()]||'application/octet-stream';slot.file=new File([b],f.name,{type});slot.url=URL.createObjectURL(slot.file)}).catch(()=>dragCache.delete(f.id))}}
+$('files').addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.closest('li[data-drag]');if(!li)return;
+  const f=((cur&&cur.files)||[]).find(x=>x.id===li.dataset.drag),slot=f&&dragCache.get(f.id);if(!f)return;
+  const dt=e.dataTransfer;dt.effectAllowed='copy';li.classList.add('dragging');
+  if(!slot||!slot.file){toast('Still loading that file, try again in a second.');dt.setData('text/plain',f.name);return}
+  const url=f.enc==='b64'?slot.url:new URL('/_blob/'+f.id,location.href).href;
+  try{dt.setData('DownloadURL',`${slot.file.type}:${f.name.replace(/:/g,'-')}:${url}`)}catch(_){}
+  try{dt.items.add(slot.file)}catch(_){}
+  dt.setData('text/plain',f.name);dt.setData('application/x-psw-file',f.id)});
+$('files').addEventListener('dragend',e=>{const li=e.target.closest&&e.target.closest('li[data-drag]');if(li)li.classList.remove('dragging')});
+// drag files from the computer onto the Files box to attach them to this lead (a file dragged from this same list is ignored)
+{const fz=$('upRow'),own=e=>[...(e.dataTransfer.types||[])].includes('application/x-psw-file');
+['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{if(own(e))return;e.preventDefault();if(assets)fz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{if(own(e))return;e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+fz.addEventListener('drop',e=>{if(!own(e))addFiles([...(e.dataTransfer.files||[])])});}
 // Some computers' PDF uploads are refused by file storage; then the PDF is stored as base64 text and decoded when read back
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function storeBytes(buf,type){
