@@ -260,7 +260,8 @@ def invite_accept(t: str = Form(...), password: str = Form(...), password2: str 
 @app.get("/api/auth/me")
 def me(request: Request):
     u = need_user(request)
-    return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"]}
+    return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
+            "binder": u["username"] in BINDER_OWNERS and not bearer(request)}
 
 
 @app.get("/api/auth/profiles")
@@ -289,6 +290,15 @@ async def change_password(request: Request):
 
 
 # ---------- tracker module: documents ----------
+# Paths under private/<username>/ belong to that one person: nobody else, no admin and no data key can read or change them.
+BINDER_OWNERS = {x.strip() for x in os.environ.get("PSW_BINDER_OWNERS", "alex").split(",") if x.strip()}
+
+
+def guard(request: Request, u, segs):
+    if segs[0] == "private" and (len(segs) < 2 or bearer(request) or segs[1] != u["username"]):
+        err(403, "private")
+
+
 def split_path(path: str, kind: str):
     segs = path.split("/") if path else []
     if not segs or not all(SEG.match(s) for s in segs):
@@ -326,8 +336,8 @@ def tracker_version(request: Request):
 
 @app.get("/api/tracker/col")
 def col_get(request: Request, path: str):
-    need_module("tracker"); need_user(request)
-    split_path(path, "col")
+    need_module("tracker"); u = need_user(request)
+    guard(request, u, split_path(path, "col"))
     with db() as c:
         rows = c.execute("SELECT id,data FROM tracker_docs WHERE parent=? ORDER BY id", (path,)).fetchall()
         return {"v": version(c), "docs": [{"id": r["id"], "data": json.loads(r["data"])} for r in rows]}
@@ -338,7 +348,7 @@ async def col_add(request: Request):
     need_module("tracker"); u = need_user(request)
     body = await request.json()
     path = body.get("path", "")
-    split_path(path, "col")
+    guard(request, u, split_path(path, "col"))
     data = clean_data(body.get("data"))
     i = new_id()
     with db() as c:
@@ -350,8 +360,8 @@ async def col_add(request: Request):
 
 @app.get("/api/tracker/doc")
 def doc_get(request: Request, path: str):
-    need_module("tracker"); need_user(request)
-    split_path(path, "doc")
+    need_module("tracker"); u = need_user(request)
+    guard(request, u, split_path(path, "doc"))
     with db() as c:
         r = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
     return {"exists": bool(r), "data": json.loads(r["data"]) if r else None}
@@ -363,6 +373,7 @@ async def doc_set(request: Request):
     body = await request.json()
     path = body.get("path", "")
     segs = split_path(path, "doc")
+    guard(request, u, segs)
     data = clean_data(body.get("data"))
     with db() as c:
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?) "
@@ -377,7 +388,7 @@ async def doc_update(request: Request):
     need_module("tracker"); u = need_user(request)
     body = await request.json()
     path = body.get("path", "")
-    split_path(path, "doc")
+    guard(request, u, split_path(path, "doc"))
     patch = body.get("data")
     if not isinstance(patch, dict):
         err(400, "bad_data")
@@ -395,8 +406,8 @@ async def doc_update(request: Request):
 
 @app.delete("/api/tracker/doc")
 def doc_delete(request: Request, path: str):
-    need_module("tracker"); need_user(request)
-    split_path(path, "doc")
+    need_module("tracker"); u = need_user(request)
+    guard(request, u, split_path(path, "doc"))
     with db() as c:
         c.execute("DELETE FROM tracker_docs WHERE path=?", (path,))
         bump(c)
@@ -466,10 +477,10 @@ def need_data_admin(request: Request):
 
 @app.get("/api/tracker/export")
 def tracker_export(request: Request):
-    """Every record keyed by path (leads/ID, leads/ID/contacts/ID, tasks/ID), plus the list of files."""
+    """Every record keyed by path (leads/ID, leads/ID/contacts/ID, tasks/ID), plus the list of files. Private records are left out."""
     need_module("tracker"); need_data_admin(request)
     with db() as c:
-        docs = {r["path"]: json.loads(r["data"]) for r in c.execute("SELECT path,data FROM tracker_docs ORDER BY path")}
+        docs = {r["path"]: json.loads(r["data"]) for r in c.execute("SELECT path,data FROM tracker_docs WHERE path NOT LIKE 'private/%' ORDER BY path")}
         blobs = {r["id"]: {"type": r["type"], "size": r["size"]} for r in c.execute("SELECT id,type,size FROM tracker_blobs")}
         return {"v": version(c), "docs": docs, "blobs": blobs}
 
