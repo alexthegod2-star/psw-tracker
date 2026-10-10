@@ -190,7 +190,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="bar">
       <select id="bYear" aria-label="Year"></select>
       <input id="bq" type="search" placeholder="Search name, type, company">
-      <button id="bPaste">Paste from Excel</button>
+      <button class="pri" id="bAdd">+ Add sale</button><button id="bPaste">Paste from Excel</button>
       <button id="bCsv">Download for Excel</button>
     </div>
     <div class="bsum" id="bSum"></div>
@@ -342,25 +342,27 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row"><button class="danger" id="clDel" style="margin-right:auto">Delete client</button><button id="clCancel">Cancel</button><button class="pri" id="clSave">Save client</button></div>
 </div></div>
 <div class="mbg" id="binDlg" role="dialog" aria-modal="true" aria-labelledby="binTitleH"><div class="mbox" id="binBox">
-  <h3 id="binTitleH">New sale</h3>
+  <h3 id="binTitleH">Add sale</h3>
   <div class="grid">
-    <div class="full"><label for="bnName">Name</label><input id="bnName" placeholder="Client, or a note like “pay to Doug”"></div>
+    <div class="full"><label for="bnName">Client name</label><input id="bnName" placeholder="Client, or a note like “pay to Doug”"></div>
     <div><label for="bnMo">Binder month</label><select id="bnMo"></select></div>
     <div><label for="bnEff">Eff date</label><input id="bnEff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="bnExp">Exp date</label><input id="bnExp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
-    <div><label for="bnType">Type</label><input id="bnType" list="bnTypes" placeholder="GL, WC, Auto…"></div>
-    <div><label for="bnCo">Company</label><input id="bnCo" list="bnCos" placeholder="Carrier or wholesaler"></div>
+    <div><label for="bnType">Type of coverage</label><input id="bnType" list="bnTypes" placeholder="GL, WC, Auto…"></div>
+    <div><label for="bnGa">GA</label><input id="bnGa" list="bnGas" placeholder="General agent"></div>
+    <div><label for="bnCo">Company</label><input id="bnCo" list="bnCos" placeholder="Carrier"></div>
     <div><label for="bnTerm">Term</label><input id="bnTerm" inputmode="numeric" placeholder="1" title="Terms in a year: 1 for annual, 2 for 6-month"></div>
     <div><label for="bnPrem">Premium</label><input id="bnPrem" inputmode="decimal" placeholder="$"></div>
     <div><label for="bnPct">Com %</label><input id="bnPct" inputmode="decimal" placeholder="%"></div>
+    <div><label for="bnComm">Comm amount</label><input id="bnComm" inputmode="decimal" title="Works itself out from premium x com %; type an amount to use your own"></div>
+    <div><label for="bnYrc">Yr commission amount</label><input id="bnYrc" inputmode="decimal" title="Works itself out from comm x term; type an amount to use your own"></div>
     <div><label for="bnBf">BF</label><input id="bnBf" inputmode="decimal" placeholder="$ (minus for money out)"></div>
     <div><label for="bnFin">Finance</label><input id="bnFin" placeholder="Finance co. or amount"></div>
     <div><label for="bnSplit">Split %</label><input id="bnSplit" inputmode="decimal" placeholder="Blank = 100%"></div>
-    <div class="bchk"><input type="checkbox" id="bnComPaid"><label for="bnComPaid">Com paid</label></div>
-    <div class="bchk"><input type="checkbox" id="bnBfPaid"><label for="bnBfPaid">BF paid</label></div>
+    <div class="bchk"><input type="checkbox" id="bnComPaid"><label for="bnComPaid">Com paid</label><input type="checkbox" id="bnBfPaid" style="margin-left:14px"><label for="bnBfPaid">BF paid</label></div>
     <div class="full"><label for="bnNotes">Notes</label><textarea id="bnNotes"></textarea></div>
   </div>
-  <datalist id="bnTypes"></datalist><datalist id="bnCos"></datalist>
+  <datalist id="bnTypes"></datalist><datalist id="bnGas"></datalist><datalist id="bnCos"></datalist>
   <div class="bcalc" id="bnCalc"></div>
   <div class="msg" id="binMsg"></div>
   <div class="row"><button class="danger" id="bnDel" style="margin-right:auto">Delete</button><button id="bnCancel">Cancel</button><button id="bnSaveAdd">Save + add another</button><button class="pri" id="bnSave">Save</button></div>
@@ -1339,7 +1341,7 @@ const PRI_ORDER={High:0,Normal:1,Low:2};
 const taskSort=(a,b)=>(!!a.done-!!b.done)||(a.done?String(b.doneAt||'').localeCompare(String(a.doneAt||'')):0)||((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0)||((PRI_ORDER[a.priority]??1)-(PRI_ORDER[b.priority]??1))||String(a.createdAt||'').localeCompare(String(b.createdAt||''));
 tasksCol.onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks();renderLeadTasks()},e=>{$('tempty').hidden=false;$('tempty').textContent=errText(e)});
 function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));$('leadsView').hidden=v!=='leads';$('tasksView').hidden=v!=='tasks';$('clientsView').hidden=v!=='clients';$('binderView').hidden=v!=='binder';
-  $('newBtn').textContent=v==='tasks'?'+ New task':v==='clients'?'+ New client':v==='binder'?'+ New sale':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks();renderClients();renderBinder()}
+  $('newBtn').textContent=v==='tasks'?'+ New task':v==='clients'?'+ New client':v==='binder'?'+ Add sale':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks();renderClients();renderBinder()}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 // the header button makes a task while the Tasks tab is showing
 function renderTasks(){
@@ -1473,7 +1475,7 @@ const bPctTxt=n=>n==null?'':`${String(n).includes('.')&&String(n).split('.')[1].
 const monKey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
 const monName=k=>{const m=/^(\d{4})-(\d\d)$/.exec(k||'');return m?`${MON[+m[2]-1]} ${m[1]}`:'No month'};
 // COMM = premium x com %; YR COMM = COMM x term; split % is your share (blank = 100%); TOTAL MADE = com split + BF split
-function bCalc(r){const comm=r.premium==null||r.comPct==null?null:r2(r.premium*r.comPct/100),yr=comm==null?null:r2(comm*(r.term||1)),sp=r.splitPct==null?100:r.splitPct;
+function bCalc(r){const comm=r.commAmt!=null?r.commAmt:r.premium==null||r.comPct==null?null:r2(r.premium*r.comPct/100),yr=r.yrAmt!=null?r.yrAmt:comm==null?null:r2(comm*(r.term||1)),sp=r.splitPct==null?100:r.splitPct;
   const comSplit=yr==null?null:r2(yr*sp/100),bfSplit=r.bf==null?null:r2(r.bf*sp/100);return {comm,yr,comSplit,bfSplit,total:r2((comSplit||0)+(bfSplit||0))}}
 const monOpts=sel=>{const now=new Date(),ks=new Set([sel,...binder.map(b=>b.month)].filter(Boolean));for(let i=-24;i<=3;i++)ks.add(monKey(new Date(now.getFullYear(),now.getMonth()+i,1)));
   return [...ks].sort().reverse().map(k=>`<option value="${esc(k)}"${k===sel?' selected':''}>${esc(monName(k))}</option>`).join('')};
@@ -1483,7 +1485,7 @@ function renderBinder(){if(!binderOn)return;
   const ys=$('bYear'),keep=ys.value||cy;ys.innerHTML=years.map(y=>`<option>${y}</option>`).join('');ys.value=years.includes(keep)?keep:cy;const year=ys.value;
   const q=$('bq').value.trim().toLowerCase();
   const inYear=binder.filter(b=>(b.month||'').startsWith(year));
-  const rows=inYear.filter(b=>!q||[b.name,b.type,b.carrier,b.finance,b.notes].join(' ').toLowerCase().includes(q));
+  const rows=inYear.filter(b=>!q||[b.name,b.type,b.ga,b.carrier,b.finance,b.notes].join(' ').toLowerCase().includes(q));
   if(view==='binder')$('count').textContent=`${inYear.length} entr${inYear.length===1?'y':'ies'} in ${year}`;
   const tot=list=>list.reduce((a,b)=>{const c=bCalc(b);a.premium+=b.premium||0;a.comm+=c.comm||0;a.yr+=c.yr||0;a.bf+=b.bf||0;a.comSplit+=c.comSplit||0;a.bfSplit+=c.bfSplit||0;a.total+=c.total;
     if(!b.comPaid)a.owed+=c.comSplit||0;if(!b.bfPaid&&(c.bfSplit||0)>0)a.owed+=c.bfSplit;if(b.premium)a.n++;return a},{premium:0,comm:0,yr:0,bf:0,comSplit:0,bfSplit:0,total:0,owed:0,n:0});
@@ -1492,16 +1494,16 @@ function renderBinder(){if(!binderOn)return;
     ...(year===cy?[[`Made in ${MON[new Date().getMonth()]}`,bMoney(r2(M.total)),0]]:[]),['Not paid yet',bMoney(r2(T.owed)),0]].map(([l,v,h])=>`<div${h?' class="hl"':''}><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('');
   const by={};rows.forEach(b=>(by[b.month||'']=by[b.month||'']||[]).push(b));
   const neg=n=>n!=null&&n<0?' neg':'';
-  const head='<thead><tr><th class="num">#</th><th class="nm">Name</th><th>Eff date</th><th>Exp date</th><th>Type</th><th>Com</th><th class="n">Term</th><th class="n">Premium</th><th class="n">Com %</th><th class="n">Comm</th><th class="n">Yr comm</th><th class="n">BF</th><th>Finance</th><th class="n">Split %</th><th class="n">Com split</th><th class="n">BF split</th><th class="n">Total made</th><th class="c">Com paid</th><th class="c">BF paid</th></tr></thead>';
+  const head='<thead><tr><th class="num">#</th><th class="nm">Name</th><th>Eff date</th><th>Exp date</th><th>Type</th><th>GA</th><th>Com</th><th class="n">Term</th><th class="n">Premium</th><th class="n">Com %</th><th class="n">Comm</th><th class="n">Yr comm</th><th class="n">BF</th><th>Finance</th><th class="n">Split %</th><th class="n">Com split</th><th class="n">BF split</th><th class="n">Total made</th><th class="c">Com paid</th><th class="c">BF paid</th></tr></thead>';
   $('bMonths').innerHTML=Object.keys(by).sort().reverse().map(k=>{const list=by[k].sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||'')),t=tot(list);
-    const body=list.map((b,i)=>{const c=bCalc(b),pd=v=>v&&/^\d{4}-/.test(v)?` title="Paid ${esc(fmtDate(v))}"`:'';return `<tr data-bin="${esc(b.id)}"><td class="num">${i+1}</td><td class="nm" title="${esc(b.name)}">${esc(b.name)}</td><td>${esc(fmtDate(b.eff))}</td><td>${esc(fmtDate(b.exp))}</td><td class="up">${esc(b.type)}</td><td class="up">${esc(b.carrier)}</td>
-      <td class="n">${b.premium!=null?esc(b.term||1):''}</td><td class="n">${bMoney(b.premium)}</td><td class="n">${bPctTxt(b.comPct)}</td><td class="n calc">${bMoney(c.comm)}</td><td class="n calc">${bMoney(c.yr)}</td><td class="n${neg(b.bf)}">${bMoney(b.bf)}</td><td>${esc(b.finance)}</td>
+    const body=list.map((b,i)=>{const c=bCalc(b),pd=v=>v&&/^\d{4}-/.test(v)?` title="Paid ${esc(fmtDate(v))}"`:'';return `<tr data-bin="${esc(b.id)}"><td class="num">${i+1}</td><td class="nm" title="${esc(b.name)}">${esc(b.name)}</td><td>${esc(fmtDate(b.eff))}</td><td>${esc(fmtDate(b.exp))}</td><td class="up">${esc(b.type)}</td><td class="up">${esc(b.ga)}</td><td class="up">${esc(b.carrier)}</td>
+      <td class="n">${b.premium!=null?esc(b.term||1):''}</td><td class="n">${bMoney(b.premium)}</td><td class="n">${bPctTxt(b.comPct)}</td><td class="n${b.commAmt!=null?'':' calc'}">${bMoney(c.comm)}</td><td class="n${b.yrAmt!=null?'':' calc'}">${bMoney(c.yr)}</td><td class="n${neg(b.bf)}">${bMoney(b.bf)}</td><td>${esc(b.finance)}</td>
       <td class="n">${bPctTxt(b.splitPct)}</td><td class="n calc">${b.splitPct==null?'':bMoney(c.comSplit)}</td><td class="n calc">${b.splitPct==null?'':bMoney(c.bfSplit)}</td><td class="n tm${neg(c.total)}">${bMoney(c.total)}</td>
       <td class="c"><input type="checkbox" class="bpaid" data-k="comPaid" aria-label="Com paid"${b.comPaid?' checked':''}${pd(b.comPaid)}></td><td class="c"><input type="checkbox" class="bpaid" data-k="bfPaid" aria-label="BF paid"${b.bfPaid?' checked':''}${pd(b.bfPaid)}></td></tr>`}).join('');
     const nm=k?MON[+k.slice(5)-1]:'No month',hasSp=list.some(b=>b.splitPct!=null);
     return `<section class="bmon"><div class="bmh"><h3>${esc(monName(k))}</h3><span class="small">${list.length} entr${list.length===1?'y':'ies'}</span><span class="sp"></span><span>Made <b>${bMoney(r2(t.total))}</b></span><button data-badd="${esc(k)}">+ Add to ${esc(nm)}</button></div>
-      <div class="bwrap"><table class="btab">${head}<tbody>${body}</tbody><tfoot><tr><td></td><td>${esc(nm)} total</td><td></td><td></td><td></td><td></td><td></td><td class="n">${bMoney(r2(t.premium))}</td><td></td><td class="n">${bMoney(r2(t.comm))}</td><td class="n">${bMoney(r2(t.yr))}</td><td class="n${neg(t.bf)}">${bMoney(r2(t.bf))}</td><td></td><td></td><td class="n">${hasSp?bMoney(r2(t.comSplit)):''}</td><td class="n">${hasSp?bMoney(r2(t.bfSplit)):''}</td><td class="n">${bMoney(r2(t.total))}</td><td></td><td></td></tr></tfoot></table></div></section>`}).join('');
-  const be=$('bempty');be.hidden=rows.length>0;be.innerHTML=inYear.length?'<b>Nothing matches</b>Try a different search.':`<b>No sales logged in ${esc(year)}</b>Click “+ New sale”, or “Paste from Excel” to bring in your sheet.`;
+      <div class="bwrap"><table class="btab">${head}<tbody>${body}</tbody><tfoot><tr><td></td><td>${esc(nm)} total</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="n">${bMoney(r2(t.premium))}</td><td></td><td class="n">${bMoney(r2(t.comm))}</td><td class="n">${bMoney(r2(t.yr))}</td><td class="n${neg(t.bf)}">${bMoney(r2(t.bf))}</td><td></td><td></td><td class="n">${hasSp?bMoney(r2(t.comSplit)):''}</td><td class="n">${hasSp?bMoney(r2(t.bfSplit)):''}</td><td class="n">${bMoney(r2(t.total))}</td><td></td><td></td></tr></tfoot></table></div></section>`}).join('');
+  const be=$('bempty');be.hidden=rows.length>0;be.innerHTML=inYear.length?'<b>Nothing matches</b>Try a different search.':`<b>No sales logged in ${esc(year)}</b>Click “+ Add sale”, or “Paste from Excel” to bring in your sheet.`;
 }
 ['bYear','bq'].forEach(id=>$(id).addEventListener('input',renderBinder));
 $('bMonths').addEventListener('click',async e=>{const p=e.target.closest('.bpaid');
@@ -1509,18 +1511,20 @@ $('bMonths').addEventListener('click',async e=>{const p=e.target.closest('.bpaid
   const a=e.target.closest('[data-badd]');if(a){openBin(null,{month:a.dataset.badd||monKey(new Date())});return}
   const r=e.target.closest('[data-bin]');if(r)openBin(binder.find(b=>b.id===r.dataset.bin))});
 // sale dialog
-const BF=[['bnName','name'],['bnType','type'],['bnCo','carrier'],['bnFin','finance'],['bnNotes','notes']];
+const BF=[['bnName','name'],['bnType','type'],['bnGa','ga'],['bnCo','carrier'],['bnFin','finance'],['bnNotes','notes']];
 function binForm(){const g=id=>$(id).value.trim();
-  return {name:g('bnName'),month:$('bnMo').value,eff:typedISO(g('bnEff')),exp:typedISO(g('bnExp')),type:g('bnType'),carrier:g('bnCo'),term:bNum(g('bnTerm'))||1,premium:bNum(g('bnPrem')),comPct:bPct(g('bnPct')),
+  return {name:g('bnName'),month:$('bnMo').value,eff:typedISO(g('bnEff')),exp:typedISO(g('bnExp')),type:g('bnType'),carrier:g('bnCo'),ga:g('bnGa'),term:bNum(g('bnTerm'))||1,premium:bNum(g('bnPrem')),comPct:bPct(g('bnPct')),commAmt:bNum(g('bnComm')),yrAmt:bNum(g('bnYrc')),
     bf:bNum(g('bnBf')),finance:g('bnFin'),splitPct:bPct(g('bnSplit')),notes:g('bnNotes')}}
-function binCalcShow(){const c=bCalc(binForm()),sp=bPct($('bnSplit').value.trim());
+function binCalcShow(){const f=binForm(),a=bCalc({...f,commAmt:null,yrAmt:null}),c0=bCalc({...f,yrAmt:null,commAmt:f.commAmt});$('bnComm').placeholder=a.comm!=null?bMoney(a.comm)+' (auto)':'Auto';$('bnYrc').placeholder=c0.yr!=null?bMoney(c0.yr)+' (auto)':'Auto';
+  const c=bCalc(f),sp=bPct($('bnSplit').value.trim());
   $('bnCalc').innerHTML=[['Comm',c.comm],['Yr comm',c.yr],...(sp==null?[]:[['Com split',c.comSplit],['BF split',c.bfSplit]]),['Total made',c.total]].map(([l,v])=>`<div><span>${l}</span><b>${bMoney(v)||'—'}</b></div>`).join('')}
 function openBin(b,preset){editBin=b||null;const v=b||preset||{};
-  $('binTitleH').textContent=b?'Edit sale':'New sale';BF.forEach(([id,k])=>$(id).value=v[k]||'');
+  $('binTitleH').textContent=b?'Edit sale':'Add sale';BF.forEach(([id,k])=>$(id).value=v[k]||'');
   $('bnMo').innerHTML=monOpts(v.month||monKey(new Date()));$('bnEff').value=fmtDate(v.eff||'');$('bnExp').value=fmtDate(v.exp||'');
-  $('bnTerm').value=v.term&&v.term!==1?v.term:'';$('bnPrem').value=v.premium!=null?bMoney(v.premium):'';$('bnPct').value=v.comPct!=null?v.comPct+'%':'';
+  $('bnTerm').value=v.term&&v.term!==1?v.term:'';$('bnComm').value=v.commAmt!=null?bMoney(v.commAmt):'';$('bnYrc').value=v.yrAmt!=null?bMoney(v.yrAmt):'';$('bnPrem').value=v.premium!=null?bMoney(v.premium):'';$('bnPct').value=v.comPct!=null?v.comPct+'%':'';
   $('bnBf').value=v.bf!=null?bMoney(v.bf):'';$('bnSplit').value=v.splitPct!=null?v.splitPct+'%':'';$('bnComPaid').checked=!!v.comPaid;$('bnBfPaid').checked=!!v.bfPaid;
   $('bnTypes').innerHTML=[...new Set(['GL','WC','Com','Auto','Com auto','DIC','HO','Umbrella',...binder.map(x=>x.type)].filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
+  $('bnGas').innerHTML=[...new Set(binder.map(x=>x.ga).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
   $('bnCos').innerHTML=[...new Set(binder.map(x=>x.carrier).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
   $('bnDel').hidden=!b;$('bnDel').textContent='Delete';delete $('bnDel').dataset.arm;$('binMsg').textContent='';$('bnSave').disabled=$('bnSaveAdd').disabled=false;binCalcShow();
   $('binDlg').classList.add('on');setTimeout(()=>$('bnName').focus(),30)}
@@ -1529,7 +1533,7 @@ $('bnCancel').onclick=closeBin;$('binDlg').addEventListener('click',e=>{if(e.tar
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('binDlg').classList.contains('on')){e.stopImmediatePropagation();closeBin()}},true);
 $('binBox').addEventListener('input',e=>{const el=e.target;if((el.id==='bnEff'||el.id==='bnExp')&&!(e.inputType&&e.inputType.startsWith('delete')))slashDate(el);binCalcShow()});
 $('binBox').addEventListener('focusout',e=>{const el=e.target;
-  if((el.id==='bnPrem'||el.id==='bnBf')&&el.value.trim()){const n=bNum(el.value);if(n!=null)el.value=bMoney(n)}
+  if((el.id==='bnPrem'||el.id==='bnBf'||el.id==='bnComm'||el.id==='bnYrc')&&el.value.trim()){const n=bNum(el.value);if(n!=null)el.value=bMoney(n)}
   if((el.id==='bnPct'||el.id==='bnSplit')&&el.value.trim()){const n=bPct(el.value);if(n!=null)el.value=n+'%'}
   if(el.id==='bnEff'||el.id==='bnExp'){const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso)){el.value=fmtDate(iso);
     if(el.id==='bnEff'&&!$('bnExp').value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);$('bnExp').value=fmtDate(d.toISOString().slice(0,10))}}}});
@@ -1545,7 +1549,7 @@ $('bnSave').onclick=()=>saveBin(false);$('bnSaveAdd').onclick=()=>saveBin(true);
 $('bnDel').onclick=async()=>{const b=$('bnDel');if(!editBin)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to delete';return}
   try{await binCol.doc(editBin.id).delete();closeBin();toast('Deleted')}catch(e){$('binMsg').className='msg err';$('binMsg').textContent=errText(e)}};
 // paste rows copied from the Excel binder sheet (same columns as the sheet; header row optional)
-const BCOLS={name:['name'],eff:['eff date','eff'],exp:['exp date','exp'],type:['type'],carrier:['com','company','carrier'],term:['term'],premium:['premium'],comPct:['com %','com%'],bf:['bf'],finance:['finance'],splitPct:['split %','split%','split'],comPaid:['com paid'],bfPaid:['bf paid']};
+const BCOLS={name:['name'],eff:['eff date','eff'],exp:['exp date','exp'],type:['type','type of coverage'],ga:['ga'],carrier:['com','company','carrier'],term:['term'],premium:['premium'],comPct:['com %','com%'],bf:['bf'],finance:['finance'],splitPct:['split %','split%','split'],comPaid:['com paid'],bfPaid:['bf paid']};
 const BDEF={name:1,eff:2,exp:3,type:4,carrier:5,term:6,premium:7,comPct:9,bf:12,finance:13,splitPct:14,comPaid:18,bfPaid:19};
 function parseBinder(text,defMonth){const lines=String(text||'').replace(/\r/g,'').split('\n').map(l=>l.split('\t'));let map=null;
   const hi=lines.findIndex(c=>c.some(x=>x.trim().toLowerCase()==='name'));
@@ -1559,11 +1563,12 @@ function parseBinder(text,defMonth){const lines=String(text||'').replace(/\r/g,'
     if(mi>=0&&!g('eff')&&!g('type')&&!g('carrier')){const k=`${mm[2]||yr}-${pad(mi+1)}`;pending.splice(0).forEach(r=>{r.month=k;out.push(r)});return}
     if(!name||/^total/i.test(name))return;
     const eff=typedISO(g('eff')),exp=typedISO(g('exp'));
-    pending.push({name,month:'',eff:/^\d{4}-/.test(eff)?eff:'',exp:/^\d{4}-/.test(exp)?exp:'',type:g('type'),carrier:g('carrier'),term:bNum(g('term'))||1,premium:bNum(g('premium')),comPct:bPct(g('comPct')),
+    pending.push({name,month:'',eff:/^\d{4}-/.test(eff)?eff:'',exp:/^\d{4}-/.test(exp)?exp:'',type:g('type'),ga:g('ga'),carrier:g('carrier'),term:bNum(g('term'))||1,premium:bNum(g('premium')),comPct:bPct(g('comPct')),
       bf:bNum(g('bf')),finance:g('finance'),splitPct:bPct(g('splitPct')),comPaid:paid(g('comPaid')),bfPaid:paid(g('bfPaid')),notes:''})});
   pending.forEach(r=>{r.month=defMonth;out.push(r)});return out}
 const bpPreview=()=>{const rows=parseBinder($('bpText').value,$('bpMo').value),by={};rows.forEach(r=>by[r.month]=(by[r.month]||0)+1);
   $('bpMsg').className='msg';$('bpMsg').textContent=rows.length?`Found ${rows.length} row${rows.length===1?'':'s'}: `+Object.entries(by).sort().map(([k,n])=>`${n} in ${monName(k)}`).join(', ')+'.':'';$('bpGo').disabled=!rows.length};
+$('bAdd').onclick=()=>openBin(null,{month:monKey(new Date())});
 $('bPaste').onclick=()=>{$('bpText').value='';$('bpMo').innerHTML=monOpts(monKey(new Date()));bpPreview();$('bpDlg').classList.add('on');setTimeout(()=>$('bpText').focus(),30)};
 $('bpText').addEventListener('input',bpPreview);$('bpMo').addEventListener('input',bpPreview);
 const closeBp=()=>$('bpDlg').classList.remove('on');$('bpCancel').onclick=closeBp;$('bpDlg').addEventListener('click',e=>{if(e.target===$('bpDlg'))closeBp()});
@@ -1574,8 +1579,8 @@ $('bpGo').onclick=async()=>{const rows=parseBinder($('bpText').value,$('bpMo').v
   catch(e){$('bpMsg').className='msg err';$('bpMsg').textContent=`Added ${n}, then stopped: ${errText(e)}`;$('bpGo').disabled=false}};
 $('bCsv').onclick=async()=>{const year=$('bYear').value,list=binder.filter(b=>(b.month||'').startsWith(year)).sort((a,b)=>(a.month+(a.createdAt||'')).localeCompare(b.month+(b.createdAt||'')));
   const q=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
-  const lines=[['Month','#','Name','Eff date','Exp date','Type','Com','Term','Premium','Com %','Comm','Yr comm','BF','Finance','Split %','Com split','BF split','Total made','Com paid','BF paid','Notes']];
-  let mk='',i=0;list.forEach(b=>{if(b.month!==mk){mk=b.month;i=0}const c=bCalc(b);lines.push([monName(b.month),++i,b.name,fmtDate(b.eff),fmtDate(b.exp),b.type,b.carrier,b.term||1,b.premium,b.comPct,c.comm,c.yr,b.bf,b.finance,b.splitPct,c.comSplit,c.bfSplit,c.total,fmtDate(b.comPaid),fmtDate(b.bfPaid),b.notes])});
+  const lines=[['Month','#','Name','Eff date','Exp date','Type','GA','Com','Term','Premium','Com %','Comm','Yr comm','BF','Finance','Split %','Com split','BF split','Total made','Com paid','BF paid','Notes']];
+  let mk='',i=0;list.forEach(b=>{if(b.month!==mk){mk=b.month;i=0}const c=bCalc(b);lines.push([monName(b.month),++i,b.name,fmtDate(b.eff),fmtDate(b.exp),b.type,b.ga,b.carrier,b.term||1,b.premium,b.comPct,c.comm,c.yr,b.bf,b.finance,b.splitPct,c.comSplit,c.bfSplit,c.total,fmtDate(b.comPaid),fmtDate(b.bfPaid),b.notes])});
   const blob=new Blob(['﻿'+lines.map(l=>l.map(q).join(',')).join('\r\n')],{type:'text/csv'});const name=`Binder ${year}.csv`;
   try{if(dl)await dl.save({filename:name,data:blob,mimeType:'text/csv'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()}}catch(e){toast(errText(e))}};
 try{const v=localStorage.getItem('psw-view');if(v==='tasks'||v==='clients'||(v==='binder'&&binderOn))setView(v)}catch(_){}
