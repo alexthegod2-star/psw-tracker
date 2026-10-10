@@ -82,6 +82,8 @@ tr.isdone td,.tli.isdone .tt{color:var(--mute)}tr.isdone .tt,.tli.isdone .tt{tex
 .pri-High{background:#fde2e1;color:#9b1c1c}.pri-Low{background:var(--chip);color:var(--mute)}
 a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .tasks{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.tli{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}.tli .tt{flex:1;min-width:0;cursor:pointer}.tli .small{white-space:nowrap}
+#clientBox{width:min(820px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
+.poltab input{width:100%;min-width:70px;padding:5px 6px}.poltab td{padding:3px 4px}.poltab th{position:static}
 #taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
 .msg{font-size:13px;margin-top:6px}
 .msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
@@ -121,7 +123,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><h1>PSW Lead Tracker</h1><div class="sub" id="count">Loading leads…</div></div>
     <button class="pri" id="newBtn">+ New lead</button>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW clients <span class="chip" id="clientCount">0</span></button></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -156,11 +158,25 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="cards" id="tcards"></div>
   </div>
+  <div id="clientsView" hidden>
+    <div class="bar">
+      <input id="cq" type="search" placeholder="Search clients, contacts, policy #, carrier">
+      <select id="cfAgent"><option value="">Everyone</option></select>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Client</th><th>First</th><th>Last</th><th>Phone</th><th>Email</th><th>Policies</th><th>Next renewal</th><th>Agent</th></tr></thead>
+        <tbody id="ctb"></tbody>
+      </table>
+      <div class="empty" id="cempty" hidden></div>
+    </div>
+    <div class="cards" id="ccards"></div>
+  </div>
 </div>
 
 <div class="ov" id="ov"></div>
 <aside class="dr" id="dr" aria-hidden="true">
-  <div class="dh"><h2 id="dTitle">New lead</h2><div class="row"><button id="saveBtn" class="pri">Save</button><button class="danger" id="delTop">Delete</button><button id="closeBtn">Close</button></div></div>
+  <div class="dh"><h2 id="dTitle">New lead</h2><div class="row"><button id="saveBtn" class="pri">Save</button><button id="toClient" title="Add this lead to PSW clients">→ PSW client</button><button class="danger" id="delTop">Delete</button><button id="closeBtn">Close</button></div></div>
   <div class="db">
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
@@ -279,6 +295,27 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="msg" id="taskMsg"></div>
   <div class="row"><button class="danger" id="tDel" style="margin-right:auto">Delete task</button><button id="tCancel">Cancel</button><button class="pri" id="tSave">Save task</button></div>
 </div></div>
+<div class="mbg" id="clientDlg" role="dialog" aria-modal="true" aria-labelledby="clientTitleH"><div class="mbox" id="clientBox">
+  <h3 id="clientTitleH">New client</h3>
+  <div class="grid">
+    <div class="full"><label for="clCompany">Client / business name</label><input id="clCompany"></div>
+    <div><label for="clDba">DBA</label><input id="clDba"></div>
+    <div><label for="clAgent">Agent</label><select id="clAgent"></select></div>
+    <div><label for="clFirst">First name</label><input id="clFirst"></div>
+    <div><label for="clLast">Last name</label><input id="clLast"></div>
+    <div><label for="clPhone">Phone</label><input id="clPhone" inputmode="tel"></div>
+    <div><label for="clEmail">Email</label><input id="clEmail" type="email"></div>
+    <div class="full"><label for="clAddress">Mailing address</label><input id="clAddress"></div>
+    <div><label for="clSince">Client since</label><input id="clSince" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
+    <div><label for="clLead">Lead</label><select id="clLead"></select></div>
+  </div>
+  <h4 style="margin:14px 0 6px">Policies</h4>
+  <div class="tablewrap" style="max-height:none"><table class="poltab"><thead><tr><th>Line</th><th>Carrier</th><th>Policy #</th><th>Eff date</th><th>Exp date</th><th>Premium</th><th></th></tr></thead><tbody id="polRows"></tbody></table></div>
+  <button id="polAdd" style="margin-top:6px">+ Add policy</button>
+  <div class="grid" style="margin-top:10px"><div class="full"><label for="clNotes">Notes</label><textarea id="clNotes"></textarea></div></div>
+  <div class="msg" id="clientMsg"></div>
+  <div class="row"><button class="danger" id="clDel" style="margin-right:auto">Delete client</button><button id="clCancel">Cancel</button><button class="pri" id="clSave">Save client</button></div>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -363,7 +400,7 @@ function show(on){$('dr').classList.toggle('on',on);$('ov').classList.toggle('on
 function closeLead(){show(false);if(curUnsub){curUnsub();curUnsub=null}cur=null}
 $('closeBtn').onclick=closeLead;$('ov').onclick=closeLead;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('dr').classList.contains('on'))closeLead()});
-$('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):openLead(null);
+$('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):view==='clients'?openClient(null,{}):openLead(null);
 
 function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact'}
 $('madeTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=!made(cur);try{await leadsCol.doc(cur.id).update({contactMade:on});cur.contactMade=on;showMade()}catch(e){toast(errText(e))}};
@@ -1237,8 +1274,8 @@ const dueTxt=t=>t.due?fmtDate(t.due)+(t.done?'':t.due<todayISO()?' (overdue)':t.
 const PRI_ORDER={High:0,Normal:1,Low:2};
 const taskSort=(a,b)=>(!!a.done-!!b.done)||(a.done?String(b.doneAt||'').localeCompare(String(a.doneAt||'')):0)||((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0)||((PRI_ORDER[a.priority]??1)-(PRI_ORDER[b.priority]??1))||String(a.createdAt||'').localeCompare(String(b.createdAt||''));
 tasksCol.onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks();renderLeadTasks()},e=>{$('tempty').hidden=false;$('tempty').textContent=errText(e)});
-function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));$('leadsView').hidden=v!=='leads';$('tasksView').hidden=v!=='tasks';
-  $('newBtn').textContent=v==='tasks'?'+ New task':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks()}
+function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));$('leadsView').hidden=v!=='leads';$('tasksView').hidden=v!=='tasks';$('clientsView').hidden=v!=='clients';
+  $('newBtn').textContent=v==='tasks'?'+ New task':v==='clients'?'+ New client':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks();renderClients()}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 // the header button makes a task while the Tasks tab is showing
 function renderTasks(){
@@ -1289,7 +1326,78 @@ $('tSave').onclick=async()=>{const m=$('taskMsg'),title=$('tTitle').value.trim()
     closeTask();toast('Task saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('tSave').disabled=false}};
 $('tDel').onclick=async()=>{const b=$('tDel');if(!editTask)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to delete';return}
   try{await tasksCol.doc(editTask.id).delete();closeTask();toast('Task deleted')}catch(e){$('taskMsg').className='msg err';$('taskMsg').textContent=errText(e)}};
-try{if(localStorage.getItem('psw-view')==='tasks')setView('tasks')}catch(_){}
+
+/* ---------- PSW clients: clients/<id> {company, dba, firstName, lastName, phone, email, address, agent, since YYYY-MM-DD, leadId, notes,
+   policies:[{line, carrier, number, eff, exp (YYYY-MM-DD), premium}], createdAt, createdBy} ---------- */
+const clientsCol=db.collection('clients');let clients=[],editClient=null;
+const clientName=c=>c.company||[c.firstName,c.lastName].filter(Boolean).join(' ')||'(no name)';
+const nextRenew=c=>(c.policies||[]).map(p=>p.exp).filter(x=>x&&x>=todayISO()).sort()[0]||'';
+clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
+function renderClients(){
+  $('clientCount').textContent=clients.length;
+  if(view==='clients')$('count').textContent=clients.length?`${clients.length} client${clients.length===1?'':'s'}`:'No clients yet';
+  opts($('cfAgent'),[...new Set([...AGENTS,...clients.map(c=>(c.agent||'').trim()).filter(Boolean)])],'Everyone');
+  const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value;
+  const rows=clients.filter(c=>{if(fa&&c.agent!==fa)return false;if(!q)return true;
+    return [c.company,c.dba,c.firstName,c.lastName,c.phone,c.email,c.address,c.notes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.number])].join(' ').toLowerCase().includes(q)})
+    .sort((a,b)=>clientName(a).localeCompare(clientName(b)));
+  const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
+  const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
+  $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(c.phone)}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td></tr>`).join('');
+  $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(c.phone),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent)].filter(Boolean).join(' · ')}</div></div>`).join('');
+  const ce=$('cempty');ce.hidden=rows.length>0;ce.innerHTML=clients.length?'<b>No matching clients</b>Try a different search.':'<b>No clients yet</b>Click “+ New client”, or open a lead and click “→ PSW client”.';
+}
+['cq','cfAgent'].forEach(id=>$(id).addEventListener('input',renderClients));
+['ctb','ccards'].forEach(id=>$(id).addEventListener('click',e=>{const r=e.target.closest('[data-client]');if(r)openClient(clients.find(c=>c.id===r.dataset.client))}));
+// policy rows: dates type as MM/DD/YYYY, exp fills in a year after eff
+const polRow=p=>{p=p||{};const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input data-p="line" placeholder="GL, WC, Auto…"></td><td><input data-p="carrier"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"></td><td><button class="danger" data-prm title="Remove policy">✕</button></td>`;
+  for(const k of ['line','carrier','number','premium'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';
+  for(const k of ['eff','exp'])tr.querySelector(`[data-p=${k}]`).value=fmtDate(p[k]||'');
+  $('polRows').appendChild(tr)};
+$('polAdd').onclick=()=>{polRow();const r=$('polRows').lastElementChild;r&&r.querySelector('input').focus()};
+$('polRows').addEventListener('click',e=>{const b=e.target.closest('[data-prm]');if(b)b.closest('tr').remove()});
+const slashDate=el=>{const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d};
+$('clientBox').addEventListener('input',e=>{const el=e.target;if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;if(e.inputType&&e.inputType.startsWith('delete'))return;slashDate(el)});
+$('clientBox').addEventListener('focusout',e=>{const el=e.target;
+  if(el.dataset.p==='premium'&&el.value.trim()){el.value=fmtMoney(el.value);return}
+  if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso);
+  if(el.dataset.p==='eff'&&/^\d{4}-/.test(iso)){const x=el.closest('tr').querySelector('[data-p=exp]');if(!x.value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);x.value=fmtDate(d.toISOString().slice(0,10))}}});
+function openClient(c,preset){editClient=c||null;const v=c||preset||{};
+  $('clientTitleH').textContent=c?'Edit client':'New client';
+  [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPhone','phone'],['clEmail','email'],['clAddress','address'],['clNotes','notes']].forEach(([id,k])=>$(id).value=v[k]||'');
+  $('clSince').value=fmtDate(v.since||'');
+  const agents=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
+  $('clAgent').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('clAgent').value=v.agent||'';
+  const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
+  $('clLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('')+
+    (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
+  $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);
+  $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
+  $('clientDlg').classList.add('on');setTimeout(()=>$('clCompany').focus(),30)}
+function closeClient(){$('clientDlg').classList.remove('on');editClient=null}
+$('clCancel').onclick=closeClient;$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
+$('clSave').onclick=async()=>{const m=$('clientMsg');
+  const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtPhone($('clPhone').value),email:$('clEmail').value.trim(),
+    address:$('clAddress').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim()};
+  if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
+  const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
+  data.since=iso($('clSince').value,'Client since');
+  data.policies=[...$('polRows').rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-p=${k}]`).value.trim();
+    return {line:g('line'),carrier:g('carrier'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):''}}).filter(p=>Object.values(p).some(Boolean));
+  if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(', ')} as MM/DD/YYYY.`;return}
+  $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
+  try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;await clientsCol.add(data)}
+    closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
+$('clDel').onclick=async()=>{const b=$('clDel');if(!editClient)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to delete';return}
+  try{await clientsCol.doc(editClient.id).delete();closeClient();toast('Client deleted')}catch(e){$('clientMsg').className='msg err';$('clientMsg').textContent=errText(e)}};
+// lead -> client: opens the client already made from this lead, else a new one filled from the lead
+$('toClient').onclick=async()=>{if(!(await ensureSaved()))return;const have=clients.find(c=>c.leadId===cur.id);
+  const l={...cur,...Object.fromEntries(['firstName','lastName','company','phone','email','assignedTo'].map(k=>[k,$(k).value.trim()]))};
+  const id=cur.id;closeLead();setView('clients');
+  openClient(have||null,{company:l.company,firstName:l.firstName,lastName:l.lastName,phone:l.phone,email:l.email,agent:l.assignedTo,leadId:id,since:todayISO()})};
+try{const v=localStorage.getItem('psw-view');if(v==='tasks'||v==='clients')setView(v)}catch(_){}
 
 /* ---------- supplementals: carrier forms filled from the lead's quote sheet (template = supporting file) ---------- */
 // section 10 (subcontractors) answers on the Burns sup, cleared when Subcontractors N/A is ticked
