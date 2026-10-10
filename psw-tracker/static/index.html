@@ -588,7 +588,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
-const PAUTO_LAYOUT='psw-pauto-layout-2',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
+const PAUTO_LAYOUT='psw-pauto-layout-3',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -712,7 +712,7 @@ const AUTO_SECTIONS=[
 // personal auto quote sheet: same look as the commercial sheets, with personal auto questions
 const PAUTO_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate'},{k:'ins_sex',n:3,label:'Sex',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation',label2:'Education',pair:'education'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date'}]},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate'},{k:'ins_sex',n:3,label:'Sex',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation'},{k:'employer',n:7,label:'Name of employer',label2:'Address of employer',pair:'employer_address'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date'}]},
  {title:'Drivers',table:{prefix:'d',rows:5,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'rel',label:'Relation',w:.8},{k:'dl',label:'DL #',w:1.25},{k:'dl_state',label:'DL st',w:.5},{k:'yrs_lic',label:'Yrs lic',w:.55}],
    cols2:[{k:'activity',label:'Tickets / accidents (3-5 yrs)',w:3},{k:'dui',label:'DUI?',w:.8,opts:['No','Yes']},{k:'filing',label:'SR22 / FR44',w:1,opts:['None','SR22','FR44']}]}},
  {title:'Vehicles',table:{prefix:'v',rows:5,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'vin',label:'VIN',w:2.2},{k:'zip',label:'Garage zip',w:.85}],
@@ -1242,6 +1242,22 @@ $('edBody').addEventListener('focusout',e=>{const el=e.target,m=el&&/^x_(auto|gl
   if(m[2]==='exp'){el.dataset.auto='';return}
   const d=parseMdy(el.value),ex=document.querySelector(`#edBody .annotationLayer [name="x_${m[1]}_exp"]`);
   if(d&&ex&&(!ex.value.trim()||ex.dataset.auto==='1')){put(ex,mdy(new Date(d.getFullYear()+1,d.getMonth(),d.getDate())));ex.dataset.auto='1'}});
+// personal auto sheet: driver 1 follows the named insured's name, birthdate, sex and marital status (until you type over it)
+{const D1={f_ins_first:'d1_first',f_ins_last:'d1_last',f_ins_dob:'d1_dob',f_ins_sex:'d1_sex',f_ins_marital:'d1_mar'};let copying=false,lic=false;
+  const box=n=>document.querySelector(`#edBody .annotationLayer [name="${n}"]`);
+  $('edBody').addEventListener('focusin',e=>{const el=e.target;if(el&&D1[el.name])el.dataset.prev=el.value});
+  $('edBody').addEventListener('input',e=>{const el=e.target;if(!el||copying)return;
+    if(Object.values(D1).includes(el.name)){el.dataset.auto='';return}
+    const t=D1[el.name]&&box(D1[el.name]);if(!t)return;
+    if(t.dataset.auto==='1'||!t.value.trim()||t.value===(el.dataset.prev||'')){copying=true;t.value=el.value;t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));copying=false;t.dataset.auto='1'}
+    el.dataset.prev=el.value})
+  // each driver's Yrs lic fills in as age minus 16 from that driver's birthdate (until you type over it)
+  $('edBody').addEventListener('input',e=>{const el=e.target,m=el&&String(el.name||'').match(/^d(\d+)_(dob|yrs_lic)$/);if(!m||lic)return;
+    const t=box(`d${m[1]}_yrs_lic`);if(!t)return;if(m[2]==='yrs_lic'){t.dataset.auto='';return}
+    if(t.value.trim()&&t.dataset.auto!=='1')return;
+    const d=parseMdy(el.value),now=new Date();let y='';
+    if(d){if(d>now)d.setFullYear(d.getFullYear()-100);let age=now.getFullYear()-d.getFullYear();if(now<new Date(now.getFullYear(),d.getMonth(),d.getDate()))age--;y=String(Math.max(0,age-16))}
+    lic=true;t.value=y;t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));lic=false;t.dataset.auto='1'})}
 // % owned: tidy to N% and keep the total under the column current
 $('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/^o[1-4]_pct$/.test(el.name||''))return;
   const put=(x,v)=>{if(!x||x.value===v)return;x.value=v;x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}))};
