@@ -1264,10 +1264,15 @@ $('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/^o[1-4]_
   const n=pctNum(el.value);if(n!=null)put(el,n+'%');const q=k=>document.querySelector(`#edBody .annotationLayer [name="${k}"]`);
   put(q('o_pct_total'),pctTotal(i=>(q(`o${i}_pct`)||{}).value))});
 // birth dates and EFF/EXP/lead dates on the sheets tidy to MM/DD/YYYY when you leave them (01012026, 0101/2026, 1/1/26 -> 01/01/2026)
-$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/^(?:f_)?(?:[od]\d+_dob|(?:eff|exp|lead)_date)$/.test(el.name||''))return;const raw=el.value.trim();if(!raw)return;
+$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/^(?:f_)?(?:[od]\d+_dob|ins_dob|(?:eff|exp|lead)_date)$/.test(el.name||''))return;const raw=el.value.trim();if(!raw)return;
   let iso=typedISO(raw);if(!/^\d{4}-\d\d-\d\d$/.test(iso)){const d=raw.replace(/\D/g,'');if(d.length===8||d.length===6)iso=typedISO(d)}
   if(/_dob$/.test(el.name)&&/^\d{4}-/.test(iso)&&+iso.slice(0,4)>new Date().getFullYear())iso=(+iso.slice(0,4)-100)+iso.slice(4); // 1/5/80 is 1980
   if(/^\d{4}-\d\d-\d\d$/.test(iso)&&fmtDate(iso)!==el.value){el.value=fmtDate(iso);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
+// birth dates on the personal auto sheet take their slashes as you type digits (01012026 -> 01/01/2026)
+$('edBody').addEventListener('input',e=>{const el=e.target;if(!el||!/^(?:f_ins|d\d+)_dob$/.test(el.name||''))return;const v=el.value;
+  if(!/^[\d\/]+\d$/.test(v)||[...v].some((c,i)=>c==='/'&&i!==2&&i!==5))return; // leave 1/5/80 style typing alone
+  const d=v.replace(/\D/g,'').slice(0,8),f=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d;
+  if(f!==v){el.value=f;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
 // phone boxes on a quote sheet tidy to (###)###-#### when you leave them
 $('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||el.name!=='f_phone')return;const v=fmtPhone(el.value.trim());if(v!==el.value){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
 $('edAdd').onclick=()=>{const on=!$('edAdd').classList.contains('on');$('edAdd').classList.toggle('on',on);$('ed').classList.toggle('adding',on)};
