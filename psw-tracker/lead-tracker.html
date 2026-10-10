@@ -1036,11 +1036,14 @@ const FIRST_TEXT='Hi {first}, I received your insurance request for your {lead} 
 const firstText=()=>{const lead=[$('txLob').value.trim()||$('leadType').value.trim(),$('company').value.trim()].filter(Boolean).join(', ');
   const est=$('txEst').value.trim().replace(/(^|[-–]\s*)(\d)/g,'$1$$$2')||'$3,500-$4,000',cov=$('txCov').value.trim()||'general liability',term=$('txTerm').value.trim()||'the year';
   return FIRST_TEXT.replace('{first}',$('firstName').value.trim()||'there').replace(lead?'{lead}':' for your {lead}',lead?lead:'.').replace('{est}',est).replace('{cov}',cov).replace('{term}',term).replace('{agent}',$('assignedTo').value.trim()||'Alex K')};
-function sendFirstText(){const msg=firstText(),d=$('phone').value.replace(/\D/g,''),num=d.length===10?'+1'+d:d;
+// Follow up text: Alex's follow-up wording, sent the same way as the first text
+const followText=()=>{const lob=$('txLob').value.trim()||$('leadType').value.trim(),first=$('firstName').value.trim();
+  return `Hi${first?', '+first:''} I'm following up on the ${lob?lob+' ':''}insurance.  Let me know if you have any questions Thanks! ${$('assignedTo').value.trim()||'Alex K'}`};
+function sendText(msg=firstText(),label='First text'){const d=$('phone').value.replace(/\D/g,''),num=d.length===10?'+1'+d:d;
   if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){location.href=`sms:${num}${/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?'}body=${encodeURIComponent(msg)}`;return}
-  navigator.clipboard.writeText(msg).then(()=>toast('First text copied: paste the number in To, then paste the message'),()=>toast('Couldn’t copy the message'));
+  navigator.clipboard.writeText(msg).then(()=>toast(label+' copied: paste the number in To, then paste the message'),()=>toast('Couldn’t copy the message'));
   window.open('https://messages.google.com/web/conversations/new','psw-gmessages')}
-document.addEventListener('click',async e=>{const b=e.target.closest('#contactSec button[data-q]');if(!b)return;if(b.dataset.q==='First text')sendFirstText();if(!(await ensureSaved()))return;
+document.addEventListener('click',async e=>{const b=e.target.closest('#contactSec button[data-q]');if(!b)return;if(b.dataset.q==='First text')sendText();if(b.dataset.q==='Follow up text')sendText(followText(),'Follow up text');if(!(await ensureSaved()))return;
   $('cHow').value=b.dataset.how;$('cAt').value=nowLocal();quickStep=b.dataset.q;try{await $('logBtn').onclick()}finally{quickStep=''}});
 $('logBtn').onclick=async()=>{
   if(!(await ensureSaved()))return;const m=$('logMsg');
