@@ -221,7 +221,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
 
     <div class="sec">
-      <h3 style="display:flex;align-items:center;gap:10px">Lead info <button type="button" id="copyClient" style="padding:3px 12px;font-size:12px;font-weight:600;border-radius:999px">Copy to PSW Client</button></h3>
+      <h3 style="display:flex;align-items:center;gap:10px">Lead info <button type="button" class="pri" id="copyClient" style="padding:3px 12px;font-size:12px;font-weight:600;border-radius:999px">Copy to PSW Client</button></h3>
       <div class="grid">
         <div><label for="leadDate">Date of lead</label><input id="leadDate" type="date"></div>
         <div><label for="leadSource">Lead source</label><input id="leadSource" list="sourceList" placeholder="Pick or type a source"></div>
@@ -306,7 +306,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
   </div>
 </aside>
-<datalist id="assignList"></datalist><datalist id="lobList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
+<datalist id="assignList"></datalist><datalist id="lobList"></datalist><datalist id="coList"></datalist><datalist id="gaList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
 <div class="ed" id="ed" aria-hidden="true">
   <div class="edh"><span class="nm" id="edName"></span>
     <button id="edAdd" title="Click on the page to type text">+ Add text</button>
@@ -328,6 +328,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><label for="tLead">Lead</label><select id="tLead"></select></div>
     <div class="full"><label for="tNotes">Notes</label><textarea id="tNotes"></textarea></div>
   </div>
+  <div class="drop row" id="tUpRow" style="padding:10px 12px;margin-top:10px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="tFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text</span></div>
+  <ul class="files" id="tFiles" style="margin-top:8px"></ul>
   <div class="msg" id="taskMsg"></div>
   <div class="row"><button class="danger" id="tDel" style="margin-right:auto">Delete task</button><button id="tCancel">Cancel</button><button class="pri" id="tSave">Save task</button></div>
 </div></div>
@@ -358,8 +360,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <h3 id="polTitleH">Policy</h3>
   <div class="grid">
     <div><label for="ppLine">Line of business</label><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"></div>
-    <div><label for="ppCarrier">General Agent</label><input id="ppCarrier" data-pp="carrier"></div>
-    <div><label for="ppCompany">Company</label><input id="ppCompany" data-pp="company"></div>
+    <div><label for="ppCarrier">General Agent</label><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"></div>
+    <div><label for="ppCompany">Company</label><input id="ppCompany" data-pp="company" list="coList" autocomplete="off" placeholder="Type or pick"></div>
     <div><label for="ppNumber">Policy #</label><input id="ppNumber" data-pp="number"></div>
     <div><label for="ppEff">Eff date</label><input id="ppEff" data-pp="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="ppExp">Exp date</label><input id="ppExp" data-pp="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
@@ -1550,10 +1552,34 @@ function openTask(t,preset){editTask=t||null;const v=t||preset||{};
   $('tAssign').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('tAssign').value=v.assignedTo||'';
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
   $('tLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('');$('tLead').value=v.leadId||'';
-  $('tDel').hidden=!t;$('tDel').textContent='Delete task';delete $('tDel').dataset.arm;$('taskMsg').textContent='';$('tSave').disabled=false;
+  tFiles=[...(v.files||[])];tAdded=[];renderTaskFiles();$('tDel').hidden=!t;$('tDel').textContent='Delete task';delete $('tDel').dataset.arm;$('taskMsg').textContent='';$('tSave').disabled=false;
   $('taskDlg').classList.add('on');setTimeout(()=>$('tTitle').focus(),30)}
-function closeTask(){$('taskDlg').classList.remove('on');editTask=null}
-$('tCancel').onclick=closeTask;$('taskDlg').addEventListener('click',e=>{if(e.target===$('taskDlg'))closeTask()});
+function closeTask(saved){$('taskDlg').classList.remove('on');if(!saved&&assets)tAdded.forEach(id=>assets.delete(id).catch(()=>{}));tAdded=[];editTask=null} // files dropped into a task you cancel are thrown away
+// task files: drop or pick files; they are stored right away and kept on the task when you hit Save task
+let tFiles=[],tAdded=[];
+function renderTaskFiles(){$('tUpRow').hidden=!assets;
+  $('tFiles').innerHTML=tFiles.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-topen="${esc(f.id)}">Open</button><button data-tsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-trm="${esc(f.id)}">Remove</button>`:''}</li>`).join('')}
+async function addTaskFiles(list){if(!assets)return;const m=$('taskMsg');
+  for(const f of list){const type=EXT[(f.name.split('.').pop()||'').toLowerCase()];
+    if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;continue}
+    m.className='msg';m.textContent=`Uploading ${f.name}…`;
+    try{const buf=await f.arrayBuffer(),head=new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0,4)));
+      if(type==='application/pdf'&&head!=='%PDF'){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF, so it can’t be stored.`;continue}
+      const r=await storeBytes(buf,type);tAdded.push(r.id);
+      tFiles.push({id:r.id,name:f.name,type,size:r.sizeBytes,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{})});renderTaskFiles();
+      m.className='msg ok';m.textContent=`Added ${f.name}. Hit Save task to keep it.`}
+    catch(e){m.className='msg err';m.textContent=`${f.name}: ${errText(e)}`}}}
+$('tFileIn').onchange=()=>{const list=[...$('tFileIn').files];$('tFileIn').value='';addTaskFiles(list)};
+{const fz=$('tUpRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
+ ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+ fz.addEventListener('drop',e=>addTaskFiles([...(e.dataTransfer.files||[])]))}
+$('tFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.topen||b.dataset.tsave||b.dataset.trm,f=tFiles.find(x=>x.id===id);if(!f)return;
+  if(b.dataset.trm){if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again';return}tFiles=tFiles.filter(x=>x.id!==id);renderTaskFiles();return}
+  try{const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
+    if(b.dataset.tsave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
+    else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
+  catch(err){$('taskMsg').className='msg err';$('taskMsg').textContent=`${f.name}: ${errText(err)}`}});
+$('tCancel').onclick=()=>closeTask();$('taskDlg').addEventListener('click',e=>{if(e.target===$('taskDlg'))closeTask()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('taskDlg').classList.contains('on')){e.stopImmediatePropagation();closeTask()}},true);
 // due date types as MM/DD/YYYY: slashes go in as you type the digits
 $('tDue').addEventListener('input',e=>{const el=e.target;if(e.inputType&&e.inputType.startsWith('delete'))return;const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d});
@@ -1561,12 +1587,12 @@ $('tDue').addEventListener('blur',()=>{const iso=typedISO($('tDue').value);if(/^
 $('tTitle').addEventListener('keydown',e=>{if(e.key==='Enter')$('tSave').click()});
 $('tSave').onclick=async()=>{const m=$('taskMsg'),title=$('tTitle').value.trim();if(!title){m.className='msg err';m.textContent='Give the task a name.';$('tTitle').focus();return}
   const raw=$('tDue').value.trim(),iso=raw?typedISO(raw):'';if(raw&&!/^\d{4}-\d\d-\d\d$/.test(iso)){m.className='msg err';m.textContent='Type the due date as MM/DD/YYYY.';$('tDue').focus();return}
-  const data={title,firstName:$('tFirst').value.trim(),lastName:$('tLast').value.trim(),company:$('tCompany').value.trim(),assignedTo:$('tAssign').value,due:iso,priority:$('tPri').value,leadId:$('tLead').value,notes:$('tNotes').value.trim()};
+  const data={title,firstName:$('tFirst').value.trim(),lastName:$('tLast').value.trim(),company:$('tCompany').value.trim(),assignedTo:$('tAssign').value,due:iso,priority:$('tPri').value,leadId:$('tLead').value,notes:$('tNotes').value.trim(),files:tFiles};const gone=((editTask&&editTask.files)||[]).filter(f=>!tFiles.some(x=>x.id===f.id));
   $('tSave').disabled=true;m.className='msg';m.textContent='Saving…';
   try{if(editTask)await tasksCol.doc(editTask.id).update(data);else{data.done=false;data.doneAt='';data.createdAt=new Date().toISOString();if(me)data.createdBy=me;await tasksCol.add(data)}
-    closeTask();toast('Task saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('tSave').disabled=false}};
+    gone.forEach(f=>assets&&assets.delete(f.id).catch(()=>{}));closeTask(true);toast('Task saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('tSave').disabled=false}};
 $('tDel').onclick=async()=>{const b=$('tDel');if(!editTask)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to delete';return}
-  try{await tasksCol.doc(editTask.id).delete();closeTask();toast('Task deleted')}catch(e){$('taskMsg').className='msg err';$('taskMsg').textContent=errText(e)}};
+  try{const fs=editTask.files||[];await tasksCol.doc(editTask.id).delete();fs.forEach(f=>assets&&assets.delete(f.id).catch(()=>{}));closeTask();toast('Task deleted')}catch(e){$('taskMsg').className='msg err';$('taskMsg').textContent=errText(e)}};
 
 /* ---------- PSW clients: clients/<id> {company, dba, firstName, lastName, phone, email, address, agent, since YYYY-MM-DD, leadId, notes,
    policies:[{line, carrier (general agent), company, number, eff, exp (YYYY-MM-DD), premium, notes}], createdAt, createdBy} ---------- */
@@ -1595,12 +1621,17 @@ const LOBS=['Personal Auto','Personal Home','Rental Dwelling','Earthquake','DIC'
 // line of business: type to narrow the list and pick; an older typed-in value (e.g. "GL") is kept as is
 const setLob=(el,v)=>{el.value=String(v||'').trim()};
 $('lobList').innerHTML=LOBS.map(x=>`<option value="${esc(x)}">`).join('');
-// leaving the box with a partial word picks the one line it matches ("work" -> Workers Comp)
-document.addEventListener('change',e=>{const el=e.target;if(!el||el.getAttribute('list')!=='lobList')return;const v=el.value.trim().toLowerCase();if(!v)return;
-  const hit=LOBS.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(LOBS.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(LOBS.filter(x=>x.toLowerCase().includes(v)));
+// policy General Agent and Company lists (A-Z); other names can still be typed
+const COMPANIES=['Kemper','Progressive','Bristol West','Mercury/SmartChoice','Aspire','Safeway','Crum and Forster','Richmond National','Ategrity','Bamboo/Incline Casualty','Lightspeed'].sort((a,b)=>a.localeCompare(b));
+$('coList').innerHTML=COMPANIES.map(x=>`<option value="${esc(x)}">`).join('');
+const GAS=['Greenwood General','Baker and Bonds','Burns and Wilcox'].sort((a,b)=>a.localeCompare(b));
+$('gaList').innerHTML=GAS.map(x=>`<option value="${esc(x)}">`).join('');
+// leaving a line of business, GA or company box with a partial word picks the one it matches ("work" -> Workers Comp)
+document.addEventListener('change',e=>{const el=e.target,L=el&&{lobList:LOBS,coList:COMPANIES,gaList:GAS}[el.getAttribute&&el.getAttribute('list')];if(!L)return;const v=el.value.trim().toLowerCase();if(!v)return;
+  const hit=L.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().includes(v)));
   if(hit&&hit!==el.value)el.value=hit},true);
 const polRow=p=>{p=p||{};const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input data-p="line" list="lobList" autocomplete="off" placeholder="Type or pick"></td><td><input data-p="carrier"></td><td><input data-p="company"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
+  tr.innerHTML=`<td><input data-p="line" list="lobList" autocomplete="off" placeholder="Type or pick"></td><td><input data-p="carrier" list="gaList" autocomplete="off"></td><td><input data-p="company" list="coList" autocomplete="off"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
   for(const k of ['carrier','company','number','premium','notes'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';setLob(tr.querySelector('[data-p=line]'),p.line);
   for(const k of ['eff','exp'])tr.querySelector(`[data-p=${k}]`).value=fmtDate(p[k]||'');
   $('polRows').appendChild(tr)};
