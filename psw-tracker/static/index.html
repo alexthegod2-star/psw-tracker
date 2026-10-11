@@ -9,10 +9,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-ap
 .wrap{max-width:none;margin:0 auto;padding:20px 24px 60px}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
 h1{font-size:22px;margin:0}
-header{display:grid;grid-template-columns:1fr auto 1fr}header>#newBtn{justify-self:end}
+header{display:grid;grid-template-columns:1fr auto 1fr}header>.hdrbtns{justify-self:end;display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .brand{grid-column:2;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0}.brand img{height:52px;width:auto;flex:none}
 .hdrband{margin:-20px -24px 10px;background:linear-gradient(#e9edfd,#dfe5f8);border-bottom:4px solid #1d2a6e;box-shadow:0 3px 0 rgba(29,42,110,.2);line-height:0}.hdrband img{display:block;width:min(820px,100%);height:auto;margin:0 auto;-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 98.5%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 98.5%,transparent)}@media (max-width:1100px){.hdrband{margin-left:-12px;margin-right:-12px}}.brand.banner{text-align:center}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media (max-width:900px){header{grid-template-columns:1fr}.brand{grid-column:1}header>#newBtn{justify-self:center}}
+@media (max-width:900px){header{grid-template-columns:1fr}.brand{grid-column:1}header>.hdrbtns{justify-self:center}}
 @media (max-width:520px){.brand img{height:40px}h1{font-size:18px}}
 .sub{color:var(--mute);font-size:13px}
 button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
@@ -41,6 +41,7 @@ tbody tr:last-child td{border-bottom:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}
+.adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.admgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}.admgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}.admlink{display:flex;gap:6px;margin-top:8px}.admlink input{flex:1;min-width:0}@media (max-width:520px){.admgrid{grid-template-columns:1fr}}
 .mbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(380px,100%);box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .mbox h3{margin:0 0 6px;font-size:18px}.mbox p{margin:0 0 16px;color:var(--mute)}
 .mbox .row{justify-content:flex-end}
@@ -147,7 +148,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="hdrband"><img src="psw-header.svg" alt="Pacific Southwest Insurance Services, Database Management System"></div>
   <header>
     <div class="brand banner"><div><h1 class="sr-only">Pacific Southwest Insurance Services Database</h1><div class="sub" id="count">Loading leads…</div></div></div>
-    <button class="pri" id="newBtn">+ New lead</button>
+    <div class="hdrbtns"><button class="pri" id="newBtn">+ New lead</button><button type="button" id="adminBtn" hidden>Admin</button></div>
   </header>
   <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button></nav>
   <div id="leadsView">
@@ -376,6 +377,22 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <textarea id="noteText" style="width:100%;min-height:140px" placeholder="What happened, what's next…"></textarea>
   <div class="small" id="noteWhen" style="margin-top:6px"></div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="noteCancel">Cancel</button><button class="pri" id="noteSave">Save note</button></div>
+</div></div>
+<div class="mbg" id="admDlg" role="dialog" aria-modal="true" aria-labelledby="admTitleH"><div class="mbox adm" style="width:min(720px,100%);max-height:90vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="admTitleH" style="margin:0">Admin</h3><button class="pri" id="admAdd" type="button">+ Add user</button></div>
+  <form id="admForm" hidden style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px">
+    <div class="admgrid">
+      <label>Full name (first name + last initial, like Paul M)<input id="admName" autocomplete="off" required></label>
+      <label>Username (what they sign in with)<input id="admUser" autocomplete="off" required></label>
+      <label>Password (leave blank to send a sign-up link instead)<input id="admPw" type="password" autocomplete="new-password" minlength="8"></label>
+      <label style="flex-direction:row;align-items:center;gap:6px;align-self:end"><input type="checkbox" id="admIsAdmin"> Admin</label>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button type="button" id="admFormCancel">Cancel</button><button class="pri" type="submit" id="admSave">Add user</button></div>
+  </form>
+  <div class="msg" id="admMsg"></div>
+  <div class="admlink" id="admLinkRow" hidden><input id="admLink" readonly><button type="button" class="pri" id="admCopy">Copy link</button></div>
+  <table style="margin-top:12px"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Added</th></tr></thead><tbody id="admRows"><tr><td colspan="5">Loading…</td></tr></tbody></table>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
   <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Done</button></div>
@@ -1582,7 +1599,34 @@ function renderMyTasks(){const el=$('myTasks');if(!myName){el.hidden=true;return
   const n=tasks.filter(t=>!t.done&&sameAgent(t.assignedTo,myName)).length;el.hidden=false;el.innerHTML=`Current Open Tasks For ${esc(myName)}: <b>${n}</b>`}
 $('myTasks').onclick=()=>{setView('tasks');const o=[...$('tfAssign').options].find(x=>x.value&&sameAgent(x.value,myName));if(o)$('tfAssign').value=o.value;$('tfStatus').value='open';renderTasks()};
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u)return;const nm=String(u.name||u.username||'').trim();
-  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks()}).catch(()=>{});
+  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner}).catch(()=>{});
+
+/* ---------- admin panel (owner only; the server checks too) ---------- */
+{const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const ERR={bad_username:'Username can only use letters, numbers, dots, dashes and underscores (2 to 32).',bad_name:'Type their full name.',exists:'That username is already taken.',too_short:'Password needs at least 8 characters.',owner_only:'Only the owner can do this.'};
+ const msg=(t,ok)=>{$('admMsg').className='msg '+(ok?'ok':'err');$('admMsg').textContent=t};
+ async function admLoad(){try{const r=await fetch('/api/admin/users',{credentials:'same-origin'});if(!r.ok)throw 0;const d=await r.json();
+   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Turned off'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td></tr>`)
+     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td></tr>`));
+   $('admRows').innerHTML=rows.join('')||'<tr><td colspan="5">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="5">Couldn’t load the user list.</td></tr>'}}
+ const formOpen=on=>{$('admForm').hidden=!on;$('admAdd').hidden=on;if(on){$('admForm').reset();setTimeout(()=>$('admName').focus(),30)}};
+ const open=()=>{formOpen(false);$('admMsg').textContent='';$('admLinkRow').hidden=true;$('admDlg').classList.add('on');admLoad()};
+ const close=()=>$('admDlg').classList.remove('on');
+ $('adminBtn').onclick=open;$('admClose').onclick=close;$('admDlg').addEventListener('click',e=>{if(e.target===$('admDlg'))close()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('admDlg').classList.contains('on')){e.stopImmediatePropagation();close()}},true);
+ $('admAdd').onclick=()=>{$('admMsg').textContent='';$('admLinkRow').hidden=true;formOpen(true)};$('admFormCancel').onclick=()=>formOpen(false);
+ $('admName').addEventListener('input',()=>{if($('admUser').dataset.typed)return;const w=$('admName').value.toLowerCase().replace(/[^a-z ]/g,'').trim().split(/\s+/).filter(Boolean);$('admUser').value=w.length?w[0]+(w.length>1?w[w.length-1][0]:''):''});
+ $('admUser').addEventListener('input',()=>{$('admUser').dataset.typed=$('admUser').value?'1':''});
+ $('admForm').onsubmit=async e=>{e.preventDefault();const name=$('admName').value.trim(),username=$('admUser').value.trim().toLowerCase(),password=$('admPw').value;
+   if(password&&password.length<8)return msg(ERR.too_short);$('admSave').disabled=true;
+   try{const r=await fetch('/api/admin/users',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,username,password,admin:$('admIsAdmin').checked})});
+     const d=await r.json().catch(()=>({}));if(!r.ok)return msg(ERR[d.code]||'Couldn’t add that user.');
+     formOpen(false);$('admUser').dataset.typed='';
+     if(d.invite){$('admLink').value=location.origin+d.invite;$('admLinkRow').hidden=false;msg(`Added ${name}. Send them this sign-up link. It works once and expires in 7 days.`,true)}
+     else msg(`Added ${name}. They can sign in now as “${username}” with the password you set.`,true);admLoad()}
+   catch(_){msg('Couldn’t reach the server.')}finally{$('admSave').disabled=false}};
+ $('admCopy').onclick=()=>{$('admLink').select();(navigator.clipboard?navigator.clipboard.writeText($('admLink').value):Promise.reject()).then(()=>toast('Link copied'),()=>document.execCommand('copy'))};
+}
 function renderTasks(){
   const open=tasks.filter(t=>!t.done).length;$('taskCount').textContent=open;renderMyTasks();
   if(view==='tasks')$('count').textContent=tasks.length?`${open} open task${open===1?'':'s'}, ${tasks.length-open} done`:'No tasks yet';
