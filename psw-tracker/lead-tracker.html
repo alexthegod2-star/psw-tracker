@@ -82,7 +82,7 @@ a.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);fon
 .mpick{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}.mpick label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;color:var(--ink);margin:0;cursor:pointer}
 .mpick input{width:auto;flex:none;margin:0}.brow{display:flex;gap:8px;align-items:center;font-size:14px}.brow label{margin:0;font-weight:400;font-size:14px;color:var(--ink);cursor:pointer}.nab{padding:1px 7px;font-size:11px;font-weight:600;border-radius:6px;color:var(--mute)}.nab.on{background:var(--mute);color:var(--card);border-color:var(--mute)}.brow.isna label{color:var(--mute);text-decoration:line-through}.mpick label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .small{font-size:12px;color:var(--mute)}
-.tabs{display:flex;gap:6px;margin:0 0 12px}.tab{border-radius:999px;padding:6px 16px;font-weight:600}.tab.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}.tab .chip{margin-left:4px}.tab.on .chip{background:rgba(255,255,255,.25);color:inherit}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;position:relative}.mytasks{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:0;background:none;padding:4px 8px;font-weight:700;font-size:15px;white-space:nowrap;color:var(--ink)}.mytasks b{color:var(--acc)}@media (max-width:1000px){.mytasks{position:static;transform:none;flex:1 0 100%;display:block;text-align:center}}.tab{border-radius:999px;padding:6px 16px;font-weight:600}.tab.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}.tab .chip{margin-left:4px}.tab.on .chip{background:rgba(255,255,255,.25);color:inherit}
 .tdone{width:18px;height:18px;margin:0;cursor:pointer;vertical-align:-4px}
 tr.isdone td,.tli.isdone .tt{color:var(--mute)}tr.isdone .tt,.tli.isdone .tt{text-decoration:line-through}
 .due-over{color:var(--bad);font-weight:600}.due-today{color:#b26b00;font-weight:600}
@@ -147,7 +147,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="brand"><img src="psw-logo.png" alt="PSW logo" onerror="this.remove()"><div><h1>PACIFIC SOUTHWEST INSURANCE SERVICES DATABASE</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <button class="pri" id="newBtn">+ New lead</button>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -1571,8 +1571,16 @@ function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classL
   $('newBtn').textContent=v==='tasks'?'+ New task':v==='clients'?'+ New client':v==='binder'?'+ Add sale':'+ New lead';try{localStorage.setItem('psw-view',v)}catch(_){}render();renderTasks();renderClients();renderBinder()}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 // the header button makes a task while the Tasks tab is showing
+// "Current Open Tasks For Alex K: 3" in the middle of the tab line, for whoever is signed in
+let myName='';const sameAgent=(a,b)=>{const n=s=>String(s||'').toLowerCase().replace(/[^a-z ]/g,' ').trim().split(/\s+/).filter(Boolean),x=n(a),y=n(b);
+  return !!x.length&&!!y.length&&x[0]===y[0]&&(x.length<2||y.length<2||x[1][0]===y[1][0])};
+function renderMyTasks(){const el=$('myTasks');if(!myName){el.hidden=true;return}
+  const n=tasks.filter(t=>!t.done&&sameAgent(t.assignedTo,myName)).length;el.hidden=false;el.innerHTML=`Current Open Tasks For ${esc(myName)}: <b>${n}</b>`}
+$('myTasks').onclick=()=>{setView('tasks');const o=[...$('tfAssign').options].find(x=>x.value&&sameAgent(x.value,myName));if(o)$('tfAssign').value=o.value;$('tfStatus').value='open';renderTasks()};
+fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u)return;const nm=String(u.name||u.username||'').trim();
+  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks()}).catch(()=>{});
 function renderTasks(){
-  const open=tasks.filter(t=>!t.done).length;$('taskCount').textContent=open;
+  const open=tasks.filter(t=>!t.done).length;$('taskCount').textContent=open;renderMyTasks();
   if(view==='tasks')$('count').textContent=tasks.length?`${open} open task${open===1?'':'s'}, ${tasks.length-open} done`:'No tasks yet';
   const agents=[...new Set([...TASK_AGENTS,...tasks.map(t=>(t.assignedTo||'').trim()).filter(Boolean)])];opts($('tfAssign'),agents,'Everyone');
   const q=$('tq').value.trim().toLowerCase(),fa=$('tfAssign').value,st=$('tfStatus').value;
