@@ -341,7 +341,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row"><button class="danger" id="tDel" style="margin-right:auto">Delete task</button><button id="tCancel">Cancel</button><button class="pri" id="tSave">Save task</button></div>
 </div></div>
 <div class="mbg" id="clientDlg" role="dialog" aria-modal="true" aria-labelledby="clientTitleH"><div class="mbox" id="clientBox">
-  <h3 id="clientTitleH">New client</h3>
+  <div class="row" style="align-items:center"><h3 id="clientTitleH" style="margin:0 auto 0 0">New client</h3><button id="clCancelTop">Cancel</button><button class="pri" id="clSaveTop">Save client</button></div>
   <div class="grid">
     <div class="full"><label for="clCompany">Client / business name</label><input id="clCompany"></div>
     <div><label for="clDba">DBA</label><input id="clDba"></div>
@@ -1801,7 +1801,8 @@ $('noteSave').onclick=async()=>{if($('noteText').readOnly)return;const t=$('note
   clNoteLog.push({at:new Date().toISOString(),text:t,...(me?{by:me}:{})});renderClNotes();closeNote();
   if(editClient){try{await clientsCol.doc(editClient.id).update({noteLog:clNoteLog});editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
   else toast('Note added. Hit Save client to keep it.')};
-$('clCancel').onclick=closeClient;$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
+$('clCancel').onclick=closeClient;$('clCancelTop').onclick=()=>$('clCancel').click();$('clSaveTop').onclick=()=>$('clSave').click(); // top-right copies of the bottom buttons
+$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
 $('clSave').onclick=async()=>{const m=$('clientMsg');
   const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),preferredName:$('clPref').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),phone2:fmtClPhone($('clPhone2').value),email2:$('clEmail2').value.trim(),
