@@ -376,7 +376,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="noteCancel">Cancel</button><button class="pri" id="noteSave">Save note</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
-  <h3 id="polTitleH">Policy</h3>
+  <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Done</button></div>
   <div class="grid">
     <div><label for="ppLine">Line of business</label><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"></div>
     <div><label for="ppCarrier" style="display:flex;align-items:center;gap:8px">General Agent <button type="button" class="pri" id="ppAddGa" style="padding:1px 10px;font-size:12px;border-radius:999px">+ Add GA</button></label><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"></div>
@@ -1748,7 +1748,8 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
 function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):''}
 $('ppFees').addEventListener('input',ppTotal);$('ppFees').addEventListener('focusout',e=>{if(e.target.dataset.f&&e.target.value.trim()){const n=bNum(e.target.value);if(n!=null)e.target.value=bMoney(n)}});
 $('ppStatusBtn').onclick=()=>{$('ppStatus').value=nextStatus($('ppStatus').value);showStatus($('ppStatusBtn'),$('ppStatus').value)};
-$('ppCancel').onclick=()=>closePolicy(false);
+$('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click(); // top-right copies of the bottom buttons
+
 $('ppDel').onclick=()=>{const b=$('ppDel');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to remove';return}if(polTr)polTr.remove();polTr=null;closePolicy(true)};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
 // pop-up driver tables: birth dates get slashes as you type, and Yrs lic fills in as age minus 16 (until you type over it)
