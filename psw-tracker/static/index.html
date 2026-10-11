@@ -93,7 +93,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 #txBox{width:min(520px,100%)}
 #clientBox{background:var(--drbg);width:95vw;max-width:100%;height:calc(100vh - 32px);max-height:calc(100vh - 32px);overflow-y:auto;padding:24px 28px}#clientBox #clNotes{min-height:140px}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
 .poltab input,.poltab select{width:100%;min-width:70px;padding:5px 6px}.poltab select,.poltab [data-p=line]{min-width:150px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
-#polBox{width:min(680px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}#ppFees{display:grid;grid-template-columns:150px minmax(0,200px);gap:6px 12px;align-items:center}#ppFees label{margin:0}#ppFees input{text-align:right}#ppFees .tot{font-weight:700;border-top:2px solid currentColor;padding-top:6px}#ppFees input.tot{background:transparent;border:0;border-top:2px solid #333;border-radius:0}.poltab td{padding:3px 4px}.poltab th{position:static;background:#cdebd5;color:#2f5d3e}.poltab th:first-child{border-top-left-radius:11px}.poltab th:last-child{border-top-right-radius:11px}
+#polBox{width:min(680px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}#polBox.wide{width:min(1180px,100%)}.pptwrap{overflow-x:auto}.pptab{width:100%;border-collapse:collapse;font-size:13px}.pptab th{font-size:11px;text-align:left;padding:2px 3px;white-space:nowrap}.pptab td{padding:2px 3px}.pptab input,.pptab select{width:100%;min-width:52px;padding:5px 6px;font-size:13px}.pptab .pn{font-weight:700;vertical-align:top;padding-top:9px}.pptab tr.r2 td{padding-bottom:8px;border-bottom:1px solid #d6dbe3}.pp2{display:flex;gap:8px}.pp2 label{display:flex;flex-direction:column;font-size:11px;margin:0;min-width:80px}#ppFees{display:grid;grid-template-columns:150px minmax(0,200px);gap:6px 12px;align-items:center}#ppFees label{margin:0}#ppFees input{text-align:right}#ppFees .tot{font-weight:700;border-top:2px solid currentColor;padding-top:6px}#ppFees input.tot{background:transparent;border:0;border-top:2px solid #333;border-radius:0}.poltab td{padding:3px 4px}.poltab th{position:static;background:#cdebd5;color:#2f5d3e}.poltab th:first-child{border-top-left-radius:11px}.poltab th:last-child{border-top-right-radius:11px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .poltab th{background:#1f3a2b;color:#b9e3c6}}:root[data-theme="dark"] .poltab th{background:#1f3a2b;color:#b9e3c6}
 .bsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 14px}.bsum div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.bsum span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em}.bsum b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}.bsum .hl{border-color:var(--acc);background:var(--soft)}
 .bmon{margin:0 0 18px}.bmh{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;margin:0 0 6px}.bmh h3{margin:0;font-size:16px}.bmh .sp{flex:1}.bmh button{padding:4px 12px}
@@ -1691,7 +1691,7 @@ $('polRows').addEventListener('click',e=>{const b=e.target.closest('[data-prm]')
 let polTr=null,polNew=false;const PP=['line','carrier','company','number','premium','tag','eff','exp','notes'];
 // each line of business adds its own basic fields to the pop-up (kept with the policy as "extra"); a's' field is a bigger box
 const LOB_FIELDS={
-  'Personal Auto':[['vehicles','Vehicles (year / make / model / VIN)','a'],['drivers','Drivers (name / DOB / license #)','a'],['bi','Bodily injury'],['pd','Property damage'],['um','UM / UIM'],['med','Med pay'],['comp','Comp ded'],['coll','Coll ded'],['rental','Rental'],['towing','Towing']],
+  'Personal Auto':[['#Drivers'],['#Vehicles'],['bi','Bodily injury'],['pd','Property damage'],['um','UM / UIM'],['med','Med pay'],['comp','Comp ded'],['coll','Coll ded'],['rental','Rental'],['towing','Towing']],
   'Commercial Auto':[['vehicles','Vehicles (year / make / model / VIN / value)','a'],['drivers','Drivers (name / DOB / license #)','a'],['csl','Liability (CSL)'],['um','UM / UIM'],['med','Med pay'],['comp','Comp ded'],['coll','Coll ded'],['hnoa','Hired / non-owned'],['cargo','Cargo'],['radius','Radius']],
   'Personal Home':[['address','Property address'],['year_built','Year built'],['dwelling','Dwelling (A)'],['other_structures','Other structures (B)'],['personal_property','Personal property (C)'],['loss_of_use','Loss of use (D)'],['liability','Liability (E)'],['med','Med pay (F)'],['deductible','Deductible'],['sq_ft','Sq ft'],['construction','Construction'],['roof','Roof year']],
   'Rental Dwelling':[['address','Property address'],['year_built','Year built'],['units','Units'],['dwelling','Dwelling'],['other_structures','Other structures'],['loss_of_rents','Loss of rents'],['liability','Liability'],['deductible','Deductible'],['sq_ft','Sq ft'],['construction','Construction']],
@@ -1708,9 +1708,15 @@ let ppExtraVals={},ppExtraLine=null;
 function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?LOB_FIELDS[line]:null;
   if(!force&&line===ppExtraLine)return;ppExtraLine=line; // only redraw when the line really changes, so typing in a field isn't lost
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{ppExtraVals[el.dataset.x]=el.value}); // keep what was typed when the line changes
-  $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';return}
+  $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';$('polBox').classList.remove('wide');return}
   $('ppExtraH').textContent=line+' details';
-  $('ppExtra').innerHTML=fs.map(([k,l,a])=>`<div${a?' class="full"':''}><label>${esc(l)}</label>${a?`<textarea data-x="${k}" style="min-height:70px"></textarea>`:`<input data-x="${k}">`}</div>`).join('');
+  // '#Drivers' / '#Vehicles' draw the same 5-row driver and vehicle tables as the personal auto quote sheet (saved as d1_first, v1_vin, ...)
+  const ppTable=title=>{const t=PAUTO_SECTIONS.find(x=>x.title===title).table,c2=t.cols2||[],cell=(c,i)=>{const k=`${t.prefix}${i}_${c.k}`;return c.opts?`<select data-x="${k}" title="${esc(c.label)}"><option value=""></option>${c.opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`:`<input data-x="${k}" title="${esc(c.label)}"${/dob$/.test(c.k)?' inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"':''}>`};
+    const old=title==='Drivers'?'drivers':'vehicles',oldBox=ppExtraVals[old]?`<label>${esc(title)} (earlier notes)</label><textarea data-x="${old}" style="min-height:50px"></textarea>`:'';
+    return `<div class="full"><label style="font-weight:700">${esc(title)}</label><div class="pptwrap"><table class="pptab"><thead><tr><th></th>${t.cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${Array.from({length:t.rows},(_,j)=>{const i=j+1;
+      return `<tr class="r1"><td rowspan="2" class="pn">${i}</td>${t.cols.map(c=>`<td>${cell(c,i)}</td>`).join('')}</tr><tr class="r2"><td colspan="${t.cols.length}"><div class="pp2">${c2.map(c=>`<label style="flex:${c.w}">${esc(c.label)}${cell(c,i)}</label>`).join('')}</div></td></tr>`}).join('')}</tbody></table></div>${oldBox}</div>`};
+  $('ppExtra').innerHTML=fs.map(([k,l,a])=>k[0]==='#'?ppTable(k.slice(1)):`<div${a?' class="full"':''}><label>${esc(l)}</label>${a?`<textarea data-x="${k}" style="min-height:70px"></textarea>`:`<input data-x="${k}">`}</div>`).join('');
+  $('polBox').classList.toggle('wide',fs.some(([k])=>k[0]==='#'));
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{el.value=ppExtraVals[el.dataset.x]||''})}
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
@@ -1731,6 +1737,15 @@ $('ppFees').addEventListener('input',ppTotal);$('ppFees').addEventListener('focu
 $('ppCancel').onclick=()=>closePolicy(false);
 $('ppDel').onclick=()=>{const b=$('ppDel');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to remove';return}if(polTr)polTr.remove();polTr=null;closePolicy(true)};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
+// pop-up driver tables: birth dates get slashes as you type, and Yrs lic fills in as age minus 16 (until you type over it)
+$('polBox').addEventListener('input',e=>{const el=e.target,m=String(el.dataset.x||'').match(/^d(\d+)_(dob|yrs_lic)$/);if(!m)return;
+  const t=$('ppExtra').querySelector(`[data-x=d${m[1]}_yrs_lic]`);if(!t)return;if(m[2]==='yrs_lic'){t.dataset.auto='';return}
+  const v=el.value;if(m[2]==='dob'&&!(e.inputType&&e.inputType.startsWith('delete'))&&/^[\d\/]+\d$/.test(v)&&![...v].some((c,i)=>c==='/'&&i!==2&&i!==5))slashDate(el); // leave 1/5/80 style typing alone
+  if(t.value.trim()&&t.dataset.auto!=='1')return;
+  const d=parseMdy(el.value),now=new Date();let y='';
+  if(d){if(d>now)d.setFullYear(d.getFullYear()-100);let age=now.getFullYear()-d.getFullYear();if(now<new Date(now.getFullYear(),d.getMonth(),d.getDate()))age--;y=String(Math.max(0,age-16))}
+  t.value=y;t.dataset.auto='1'});
+$('polBox').addEventListener('focusout',e=>{const el=e.target;if(/^d\d+_dob$/.test(el.dataset.x||'')&&el.value.trim()){const f=fmtDOB(el.value);if(f!==el.value){el.value=f;el.dispatchEvent(new Event('input',{bubbles:true}))}}});
 $('polBox').addEventListener('input',e=>{const el=e.target;if(!(el.dataset.pp==='eff'||el.dataset.pp==='exp'))return;if(e.inputType&&e.inputType.startsWith('delete'))return;slashDate(el)});
 $('polBox').addEventListener('focusout',e=>{const el=e.target;if(el.dataset.pp==='premium'&&el.value.trim()){el.value=fmtMoney(el.value);return}
   if(!(el.dataset.pp==='eff'||el.dataset.pp==='exp'))return;const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso);
