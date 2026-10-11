@@ -189,7 +189,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Client</th><th>First</th><th>Last</th><th>Phone</th><th>Email</th><th>Policies</th><th>Next renewal</th><th>Agent</th></tr></thead>
+        <thead><tr><th>Client</th><th>First</th><th>Last</th><th>Cell</th><th>Email</th><th>Policies</th><th>Next renewal</th><th>Agent</th></tr></thead>
         <tbody id="ctb"></tbody>
       </table>
       <div class="empty" id="cempty" hidden></div>
@@ -230,10 +230,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
         <div><label for="firstName">First name</label><input id="firstName"></div>
         <div><label for="lastName">Last name</label><input id="lastName"></div>
         <div class="full"><label for="company">Company name</label><input id="company"></div>
-        <div><label for="phone">Cell phone number</label><input id="phone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="phone">Cell phone number</label><input id="phone" inputmode="tel" placeholder="(###) ###-####"></div>
         <div><label for="email">Email</label><input id="email" type="email"></div>
-        <div><label for="homePhone">Home number</label><input id="homePhone" inputmode="tel" placeholder="(###)###-####"></div>
-        <div><label for="workPhone">Work number</label><input id="workPhone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="homePhone">Home number</label><input id="homePhone" inputmode="tel" placeholder="(###) ###-####"></div>
+        <div><label for="workPhone">Work number</label><input id="workPhone" inputmode="tel" placeholder="(###) ###-####"></div>
         <div><label for="leadType">Lead type</label><input id="leadType" list="typeList" placeholder="Pick or type a lead type"></div>
         <div><label>Last contacted</label><input id="lastShow" disabled placeholder="Set by contact log"></div>
         <div><label for="xDate">X date</label><input id="xDate" inputmode="numeric" placeholder="MM/DD/YYYY" title="When their current policy expires"></div>
@@ -348,8 +348,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><label for="clAgent">Agent</label><select id="clAgent"></select></div>
     <div><label for="clFirst">First name</label><input id="clFirst"></div>
     <div><label for="clLast">Last name</label><input id="clLast"></div>
-    <div><label for="clPhone">Phone</label><input id="clPhone" inputmode="tel"></div>
+    <div><label for="clPhone">Cell phone number</label><input id="clPhone" inputmode="tel" placeholder="(###) ###-####"></div>
     <div><label for="clEmail">Email</label><input id="clEmail" type="email"></div>
+    <div><label for="clPhone2">Secondary phone number</label><input id="clPhone2" inputmode="tel" placeholder="(###) ###-####"></div>
+    <div><label for="clEmail2">Secondary email</label><input id="clEmail2" type="email"></div>
     <div class="full"><label for="clAddress">Mailing address</label><input id="clAddress"></div>
     <div><label for="clSince">Client since</label><input id="clSince" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="clLead">Lead</label><select id="clLead"></select></div>
@@ -456,9 +458,11 @@ const fmtDate=s=>{if(!s)return '';const m=/^(\d{4})-(\d\d)-(\d\d)/.exec(s);retur
 const fmtDT=s=>{if(!s)return '';const d=new Date(s);if(isNaN(d))return s;return d.toLocaleString([], {month:'2-digit',day:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit'})};
 // typed date (010126, 01012026, 1/1/26) -> 2026-01-01; anything else is kept as typed
 const typedISO=v=>{v=String(v||'').trim();if(/^\d{4}-\d\d-\d\d$/.test(v))return v;let m=/^(\d\d)(\d\d)(\d\d(?:\d\d)?)$/.exec(v)||/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d\d(?:\d\d)?)$/.exec(v);if(!m)return v;const mo=+m[1],d=+m[2],y=m[3].length===2?2000+ +m[3]:+m[3];const t=new Date(y,mo-1,d);if(t.getMonth()!==mo-1||t.getDate()!==d)return v;return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`};
-// client phones read (818) 701-1033
-const fmtClPhone=v=>{const d=String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:String(v||'')};
-const fmtPhone=v=>{const d=String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6)}`:v};
+// every phone number reads (818) 701-1033
+const fmtPhone=v=>{const d=String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:v},fmtClPhone=v=>String(fmtPhone(v)||'');
+// every birth date reads 01/01/2026 (1/5/80, 01051980 and 1980-01-05 all become 01/05/1980)
+const fmtDOB=v=>{const raw=String(v||'').trim();if(!raw)return '';let iso=typedISO(raw);if(!/^\d{4}-\d\d-\d\d$/.test(iso)){const d=raw.replace(/\D/g,'');if(d.length===8||d.length===6)iso=typedISO(d)}
+  if(!/^\d{4}-\d\d-\d\d$/.test(iso))return raw;if(+iso.slice(0,4)>new Date().getFullYear())iso=(+iso.slice(0,4)-100)+iso.slice(4);return fmtDate(iso)};
 const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
 const toast=t=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)};
 const errText=e=>{const c=e&&e.code;return ({permission_denied:'You only have view access to this tracker.',too_large:'That file is too big (20 MB max).',unsupported_type:'That file type can’t be stored. Use PDF, an image, CSV or text.',rate_limited:'Too many changes at once, try again in a moment.',quota_or_state:'File storage is full.',not_granted:'This view can’t do that.'})[c]||('Something went wrong'+(c?` (${c})`:'')+'. Try again.')};
@@ -507,7 +511,7 @@ function render(){
   $('empty').hidden=leads.length>0;
   if(leads.length&&!rows.length){$('empty').hidden=false;$('empty').innerHTML='<b>No matches</b>Try a different search or filter.'}
   else $('empty').innerHTML='<b>No leads yet</b>Click “+ New lead” to add your first one.';
-  $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td>${esc(l.assignedTo)}</td><td>${dot(l)}${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(l.phone)}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
+  $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td>${esc(l.assignedTo)}</td><td>${dot(l)}${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(fmtPhone(l.phone))}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
   $('cards').innerHTML=rows.map(l=>`<div class="lc" data-id="${esc(l.id)}"><button class="danger delrow" style="float:right" data-del-lead="${esc(l.id)}">Delete</button><div class="t">${dot(l)}${esc([l.firstName,l.lastName].filter(Boolean).join(' ')||'(no name)')}${l.company?' · '+esc(l.company):''}</div><div class="m">${esc(fmtDate(l.leadDate))}${l.assignedTo?' · '+esc(l.assignedTo):''}${l.leadType?' · '+esc(l.leadType):''}</div><div class="m">${l.lastContacted?'Last contact '+esc(fmtDT(l.lastContacted))+' ('+esc(l.howContacted)+')':'Not contacted yet'}${l.xDate?' · X date '+esc(fmtDate(l.xDate)):''}</div></div>`).join('');
   document.querySelectorAll('th').forEach(th=>th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.k===sortK?(sortDir>0?' ▲':' ▼'):''));
 }
@@ -611,7 +615,7 @@ function parseMdy(v){const m=String(v||'').trim().match(/^(\d{1,2})[\/\-.](\d{1,
   const iso=String(v||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})/);return iso?new Date(+iso[1],iso[2]-1,+iso[3]):null}
 function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|\.\d+)\s*(k|m|mil|million|thousand)?\b\.?(.*)$/i);if(!m)return String(v).trim();
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
-const AGENCY_CONTACT='info@pswinsurance.com   |   (818)701-1033';
+const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
 const PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-20',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
@@ -627,8 +631,8 @@ async function sheetFonts(doc,notesOnly){
 }
 async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURANCE QUOTE SHEET',SUBJ='psw-quote-sheet'){
   await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
-  // phone always (###)###-####; client name is one box now, so an old website/note box moves into the description
-  v={...v};if(v.phone)v.phone=fmtPhone(v.phone);
+  // phones always (###) ###-####, birth dates MM/DD/YYYY; client name is one box now, so an old website/note box moves into the description
+  v={...v};for(const k in v){if(/phone/i.test(k)&&v[k])v[k]=fmtPhone(v[k]);if(/(^|_)dob$/.test(k)&&v[k])v[k]=fmtDOB(v[k])}
   if(v.owner_name&&!v.owner_first&&!v.owner_last){const p=String(v.owner_name).trim().split(/\s+/);v.owner_first=p.shift()||'';v.owner_last=p.join(' ')}delete v.owner_name;
   if(String(v.client_note||'').trim()){const k=SECS===AUTO_SECTIONS?'description':'detailed_description',note=String(v.client_note).trim();if(!String(v[k]||'').includes(note))v[k]=[String(v[k]||'').trim(),note].filter(Boolean).join(' - ')}delete v.client_note;
   // the old Contractor section (items 38-41) became Umbrella / Excess: keep any old answers in the detailed description
@@ -1294,17 +1298,17 @@ $('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/^o[1-4]_
   const n=pctNum(el.value);if(n!=null)put(el,n+'%');const q=k=>document.querySelector(`#edBody .annotationLayer [name="${k}"]`);
   put(q('o_pct_total'),pctTotal(i=>(q(`o${i}_pct`)||{}).value))});
 // birth dates and EFF/EXP/lead dates on the sheets tidy to MM/DD/YYYY when you leave them (01012026, 0101/2026, 1/1/26 -> 01/01/2026)
-$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/^(?:f_)?(?:[od]\d+_dob|ins_dob|(?:eff|exp|lead)_date)$/.test(el.name||''))return;const raw=el.value.trim();if(!raw)return;
+$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/(?:_dob|^(?:f_)?(?:eff|exp|lead)_date)$/.test(el.name||''))return;const raw=el.value.trim();if(!raw)return;
   let iso=typedISO(raw);if(!/^\d{4}-\d\d-\d\d$/.test(iso)){const d=raw.replace(/\D/g,'');if(d.length===8||d.length===6)iso=typedISO(d)}
   if(/_dob$/.test(el.name)&&/^\d{4}-/.test(iso)&&+iso.slice(0,4)>new Date().getFullYear())iso=(+iso.slice(0,4)-100)+iso.slice(4); // 1/5/80 is 1980
   if(/^\d{4}-\d\d-\d\d$/.test(iso)&&fmtDate(iso)!==el.value){el.value=fmtDate(iso);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
-// birth dates on the personal auto sheet take their slashes as you type digits (01012026 -> 01/01/2026)
-$('edBody').addEventListener('input',e=>{const el=e.target;if(!el||!/^(?:f_ins|d\d+)_dob$/.test(el.name||''))return;const v=el.value;
+// birth dates on every sheet take their slashes as you type digits (01012026 -> 01/01/2026)
+$('edBody').addEventListener('input',e=>{const el=e.target;if(!el||!/_dob$/.test(el.name||''))return;const v=el.value;
   if(!/^[\d\/]+\d$/.test(v)||[...v].some((c,i)=>c==='/'&&i!==2&&i!==5))return; // leave 1/5/80 style typing alone
   const d=v.replace(/\D/g,'').slice(0,8),f=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d;
   if(f!==v){el.value=f;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
-// phone boxes on a quote sheet tidy to (###)###-#### when you leave them
-$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||el.name!=='f_phone')return;const v=fmtPhone(el.value.trim());if(v!==el.value){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
+// phone boxes on a quote sheet tidy to (###) ###-#### when you leave them
+$('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/phone/i.test(el.name||''))return;const v=fmtPhone(el.value.trim());if(v!==el.value){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
 $('edAdd').onclick=()=>{const on=!$('edAdd').classList.contains('on');$('edAdd').classList.toggle('on',on);$('ed').classList.toggle('adding',on)};
 $('edBody').addEventListener('click',e=>{
   if(!ed||!$('ed').classList.contains('adding'))return;
@@ -1633,7 +1637,7 @@ function renderClients(){
   opts($('cfAgent'),[...new Set([...AGENTS,...clients.map(c=>(c.agent||'').trim()).filter(Boolean)])],'Everyone');
   const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value;
   const rows=clients.filter(c=>{if(fa&&c.agent!==fa)return false;if(!q)return true;
-    return [c.company,c.dba,c.firstName,c.lastName,c.phone,c.email,c.address,c.notes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
+    return [c.company,c.dba,c.firstName,c.lastName,c.phone,c.email,c.phone2,c.email2,c.address,c.notes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
     .sort((a,b)=>clientName(a).localeCompare(clientName(b)));
   const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
@@ -1718,14 +1722,14 @@ $('polBox').addEventListener('focusout',e=>{const el=e.target;if(el.dataset.pp==
 const slashDate=el=>{const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d};
 $('clientBox').addEventListener('input',e=>{const el=e.target;if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;if(e.inputType&&e.inputType.startsWith('delete'))return;slashDate(el)});
 $('clientBox').addEventListener('focusout',e=>{const el=e.target;
-  if(el.id==='clPhone'){el.value=fmtClPhone(el.value.trim());return}
+  if(el.id==='clPhone'||el.id==='clPhone2'){el.value=fmtClPhone(el.value.trim());return}
   if(el.dataset.p==='premium'&&el.value.trim()){el.value=fmtMoney(el.value);return}
   if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso);
   if(el.dataset.p==='eff'&&/^\d{4}-/.test(iso)){const x=el.closest('tr').querySelector('[data-p=exp]');if(!x.value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);x.value=fmtDate(d.toISOString().slice(0,10))}}});
 function openClient(c,preset){editClient=c||null;const v=c||preset||{};
   $('clientTitleH').textContent=c?'Edit client':'New client';
-  [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPhone','phone'],['clEmail','email'],['clAddress','address'],['clNotes','notes']].forEach(([id,k])=>$(id).value=v[k]||'');
-  $('clSince').value=fmtDate(v.since||'');$('clPhone').value=fmtClPhone($('clPhone').value);
+  [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clNotes','notes']].forEach(([id,k])=>$(id).value=v[k]||'');
+  $('clSince').value=fmtDate(v.since||'');$('clPhone').value=fmtClPhone($('clPhone').value);$('clPhone2').value=fmtClPhone($('clPhone2').value);
   const agents=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
   $('clAgent').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('clAgent').value=v.agent||'';
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
@@ -1751,7 +1755,7 @@ $('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('not
 $('clCancel').onclick=closeClient;$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
 $('clSave').onclick=async()=>{const m=$('clientMsg');
-  const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),
+  const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),phone2:fmtClPhone($('clPhone2').value),email2:$('clEmail2').value.trim(),
     address:$('clAddress').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim(),noteLog:clNoteLog};
   if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
