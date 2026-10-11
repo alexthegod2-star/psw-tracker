@@ -677,7 +677,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-23',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
+const PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-24',QS_LAYOUT='psw-qs-layout-19',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -795,7 +795,7 @@ const AUTO_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source'}]},
  {title:'Owner info',fields:[{k:'owner_first',n:1,label:'Name (first / last)',pair:'owner_last'},{k:'owner_address',n:2,label:'Address'},{k:'owner_dob',n:3,label:'Birthdate'},{k:'owner_ssn',n:4,label:'SS#'},{k:'owner_daily_ops',n:5,label:'Involved in daily ops'}]},
  {title:'Company info',fields:[{k:'client_name',n:6,label:'Company Name'},{k:'contact_name',n:7,label:'Contact name'},{k:'dba',n:8,label:'DBA'},{k:'entity_type',n:9,label:'Bus structure'},{k:'phone',n:10,label:'Phone Number'},{k:'email',n:11,label:'Email'},{k:'mailing_address',n:12,label:'Mailing Address'},{k:'garaging_address',n:13,label:'Business Address'},{k:'description',n:14,label:'Business desc'},{k:'filings',n:15,label:'Filings needed',opts:['Yes','No'],def:'No',also:[{k:'federal_filing',label:'Federal filing',opts:['Yes','No'],def:'No'},{k:'state_filing',label:'State filing',opts:['Yes','No'],def:'No'}]},{k:'dot_number',n:15,label:'DOT Number',also:[{k:'ca_number',label:'CA Number'},{k:'cross_state',label:'Cross state lines',opts:['Yes','No']}]},{k:'eff_date',n:16,label:'EFF Date'}]},
- {title:'Drivers',table:{prefix:'d',rows:6,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'dl',label:'DL #',w:1.25},{k:'cdl',label:'CDL',w:.6,opts:['Yes','No']},{k:'cdl_yrs',label:'Yrs CDL',w:.6},{k:'activity',label:'Driving activity',w:1.5}]}},
+ {title:'Drivers',table:{prefix:'d',rows:6,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'dl_state',label:'St Lic',w:.5},{k:'dl',label:'DL #',w:1.15},{k:'cdl',label:'CDL',w:.6,opts:['Yes','No']},{k:'cdl_yrs',label:'Yrs CDL',w:.6},{k:'activity',label:'Driving activity',w:1.5}]}},
  {title:'Vehicles',table:{prefix:'v',rows:6,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'body',label:'Body type',w:1},{k:'vin',label:'VIN',w:2.2},{k:'value',label:'Value',w:1.1},{k:'use',label:'Zip code',w:1.25}],
    cols2:[{k:'gvw',label:'GVW',w:1},{k:'radius',label:'Radius',w:1},{k:'usage',label:'Use',w:1,opts:['Biz Only','Both']},{k:'passengers',label:'# Passengers',w:1}]}},
  {title:'Operations',fields:[{k:'states',n:18,label:'States driven in'},{k:'cargo',n:19,label:'What is hauled / carried'}]},
