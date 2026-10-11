@@ -998,9 +998,38 @@ function formFill(t){
   return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
 }
 // a row copied from a spreadsheet (cells split by tabs): pick each cell out by what it looks like, no Claude needed
+// Alex's web-lead sheet, one row per lead (22 columns): date, -, name, company, phone, email, city, state, type of business,
+// coverages wanted, currently insured, liability limits wanted, VIN, vehicle value, -, year started, # employees, gross receipts,
+// claims, website, business description, full address
+function sheetRowFill(C){
+  if(C.length<21||!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(C[0])||!/@/.test(C[5]))return null;
+  const lead={},quote={},auto={},put=(v,...ks)=>{v=String(v||'').trim();if(v&&!/^(n\/?a|none|-)$/i.test(v))ks.forEach(([o,k])=>o[k]=v)};
+  const [m,d,y]=C[0].split('/');lead.leadDate=`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;quote.lead_date=auto.lead_date=`${m.padStart(2,'0')}/${d.padStart(2,'0')}/${y}`;
+  const nm=C[2].trim();if(nm){const p=nm.split(/\s+/);lead.firstName=p[0];lead.lastName=p.slice(1).join(' ');quote.contact_first=auto.owner_first=lead.firstName;quote.contact_last=auto.owner_last=lead.lastName;auto.contact_name=nm}
+  put(C[3],[lead,'company'],[quote,'client_name'],[auto,'client_name']);
+  if(lead.company)quote.entity_type=auto.entity_type=/llc/i.test(lead.company)?'LLC':/\b(inc|corp)/i.test(lead.company)?'Corporation':'';
+  put(C[4],[lead,'phone'],[quote,'phone'],[auto,'phone']);put(C[5],[lead,'email'],[quote,'email'],[auto,'email']);
+  const biz=C[8].trim(),lt=LEAD_TYPES.find(x=>x.toLowerCase()===biz.toLowerCase());lead.leadType=lt||'Commercial';
+  const seek=C[9].split(/\s*,\s*/).filter(Boolean);quote.line_of_business=C[9].trim();
+  if(/^(y|n)/i.test(C[10]))quote.currently_insured=auto.currently_insured=/^y/i.test(C[10])?'Yes':'No';
+  put(C[11],[auto,'liability_limit']);
+  if(/^[A-HJ-NPR-Z0-9]{17}$/i.test(C[12]))auto.v1_vin=C[12].toUpperCase();
+  const usd=v=>{const n=String(v||'').replace(/[^\d.]/g,'');return n?'$'+Number(n).toLocaleString('en-US'):''};
+  if(/\d/.test(C[13]))auto.v1_value=usd(C[13]);
+  put(C[15],[quote,'year_started'],[auto,'year_started']);put(C[16],[quote,'full_time']);
+  if(/\d/.test(C[17]))quote.gross_receipts=usd(C[17]);
+  put(C[18],[quote,'claims'],[auto,'claims']);
+  const web=/^[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(C[19])&&!/^\d/.test(C[19])?C[19]:'';
+  const desc=[biz,C[20].trim()].filter((v,i,a)=>v&&a.findIndex(x=>x.toLowerCase()===v.toLowerCase())===i).join(': ');
+  if(desc)quote.description=auto.description=desc;if(web)quote.detailed_description='Website: '+web;
+  const addr=(C[21]||'').trim()||[C[6],C[7]].filter(Boolean).join(', ');
+  if(addr)quote.mailing_address=auto.mailing_address=auto.garaging_address=auto.owner_address=addr;
+  return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
+}
 function rowFill(t){
-  const lines=String(t||'').replace(/\r/g,'').split('\n').filter(l=>l.trim());if(lines.length!==1)return null;
-  const C=lines[0].split('\t').map(x=>x.trim());if(C.filter(Boolean).length<5)return null;
+  const lines=String(t||'').replace(/\r/g,'').split('\n').filter(l=>l.split('\t').filter(x=>x.trim()).length>=5);if(!lines.length)return null;
+  const C=lines[0].split('\t').map(x=>x.trim().replace(/^"([\s\S]*)"$/,'$1').trim());
+  const own=sheetRowFill(C);if(own)return {...own,rows:lines.length};
   const lead={},quote={},auto={},seek=[],used=new Set(),take=i=>{used.add(i);return C[i]};
   const find=re=>C.findIndex((c,i)=>!used.has(i)&&c&&re.test(c));
   let i=find(/^\d{1,2}\/\d{1,2}\/\d{4}$/);if(i>=0){const [m,d,y]=take(i).split('/');lead.leadDate=`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;quote.lead_date=auto.lead_date=`${m.padStart(2,'0')}/${d.padStart(2,'0')}/${y}`}
@@ -1023,7 +1052,7 @@ function rowFill(t){
   if(!lead.company&&n>=0&&C[n+1]&&!used.has(n+1)&&/[A-Za-z]/.test(C[n+1])){lead.company=quote.client_name=auto.client_name=take(n+1)}
   if(!lead.leadType&&(lead.company||quote.description))lead.leadType='Commercial';
   if(!lead.email&&!lead.phone&&!lead.firstName)return null;
-  return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
+  return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x)),rows:lines.length};
 }
 const hasAuto=a=>!!a&&Object.keys(a).some(k=>/^[dv]\d+_/.test(k));
 function apply(o){
@@ -1034,6 +1063,7 @@ function apply(o){
   return n;
 }
 const sampleErr=c=>({not_granted:'Claude wasn’t allowed to read it, so only the basics were filled.',rate_limited:'Too many requests, try again in a moment.',prompt_too_large:'That’s too much text. Paste just the lead’s part.',cancelled:'Stopped.',image_rejected:'That picture couldn’t be read.'})[c]||'Claude couldn’t read it'+(c?` (${c})`:'')+', so only the basics were filled.';
+const rowNote=f=>f&&f.rows?' from the spreadsheet row':' (basic mode)';
 async function quickFill(text,images,label){
   const m=$('fillMsg');m.className='msg';
   const which=$('fillWhich').value;
@@ -1067,7 +1097,7 @@ ${text?'\nContent:\n"""\n'+text.slice(0,40000)+'\n"""':''}`;
     $('fillStop').hidden=true;$('fillBtn').disabled=false;fillCtl=null;
   }else{
     if(!text){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t available in this view.';return}
-    const b=basicRead(text),n=apply(b.lead);const qs=await basicSheets(n,which,b.f);m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} field${n===1?'':'s'} (basic mode)${qs}. Check them, then Save.`:'Couldn’t find lead details in that.';
+    const b=basicRead(text),n=apply(b.lead);const qs=await basicSheets(n,which,b.f);m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} field${n===1?'':'s'}${rowNote(b.f)}${qs}. Check them, then Save.${b.f&&b.f.rows>1?` You pasted ${b.f.rows} rows, so this is the first one (${[b.f.lead.firstName,b.f.lead.lastName].join(' ').trim()}). Paste the others one at a time.`:''}`:'Couldn’t find lead details in that.';
   }
 }
 $('fillStop').onclick=()=>fillCtl&&fillCtl.abort();
