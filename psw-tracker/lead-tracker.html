@@ -95,6 +95,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 #txBox{width:min(520px,100%)}
 #clientBox{background:var(--drbg);width:95vw;max-width:100%;height:calc(100vh - 32px);max-height:calc(100vh - 32px);overflow-y:auto;padding:24px 28px}#clientBox #clNotes{min-height:140px}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
 #polRows tr{cursor:pointer}#polRows tr:hover td{background:var(--soft)}#polRows input[readonly]{cursor:pointer;pointer-events:none;background:transparent;border-color:transparent;color:var(--ink)}#polRows .stbtn{pointer-events:none}.poltab input,.poltab select{width:100%;min-width:70px;padding:5px 6px}.poltab select,.poltab [data-p=line]{min-width:150px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
+.ppLay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start;margin-top:8px}.ppSide{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}.ppCard{background:#fff;border:1px solid #c9dccf;border-radius:12px;padding:10px 12px}.ppCardH{display:flex;align-items:center;gap:8px;margin-bottom:8px}.ppCardH h4{margin:0 auto 0 0;color:#2f5d3e}.ppCardH button{padding:3px 12px;font-size:12px;border-radius:999px}.ppCard .drop{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px;font-size:13px}.ppCard .drop input{max-width:100%;font-size:12px}.ppCard .files{margin:8px 0 0}.ppCard .files li{flex-wrap:wrap}#ppInv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 8px;align-items:center}#ppInv .ppCardH{grid-column:1/-1;margin-bottom:2px}#ppInv label{margin:0;font-size:12px}#ppInv input,#ppInv select{padding:6px 8px;font-size:13px}#ppTasks{margin:0;padding:0}#ppTasks li{cursor:pointer}@media(max-width:900px){.ppLay{grid-template-columns:1fr}.ppSide{position:static}}#taskDlg{z-index:12}
 #polBox{background:var(--polbg);width:80vw;max-width:100%;max-height:calc(100vh - 32px);overflow-y:auto}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}.stbtn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;font-weight:600;white-space:nowrap}.stbtn::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--dot,#1f9d55)}.poltab .stbtn{padding:5px 10px}#polBox .stbtn{width:100%;justify-content:flex-start;padding:10px 12px}.pptwrap{overflow-x:auto}.pptab{width:100%;border-collapse:collapse;font-size:13px}.pptab th{background:#d5e5f9;color:#1d3f6e;font-size:11px;text-align:left;padding:2px 3px;white-space:nowrap}.pptab td{padding:2px 3px}.pptab input,.pptab select{width:100%;min-width:52px;padding:5px 6px;font-size:13px}.pptab .pn{font-weight:700;vertical-align:top;padding-top:9px}.pptab tr.r2 td{padding-bottom:8px;border-bottom:1px solid #d6dbe3}.pp2{display:flex;gap:8px}.pp2 label{display:flex;flex-direction:column;font-size:11px;margin:0;min-width:80px}#ppFees{display:grid;grid-template-columns:150px minmax(0,200px);gap:6px 12px;align-items:center}#ppFees label{margin:0}#ppFees input{text-align:right}#ppFees .tot{font-weight:700;border-top:2px solid currentColor;padding-top:6px}#ppFees input.tot{background:transparent;border:0;border-top:2px solid #333;border-radius:0}.poltab td{padding:3px 4px}.poltab th{position:static;background:#cdebd5;color:#2f5d3e}.poltab th:first-child{border-top-left-radius:11px}.poltab th:last-child{border-top-right-radius:11px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .poltab th{background:#1f3a2b;color:#b9e3c6}}:root[data-theme="dark"] .poltab th{background:#1f3a2b;color:#b9e3c6}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pptab th{background:#1b2a3d;color:#b9d3f5}}:root[data-theme="dark"] .pptab th{background:#1b2a3d;color:#b9d3f5}
 .bsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 14px}.bsum div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.bsum span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em}.bsum b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}.bsum .hl{border-color:var(--acc);background:var(--soft)}
@@ -397,6 +398,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
   <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Done</button></div>
+  <div class="ppLay"><div class="ppMain">
   <div class="drop row" id="ppReadRow" style="padding:10px 12px;margin-top:8px"><span style="font-weight:600">Drop a quote sheet, dec page or binder to fill this policy, or</span><input type="file" id="ppReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*" style="flex:1"></div>
   <div class="msg" id="ppReadMsg"></div>
   <div class="grid">
@@ -427,10 +429,24 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="full" id="ppExtraWrap" hidden><h4 id="ppExtraH" style="margin:6px 0 0"></h4><div class="grid" id="ppExtra"></div></div>
     <div class="full"><label for="ppNotes">Notes</label><textarea id="ppNotes" data-pp="notes" placeholder="Coverages, limits, deductibles, anything about this policy"></textarea></div>
   </div>
-  <h4 style="margin:12px 0 6px">Policy files</h4>
-  <div class="drop row" id="ppUpRow" style="padding:10px 12px;margin-bottom:8px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="ppFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"></div>
-  <ul class="files" id="ppFiles" style="margin-top:0"></ul>
-  <div class="msg" id="ppMsg"></div>
+  </div><aside class="ppSide">
+    <section class="ppCard"><div class="ppCardH"><h4>Tasks</h4><button type="button" class="pri" id="ppTaskAdd">+ Add task</button></div>
+      <ul class="tasks" id="ppTasks"></ul><div class="small" id="ppTasksNone">No tasks for this policy yet.</div></section>
+    <section class="ppCard"><div class="ppCardH"><h4>Files</h4></div>
+      <div class="drop" id="ppUpRow"><span style="font-weight:600">Drop files here, or</span><input type="file" id="ppFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*"></div>
+      <ul class="files" id="ppFiles"></ul>
+      <div class="msg" id="ppMsg"></div></section>
+    <section class="ppCard" id="ppInv"><div class="ppCardH"><h4>Invoice</h4><button type="button" id="ppInvPrint">Print invoice</button></div>
+      <label for="ppInvNo">Invoice #</label><input id="ppInvNo" data-inv="invNo">
+      <label for="ppInvDate">Invoice date</label><input id="ppInvDate" data-inv="invDate" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
+      <label for="ppInvDue">Due date</label><input id="ppInvDue" data-inv="invDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
+      <label for="ppInvAmt">Amount due</label><input id="ppInvAmt" data-inv="invAmt" placeholder="Same as Total" inputmode="decimal">
+      <label for="ppInvPaid">Payment</label><select id="ppInvPaid" data-inv="invPaid"><option value=""></option><option>Unpaid</option><option>Partly paid</option><option>Paid</option></select>
+      <label for="ppInvPaidAmt">Amount paid</label><input id="ppInvPaidAmt" data-inv="invPaidAmt" placeholder="$" inputmode="decimal">
+      <label for="ppInvPaidDate">Paid date</label><input id="ppInvPaidDate" data-inv="invPaidDate" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
+      <label for="ppInvMethod">Paid by</label><input id="ppInvMethod" data-inv="invMethod" list="payList" autocomplete="off" placeholder="Type or pick"><datalist id="payList"><option value="Credit card"><option value="Check"><option value="Cash"><option value="ACH / bank transfer"><option value="Zelle"><option value="Finance company"></datalist>
+    </section>
+  </aside></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
   <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Done</button></div>
 </div></div>
@@ -1697,7 +1713,7 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
  $('admCopy').onclick=()=>{$('admLink').select();(navigator.clipboard?navigator.clipboard.writeText($('admLink').value):Promise.reject()).then(()=>toast('Link copied'),()=>document.execCommand('copy'))};
 }
 function renderTasks(){
-  const open=tasks.filter(t=>!t.done).length;$('taskCount').textContent=open;renderMyTasks();
+  const open=tasks.filter(t=>!t.done).length;$('taskCount').textContent=open;renderMyTasks();renderPpTasks();
   if(view==='tasks')$('count').textContent=tasks.length?`${open} open task${open===1?'':'s'}, ${tasks.length-open} done`:'No tasks yet';
   const agents=[...new Set([...TASK_AGENTS,...tasks.map(t=>(t.assignedTo||'').trim()).filter(Boolean)])];opts($('tfAssign'),agents,'Everyone');
   const q=$('tq').value.trim().toLowerCase(),fa=$('tfAssign').value,st=$('tfStatus').value;
@@ -1714,15 +1730,15 @@ async function setDone(id,on){const t=tasks.find(x=>x.id===id);if(!t)return;try{
 const onTaskClick=e=>{const ol=e.target.closest('[data-open-lead]');if(ol){e.stopPropagation();const l=leads.find(x=>x.id===ol.dataset.openLead);if(l)openLead(l);return}
   if(e.target.closest('[data-done]'))return;const r=e.target.closest('[data-task]');if(r)openTask(tasks.find(t=>t.id===r.dataset.task))};
 const onTaskChange=e=>{const c=e.target.closest('[data-done]');if(c)setDone(c.dataset.done,c.checked)};
-['ttb','tcards','leadTasks'].forEach(id=>{$(id).addEventListener('click',onTaskClick);$(id).addEventListener('change',onTaskChange)});
+['ttb','tcards','leadTasks','ppTasks'].forEach(id=>{$(id).addEventListener('click',onTaskClick);$(id).addEventListener('change',onTaskChange)});
 function renderLeadTasks(){if(!cur||!cur.id){$('leadTasks').innerHTML='';$('leadTasksNone').hidden=false;return}
   const rows=tasks.filter(t=>t.leadId===cur.id).sort(taskSort);$('leadTasksNone').hidden=rows.length>0;
   $('leadTasks').innerHTML=rows.map(t=>`<li class="tli${t.done?' isdone':''}" data-task="${esc(t.id)}"><input type="checkbox" class="tdone" data-done="${esc(t.id)}"${t.done?' checked':''} aria-label="Done"><span class="tt">${esc(t.title||'(untitled)')}</span><span class="small">${esc(t.assignedTo)}</span><span class="small ${dueCls(t)}">${esc(dueTxt(t))}</span></li>`).join('')}
 $('leadTaskBtn').onclick=async()=>{if(!(await ensureSaved()))return;openTask(null,{leadId:cur.id,assignedTo:cur.assignedTo||'',firstName:cur.firstName||'',lastName:cur.lastName||'',company:cur.company||''})};
 // picking a lead fills empty first / last name boxes from it
 $('tLead').addEventListener('change',()=>{const l=leads.find(x=>x.id===$('tLead').value);if(!l)return;if(!$('tFirst').value.trim())$('tFirst').value=l.firstName||'';if(!$('tLast').value.trim())$('tLast').value=l.lastName||'';if(!$('tCompany').value.trim())$('tCompany').value=l.company||''});
-function openTask(t,preset){editTask=t||null;const v=t||preset||{};
-  $('taskTitleH').textContent=t?'Edit task':'New task';$('tTitle').value=v.title||'';$('tFirst').value=v.firstName||'';$('tLast').value=v.lastName||'';$('tCompany').value=v.company||'';$('tDue').value=fmtDate(v.due||(t?'':todayISO())); // a new task starts due today$('tPri').value=v.priority||'Normal';$('tNotes').value=v.notes||'';
+function openTask(t,preset){editTask=t||null;const v=t||preset||{};taskLink={pid:v.pid||'',clientId:v.clientId||''}; // a task added from a policy remembers that policy
+  $('taskTitleH').textContent=t?'Edit task':'New task';$('tTitle').value=v.title||'';$('tFirst').value=v.firstName||'';$('tLast').value=v.lastName||'';$('tCompany').value=v.company||'';$('tDue').value=fmtDate(v.due||(t?'':todayISO()));$('tPri').value=v.priority||'Normal';$('tNotes').value=v.notes||''; // a new task starts due today
   const agents=[...new Set([...TASK_AGENTS,...tasks.map(x=>(x.assignedTo||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
   $('tAssign').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('tAssign').value=v.assignedTo||'';
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
@@ -1731,7 +1747,7 @@ function openTask(t,preset){editTask=t||null;const v=t||preset||{};
   $('taskDlg').classList.add('on');setTimeout(()=>$('tTitle').focus(),30)}
 function closeTask(saved){$('taskDlg').classList.remove('on');if(!saved&&assets)tAdded.forEach(id=>assets.delete(id).catch(()=>{}));tAdded=[];editTask=null} // files dropped into a task you cancel are thrown away
 // task files: drop or pick files; they are stored right away and kept on the task when you hit Save task
-let tFiles=[],tAdded=[];
+let tFiles=[],tAdded=[],taskLink={pid:'',clientId:''};
 function renderTaskFiles(){$('tUpRow').hidden=!assets;
   $('tFiles').innerHTML=tFiles.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-topen="${esc(f.id)}">Open</button><button data-tsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-trm="${esc(f.id)}">Remove</button>`:''}</li>`).join('')}
 async function addTaskFiles(list){if(!assets)return;const m=$('taskMsg');
@@ -1762,7 +1778,7 @@ $('tDue').addEventListener('blur',()=>{const iso=typedISO($('tDue').value);if(/^
 $('tTitle').addEventListener('keydown',e=>{if(e.key==='Enter')$('tSave').click()});
 $('tSave').onclick=async()=>{const m=$('taskMsg'),title=$('tTitle').value.trim();if(!title){m.className='msg err';m.textContent='Give the task a name.';$('tTitle').focus();return}
   const raw=$('tDue').value.trim(),iso=raw?typedISO(raw):'';if(raw&&!/^\d{4}-\d\d-\d\d$/.test(iso)){m.className='msg err';m.textContent='Type the due date as MM/DD/YYYY.';$('tDue').focus();return}
-  const data={title,firstName:$('tFirst').value.trim(),lastName:$('tLast').value.trim(),company:$('tCompany').value.trim(),assignedTo:$('tAssign').value,due:iso,priority:$('tPri').value,leadId:$('tLead').value,notes:$('tNotes').value.trim(),files:tFiles};const gone=((editTask&&editTask.files)||[]).filter(f=>!tFiles.some(x=>x.id===f.id));
+  const data={title,firstName:$('tFirst').value.trim(),lastName:$('tLast').value.trim(),company:$('tCompany').value.trim(),assignedTo:$('tAssign').value,due:iso,priority:$('tPri').value,leadId:$('tLead').value,notes:$('tNotes').value.trim(),files:tFiles};if(taskLink.pid){data.pid=taskLink.pid;data.clientId=taskLink.clientId}const gone=((editTask&&editTask.files)||[]).filter(f=>!tFiles.some(x=>x.id===f.id));
   $('tSave').disabled=true;m.className='msg';m.textContent='Saving…';
   try{if(editTask)await tasksCol.doc(editTask.id).update(data);else{data.done=false;data.doneAt='';data.createdAt=new Date().toISOString();if(me)data.createdBy=me;await tasksCol.add(data)}
     gone.forEach(f=>assets&&assets.delete(f.id).catch(()=>{}));closeTask(true);toast('Task saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('tSave').disabled=false}};
@@ -1861,7 +1877,7 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{el.value=ppExtraVals[el.dataset.x]||''})}
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
-  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   $('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
@@ -1870,16 +1886,40 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
   for(const k of PP){let v=g(k);if(k==='state'&&/^[a-z]{2}$/i.test(v))v=v.toUpperCase();if((k==='eff'||k==='exp'||k==='cdate')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
   const ex={};$('ppExtra').querySelectorAll('[data-x]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.x]=v});
   $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee)ex.total=$('ppTotal').value;
+  $('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.inv]=v});
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';showStatus(polTr.querySelector('[data-pstat]'),g('status'));
   closePolicy(true)};
 // Total = premium + every fee box, kept up to date as you type
-function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):''}
+function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):'';$('ppInvAmt').placeholder=$('ppTotal').value?`${$('ppTotal').value} (Total)`:'Same as Total'}
 $('ppFees').addEventListener('input',ppTotal);$('ppFees').addEventListener('focusout',e=>{if(e.target.dataset.f&&e.target.value.trim()){const n=bNum(e.target.value);if(n!=null)e.target.value=bMoney(n)}});
 $('ppStatusBtn').onclick=()=>{$('ppStatus').value=nextStatus($('ppStatus').value);showStatus($('ppStatusBtn'),$('ppStatus').value)};
 $('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click(); // top-right copies of the bottom buttons
 
 $('ppDel').onclick=()=>{const b=$('ppDel');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to remove';return}if(polTr)polTr.remove();polTr=null;closePolicy(true)};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
+// right side of the policy pop-up: this policy's tasks, files and invoice
+const ppPid=()=>polTr?polTr.querySelector('[data-p=pid]').value:'';
+function renderPpTasks(){const pid=ppPid(),rows=pid?tasks.filter(t=>t.pid===pid).sort(taskSort):[];$('ppTasksNone').hidden=rows.length>0;
+  $('ppTasks').innerHTML=rows.map(t=>`<li class="tli${t.done?' isdone':''}" data-task="${esc(t.id)}"><input type="checkbox" class="tdone" data-done="${esc(t.id)}"${t.done?' checked':''} aria-label="Done"><span class="tt">${esc(t.title||'(untitled)')}</span><span class="small ${dueCls(t)}">${esc(dueTxt(t))}</span></li>`).join('')}
+$('ppTaskAdd').onclick=()=>{const pid=ppPid();if(!pid)return;const line=$('ppLine').value.trim(),num=$('ppNumber').value.trim();
+  openTask(null,{pid,clientId:editClient?editClient.id:'',firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),company:$('clCompany').value.trim(),assignedTo:$('ppProducer').value,notes:[line,num&&'Policy # '+num].filter(Boolean).join(' · ')})};
+$('ppInv').addEventListener('input',e=>{const el=e.target;if(!/Date|Due$/.test(el.id)||(e.inputType&&e.inputType.startsWith('delete')))return;slashDate(el)});
+$('ppInv').addEventListener('focusout',e=>{const el=e.target,v=el.value.trim();if(!v)return;
+  if(el.id==='ppInvAmt'||el.id==='ppInvPaidAmt'){const n=bNum(v);if(n!=null)el.value=bMoney(n);return}
+  if(/Date|Due$/.test(el.id)){const iso=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso)}});
+$('ppInvPaid').addEventListener('change',()=>{if($('ppInvPaid').value==='Paid'&&!$('ppInvPaidDate').value.trim())$('ppInvPaidDate').value=fmtDate(todayISO())});
+$('ppInvPrint').onclick=()=>{const g=id=>$(id).value.trim(),h=esc,name=[g('clFirst'),g('clLast')].filter(Boolean).join(' '),co=g('clCompany');
+  if(!g('ppInvDate'))$('ppInvDate').value=fmtDate(todayISO());
+  const fees=[['Premium',$('ppPremium').value],...[...$('ppFees').querySelectorAll('[data-f]')].map(el=>[$('ppFees').querySelector(`label[for=${el.id}]`).textContent,el.value])].filter(([,v])=>v.trim()).map(([l,v])=>{const n=bNum(v);return [l,n!=null?bMoney(n):v]});
+  const amt=g('ppInvAmt')||g('ppTotal')||(fees[0]||[])[1]||'',paid=g('ppInvPaidAmt'),rows=fees.map(([l,v])=>`<tr><td>${h(l)}</td><td class="r">${h(v)}</td></tr>`).join('');
+  const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print the invoice');return}
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${h(g('ppInvNo'))}</title><style>body{font:14px/1.45 Helvetica,Arial,sans-serif;color:#111;max-width:720px;margin:32px auto;padding:0 24px}h1{font-size:28px;margin:0;color:#1d2a6e}.top{display:flex;justify-content:space-between;gap:24px;border-bottom:3px solid #1d2a6e;padding-bottom:12px}.ag b{font-size:16px}.meta td{padding:2px 0 2px 14px}.meta td:first-child{color:#555;padding-left:0}h3{margin:22px 0 6px;font-size:13px;text-transform:uppercase;color:#555;letter-spacing:.04em}table.l{width:100%;border-collapse:collapse;margin-top:6px}table.l td{padding:7px 4px;border-bottom:1px solid #ddd}.r{text-align:right}tr.tot td{font-weight:700;font-size:16px;border-top:2px solid #111;border-bottom:none}.paid{margin-top:14px;font-weight:700;color:#1f7a3f}.ft{margin-top:36px;color:#555;font-size:12px}@media print{body{margin:0 auto}}</style></head><body>
+<div class="top"><div class="ag"><b>Pacific Southwest Insurance Services</b><br>9036 Reseda Blvd., Suite 105<br>Northridge, CA 91324<br>(818) 701-1033 · CA Lic # 0F41718</div><div><h1>INVOICE</h1><table class="meta">${[['Invoice #',g('ppInvNo')],['Date',g('ppInvDate')],['Due',g('ppInvDue')]].filter(([,v])=>v).map(([l,v])=>`<tr><td>${l}</td><td>${h(v)}</td></tr>`).join('')}</table></div></div>
+<h3>Bill to</h3><div>${[co,name,...g('clAddress').split(/\n/)].filter(Boolean).map(h).join('<br>')||'&nbsp;'}</div>
+<h3>Policy</h3><div>${h([g('ppLine'),g('ppCompany')||g('ppCarrier')].filter(Boolean).join(' · '))}${g('ppNumber')?`<br>Policy # ${h(g('ppNumber'))}`:''}${g('ppEff')||g('ppExp')?`<br>Term ${h(g('ppEff'))} to ${h(g('ppExp'))}`:''}</div>
+<table class="l">${rows}<tr class="tot"><td>Amount due</td><td class="r">${h(amt)}</td></tr></table>
+${g('ppInvPaid')==='Paid'?`<div class="paid">PAID${g('ppInvPaidDate')?' '+h(g('ppInvPaidDate')):''}${g('ppInvMethod')?' by '+h(g('ppInvMethod')):''}</div>`:paid?`<div class="paid">Paid so far: ${h(paid)}</div>`:''}
+<div class="ft">Thank you for your business.</div><script>onload=()=>print()<\/script></body></html>`);w.document.close()};
 // pop-up vehicles: Year keeps 4 digits, Annual miles keeps 6 digits shown as 12,000
 $('polBox').addEventListener('input',e=>{const el=e.target,m=String(el.dataset.x||'').match(/^v\d+_(year|miles)$/);if(!m)return;
   const d=el.value.replace(/\D/g,'').slice(0,m[1]==='year'?4:6);el.value=m[1]==='miles'&&d?Number(d).toLocaleString('en-US'):d});
