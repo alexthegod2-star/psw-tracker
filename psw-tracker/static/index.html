@@ -367,7 +367,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <h3 id="polTitleH">Policy</h3>
   <div class="grid">
     <div><label for="ppLine">Line of business</label><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"></div>
-    <div><label for="ppCarrier">General Agent</label><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"></div>
+    <div><label for="ppCarrier" style="display:flex;align-items:center;gap:8px">General Agent <button type="button" id="ppAddGa" style="padding:1px 10px;font-size:12px;border-radius:999px">+ Add GA</button></label><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"></div>
     <div><label for="ppCompany" style="display:flex;align-items:center;gap:8px">Company <button type="button" id="ppAddCo" style="padding:1px 10px;font-size:12px;border-radius:999px">+ Add company</button></label><input id="ppCompany" data-pp="company" list="coList" autocomplete="off" placeholder="Type or pick"></div>
     <div><label for="ppNumber">Policy #</label><input id="ppNumber" data-pp="number"></div>
     <div><label for="ppEff">Eff date</label><input id="ppEff" data-pp="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
@@ -1635,16 +1635,16 @@ const setLob=(el,v)=>{el.value=String(v||'').trim()};
 $('lobList').innerHTML=LOBS.map(x=>`<option value="${esc(x)}">`).join('');
 // policy General Agent and Company lists (A-Z); other names can still be typed
 const COMPANIES=['Kemper','Progressive','Bristol West','Mercury/SmartChoice','Aspire','Safeway','Crum and Forster','Richmond National','Ategrity','Bamboo/Incline Casualty','Lightspeed'].sort((a,b)=>a.localeCompare(b));
-const BASE_COMPANIES=[...COMPANIES],fillCoList=()=>{$('coList').innerHTML=COMPANIES.map(x=>`<option value="${esc(x)}">`).join('')};fillCoList();
-// "+ Add company" saves a name to the shared list (everyone sees it in the Company dropdown)
-const companiesCol=db.collection('companies');
-companiesCol.onSnapshot(s=>{const m=new Map(BASE_COMPANIES.map(x=>[x.toLowerCase(),x]));s.docs.forEach(d=>{const n=String(d.data().name||'').trim();if(n&&!m.has(n.toLowerCase()))m.set(n.toLowerCase(),n)});
-  COMPANIES.splice(0,COMPANIES.length,...[...m.values()].sort((a,b)=>a.localeCompare(b)));fillCoList()},()=>{});
-$('ppAddCo').onclick=async()=>{const n=(prompt('New company name to add to the list:',$('ppCompany').value.trim())||'').trim();if(!n)return;
-  if(COMPANIES.some(x=>x.toLowerCase()===n.toLowerCase())){$('ppCompany').value=COMPANIES.find(x=>x.toLowerCase()===n.toLowerCase());toast(n+' is already in the list');return}
-  try{await companiesCol.add({name:n,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});$('ppCompany').value=n;toast('Added '+n+' to the company list')}catch(e){toast(errText(e))}};
 const GAS=['Greenwood General','Baker and Bonds','Burns and Wilcox'].sort((a,b)=>a.localeCompare(b));
-$('gaList').innerHTML=GAS.map(x=>`<option value="${esc(x)}">`).join('');
+// "+ Add company" / "+ Add GA" save a name to a shared list (everyone sees it in that dropdown), kept A-Z with the built-in names
+function addableList(list,listId,colName,btn,box,what){const base=[...list],col=db.collection(colName),fill=()=>{$(listId).innerHTML=list.map(x=>`<option value="${esc(x)}">`).join('')};fill();
+  col.onSnapshot(s=>{const m=new Map(base.map(x=>[x.toLowerCase(),x]));s.docs.forEach(d=>{const n=String(d.data().name||'').trim();if(n&&!m.has(n.toLowerCase()))m.set(n.toLowerCase(),n)});
+    list.splice(0,list.length,...[...m.values()].sort((a,b)=>a.localeCompare(b)));fill()},()=>{});
+  $(btn).onclick=async()=>{const n=(prompt(`New ${what} to add to the list:`,$(box).value.trim())||'').trim();if(!n)return;
+    const have=list.find(x=>x.toLowerCase()===n.toLowerCase());if(have){$(box).value=have;toast(have+' is already in the list');return}
+    try{await col.add({name:n,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});$(box).value=n;toast(`Added ${n} to the ${what} list`)}catch(e){toast(errText(e))}}}
+addableList(COMPANIES,'coList','companies','ppAddCo','ppCompany','company');
+addableList(GAS,'gaList','generalAgents','ppAddGa','ppCarrier','general agent');
 // leaving a line of business, GA or company box with a partial word picks the one it matches ("work" -> Workers Comp)
 document.addEventListener('change',e=>{const el=e.target,L=el&&{lobList:LOBS,coList:COMPANIES,gaList:GAS}[el.getAttribute&&el.getAttribute('list')];if(!L)return;const v=el.value.trim().toLowerCase();if(!v)return;
   const hit=L.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().includes(v)));
