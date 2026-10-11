@@ -807,7 +807,7 @@ async function basicSheets(n,which,f){if(!n)return '';f=f||{};
   const wantA=which==='auto'||which==='both'||(which==='detect'&&hasAuto(f.auto)),wantQ=which==='quote'||which==='both'||(which==='detect'&&!(wantA&&f.autoOnly));
   const as=wantA?await makeAutoSheet(f.auto||null,true):'';return (wantQ?await makeQuoteSheet(f.quote||null):'')+as}
 // basic (no Claude) read: labeled web-form answers first, then the simple patterns
-function basicRead(text){const f=formFill(text),o=regexFill(text);if(f)for(const [k,v] of Object.entries(f.lead))if(v)o[k]=v;return {lead:o,f}}
+function basicRead(text){const f=formFill(text)||rowFill(text),o=regexFill(text);if(f)for(const [k,v] of Object.entries(f.lead))if(v)o[k]=v;return {lead:o,f}}
 // Build "<client> com auto quote sheet.pdf" from what was pasted (now if saved, else on Save)
 async function makeAutoSheet(q,force){
   if(!assets)return '';if(!q||typeof q!=='object'){if(!force)return '';q={}}
@@ -997,6 +997,31 @@ function formFill(t){
   if(!lead.leadType&&(lead.company||quote.description))lead.leadType='Commercial';
   return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
 }
+// a row copied from a spreadsheet (cells split by tabs): pick each cell out by what it looks like, no Claude needed
+function rowFill(t){
+  const lines=String(t||'').replace(/\r/g,'').split('\n').filter(l=>l.trim());if(lines.length!==1)return null;
+  const C=lines[0].split('\t').map(x=>x.trim());if(C.filter(Boolean).length<5)return null;
+  const lead={},quote={},auto={},seek=[],used=new Set(),take=i=>{used.add(i);return C[i]};
+  const find=re=>C.findIndex((c,i)=>!used.has(i)&&c&&re.test(c));
+  let i=find(/^\d{1,2}\/\d{1,2}\/\d{4}$/);if(i>=0){const [m,d,y]=take(i).split('/');lead.leadDate=`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;quote.lead_date=auto.lead_date=`${m.padStart(2,'0')}/${d.padStart(2,'0')}/${y}`}
+  i=find(/^[\w.+-]+@[\w-]+\.[\w.-]+$/);if(i>=0)lead.email=quote.email=auto.email=take(i);
+  i=find(/^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/);if(i>=0)lead.phone=quote.phone=auto.phone=take(i);
+  i=find(/^[A-HJ-NPR-Z0-9]{17}$/i);if(i>=0){auto.v1_vin=take(i).toUpperCase();const v=C[i+1];if(v&&/^\$?[\d,]+(\.\d\d)?$/.test(v)&&+v.replace(/[$,]/g,'')>=1000){used.add(i+1);auto.v1_value=v.startsWith('$')?v:'$'+v}}
+  i=find(/^\d+\s+\S.*,.*\b\d{5}(-\d{4})?$/);if(i>=0){const a=take(i);quote.mailing_address=auto.mailing_address=auto.garaging_address=a;C.forEach((c,j)=>{if(c&&a.toLowerCase().startsWith(c.toLowerCase())&&/^\d/.test(c))used.add(j)})}
+  i=find(/insurance|liability|workers|comp\b|property|umbrella|bond/i);if(i>=0)seek.push(...take(i).split(/\s*,\s*/).filter(Boolean));
+  i=find(/^(yes|no)$/i);if(i>=0)quote.currently_insured=auto.currently_insured=/^y/i.test(take(i))?'Yes':'No';
+  i=C.findIndex((c,j)=>!used.has(j)&&LEAD_TYPES.some(x=>x.toLowerCase()===c.toLowerCase()));
+  if(i>=0){const v=take(i);lead.leadType=LEAD_TYPES.find(x=>x.toLowerCase()===v.toLowerCase());quote.description=auto.description=v;C.forEach((c,j)=>{if(c.toLowerCase()===v.toLowerCase())used.add(j)})}
+  const words=c=>/^[A-Za-z][A-Za-z.'-]*(\s+[A-Za-z][A-Za-z.'-]*){1,3}$/.test(c);
+  i=find(/\b(llc|inc|corp|corporation|co|company|ltd|lp|llp|pllc|dba)\b\.?/i);
+  if(i>=0){lead.company=quote.client_name=auto.client_name=take(i);quote.entity_type=auto.entity_type=/llc/i.test(lead.company)?'LLC':/inc|corp/i.test(lead.company)?'Corporation':''}
+  const n=C.findIndex((c,j)=>!used.has(j)&&c&&words(c)&&(i<0||j<i));
+  if(n>=0){const v=take(n),p=v.split(/\s+/);lead.firstName=p[0];lead.lastName=p.slice(1).join(' ');quote.contact_first=lead.firstName;quote.contact_last=lead.lastName;auto.owner_first=lead.firstName;auto.owner_last=lead.lastName;auto.contact_name=v}
+  if(!lead.company&&n>=0&&C[n+1]&&!used.has(n+1)&&/[A-Za-z]/.test(C[n+1])){lead.company=quote.client_name=auto.client_name=take(n+1)}
+  if(!lead.leadType&&(lead.company||quote.description))lead.leadType='Commercial';
+  if(!lead.email&&!lead.phone&&!lead.firstName)return null;
+  return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
+}
 const hasAuto=a=>!!a&&Object.keys(a).some(k=>/^[dv]\d+_/.test(k));
 function apply(o){
   let n=0;
@@ -1026,7 +1051,7 @@ In "auto", split each driver's name into first and last, put the business's stre
 "autoOnly" is true when commercial auto is the only insurance the customer is asking for.
 Use "" or omit for anything not present. Example: {"lead":{"firstName":"Jane","lastName":"Doe","company":"Up Cleaning LLC","phone":"5551234567","email":"jane@up.com","leadType":"Commercial","leadDate":""},"quote":{"client_name":"Up Cleaning LLC","contact_first":"Jane","contact_last":"Doe","description":"residential cleaning","gross_receipts":"$50,000"}}
 ${text?'\nContent:\n"""\n'+text.slice(0,40000)+'\n"""':''}`;
-  if(sample){
+  if(sample&&!rowFill(text)){
     fillCtl=new AbortController();$('fillStop').hidden=false;$('fillBtn').disabled=true;m.textContent='Claude is reading it…';
     try{const o=await sample.json(prompt,{modelTier:'quick',signal:fillCtl.signal,...(images?{images}:{})});
       const lead=o&&typeof o==='object'?(o.lead&&typeof o.lead==='object'?o.lead:o):{};
