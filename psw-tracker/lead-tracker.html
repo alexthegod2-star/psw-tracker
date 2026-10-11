@@ -1008,6 +1008,9 @@ function rowFill(t){
   i=find(/^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/);if(i>=0)lead.phone=quote.phone=auto.phone=take(i);
   i=find(/^[A-HJ-NPR-Z0-9]{17}$/i);if(i>=0){auto.v1_vin=take(i).toUpperCase();const v=C[i+1];if(v&&/^\$?[\d,]+(\.\d\d)?$/.test(v)&&+v.replace(/[$,]/g,'')>=1000){used.add(i+1);auto.v1_value=v.startsWith('$')?v:'$'+v}}
   i=find(/^\d+\s+\S.*,.*\b\d{5}(-\d{4})?$/);if(i>=0){const a=take(i);quote.mailing_address=auto.mailing_address=auto.garaging_address=a;C.forEach((c,j)=>{if(c&&a.toLowerCase().startsWith(c.toLowerCase())&&/^\d/.test(c))used.add(j)})}
+  // year business started, then number of employees, then gross receipts
+  i=find(/^(19|20)\d\d$/);if(i>=0){quote.year_started=auto.year_started=take(i);const num=v=>v!=null&&/^\$?[\d,]+(\.\d\d)?$/.test(v);
+    if(num(C[i+1])){used.add(i+1);quote.full_time=C[i+1]}if(num(C[i+2])){used.add(i+2);const g=C[i+2];quote.gross_receipts=g.startsWith('$')?g:'$'+g}}
   i=find(/insurance|liability|workers|comp\b|property|umbrella|bond/i);if(i>=0)seek.push(...take(i).split(/\s*,\s*/).filter(Boolean));
   i=find(/^(yes|no)$/i);if(i>=0)quote.currently_insured=auto.currently_insured=/^y/i.test(take(i))?'Yes':'No';
   i=C.findIndex((c,j)=>!used.has(j)&&LEAD_TYPES.some(x=>x.toLowerCase()===c.toLowerCase()));
