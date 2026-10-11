@@ -348,11 +348,14 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><label for="clAgent">Agent</label><select id="clAgent"></select></div>
     <div><label for="clFirst">First name</label><input id="clFirst"></div>
     <div><label for="clLast">Last name</label><input id="clLast"></div>
+    <div><label for="clPref">Preferred name</label><input id="clPref"></div>
+    <div></div>
     <div><label for="clPhone">Cell phone number</label><input id="clPhone" inputmode="tel" placeholder="(###) ###-####"></div>
     <div><label for="clEmail">Email</label><input id="clEmail" type="email"></div>
     <div><label for="clPhone2">Secondary phone number</label><input id="clPhone2" inputmode="tel" placeholder="(###) ###-####"></div>
     <div><label for="clEmail2">Secondary email</label><input id="clEmail2" type="email"></div>
     <div class="full"><label for="clAddress">Mailing address</label><input id="clAddress"></div>
+    <div class="full"><label for="clLocation">Location address</label><input id="clLocation"></div>
     <div><label for="clSince">Client since</label><input id="clSince" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="clLead">Lead</label><select id="clLead"></select></div>
   </div>
@@ -1637,7 +1640,7 @@ function renderClients(){
   opts($('cfAgent'),[...new Set([...AGENTS,...clients.map(c=>(c.agent||'').trim()).filter(Boolean)])],'Everyone');
   const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value;
   const rows=clients.filter(c=>{if(fa&&c.agent!==fa)return false;if(!q)return true;
-    return [c.company,c.dba,c.firstName,c.lastName,c.phone,c.email,c.phone2,c.email2,c.address,c.notes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
+    return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,c.phone,c.email,c.phone2,c.email2,c.address,c.location,c.notes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
     .sort((a,b)=>clientName(a).localeCompare(clientName(b)));
   const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
@@ -1728,7 +1731,7 @@ $('clientBox').addEventListener('focusout',e=>{const el=e.target;
   if(el.dataset.p==='eff'&&/^\d{4}-/.test(iso)){const x=el.closest('tr').querySelector('[data-p=exp]');if(!x.value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);x.value=fmtDate(d.toISOString().slice(0,10))}}});
 function openClient(c,preset){editClient=c||null;const v=c||preset||{};
   $('clientTitleH').textContent=c?'Edit client':'New client';
-  [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clNotes','notes']].forEach(([id,k])=>$(id).value=v[k]||'');
+  [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPref','preferredName'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clLocation','location'],['clNotes','notes']].forEach(([id,k])=>$(id).value=v[k]||'');
   $('clSince').value=fmtDate(v.since||'');$('clPhone').value=fmtClPhone($('clPhone').value);$('clPhone2').value=fmtClPhone($('clPhone2').value);
   const agents=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
   $('clAgent').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('clAgent').value=v.agent||'';
@@ -1755,8 +1758,8 @@ $('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('not
 $('clCancel').onclick=closeClient;$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
 $('clSave').onclick=async()=>{const m=$('clientMsg');
-  const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),phone2:fmtClPhone($('clPhone2').value),email2:$('clEmail2').value.trim(),
-    address:$('clAddress').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim(),noteLog:clNoteLog};
+  const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),preferredName:$('clPref').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),phone2:fmtClPhone($('clPhone2').value),email2:$('clEmail2').value.trim(),
+    address:$('clAddress').value.trim(),location:$('clLocation').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim(),noteLog:clNoteLog};
   if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
   data.since=iso($('clSince').value,'Client since');
