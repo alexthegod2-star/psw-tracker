@@ -359,9 +359,15 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="tablewrap" style="max-height:none"><table class="poltab"><thead><tr><th>Line of business</th><th>General Agent</th><th>Company</th><th>Policy #</th><th>Eff date</th><th>Exp date</th><th>Premium</th><th></th></tr></thead><tbody id="polRows"></tbody></table></div>
   <h4 style="margin:14px 0 6px">Files</h4>
   <ul class="files" id="clFiles" style="margin-top:0"></ul>
-  <div class="grid" style="margin-top:10px"><div class="full"><label for="clNotes">Notes</label><textarea id="clNotes"></textarea></div></div>
+  <div class="grid" style="margin-top:10px"><div class="full"><label for="clNotes" style="display:flex;align-items:center;gap:8px">Notes <button type="button" class="pri" id="clAddNote" style="padding:2px 12px;font-size:12px;border-radius:999px">+ Add note</button></label><ul class="log" id="clNoteLog" style="margin:0 0 8px"></ul><textarea id="clNotes"></textarea></div></div>
   <div class="msg" id="clientMsg"></div>
   <div class="row"><button class="danger" id="clDel" style="margin-right:auto">Delete client</button><button id="clCancel">Cancel</button><button class="pri" id="clSave">Save client</button></div>
+</div></div>
+<div class="mbg" id="noteDlg" role="dialog" aria-modal="true" aria-labelledby="noteTitleH"><div class="mbox" id="noteBox" style="max-width:560px">
+  <h3 id="noteTitleH">Add note</h3>
+  <textarea id="noteText" style="width:100%;min-height:140px" placeholder="What happened, what's next…"></textarea>
+  <div class="small" id="noteWhen" style="margin-top:6px"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="noteCancel">Cancel</button><button class="pri" id="noteSave">Save note</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
   <h3 id="polTitleH">Policy</h3>
@@ -1559,7 +1565,7 @@ $('leadTaskBtn').onclick=async()=>{if(!(await ensureSaved()))return;openTask(nul
 // picking a lead fills empty first / last name boxes from it
 $('tLead').addEventListener('change',()=>{const l=leads.find(x=>x.id===$('tLead').value);if(!l)return;if(!$('tFirst').value.trim())$('tFirst').value=l.firstName||'';if(!$('tLast').value.trim())$('tLast').value=l.lastName||'';if(!$('tCompany').value.trim())$('tCompany').value=l.company||''});
 function openTask(t,preset){editTask=t||null;const v=t||preset||{};
-  $('taskTitleH').textContent=t?'Edit task':'New task';$('tTitle').value=v.title||'';$('tFirst').value=v.firstName||'';$('tLast').value=v.lastName||'';$('tCompany').value=v.company||'';$('tDue').value=fmtDate(v.due||'');$('tPri').value=v.priority||'Normal';$('tNotes').value=v.notes||'';
+  $('taskTitleH').textContent=t?'Edit task':'New task';$('tTitle').value=v.title||'';$('tFirst').value=v.firstName||'';$('tLast').value=v.lastName||'';$('tCompany').value=v.company||'';$('tDue').value=fmtDate(v.due||(t?'':todayISO())); // a new task starts due today$('tPri').value=v.priority||'Normal';$('tNotes').value=v.notes||'';
   const agents=[...new Set([...TASK_AGENTS,...tasks.map(x=>(x.assignedTo||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
   $('tAssign').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('tAssign').value=v.assignedTo||'';
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
@@ -1688,15 +1694,28 @@ function openClient(c,preset){editClient=c||null;const v=c||preset||{};
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
   $('clLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('')+
     (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
-  $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);renderClFiles(c);
+  $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);renderClFiles(c);clNoteLog=[...(v.noteLog||[])];renderClNotes();
   $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
   $('clientDlg').classList.add('on');setTimeout(()=>$('clCompany').focus(),30)}
 function closeClient(){$('clientDlg').classList.remove('on');editClient=null}
+// client notes: "+ Add note" opens a pop-up; each note is kept with its date and time (newest first), saved to the client right away
+let clNoteLog=[];
+async function renderClNotes(){const ids=[...new Set(clNoteLog.map(n=>n.by).filter(x=>x&&!(x in names)))];
+  if(ids.length&&user){try{const ps=await user.profiles(ids);ps.forEach(p=>names[p.id]=p.isMe?'You':(p.name||''))}catch(e){}}
+  $('clNoteLog').innerHTML=[...clNoteLog].reverse().map(n=>`<li style="background:var(--card)"><div class="small" style="font-weight:600">${esc(fmtDT(n.at))}${names[n.by]?' · '+esc(names[n.by]):''}</div><div style="white-space:pre-wrap">${esc(n.text)}</div></li>`).join('')}
+$('clAddNote').onclick=()=>{$('noteText').value='';$('noteWhen').textContent='Will be stamped '+fmtDT(new Date().toISOString());$('noteDlg').classList.add('on');setTimeout(()=>$('noteText').focus(),30)};
+const closeNote=()=>$('noteDlg').classList.remove('on');
+$('noteCancel').onclick=closeNote;$('noteDlg').addEventListener('click',e=>{if(e.target===$('noteDlg'))closeNote()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('noteDlg').classList.contains('on')){e.stopImmediatePropagation();closeNote()}},true);
+$('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('noteText').focus();return}
+  clNoteLog.push({at:new Date().toISOString(),text:t,...(me?{by:me}:{})});renderClNotes();closeNote();
+  if(editClient){try{await clientsCol.doc(editClient.id).update({noteLog:clNoteLog});editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
+  else toast('Note added. Hit Save client to keep it.')};
 $('clCancel').onclick=closeClient;$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
 $('clSave').onclick=async()=>{const m=$('clientMsg');
   const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtPhone($('clPhone').value),email:$('clEmail').value.trim(),
-    address:$('clAddress').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim()};
+    address:$('clAddress').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim(),noteLog:clNoteLog};
   if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
   data.since=iso($('clSince').value,'Client since');
