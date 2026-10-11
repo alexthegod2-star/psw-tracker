@@ -1724,7 +1724,7 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';$('polBox').classList.remove('wide');return}
   $('ppExtraH').textContent=line+' details';
   // '#Drivers' / '#Vehicles' draw the same 5-row driver and vehicle tables as the personal auto quote sheet (saved as d1_first, v1_vin, ...)
-  const ppTable=title=>{const t=PAUTO_SECTIONS.find(x=>x.title===title).table,c2=title==='Drivers'?[]:t.cols2||[],cell=(c,i)=>{const k=`${t.prefix}${i}_${c.k}`;return c.opts?`<select data-x="${k}" title="${esc(c.label)}"><option value=""></option>${c.opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`:`<input data-x="${k}" title="${esc(c.label)}"${/dob$/.test(c.k)?' inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"':''}>`};
+  const ppTable=title=>{const t0=PAUTO_SECTIONS.find(x=>x.title===title).table,t=title==='Vehicles'?{...t0,cols:[...t0.cols,...t0.cols2.filter(c=>c.k!=='owned')]}:t0,c2=[],cell=(c,i)=>{const k=`${t.prefix}${i}_${c.k}`;return c.opts?`<select data-x="${k}" title="${esc(c.label)}"><option value=""></option>${c.opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`:`<input data-x="${k}" title="${esc(c.label)}"${/dob$/.test(c.k)?' inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"':c.k==='year'?' inputmode="numeric" maxlength="4" style="width:6ch;min-width:0"':c.k==='miles'?' inputmode="numeric" maxlength="7" style="width:9ch;min-width:0"':c.k==='vin'?' maxlength="17" style="min-width:20ch"':''}>`};
     const old=title==='Drivers'?'drivers':'vehicles',oldBox=ppExtraVals[old]?`<label>${esc(title)} (earlier notes)</label><textarea data-x="${old}" style="min-height:50px"></textarea>`:'';
     return `<div class="full"><label style="font-weight:700">${esc(title)}</label><div class="pptwrap"><table class="pptab"><thead><tr><th></th>${t.cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${Array.from({length:t.rows},(_,j)=>{const i=j+1;
       return `<tr class="r1"><td${c2.length?' rowspan="2"':''} class="pn">${i}</td>${t.cols.map(c=>`<td>${cell(c,i)}</td>`).join('')}</tr>${c2.length?`<tr class="r2"><td colspan="${t.cols.length}"><div class="pp2">${c2.map(c=>`<label style="flex:${c.w}">${esc(c.label)}${cell(c,i)}</label>`).join('')}</div></td></tr>`:''}`}).join('')}</tbody></table></div>${oldBox}</div>`};
@@ -1752,6 +1752,9 @@ $('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppC
 
 $('ppDel').onclick=()=>{const b=$('ppDel');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to remove';return}if(polTr)polTr.remove();polTr=null;closePolicy(true)};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
+// pop-up vehicles: Year keeps 4 digits, Annual miles keeps 6 digits shown as 12,000
+$('polBox').addEventListener('input',e=>{const el=e.target,m=String(el.dataset.x||'').match(/^v\d+_(year|miles)$/);if(!m)return;
+  const d=el.value.replace(/\D/g,'').slice(0,m[1]==='year'?4:6);el.value=m[1]==='miles'&&d?Number(d).toLocaleString('en-US'):d});
 // pop-up driver tables: birth dates get slashes as you type, and Yrs lic fills in as age minus 16 (until you type over it)
 $('polBox').addEventListener('input',e=>{const el=e.target,m=String(el.dataset.x||'').match(/^d(\d+)_(dob|yrs_lic)$/);if(!m)return;
   const t=$('ppExtra').querySelector(`[data-x=d${m[1]}_yrs_lic]`);if(!t)return;if(m[2]==='yrs_lic'){t.dataset.auto='';return}
