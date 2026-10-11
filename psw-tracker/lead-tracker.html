@@ -30,6 +30,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--line)}
 td:nth-child(7){word-break:break-word;min-width:105px}td:nth-child(5){min-width:80px}td:nth-child(4){min-width:70px}
 td:first-child,td:nth-child(3),td:nth-child(6),td:nth-child(10),td:last-child{white-space:nowrap}
+#tb td:nth-child(3){white-space:normal}#tb td:nth-child(4){white-space:nowrap;min-width:0}#tb td:nth-child(5){min-width:70px}#tb td:nth-child(6){min-width:80px;white-space:normal}#tb td:nth-child(7){word-break:normal;min-width:0;white-space:nowrap}#tb td:nth-child(8){word-break:break-word;min-width:105px}#tb td:nth-child(10){white-space:normal}#tb td:nth-child(11){white-space:nowrap} /* leads table: Status is column 2, so the columns above shift by one */
 th{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em;cursor:pointer;user-select:none;background:var(--card);position:sticky;top:0}
 tbody tr{cursor:pointer}
 tbody tr:hover{background:var(--soft)}
@@ -161,7 +162,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="tablewrap">
     <table>
       <thead><tr>
-        <th data-k="leadDate">Lead date</th><th data-k="assignedTo">Assigned to</th><th data-k="firstName">First</th><th data-k="lastName">Last</th>
+        <th data-k="leadDate">Lead date</th><th data-k="status">Status</th><th data-k="assignedTo">Assigned to</th><th data-k="firstName">First</th><th data-k="lastName">Last</th>
         <th data-k="company">Company</th><th data-k="phone">Cell</th><th data-k="email">Email</th><th data-k="leadType">Lead type</th>
         <th data-k="lastContacted">Last contacted</th><th data-k="xDate">X date</th><th data-k="howContacted">How</th><th data-k="nfiles">Files</th><th></th>
       </tr></thead>
@@ -561,20 +562,21 @@ function render(){
     const hay=[l.firstName,l.lastName,l.company,l.email,l.phone,l.homePhone,l.workPhone,l.assignedTo,l.leadType].join(' ').toLowerCase();
     return hay.includes(q)||(qd.length>=3&&[l.phone,l.homePhone,l.workPhone].some(x=>String(x||'').replace(/\D/g,'').includes(qd)));
   });
-  rows.sort((a,b)=>{const va=sortK==='nfiles'?(a.files||[]).length:String(a[sortK]||''),vb=sortK==='nfiles'?(b.files||[]).length:String(b[sortK]||'');
+  const sv=l=>sortK==='nfiles'?(l.files||[]).length:sortK==='status'?(l.sold===true?2:made(l)?1:0):String(l[sortK]||''); // status order: No contact, Contacted, Sold
+  rows.sort((a,b)=>{const va=sv(a),vb=sv(b);
     if(va===vb)return String(b.createdAt||'').localeCompare(String(a.createdAt||''));
-    if(va===''||va===0&&sortK!=='nfiles')return 1;if(vb===''||vb===0&&sortK!=='nfiles')return -1;
+    if(va==='')return 1;if(vb==='')return -1;
     return (va<vb?-1:1)*sortDir});
   if(view==='leads')$('count').textContent=leads.length?`${rows.length} of ${leads.length} lead${leads.length===1?'':'s'}`:'No leads yet';
   $('empty').hidden=leads.length>0;
   if(leads.length&&!rows.length){$('empty').hidden=false;$('empty').innerHTML='<b>No matches</b>Try a different search or filter.'}
   else $('empty').innerHTML='<b>No leads yet</b>Click “+ New lead” to add your first one.';
-  $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td>${esc(l.assignedTo)}</td><td>${dot(l)}${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(fmtPhone(l.phone))}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
+  $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td style="white-space:nowrap">${dot(l)}${l.sold===true?'':`<span class="small">${made(l)?'Contacted':'No contact'}</span>`}</td><td>${esc(l.assignedTo)}</td><td>${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(fmtPhone(l.phone))}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
   $('cards').innerHTML=rows.map(l=>`<div class="lc" data-id="${esc(l.id)}"><button class="danger delrow" style="float:right" data-del-lead="${esc(l.id)}">Delete</button><div class="t">${dot(l)}${esc([l.firstName,l.lastName].filter(Boolean).join(' ')||'(no name)')}${l.company?' · '+esc(l.company):''}</div><div class="m">${esc(fmtDate(l.leadDate))}${l.assignedTo?' · '+esc(l.assignedTo):''}${l.leadType?' · '+esc(l.leadType):''}</div><div class="m">${l.lastContacted?'Last contact '+esc(fmtDT(l.lastContacted))+' ('+esc(l.howContacted)+')':'Not contacted yet'}${l.xDate?' · X date '+esc(fmtDate(l.xDate)):''}</div></div>`).join('');
   document.querySelectorAll('th').forEach(th=>th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.k===sortK?(sortDir>0?' ▲':' ▼'):''));
 }
 ['q','fType','fAssign'].forEach(id=>$(id).addEventListener('input',render));
-document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=/Date|Contacted|nfiles/.test(k)?-1:1}render()});
+document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=/Date|Contacted|nfiles|status/.test(k)?-1:1}render()});
 const made=l=>l.contactMade===true;
 const dot=l=>l.sold===true?'<span class="sold" title="Sold">SOLD</span>':`<button class="cdot ${made(l)?'yes':'no'}" data-dot="${esc(l.id)}" title="${made(l)?'Contact made (click to mark no contact)':'No contact yet (click to mark contact made)'}" aria-label="${made(l)?'Contact made':'No contact'}"></button>`;
 const openFromRow=e=>{const dlb=e.target.closest('[data-del-lead]');if(dlb){e.stopPropagation();askDelete(dlb.dataset.delLead);return}const d=e.target.closest('[data-dot]');if(d){e.stopPropagation();toggleMade(d.dataset.dot);return}const r=e.target.closest('[data-id]');if(r)openLead(leads.find(l=>l.id===r.dataset.id))};
