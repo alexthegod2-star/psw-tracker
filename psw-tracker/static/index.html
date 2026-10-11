@@ -358,6 +358,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <button id="polAdd" style="margin-bottom:8px">+ Add policy</button>
   <div class="tablewrap" style="max-height:none"><table class="poltab"><thead><tr><th>Line of business</th><th>General Agent</th><th>Company</th><th>Policy #</th><th>Eff date</th><th>Exp date</th><th>Premium</th><th>Tag/Note</th><th></th></tr></thead><tbody id="polRows"></tbody></table></div>
   <h4 style="margin:14px 0 6px">Files</h4>
+  <div class="drop row" id="clUpRow" style="padding:10px 12px;margin-bottom:8px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="clFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text</span></div>
   <ul class="files" id="clFiles" style="margin-top:0"></ul>
   <div class="grid" style="margin-top:10px"><div class="full"><label for="clNotes" style="display:flex;align-items:center;gap:8px">Notes <button type="button" class="pri" id="clAddNote" style="padding:2px 12px;font-size:12px;border-radius:999px">+ Add note</button></label><ul class="log" id="clNoteLog" style="margin:0 0 8px"></ul><textarea id="clNotes"></textarea></div></div>
   <div class="msg" id="clientMsg"></div>
@@ -380,8 +381,13 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><label for="ppExp">Exp date</label><input id="ppExp" data-pp="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="ppPremium">Premium</label><input id="ppPremium" data-pp="premium" placeholder="$"></div>
     <div><label for="ppTag">Tag/Note</label><input id="ppTag" data-pp="tag"></div>
+    <div class="full" id="ppExtraWrap" hidden><h4 id="ppExtraH" style="margin:6px 0 0"></h4><div class="grid" id="ppExtra"></div></div>
     <div class="full"><label for="ppNotes">Notes</label><textarea id="ppNotes" data-pp="notes" placeholder="Coverages, limits, deductibles, anything about this policy"></textarea></div>
   </div>
+  <h4 style="margin:12px 0 6px">Policy files</h4>
+  <div class="drop row" id="ppUpRow" style="padding:10px 12px;margin-bottom:8px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="ppFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"></div>
+  <ul class="files" id="ppFiles" style="margin-top:0"></ul>
+  <div class="msg" id="ppMsg"></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
   <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Done</button></div>
 </div></div>
@@ -1657,21 +1663,48 @@ document.addEventListener('change',e=>{const el=e.target,L=el&&{lobList:LOBS,coL
   const hit=L.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().includes(v)));
   if(hit&&hit!==el.value)el.value=hit},true);
 const polRow=p=>{p=p||{};const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input data-p="line" list="lobList" autocomplete="off" placeholder="Type or pick"></td><td><input data-p="carrier" list="gaList" autocomplete="off"></td><td><input data-p="company" list="coList" autocomplete="off"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"></td><td><input data-p="tag"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
-  for(const k of ['carrier','company','number','premium','tag','notes'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';setLob(tr.querySelector('[data-p=line]'),p.line);
+  tr.innerHTML=`<td><input data-p="line" list="lobList" autocomplete="off" placeholder="Type or pick"></td><td><input data-p="carrier" list="gaList" autocomplete="off"></td><td><input data-p="company" list="coList" autocomplete="off"></td><td><input data-p="number"></td><td><input data-p="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></td><td><input data-p="premium" placeholder="$"><input type="hidden" data-p="notes"><input type="hidden" data-p="extra"><input type="hidden" data-p="pid"></td><td><input data-p="tag"></td><td><button class="pri" data-popen title="Open this policy">Open</button> <button class="danger" data-prm title="Remove policy">✕</button></td>`;
+  for(const k of ['carrier','company','number','premium','tag','notes'])tr.querySelector(`[data-p=${k}]`).value=p[k]||'';tr.querySelector('[data-p=pid]').value=p.pid||('p'+Date.now().toString(36)+Math.random().toString(36).slice(2,7));tr.querySelector('[data-p=extra]').value=p.extra&&Object.keys(p.extra).length?JSON.stringify(p.extra):'';setLob(tr.querySelector('[data-p=line]'),p.line);
   for(const k of ['eff','exp'])tr.querySelector(`[data-p=${k}]`).value=fmtDate(p[k]||'');
   $('polRows').appendChild(tr)};
-$('polAdd').onclick=()=>{let r=$('polRows').lastElementChild;if(!r||[...r.querySelectorAll('[data-p]')].some(x=>x.value.trim())){polRow();r=$('polRows').lastElementChild}openPolicy(r,true)}; // a blank row is reused
+$('polAdd').onclick=()=>{let r=$('polRows').lastElementChild;if(!r||[...r.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim())){polRow();r=$('polRows').lastElementChild}openPolicy(r,true)}; // a blank row is reused
 $('polRows').addEventListener('click',e=>{const b=e.target.closest('[data-prm]');if(b){b.closest('tr').remove();return}const o=e.target.closest('[data-popen]');if(o)openPolicy(o.closest('tr'))});
 // policy pop-up: edits one row of the client's policy table (kept in the row until Save client)
 let polTr=null,polNew=false;const PP=['line','carrier','company','number','premium','tag','eff','exp','notes'];
+// each line of business adds its own basic fields to the pop-up (kept with the policy as "extra"); a's' field is a bigger box
+const LOB_FIELDS={
+  'Personal Auto':[['vehicles','Vehicles (year / make / model / VIN)','a'],['drivers','Drivers (name / DOB / license #)','a'],['bi','Bodily injury'],['pd','Property damage'],['um','UM / UIM'],['med','Med pay'],['comp','Comp ded'],['coll','Coll ded'],['rental','Rental'],['towing','Towing']],
+  'Commercial Auto':[['vehicles','Vehicles (year / make / model / VIN / value)','a'],['drivers','Drivers (name / DOB / license #)','a'],['csl','Liability (CSL)'],['um','UM / UIM'],['med','Med pay'],['comp','Comp ded'],['coll','Coll ded'],['hnoa','Hired / non-owned'],['cargo','Cargo'],['radius','Radius']],
+  'Personal Home':[['address','Property address'],['year_built','Year built'],['dwelling','Dwelling (A)'],['other_structures','Other structures (B)'],['personal_property','Personal property (C)'],['loss_of_use','Loss of use (D)'],['liability','Liability (E)'],['med','Med pay (F)'],['deductible','Deductible'],['sq_ft','Sq ft'],['construction','Construction'],['roof','Roof year']],
+  'Rental Dwelling':[['address','Property address'],['year_built','Year built'],['units','Units'],['dwelling','Dwelling'],['other_structures','Other structures'],['loss_of_rents','Loss of rents'],['liability','Liability'],['deductible','Deductible'],['sq_ft','Sq ft'],['construction','Construction']],
+  'Secondary Home':[['address','Property address'],['year_built','Year built'],['dwelling','Dwelling (A)'],['personal_property','Personal property (C)'],['loss_of_use','Loss of use (D)'],['liability','Liability (E)'],['deductible','Deductible'],['occupancy','Occupancy (seasonal / vacant / rented)']],
+  'Earthquake':[['address','Property address'],['year_built','Year built'],['dwelling','Dwelling limit'],['contents','Contents'],['loss_of_use','Loss of use'],['deductible','Deductible %'],['retrofit','Retrofitted?'],['construction','Construction']],
+  'DIC':[['address','Location address'],['perils','Perils (EQ / flood)'],['building','Building limit'],['contents','Contents'],['bi','Business income / rents'],['deductible','Deductible'],['year_built','Year built'],['construction','Construction']],
+  'Commercial Property':[['address','Location address'],['occupancy','Occupancy'],['building','Building'],['bpp','Business personal property'],['bi','Business income'],['deductible','Deductible'],['year_built','Year built'],['sq_ft','Sq ft'],['construction','Construction'],['protection','Sprinklers / alarm']],
+  'General Liability':[['operations','Business / operations','a'],['class_code','Class code'],['occurrence','Each occurrence'],['aggregate','General aggregate'],['products','Products / completed ops'],['personal_adv','Personal & adv injury'],['sales','Sales'],['payroll','Payroll'],['deductible','Deductible'],['addl_insured','Additional insureds']],
+  'Workers Comp':[['class_codes','Class codes / payroll','a'],['employees','# of employees'],['exp_mod','Experience mod'],['el_limits','Employers liability limits'],['owners','Owners included / excluded'],['subs','Subcontractor cost']],
+  'Umbrella/Excess':[['limit','Limit'],['retention','Retention / SIR'],['underlying','Underlying policies (auto / GL / EL)','a'],['form','Follow form or standalone']],
+  'CSLB Bond':[['bond_amount','Bond amount'],['license','CSLB license #'],['classification','Classification'],['bond_type','Bond type (contractor / LLC / qualifier)'],['bond_number','Bond #']],
+  'BOP':[['address','Location address'],['operations','Business / operations'],['building','Building'],['bpp','Business personal property'],['bi','Business income'],['occurrence','Liability each occurrence'],['aggregate','Liability aggregate'],['deductible','Deductible'],['sales','Sales'],['sq_ft','Sq ft']]};
+let ppExtraVals={},ppExtraLine=null;
+function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?LOB_FIELDS[line]:null;
+  if(!force&&line===ppExtraLine)return;ppExtraLine=line; // only redraw when the line really changes, so typing in a field isn't lost
+  $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{ppExtraVals[el.dataset.x]=el.value}); // keep what was typed when the line changes
+  $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';return}
+  $('ppExtraH').textContent=line+' details';
+  $('ppExtra').innerHTML=fs.map(([k,l,a])=>`<div${a?' class="full"':''}><label>${esc(l)}</label>${a?`<textarea data-x="${k}" style="min-height:70px"></textarea>`:`<input data-x="${k}">`}</div>`).join('');
+  $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{el.value=ppExtraVals[el.dataset.x]||''})}
+$('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);$('ppMsg').textContent='';renderPpFiles();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   $('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
-function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll('[data-p]')].some(x=>x.value.trim()))polTr.remove();$('polDlg').classList.remove('on');polTr=null}
+function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim()))polTr.remove();$('polDlg').classList.remove('on');polTr=null}
 $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#polBox [data-pp=${k}]`).value.trim();
   for(const k of PP){let v=g(k);if((k==='eff'||k==='exp')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
+  const ex={};$('ppExtra').querySelectorAll('[data-x]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.x]=v});
+  polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';
   closePolicy(true)};
 $('ppCancel').onclick=()=>closePolicy(false);
 $('ppDel').onclick=()=>{const b=$('ppDel');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to remove';return}if(polTr)polTr.remove();polTr=null;closePolicy(true)};
@@ -1695,10 +1728,10 @@ function openClient(c,preset){editClient=c||null;const v=c||preset||{};
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
   $('clLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('')+
     (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
-  $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);renderClFiles(c);clNoteLog=[...(v.noteLog||[])];renderClNotes();
+  $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);clPending=[];renderClFiles(c);clNoteLog=[...(v.noteLog||[])];renderClNotes();
   $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
   $('clientDlg').classList.add('on');setTimeout(()=>$('clCompany').focus(),30)}
-function closeClient(){$('clientDlg').classList.remove('on');editClient=null}
+function closeClient(){$('clientDlg').classList.remove('on');editClient=null;if(assets)clPending.forEach(f=>assets.delete(f.id).catch(()=>{}));clPending=[]} // files dropped into a new client you cancel are thrown away
 // client notes: "+ Add note" opens a pop-up; each note is kept with its date and time (newest first), saved to the client right away
 let clNoteLog=[];
 async function renderClNotes(){const ids=[...new Set(clNoteLog.map(n=>n.by).filter(x=>x&&!(x in names)))];
@@ -1721,16 +1754,47 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
   data.since=iso($('clSince').value,'Client since');
   data.policies=[...$('polRows').rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-p=${k}]`).value.trim();
-    return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes')}}).filter(p=>Object.values(p).some(Boolean));
+    return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes'),pid:g('pid'),extra:(()=>{try{return JSON.parse(g('extra')||'{}')}catch(_){return {}}})()}}).filter(p=>Object.entries(p).some(([k,v])=>k==='pid'?false:k==='extra'?Object.keys(v).length:v)).map(p=>{if(!Object.keys(p.extra).length)delete p.extra;return p});
   if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(', ')} as MM/DD/YYYY.`;return}
   $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
-  try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;await clientsCol.add(data)}
-    closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
+  try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;if(clPending.length)data.files=clPending;await clientsCol.add(data)}
+    clPending=[];closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
 $('clDel').onclick=async()=>{const b=$('clDel');if(!editClient)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to delete';return}
   try{const gone=editClient.files||[];await clientsCol.doc(editClient.id).delete();if(assets)for(const f of gone){try{await assets.delete(f.id)}catch(_){}}closeClient();toast('Client deleted')}catch(e){$('clientMsg').className='msg err';$('clientMsg').textContent=errText(e)}};
 // client files: copies made from a lead's files (their own stored copies, so removing the lead's file leaves the client's)
-function renderClFiles(c){const fs=(c&&c.files)||[];
-  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use “Copy to PSW Client” in a lead to bring files over.</li>'}
+// drop or pick files to add them to this client; for a new client they are kept and saved with Save client
+let clPending=[];
+async function addClientFiles(list,pid){if(!assets)return;const m=pid?$('ppMsg'):$('clientMsg');
+  for(const f of list){const type=EXT[(f.name.split('.').pop()||'').toLowerCase()];
+    if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;continue}
+    m.className='msg';m.textContent=`Uploading ${f.name}…`;
+    try{const buf=await f.arrayBuffer();if(type==='application/pdf'&&new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0,4)))!=='%PDF'){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF, so it can’t be stored.`;continue}
+      const r=await storeBytes(buf,type),entry={id:r.id,name:f.name,type,size:r.sizeBytes,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{}),...(pid?{pid}:{})};
+      if(editClient){const files=[...(editClient.files||[]),entry];await clientsCol.doc(editClient.id).update({files});editClient.files=files;renderClFiles(editClient)}
+      else{clPending.push(entry);renderClFiles({files:clPending})}
+      if(pid)renderPpFiles();
+      m.className='msg ok';m.textContent=pid?`Added ${f.name} to this policy and the client's files. Click Done, then Save client.`:`Added ${f.name}.`}
+    catch(e){m.className='msg err';m.textContent=`${f.name}: ${errText(e)}`}}}
+$('clFileIn').onchange=()=>{const list=[...$('clFileIn').files];$('clFileIn').value='';addClientFiles(list)};
+{const fz=$('clUpRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
+ ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+ fz.addEventListener('drop',e=>addClientFiles([...(e.dataTransfer.files||[])]))}
+// policy files: dropped in the policy pop-up, stored with the client (tagged to the policy) so they show in both places
+const clFileList=()=>editClient?(editClient.files||[]):clPending;
+function renderPpFiles(){const pid=polTr&&polTr.querySelector('[data-p=pid]').value,fs=clFileList().filter(f=>pid&&f.pid===pid);$('ppUpRow').hidden=!assets;
+  $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button></li>`).join('')}
+$('ppFileIn').onchange=()=>{const list=[...$('ppFileIn').files];$('ppFileIn').value='';if(polTr)addClientFiles(list,polTr.querySelector('[data-p=pid]').value)};
+{const fz=$('ppUpRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
+ ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+ fz.addEventListener('drop',e=>{if(polTr)addClientFiles([...(e.dataTransfer.files||[])],polTr.querySelector('[data-p=pid]').value)})}
+$('ppFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.popen||b.dataset.psave,f=clFileList().find(x=>x.id===id);if(!f)return;
+  try{const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
+    if(b.dataset.psave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
+    else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
+  catch(err){$('ppMsg').className='msg err';$('ppMsg').textContent=`${f.name}: ${errText(err)}`}});
+function renderClFiles(c){const fs=(c&&c.files)||[];$('clUpRow').hidden=!assets;
+  const pl=pid=>{const tr=[...$('polRows').rows].find(t=>t.querySelector('[data-p=pid]').value===pid);return tr?(tr.querySelector('[data-p=line]').value.trim()||'policy'):''};
+  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}${f.pid&&pl(f.pid)?` <span class="chip">${esc(pl(f.pid))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Drop them above, or use “Copy to PSW Client” in a lead.</li>'}
 $('clFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.clopen||b.dataset.clsave||b.dataset.clrm,f=(editClient.files||[]).find(x=>x.id===id);if(!f)return;
   try{if(b.dataset.clrm){if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again';return}
       const files=(editClient.files||[]).filter(x=>x.id!==id);await clientsCol.doc(editClient.id).update({files});editClient.files=files;renderClFiles(editClient);try{await assets.delete(id)}catch(_){}return}
