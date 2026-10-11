@@ -93,7 +93,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 #txBox{width:min(520px,100%)}
 #clientBox{background:var(--drbg);width:95vw;max-width:100%;height:calc(100vh - 32px);max-height:calc(100vh - 32px);overflow-y:auto;padding:24px 28px}#clientBox #clNotes{min-height:140px}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
 .poltab input,.poltab select{width:100%;min-width:70px;padding:5px 6px}.poltab select,.poltab [data-p=line]{min-width:150px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
-#polBox{width:min(680px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}.poltab td{padding:3px 4px}.poltab th{position:static;background:#cdebd5;color:#2f5d3e}.poltab th:first-child{border-top-left-radius:11px}.poltab th:last-child{border-top-right-radius:11px}
+#polBox{width:min(680px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}#ppFees{display:grid;grid-template-columns:150px minmax(0,200px);gap:6px 12px;align-items:center}#ppFees label{margin:0}#ppFees input{text-align:right}#ppFees .tot{font-weight:700;border-top:2px solid currentColor;padding-top:6px}#ppFees input.tot{background:transparent;border:0;border-top:2px solid #333;border-radius:0}.poltab td{padding:3px 4px}.poltab th{position:static;background:#cdebd5;color:#2f5d3e}.poltab th:first-child{border-top-left-radius:11px}.poltab th:last-child{border-top-right-radius:11px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .poltab th{background:#1f3a2b;color:#b9e3c6}}:root[data-theme="dark"] .poltab th{background:#1f3a2b;color:#b9e3c6}
 .bsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 14px}.bsum div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.bsum span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.02em}.bsum b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}.bsum .hl{border-color:var(--acc);background:var(--soft)}
 .bmon{margin:0 0 18px}.bmh{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;margin:0 0 6px}.bmh h3{margin:0;font-size:16px}.bmh .sp{flex:1}.bmh button{padding:4px 12px}
@@ -384,8 +384,17 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><label for="ppNumber">Policy #</label><input id="ppNumber" data-pp="number"></div>
     <div><label for="ppEff">Eff date</label><input id="ppEff" data-pp="eff" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="ppExp">Exp date</label><input id="ppExp" data-pp="exp" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
-    <div><label for="ppPremium">Premium</label><input id="ppPremium" data-pp="premium" placeholder="$"></div>
-    <div><label for="ppTag">Tag/Note</label><input id="ppTag" data-pp="tag"></div>
+    <div class="full"><label for="ppTag">Tag/Note</label><input id="ppTag" data-pp="tag"></div>
+    <div class="full"><h4 style="margin:6px 0 4px">Premium and fees</h4><div class="fees" id="ppFees">
+      <label for="ppPremium">Premium</label><input id="ppPremium" data-pp="premium" placeholder="$" inputmode="decimal">
+      <label for="ppFee1">Policy fee</label><input id="ppFee1" data-f="policyFee" placeholder="$" inputmode="decimal">
+      <label for="ppFee2">GA fee</label><input id="ppFee2" data-f="gaFee" placeholder="$" inputmode="decimal">
+      <label for="ppFee3">Tax</label><input id="ppFee3" data-f="tax" placeholder="$" inputmode="decimal">
+      <label for="ppFee4">Stamping</label><input id="ppFee4" data-f="stamping" placeholder="$" inputmode="decimal">
+      <label for="ppFee5">State filing fee</label><input id="ppFee5" data-f="filingFee" placeholder="$" inputmode="decimal">
+      <label for="ppFee6">PSW agency fee</label><input id="ppFee6" data-f="pswFee" placeholder="$" inputmode="decimal">
+      <label class="tot" for="ppTotal">Total</label><input class="tot" id="ppTotal" readonly tabindex="-1">
+    </div></div>
     <div class="full" id="ppExtraWrap" hidden><h4 id="ppExtraH" style="margin:6px 0 0"></h4><div class="grid" id="ppExtra"></div></div>
     <div class="full"><label for="ppNotes">Notes</label><textarea id="ppNotes" data-pp="notes" placeholder="Coverages, limits, deductibles, anything about this policy"></textarea></div>
   </div>
@@ -1705,7 +1714,7 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{el.value=ppExtraVals[el.dataset.x]||''})}
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
-  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);$('ppMsg').textContent='';renderPpFiles();
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});ppTotal();$('ppMsg').textContent='';renderPpFiles();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   $('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
@@ -1713,8 +1722,12 @@ function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll(
 $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#polBox [data-pp=${k}]`).value.trim();
   for(const k of PP){let v=g(k);if((k==='eff'||k==='exp')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
   const ex={};$('ppExtra').querySelectorAll('[data-x]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.x]=v});
+  $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee)ex.total=$('ppTotal').value;
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';
   closePolicy(true)};
+// Total = premium + every fee box, kept up to date as you type
+function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):''}
+$('ppFees').addEventListener('input',ppTotal);$('ppFees').addEventListener('focusout',e=>{if(e.target.dataset.f&&e.target.value.trim()){const n=bNum(e.target.value);if(n!=null)e.target.value=bMoney(n)}});
 $('ppCancel').onclick=()=>closePolicy(false);
 $('ppDel').onclick=()=>{const b=$('ppDel');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Click again to remove';return}if(polTr)polTr.remove();polTr=null;closePolicy(true)};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
