@@ -1788,12 +1788,16 @@ function closeClient(){$('clientDlg').classList.remove('on');editClient=null;if(
 let clNoteLog=[];
 async function renderClNotes(){const ids=[...new Set(clNoteLog.map(n=>n.by).filter(x=>x&&!(x in names)))];
   if(ids.length&&user){try{const ps=await user.profiles(ids);ps.forEach(p=>names[p.id]=p.isMe?'You':(p.name||''))}catch(e){}}
-  $('clNoteLog').innerHTML=[...clNoteLog].reverse().map(n=>`<li style="background:var(--card)"><div class="small" style="font-weight:600">${esc(fmtDT(n.at))}${names[n.by]?' · '+esc(names[n.by]):''}</div><div style="white-space:pre-wrap">${esc(n.text)}</div></li>`).join('')}
-$('clAddNote').onclick=()=>{$('noteText').value='';$('noteWhen').textContent='Will be stamped '+fmtDT(new Date().toISOString());$('noteDlg').classList.add('on');setTimeout(()=>$('noteText').focus(),30)};
+  $('clNoteLog').innerHTML=clNoteLog.map((n,i)=>[n,i]).reverse().map(([n,i])=>`<li data-ni="${i}" title="Click to read" style="background:var(--card);cursor:pointer"><div class="small" style="font-weight:600">${esc(fmtDT(n.at))}${names[n.by]?' · '+esc(names[n.by]):''}</div><div style="white-space:pre-wrap">${esc(n.text)}</div></li>`).join('')}
+// note pop-up: "+ Add note" writes a new one; clicking a saved note shows it read-only
+const noteMode=view=>{$('noteText').readOnly=view;$('noteSave').hidden=view;$('noteCancel').textContent=view?'Close':'Cancel';$('noteTitleH').textContent=view?'Note':'Add note'};
+$('clNoteLog').addEventListener('click',e=>{const li=e.target.closest('[data-ni]');if(!li)return;const n=clNoteLog[+li.dataset.ni];if(!n)return;
+  noteMode(true);$('noteText').value=n.text||'';$('noteWhen').textContent=fmtDT(n.at)+(names[n.by]?' · '+names[n.by]:'');$('noteDlg').classList.add('on');setTimeout(()=>$('noteCancel').focus(),30)});
+$('clAddNote').onclick=()=>{noteMode(false);$('noteText').value='';$('noteWhen').textContent='Will be stamped '+fmtDT(new Date().toISOString());$('noteDlg').classList.add('on');setTimeout(()=>$('noteText').focus(),30)};
 const closeNote=()=>$('noteDlg').classList.remove('on');
 $('noteCancel').onclick=closeNote;$('noteDlg').addEventListener('click',e=>{if(e.target===$('noteDlg'))closeNote()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('noteDlg').classList.contains('on')){e.stopImmediatePropagation();closeNote()}},true);
-$('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('noteText').focus();return}
+$('noteSave').onclick=async()=>{if($('noteText').readOnly)return;const t=$('noteText').value.trim();if(!t){$('noteText').focus();return}
   clNoteLog.push({at:new Date().toISOString(),text:t,...(me?{by:me}:{})});renderClNotes();closeNote();
   if(editClient){try{await clientsCol.doc(editClient.id).update({noteLog:clNoteLog});editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
   else toast('Note added. Hit Save client to keep it.')};
