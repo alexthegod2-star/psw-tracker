@@ -80,6 +80,9 @@ def init_db():
         c.execute("PRAGMA journal_mode=WAL")
         c.executescript(SCHEMA)
         c.execute("INSERT OR IGNORE INTO meta(k,v) VALUES('version','0')")
+        for t in ("users", "invites"):  # added after launch: each person's email address
+            if "email" not in {r[1] for r in c.execute(f"PRAGMA table_info({t})")}:
+                c.execute(f"ALTER TABLE {t} ADD COLUMN email TEXT NOT NULL DEFAULT ''")
 
 
 # ---------- passwords ----------
@@ -247,8 +250,8 @@ def invite_accept(t: str = Form(...), password: str = Form(...), password2: str 
         if c.execute("SELECT 1 FROM users WHERE username=?", (inv["username"],)).fetchone():
             c.execute("UPDATE users SET pw=?, active=1 WHERE username=?", (hash_pw(password), inv["username"]))
         else:
-            c.execute("INSERT INTO users(id,username,name,pw,role,active,created) VALUES(?,?,?,?,?,1,?)",
-                      (new_id(), inv["username"], inv["name"], hash_pw(password), inv["role"], time.time()))
+            c.execute("INSERT INTO users(id,username,name,pw,role,active,created,email) VALUES(?,?,?,?,?,1,?,?)",
+                      (new_id(), inv["username"], inv["name"], hash_pw(password), inv["role"], time.time(), inv["email"]))
         uid = c.execute("SELECT id FROM users WHERE username=?", (inv["username"],)).fetchone()["id"]
         c.execute("UPDATE invites SET used=? WHERE token_hash=?", (time.time(), inv["token_hash"]))
         tok = start_session(c, uid)
@@ -294,6 +297,13 @@ async def change_password(request: Request):
 PANEL_OWNERS = {x.strip() for x in os.environ.get("PSW_PANEL_OWNERS", os.environ.get("PSW_BINDER_OWNERS", "alex")).split(",") if x.strip()}
 
 
+def clean_email(v, required=True):
+    v = str(v or "").strip()
+    if (v or required) and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", v):
+        err(400, "bad_email")
+    return v[:200]
+
+
 def need_owner(request: Request):
     u = need_user(request)
     if bearer(request) or u["username"] not in PANEL_OWNERS:
@@ -303,13 +313,13 @@ def need_owner(request: Request):
 
 @app.get("/api/admin/users")
 def admin_users(request: Request):
-    need_owner(request)
+    me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,role,active,created FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
-        pending = c.execute("SELECT username,name,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
+        rows = c.execute("SELECT username,name,email,role,active,created FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
-    return {"users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
+    return {"me": me["username"], "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
 
 
 @app.post("/api/admin/users")
@@ -320,6 +330,7 @@ async def admin_add_user(request: Request):
     name = " ".join(str(body.get("name", "")).split())
     role = "admin" if body.get("admin") else "user"
     pw = str(body.get("password", ""))
+    email = clean_email(body.get("email", ""))
     if not re.fullmatch(r"[a-z0-9._-]{2,32}", username):
         err(400, "bad_username")
     if not name or len(name) > 80:
@@ -330,14 +341,43 @@ async def admin_add_user(request: Request):
         if pw:
             if len(pw) < 8:
                 err(400, "too_short")
-            c.execute("INSERT INTO users(id,username,name,pw,role,active,created) VALUES(?,?,?,?,?,1,?)",
-                      (new_id(), username, name, hash_pw(pw), role, time.time()))
+            c.execute("INSERT INTO users(id,username,name,pw,role,active,created,email) VALUES(?,?,?,?,?,1,?,?)",
+                      (new_id(), username, name, hash_pw(pw), role, time.time(), email))
             return {"ok": True}
         t = secrets.token_urlsafe(24)  # same one-time sign-up link as  sudo psw invite
         c.execute("DELETE FROM invites WHERE username=? AND used IS NULL", (username,))
-        c.execute("INSERT INTO invites(token_hash,username,name,role,expires,used) VALUES(?,?,?,?,?,NULL)",
-                  (token_hash(t), username, name, role, time.time() + 7 * 86400))
+        c.execute("INSERT INTO invites(token_hash,username,name,role,expires,used,email) VALUES(?,?,?,?,?,NULL,?)",
+                  (token_hash(t), username, name, role, time.time() + 7 * 86400, email))
     return {"ok": True, "invite": f"/invite?t={t}"}
+
+
+@app.post("/api/admin/users/{username}/active")
+async def admin_set_active(username: str, request: Request):
+    """Remove = turn the login off and sign them out (their leads, tasks and notes stay); Restore turns it back on."""
+    me = need_owner(request)
+    on = bool((await request.json()).get("active"))
+    if username == me["username"] and not on:
+        err(400, "not_yourself")
+    with db() as c:
+        n = c.execute("UPDATE users SET active=? WHERE username=?", (1 if on else 0, username)).rowcount
+        if not on:
+            c.execute("DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE username=?)", (username,))
+            n += c.execute("DELETE FROM invites WHERE username=? AND used IS NULL", (username,)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/email")
+async def admin_set_email(username: str, request: Request):
+    need_owner(request)
+    email = clean_email((await request.json()).get("email", ""), required=False)
+    with db() as c:
+        n = c.execute("UPDATE users SET email=? WHERE username=?", (email, username)).rowcount
+        n += c.execute("UPDATE invites SET email=? WHERE username=? AND used IS NULL", (email, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
 
 
 # ---------- tracker module: documents ----------
