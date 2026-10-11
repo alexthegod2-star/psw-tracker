@@ -64,7 +64,7 @@ button.delrow{padding:3px 8px;font-size:12px}
 .dr.on{transform:none}
 .dh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:1}
 .dh h2{margin:0;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.db{padding:16px;display:grid;gap:16px}
+.db{padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(340px,40%);align-items:start}.dbL{display:grid;gap:16px;min-width:0}.dbR{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;border-radius:12px}@media(max-width:1000px){.db{grid-template-columns:1fr}.dbR{position:static;max-height:none;grid-row:2}}
 .sec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
 .sec h3{margin:0 0 10px;font-size:14px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -217,7 +217,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="ov" id="ov"></div>
 <aside class="dr" id="dr" aria-hidden="true">
   <div class="dh"><h2 id="dTitle">New lead</h2><div class="row"><button id="saveBtn" class="pri">Save</button><button class="danger" id="delTop">Delete</button><button id="closeBtn">Close</button></div></div>
-  <div class="db">
+  <div class="db"><div class="dbL">
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
       <textarea id="dropText" placeholder="Paste text from an email, web form, text message…"></textarea>
@@ -245,32 +245,6 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
         <div class="full"><label for="leadNotes">Notes</label><textarea id="leadNotes" placeholder="Anything to remember about this lead"></textarea></div>
       </div>
       <div class="msg" id="saveMsg"></div>
-    </div>
-
-    <div class="sec" id="contactSec">
-      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button></h3>
-      <div class="grid">
-        <div><label for="cAt">Date / time</label><input id="cAt" type="datetime-local"></div>
-        <div><label for="cHow">How contacted</label>
-          <select id="cHow"><option>Phone call</option><option>Email</option><option>Text</option><option>Phone + text</option><option>Phone + text + email</option><option>Voicemail</option><option>In person</option><option>Other</option></select></div>
-        <div class="full"><label for="cNote">Notes</label><textarea id="cNote" placeholder="What was discussed, next steps…"></textarea></div>
-      </div>
-      <div class="row" style="margin-top:8px"><button class="pri" id="logBtn">Add contact</button><button id="textBtn">Text customer</button><span class="small" id="logHint"></span></div>
-      <div class="small" style="margin:12px 0 6px;font-weight:600">Quick log (uses the time now, plus any notes above)</div>
-      <div class="grid3" style="margin-bottom:8px">
-        <div><label for="txLob">Line of biz</label><input id="txLob" list="typeList" placeholder="e.g. Petting zoo"></div>
-        <div><label for="txEst">Estimate</label><input id="txEst" placeholder="$3,500-$4,000"></div>
-        <div><label for="txCov">Type of cov</label><input id="txCov" placeholder="general liability"></div>
-        <div><label for="txTerm">Term</label><input id="txTerm" placeholder="the year"></div>
-      </div>
-      <div class="row" id="quickLog">
-        <button class="pri" data-q="First text" data-how="Text">First text</button><button class="pri" data-q="Follow up text" data-how="Text">Follow up text</button><button class="pri" data-q="Follow up text 2" data-how="Text">Follow up text 2</button>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <button class="pri" data-q="First email" data-how="Email">First email</button><button class="pri" data-q="Follow up email" data-how="Email">Follow up email</button><button class="pri" data-q="Email 3" data-how="Email">Email 3</button>
-      </div>
-      <div class="msg" id="logMsg"></div>
-      <ul class="log" id="log"></ul>
     </div>
 
     <div class="sec" id="taskSec">
@@ -316,7 +290,33 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="delSec">
       <button class="danger" id="delBtn">Delete this lead</button>
     </div>
-  </div>
+  </div><div class="dbR">
+    <div class="sec" id="contactSec">
+      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button></h3>
+      <div class="grid">
+        <div><label for="cAt">Date / time</label><input id="cAt" type="datetime-local"></div>
+        <div><label for="cHow">How contacted</label>
+          <select id="cHow"><option>Phone call</option><option>Email</option><option>Text</option><option>Phone + text</option><option>Phone + text + email</option><option>Voicemail</option><option>In person</option><option>Other</option></select></div>
+        <div class="full"><label for="cNote">Notes</label><textarea id="cNote" placeholder="What was discussed, next steps…"></textarea></div>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="logBtn">Add contact</button><button id="textBtn">Text customer</button><span class="small" id="logHint"></span></div>
+      <div class="small" style="margin:12px 0 6px;font-weight:600">Quick log (uses the time now, plus any notes above)</div>
+      <div class="grid3" style="margin-bottom:8px">
+        <div><label for="txLob">Line of biz</label><input id="txLob" list="typeList" placeholder="e.g. Petting zoo"></div>
+        <div><label for="txEst">Estimate</label><input id="txEst" placeholder="$3,500-$4,000"></div>
+        <div><label for="txCov">Type of cov</label><input id="txCov" placeholder="general liability"></div>
+        <div><label for="txTerm">Term</label><input id="txTerm" placeholder="the year"></div>
+      </div>
+      <div class="row" id="quickLog">
+        <button class="pri" data-q="First text" data-how="Text">First text</button><button class="pri" data-q="Follow up text" data-how="Text">Follow up text</button><button class="pri" data-q="Follow up text 2" data-how="Text">Follow up text 2</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="pri" data-q="First email" data-how="Email">First email</button><button class="pri" data-q="Follow up email" data-how="Email">Follow up email</button><button class="pri" data-q="Email 3" data-how="Email">Email 3</button>
+      </div>
+      <div class="msg" id="logMsg"></div>
+      <ul class="log" id="log"></ul>
+    </div>
+  </div></div>
 </aside>
 <datalist id="assignList"></datalist><datalist id="lobList"></datalist><datalist id="coList"></datalist><datalist id="gaList"></datalist><datalist id="sourceList"></datalist><datalist id="typeList"></datalist>
 <div class="ed" id="ed" aria-hidden="true">
