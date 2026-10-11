@@ -456,6 +456,8 @@ const fmtDate=s=>{if(!s)return '';const m=/^(\d{4})-(\d\d)-(\d\d)/.exec(s);retur
 const fmtDT=s=>{if(!s)return '';const d=new Date(s);if(isNaN(d))return s;return d.toLocaleString([], {month:'2-digit',day:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit'})};
 // typed date (010126, 01012026, 1/1/26) -> 2026-01-01; anything else is kept as typed
 const typedISO=v=>{v=String(v||'').trim();if(/^\d{4}-\d\d-\d\d$/.test(v))return v;let m=/^(\d\d)(\d\d)(\d\d(?:\d\d)?)$/.exec(v)||/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d\d(?:\d\d)?)$/.exec(v);if(!m)return v;const mo=+m[1],d=+m[2],y=m[3].length===2?2000+ +m[3]:+m[3];const t=new Date(y,mo-1,d);if(t.getMonth()!==mo-1||t.getDate()!==d)return v;return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`};
+// client phones read (818) 701-1033
+const fmtClPhone=v=>{const d=String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:String(v||'')};
 const fmtPhone=v=>{const d=String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6)}`:v};
 const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
 const toast=t=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)};
@@ -1635,8 +1637,8 @@ function renderClients(){
     .sort((a,b)=>clientName(a).localeCompare(clientName(b)));
   const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
-  $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(c.phone)}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td></tr>`).join('');
-  $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(c.phone),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent)].filter(Boolean).join(' · ')}</div></div>`).join('');
+  $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(fmtClPhone(c.phone))}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td></tr>`).join('');
+  $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(fmtClPhone(c.phone)),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent)].filter(Boolean).join(' · ')}</div></div>`).join('');
   const ce=$('cempty');ce.hidden=rows.length>0;ce.innerHTML=clients.length?'<b>No matching clients</b>Try a different search.':'<b>No clients yet</b>Click “+ New client”, or open a lead and click “→ PSW Client”.';
 }
 ['cq','cfAgent'].forEach(id=>$(id).addEventListener('input',renderClients));
@@ -1716,13 +1718,14 @@ $('polBox').addEventListener('focusout',e=>{const el=e.target;if(el.dataset.pp==
 const slashDate=el=>{const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d};
 $('clientBox').addEventListener('input',e=>{const el=e.target;if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;if(e.inputType&&e.inputType.startsWith('delete'))return;slashDate(el)});
 $('clientBox').addEventListener('focusout',e=>{const el=e.target;
+  if(el.id==='clPhone'){el.value=fmtClPhone(el.value.trim());return}
   if(el.dataset.p==='premium'&&el.value.trim()){el.value=fmtMoney(el.value);return}
   if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso);
   if(el.dataset.p==='eff'&&/^\d{4}-/.test(iso)){const x=el.closest('tr').querySelector('[data-p=exp]');if(!x.value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);x.value=fmtDate(d.toISOString().slice(0,10))}}});
 function openClient(c,preset){editClient=c||null;const v=c||preset||{};
   $('clientTitleH').textContent=c?'Edit client':'New client';
   [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPhone','phone'],['clEmail','email'],['clAddress','address'],['clNotes','notes']].forEach(([id,k])=>$(id).value=v[k]||'');
-  $('clSince').value=fmtDate(v.since||'');
+  $('clSince').value=fmtDate(v.since||'');$('clPhone').value=fmtClPhone($('clPhone').value);
   const agents=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
   $('clAgent').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('clAgent').value=v.agent||'';
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
@@ -1748,7 +1751,7 @@ $('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('not
 $('clCancel').onclick=closeClient;$('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
 $('clSave').onclick=async()=>{const m=$('clientMsg');
-  const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtPhone($('clPhone').value),email:$('clEmail').value.trim(),
+  const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),
     address:$('clAddress').value.trim(),agent:$('clAgent').value,leadId:$('clLead').value,notes:$('clNotes').value.trim(),noteLog:clNoteLog};
   if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
@@ -1813,7 +1816,7 @@ $('copyClient').onclick=async()=>{if(!(await ensureSaved()))return;const fresh=l
   const l={...fresh,...Object.fromEntries(['firstName','lastName','company','phone','email','assignedTo'].map(k=>[k,$(k).value.trim()])),id:cur.id};
   let v={};const qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
   if(qs){try{await acordReady();v=sheetValues(await PDFLib.PDFDocument.load(await fileBytes(qs)))}catch(_){}}
-  const want={company:l.company||v.client_name||'',dba:v.dba||'',firstName:l.firstName||v.contact_first||'',lastName:l.lastName||v.contact_last||'',phone:fmtPhone(l.phone||v.phone||''),email:l.email||v.email||'',
+  const want={company:l.company||v.client_name||'',dba:v.dba||'',firstName:l.firstName||v.contact_first||'',lastName:l.lastName||v.contact_last||'',phone:fmtClPhone(l.phone||v.phone||''),email:l.email||v.email||'',
     address:v.mailing_address||'',agent:l.assignedTo||'',leadId:l.id,since:todayISO()};
   const have=findClient({...l,company:want.company,email:want.email,phone:want.phone});
   const fill=have?Object.fromEntries(Object.entries(want).filter(([k,x])=>x&&!String(have[k]||'').trim())):Object.fromEntries(Object.entries(want).filter(([,x])=>x));
