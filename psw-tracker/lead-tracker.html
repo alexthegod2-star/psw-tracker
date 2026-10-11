@@ -41,7 +41,7 @@ tbody tr:last-child td{border-bottom:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}
-.adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.admgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}.admgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}.admlink{display:flex;gap:6px;margin-top:8px}.admlink input{flex:1;min-width:0}@media (max-width:520px){.admgrid{grid-template-columns:1fr}}
+.adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}.adm .admEm{width:100%;min-width:170px;font-size:13px;padding:4px 6px}.admgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}.admgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}.admlink{display:flex;gap:6px;margin-top:8px}.admlink input{flex:1;min-width:0}@media (max-width:520px){.admgrid{grid-template-columns:1fr}}
 .mbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(380px,100%);box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .mbox h3{margin:0 0 6px;font-size:18px}.mbox p{margin:0 0 16px;color:var(--mute)}
 .mbox .row{justify-content:flex-end}
@@ -378,12 +378,13 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="small" id="noteWhen" style="margin-top:6px"></div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="noteCancel">Cancel</button><button class="pri" id="noteSave">Save note</button></div>
 </div></div>
-<div class="mbg" id="admDlg" role="dialog" aria-modal="true" aria-labelledby="admTitleH"><div class="mbox adm" style="width:min(720px,100%);max-height:90vh;overflow:auto">
+<div class="mbg" id="admDlg" role="dialog" aria-modal="true" aria-labelledby="admTitleH"><div class="mbox adm" style="width:min(860px,100%);max-height:90vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="admTitleH" style="margin:0">Admin</h3><button class="pri" id="admAdd" type="button">+ Add user</button></div>
   <form id="admForm" hidden style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px">
     <div class="admgrid">
       <label>Full name (first name + last initial, like Paul M)<input id="admName" autocomplete="off" required></label>
       <label>Username (what they sign in with)<input id="admUser" autocomplete="off" required></label>
+      <label>Email<input id="admEmail" type="email" autocomplete="off" required></label>
       <label>Password (leave blank to send a sign-up link instead)<input id="admPw" type="password" autocomplete="new-password" minlength="8"></label>
       <label style="flex-direction:row;align-items:center;gap:6px;align-self:end"><input type="checkbox" id="admIsAdmin"> Admin</label>
     </div>
@@ -391,7 +392,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </form>
   <div class="msg" id="admMsg"></div>
   <div class="admlink" id="admLinkRow" hidden><input id="admLink" readonly><button type="button" class="pri" id="admCopy">Copy link</button></div>
-  <table style="margin-top:12px"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Added</th></tr></thead><tbody id="admRows"><tr><td colspan="5">Loading…</td></tr></tbody></table>
+  <table style="margin-top:12px"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Added</th><th></th></tr></thead><tbody id="admRows"><tr><td colspan="7">Loading…</td></tr></tbody></table>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
@@ -1603,12 +1604,13 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
 
 /* ---------- admin panel (owner only; the server checks too) ---------- */
 {const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
- const ERR={bad_username:'Username can only use letters, numbers, dots, dashes and underscores (2 to 32).',bad_name:'Type their full name.',exists:'That username is already taken.',too_short:'Password needs at least 8 characters.',owner_only:'Only the owner can do this.'};
+ const ERR={bad_username:'Username can only use letters, numbers, dots, dashes and underscores (2 to 32).',bad_name:'Type their full name.',bad_email:'That email address doesn’t look right.',exists:'That username is already taken.',too_short:'Password needs at least 8 characters.',not_yourself:'You can’t remove your own login.',owner_only:'Only the owner can do this.'};
  const msg=(t,ok)=>{$('admMsg').className='msg '+(ok?'ok':'err');$('admMsg').textContent=t};
  async function admLoad(){try{const r=await fetch('/api/admin/users',{credentials:'same-origin'});if(!r.ok)throw 0;const d=await r.json();
-   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Turned off'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td></tr>`)
-     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td></tr>`));
-   $('admRows').innerHTML=rows.join('')||'<tr><td colspan="5">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="5">Couldn’t load the user list.</td></tr>'}}
+   const em=u=>`<input type="email" class="admEm" data-u="${esc(u.username)}" value="${esc(u.email)}" data-was="${esc(u.email)}" placeholder="Add email" aria-label="Email for ${esc(u.name)}">`;
+   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Removed'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td><td>${u.username===d.me?'':u.active?`<button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button>`:`<button type="button" class="admRs" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Restore</button>`}</td></tr>`)
+     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td><td><button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button></td></tr>`));
+   $('admRows').innerHTML=rows.join('')||'<tr><td colspan="7">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="7">Couldn’t load the user list.</td></tr>'}}
  const formOpen=on=>{$('admForm').hidden=!on;$('admAdd').hidden=on;if(on){$('admForm').reset();setTimeout(()=>$('admName').focus(),30)}};
  const open=()=>{formOpen(false);$('admMsg').textContent='';$('admLinkRow').hidden=true;$('admDlg').classList.add('on');admLoad()};
  const close=()=>$('admDlg').classList.remove('on');
@@ -1617,14 +1619,23 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
  $('admAdd').onclick=()=>{$('admMsg').textContent='';$('admLinkRow').hidden=true;formOpen(true)};$('admFormCancel').onclick=()=>formOpen(false);
  $('admName').addEventListener('input',()=>{if($('admUser').dataset.typed)return;const w=$('admName').value.toLowerCase().replace(/[^a-z ]/g,'').trim().split(/\s+/).filter(Boolean);$('admUser').value=w.length?w[0]+(w.length>1?w[w.length-1][0]:''):''});
  $('admUser').addEventListener('input',()=>{$('admUser').dataset.typed=$('admUser').value?'1':''});
- $('admForm').onsubmit=async e=>{e.preventDefault();const name=$('admName').value.trim(),username=$('admUser').value.trim().toLowerCase(),password=$('admPw').value;
+ $('admForm').onsubmit=async e=>{e.preventDefault();const name=$('admName').value.trim(),email=$('admEmail').value.trim(),username=$('admUser').value.trim().toLowerCase(),password=$('admPw').value;
    if(password&&password.length<8)return msg(ERR.too_short);$('admSave').disabled=true;
-   try{const r=await fetch('/api/admin/users',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,username,password,admin:$('admIsAdmin').checked})});
+   try{const r=await fetch('/api/admin/users',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,username,email,password,admin:$('admIsAdmin').checked})});
      const d=await r.json().catch(()=>({}));if(!r.ok)return msg(ERR[d.code]||'Couldn’t add that user.');
      formOpen(false);$('admUser').dataset.typed='';
      if(d.invite){$('admLink').value=location.origin+d.invite;$('admLinkRow').hidden=false;msg(`Added ${name}. Send them this sign-up link. It works once and expires in 7 days.`,true)}
      else msg(`Added ${name}. They can sign in now as “${username}” with the password you set.`,true);admLoad()}
    catch(_){msg('Couldn’t reach the server.')}finally{$('admSave').disabled=false}};
+ $('admRows').addEventListener('change',async e=>{const el=e.target.closest('.admEm');if(!el)return;const v=el.value.trim();if(v===el.dataset.was)return;
+   if(v&&!el.checkValidity())return msg(ERR.bad_email);
+   try{const r=await fetch(`/api/admin/users/${encodeURIComponent(el.dataset.u)}/email`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:v})});
+     const d=await r.json().catch(()=>({}));if(!r.ok)return msg(ERR[d.code]||'Couldn’t save that email.');el.dataset.was=v;msg(`Email saved for ${el.dataset.u}.`,true)}catch(_){msg('Couldn’t reach the server.')}});
+ $('admRows').addEventListener('click',async e=>{const bt=e.target.closest('.admRm,.admRs');if(!bt)return;const on=bt.classList.contains('admRs'),n=bt.dataset.n;
+   if(!on&&!confirm(`Remove ${n}? They’ll be signed out and can’t sign in anymore. Their leads, tasks and notes stay.`))return;bt.disabled=true;
+   try{const r=await fetch(`/api/admin/users/${encodeURIComponent(bt.dataset.u)}/active`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:on})});
+     const d=await r.json().catch(()=>({}));if(!r.ok){bt.disabled=false;return msg(ERR[d.code]||'Couldn’t change that user.')}msg(on?`${n} can sign in again.`:`${n} was removed.`,true);admLoad()}catch(_){bt.disabled=false;msg('Couldn’t reach the server.')}});
+ $('admRows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('.admEm'))e.target.blur()});
  $('admCopy').onclick=()=>{$('admLink').select();(navigator.clipboard?navigator.clipboard.writeText($('admLink').value):Promise.reject()).then(()=>toast('Link copied'),()=>document.execCommand('copy'))};
 }
 function renderTasks(){
