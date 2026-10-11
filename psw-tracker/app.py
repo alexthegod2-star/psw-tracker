@@ -261,7 +261,8 @@ def invite_accept(t: str = Form(...), password: str = Form(...), password2: str 
 def me(request: Request):
     u = need_user(request)
     return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
-            "binder": u["username"] in BINDER_OWNERS and not bearer(request)}
+            "binder": u["username"] in BINDER_OWNERS and not bearer(request),
+            "owner": u["username"] in PANEL_OWNERS and not bearer(request)}
 
 
 @app.get("/api/auth/profiles")
@@ -287,6 +288,56 @@ async def change_password(request: Request):
     with db() as c:
         c.execute("UPDATE users SET pw=? WHERE id=?", (hash_pw(new), u["id"]))
     return {"ok": True}
+
+
+# ---------- core: admin panel (the owner only: list people and add new ones) ----------
+PANEL_OWNERS = {x.strip() for x in os.environ.get("PSW_PANEL_OWNERS", os.environ.get("PSW_BINDER_OWNERS", "alex")).split(",") if x.strip()}
+
+
+def need_owner(request: Request):
+    u = need_user(request)
+    if bearer(request) or u["username"] not in PANEL_OWNERS:
+        err(403, "owner_only")
+    return u
+
+
+@app.get("/api/admin/users")
+def admin_users(request: Request):
+    need_owner(request)
+    with db() as c:
+        rows = c.execute("SELECT username,name,role,active,created FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        pending = c.execute("SELECT username,name,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
+                            (time.time(),)).fetchall()
+    have = {r["username"] for r in rows}
+    return {"users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
+
+
+@app.post("/api/admin/users")
+async def admin_add_user(request: Request):
+    need_owner(request)
+    body = await request.json()
+    username = str(body.get("username", "")).strip().lower()
+    name = " ".join(str(body.get("name", "")).split())
+    role = "admin" if body.get("admin") else "user"
+    pw = str(body.get("password", ""))
+    if not re.fullmatch(r"[a-z0-9._-]{2,32}", username):
+        err(400, "bad_username")
+    if not name or len(name) > 80:
+        err(400, "bad_name")
+    with db() as c:
+        if c.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
+            err(409, "exists")
+        if pw:
+            if len(pw) < 8:
+                err(400, "too_short")
+            c.execute("INSERT INTO users(id,username,name,pw,role,active,created) VALUES(?,?,?,?,?,1,?)",
+                      (new_id(), username, name, hash_pw(pw), role, time.time()))
+            return {"ok": True}
+        t = secrets.token_urlsafe(24)  # same one-time sign-up link as  sudo psw invite
+        c.execute("DELETE FROM invites WHERE username=? AND used IS NULL", (username,))
+        c.execute("INSERT INTO invites(token_hash,username,name,role,expires,used) VALUES(?,?,?,?,?,NULL)",
+                  (token_hash(t), username, name, role, time.time() + 7 * 86400))
+    return {"ok": True, "invite": f"/invite?t={t}"}
 
 
 # ---------- tracker module: documents ----------
