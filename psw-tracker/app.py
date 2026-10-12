@@ -83,6 +83,10 @@ def init_db():
         for t in ("users", "invites"):  # added after launch: each person's email address
             if "email" not in {r[1] for r in c.execute(f"PRAGMA table_info({t})")}:
                 c.execute(f"ALTER TABLE {t} ADD COLUMN email TEXT NOT NULL DEFAULT ''")
+        if "secrets" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # can this person see company/GA user names and passwords
+            c.execute("ALTER TABLE users ADD COLUMN secrets INTEGER NOT NULL DEFAULT 0")
+        if "can_delete" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Delete Yes/No (everyone could delete before this)
+            c.execute("ALTER TABLE users ADD COLUMN can_delete INTEGER NOT NULL DEFAULT 1")
 
 
 # ---------- passwords ----------
@@ -265,7 +269,7 @@ def me(request: Request):
     u = need_user(request)
     return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
             "binder": u["username"] in BINDER_OWNERS and not bearer(request),
-            "owner": u["username"] in PANEL_OWNERS and not bearer(request)}
+            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u)}
 
 
 @app.get("/api/auth/profiles")
@@ -315,11 +319,11 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
-    return {"me": me["username"], "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
+    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
 
 
 @app.post("/api/admin/users")
@@ -380,6 +384,48 @@ async def admin_set_email(username: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/api/admin/users/{username}/secrets")
+async def admin_set_secrets(username: str, request: Request):
+    """User/Pass Yes or No: whether this person sees the user names and passwords saved for companies and GAs."""
+    need_owner(request)
+    on = bool((await request.json()).get("secrets"))
+    with db() as c:
+        n = c.execute("UPDATE users SET secrets=? WHERE username=?", (1 if on else 0, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/delete")
+async def admin_set_delete(username: str, request: Request):
+    """Delete Yes or No: whether this person can delete leads, clients, tasks, notes and files."""
+    need_owner(request)
+    on = bool((await request.json()).get("delete"))
+    with db() as c:
+        n = c.execute("UPDATE users SET can_delete=? WHERE username=?", (1 if on else 0, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+def may_delete(u):
+    return u["username"] in PANEL_OWNERS or bool(u["can_delete"])
+
+
+# ---------- company/GA logins ----------
+# siteLinks records hold each company's and GA's portal user name and password; only owners and people set to Yes see them.
+SITE_COL = "siteLinks"
+SECRET_KEYS = ("user", "pass")
+
+
+def can_secrets(u):
+    return u["username"] in PANEL_OWNERS or bool(u["secrets"])
+
+
+def hide_secrets(data):
+    return {k: v for k, v in data.items() if k not in SECRET_KEYS}
+
+
 # ---------- tracker module: documents ----------
 # Paths under private/<username>/ belong to that one person: nobody else, no admin and no data key can read or change them.
 BINDER_OWNERS = {x.strip() for x in os.environ.get("PSW_BINDER_OWNERS", "alex").split(",") if x.strip()}
@@ -431,7 +477,8 @@ def col_get(request: Request, path: str):
     guard(request, u, split_path(path, "col"))
     with db() as c:
         rows = c.execute("SELECT id,data FROM tracker_docs WHERE parent=? ORDER BY id", (path,)).fetchall()
-        return {"v": version(c), "docs": [{"id": r["id"], "data": json.loads(r["data"])} for r in rows]}
+        hide = path == SITE_COL and not can_secrets(u)
+        return {"v": version(c), "docs": [{"id": r["id"], "data": hide_secrets(json.loads(r["data"])) if hide else json.loads(r["data"])} for r in rows]}
 
 
 @app.post("/api/tracker/col")
@@ -440,7 +487,10 @@ async def col_add(request: Request):
     body = await request.json()
     path = body.get("path", "")
     guard(request, u, split_path(path, "col"))
-    data = clean_data(body.get("data"))
+    data = body.get("data")
+    if path == SITE_COL and isinstance(data, dict) and not can_secrets(u):
+        data = hide_secrets(data)
+    data = clean_data(data)
     i = new_id()
     with db() as c:
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
@@ -452,10 +502,14 @@ async def col_add(request: Request):
 @app.get("/api/tracker/doc")
 def doc_get(request: Request, path: str):
     need_module("tracker"); u = need_user(request)
-    guard(request, u, split_path(path, "doc"))
+    segs = split_path(path, "doc")
+    guard(request, u, segs)
     with db() as c:
         r = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
-    return {"exists": bool(r), "data": json.loads(r["data"]) if r else None}
+    data = json.loads(r["data"]) if r else None
+    if data and "/".join(segs[:-1]) == SITE_COL and not can_secrets(u):
+        data = hide_secrets(data)
+    return {"exists": bool(r), "data": data}
 
 
 @app.put("/api/tracker/doc")
@@ -465,8 +519,13 @@ async def doc_set(request: Request):
     path = body.get("path", "")
     segs = split_path(path, "doc")
     guard(request, u, segs)
-    data = clean_data(body.get("data"))
+    data = body.get("data")
+    keep = "/".join(segs[:-1]) == SITE_COL and isinstance(data, dict) and not can_secrets(u)
     with db() as c:
+        if keep:  # someone set to No can't see or change the saved user name and password, so keep what is there
+            old = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
+            data = {**hide_secrets(data), **{k: v for k, v in (json.loads(old["data"]) if old else {}).items() if k in SECRET_KEYS}}
+        data = clean_data(data)
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?) "
                   "ON CONFLICT(path) DO UPDATE SET data=excluded.data, updated=excluded.updated, updated_by=excluded.updated_by",
                   (path, "/".join(segs[:-1]), segs[-1], data, time.time(), u["id"]))
@@ -483,6 +542,8 @@ async def doc_update(request: Request):
     patch = body.get("data")
     if not isinstance(patch, dict):
         err(400, "bad_data")
+    if path.rsplit("/", 1)[0] == SITE_COL and not can_secrets(u):
+        patch = hide_secrets(patch)
     with db() as c:
         r = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
         if not r:
@@ -498,7 +559,10 @@ async def doc_update(request: Request):
 @app.delete("/api/tracker/doc")
 def doc_delete(request: Request, path: str):
     need_module("tracker"); u = need_user(request)
-    guard(request, u, split_path(path, "doc"))
+    segs = split_path(path, "doc")
+    guard(request, u, segs)
+    if segs[0] != "private" and not may_delete(u):
+        err(403, "no_delete")
     with db() as c:
         c.execute("DELETE FROM tracker_docs WHERE path=?", (path,))
         bump(c)
