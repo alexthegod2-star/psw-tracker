@@ -1859,7 +1859,7 @@ const setLob=(el,v)=>{el.value=String(v||'').trim()};
 $('lobList').innerHTML=LOBS.map(x=>`<option value="${esc(x)}">`).join('');
 // policy General Agent and Company lists (A-Z); other names can still be typed
 const COMPANIES=['Kemper','Progressive','Bristol West','Mercury/SmartChoice','Aspire','Safeway','Crum and Forster','Richmond National','Ategrity','Bamboo/Incline Casualty','Lightspeed'].sort((a,b)=>a.localeCompare(b));
-const GAS=['Greenwood General','Baker and Bonds','Burns and Wilcox'].sort((a,b)=>a.localeCompare(b));
+const GAS=['N/A','Greenwood General','Baker and Bonds','Burns and Wilcox'].sort((a,b)=>a.localeCompare(b));
 // "+ Add company" / "+ Add GA" save a name to a shared list (everyone sees it in that dropdown), kept A-Z with the built-in names
 function addableList(list,listId,colName,btn,box,what){const base=[...list],col=db.collection(colName),fill=()=>{$(listId).innerHTML=list.map(x=>`<option value="${esc(x)}">`).join('')};fill();
   col.onSnapshot(s=>{const m=new Map(base.map(x=>[x.toLowerCase(),x]));s.docs.forEach(d=>{const n=String(d.data().name||'').trim();if(n&&!m.has(n.toLowerCase()))m.set(n.toLowerCase(),n)});
@@ -1873,7 +1873,7 @@ addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','le
 // company / GA website: "Open" shows once one is picked; the first click asks for the web address and saves it for everyone
 const siteCol=db.collection('siteLinks'),sites=new Map(),siteKey=(kind,n)=>kind+':'+n.trim().toLowerCase();
 const siteFix=u=>{u=u.trim();return !u?'':/^https?:\/\//i.test(u)?u:'https://'+u};
-function siteBtns(){[['ppCompany','ppCoGo','ppCoEd','company'],['ppCarrier','ppGaGo','ppGaEd','ga']].forEach(([box,go,ed,kind])=>{const n=$(box).value.trim();$(go).hidden=!n;$(ed).hidden=!(n&&sites.has(siteKey(kind,n)))})}
+function siteBtns(){[['ppCompany','ppCoGo','ppCoEd','company'],['ppCarrier','ppGaGo','ppGaEd','ga']].forEach(([box,go,ed,kind])=>{const n=$(box).value.trim();$(go).hidden=!n||/^n\/?a$/i.test(n);$(ed).hidden=!(n&&sites.has(siteKey(kind,n)))})}
 siteCol.onSnapshot(s=>{sites.clear();s.docs.forEach(d=>{const x=d.data();if(x.kind&&x.name&&x.url)sites.set(siteKey(x.kind,x.name),{id:d.id,...x})});siteBtns()},()=>{});
 async function siteAsk(kind,n,what){const cur=sites.get(siteKey(kind,n));const u=siteFix(prompt(`Web address for ${n} (${what}):`,cur?cur.url:'')||'');if(!u)return '';
   try{if(cur)await siteCol.doc(cur.id).update({url:u});else await siteCol.add({kind,name:n.trim(),url:u,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});sites.set(siteKey(kind,n),{...(cur||{kind,name:n.trim()}),url:u});siteBtns();toast(`Saved the web address for ${n}`)}catch(e){toast(errText(e))}
