@@ -438,7 +438,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="ppCol">
     <section class="ppCard ppInfo">
       <label>Policy status</label><div><input type="hidden" id="ppStatus" data-pp="status"><button type="button" class="stbtn" id="ppStatusBtn" title="Click to change"></button></div>
-      <label for="ppLine">Line of business</label><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick">
+      <label for="ppLine">Line of business</label><div class="ppPick"><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddLine">+ Add line</button></div>
       <label for="ppNumber">Policy number</label><input id="ppNumber" data-pp="number">
       <label for="ppCarrier">GA</label><div class="ppPick"><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddGa">+ Add GA</button><button type="button" class="siteGo" id="ppGaGo" hidden title="Agency code, login, phone, website and contact">Open</button></div>
       <label for="ppCompany">Company</label><div class="ppPick"><input id="ppCompany" data-pp="company" list="coList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddCo">+ Add company</button><button type="button" class="siteGo" id="ppCoGo" hidden title="Agency code, login, phone, website and contact">Open</button></div>
@@ -638,6 +638,14 @@ function show(on){$('dr').classList.toggle('on',on);$('ov').classList.toggle('on
 function closeLead(){show(false);if(curUnsub){curUnsub();curUnsub=null}cur=null}
 $('closeBtn').onclick=closeLead;$('ov').onclick=closeLead;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('dr').classList.contains('on'))closeLead()});
+const AZ_SELECTS=['tAssign','clAgent','ppProducer','fType','fAssign','tfAssign','cHow','clBusType','tLead','clLead'];
+function azSort(el){const os=[...el.querySelectorAll('option')];if(os.length<3)return;const val=el.tagName==='SELECT'?el.value:null;
+  const rank=o=>{const v=o.value.trim(),t=(o.textContent||v).trim();return !v||/^(all |everyone|unassigned|no lead|anyone)/i.test(t)?0:/^other$/i.test(t||v)?2:1},key=o=>(o.textContent||o.value).trim().toLowerCase();
+  const sorted=[...os].sort((a,b)=>rank(a)-rank(b)||key(a).localeCompare(key(b),undefined,{numeric:true}));if(sorted.every((o,i)=>o===os[i]))return;
+  sorted.forEach(o=>el.appendChild(o));if(val!==null)el.value=val}
+{const run=()=>{document.querySelectorAll('datalist').forEach(azSort);AZ_SELECTS.forEach(id=>{const el=$(id);if(el)azSort(el)})};
+  const mo=new MutationObserver(ms=>{const hit=new Set();ms.forEach(m=>{const t=m.target;if(t.tagName==='DATALIST'||(t.tagName==='SELECT'&&AZ_SELECTS.includes(t.id)))hit.add(t)});hit.forEach(azSort)});
+  run();document.querySelectorAll('datalist').forEach(d=>mo.observe(d,{childList:true}));AZ_SELECTS.forEach(id=>{const el=$(id);if(el)mo.observe(el,{childList:true})})}
 $('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):view==='clients'?openClient(null,{}):view==='binder'?openBin(null,{month:monKey(new Date())}):openLead(null);
 
 function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact';
@@ -1885,6 +1893,7 @@ function addableList(list,listId,colName,btn,box,what){const base=[...list],col=
     try{await col.add({name:n,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});$(box).value=n;toast(`Added ${n} to the ${what} list`)}catch(e){toast(errText(e))}}}
 addableList(COMPANIES,'coList','companies','ppAddCo','ppCompany','company');
 addableList(GAS,'gaList','generalAgents','ppAddGa','ppCarrier','general agent');
+addableList(LOBS,'lobList','linesOfBusiness','ppAddLine','ppLine','line of business');
 addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','lead source');
 // company / GA info: "Open" (once one is picked) shows a pop-up with agency code, login, phone, website and contact, shared with everyone
 const siteCol=db.collection('siteLinks'),sites=new Map(),siteKey=(kind,n)=>kind+':'+n.trim().toLowerCase();
