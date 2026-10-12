@@ -42,7 +42,11 @@ tbody tr:last-child td{border-bottom:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}
-.adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}.adm .admEm{width:100%;min-width:170px;font-size:13px;padding:4px 6px}.admgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}.admgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}.admlink{display:flex;gap:6px;margin-top:8px}.admlink input{flex:1;min-width:0}@media (max-width:520px){.admgrid{grid-template-columns:1fr}}
+.adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}
+.admYN{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.admYN button{border:0;border-radius:0;padding:4px 12px;font-size:12px;background:transparent}
+.admYN button[data-yn="1"].on{background:#1f9d55;color:#fff}
+.admYN button[data-yn="0"].on{background:#c0392b;color:#fff}.adm .admEm{width:100%;min-width:170px;font-size:13px;padding:4px 6px}.admgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}.admgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}.admlink{display:flex;gap:6px;margin-top:8px}.admlink input{flex:1;min-width:0}@media (max-width:520px){.admgrid{grid-template-columns:1fr}}
 .mbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(380px,100%);box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .mbox h3{margin:0 0 6px;font-size:18px}.mbox p{margin:0 0 16px;color:var(--mute)}
 .mbox .row{justify-content:flex-end}
@@ -98,9 +102,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 #polRows tr{cursor:pointer}#polRows tr:hover td{background:var(--soft)}#polRows input[readonly]{cursor:pointer;pointer-events:none;background:transparent;border-color:transparent;color:var(--ink)}#polRows .stbtn{pointer-events:none}.poltab input,.poltab select{width:100%;min-width:70px;padding:5px 6px}.poltab select,.poltab [data-p=line]{min-width:150px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
 .ppLay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start;margin-top:8px}.ppSide{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}.ppCard{background:#fff;border:1px solid #c9dccf;border-radius:12px;padding:10px 12px}.ppCardH{display:flex;align-items:center;gap:8px;margin-bottom:8px}.ppCardH h4{margin:0 auto 0 0;color:#2f5d3e}.ppCardH button{padding:3px 12px;font-size:12px;border-radius:999px}.ppCard .drop{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px;font-size:13px}.ppCard .drop input{max-width:100%;font-size:12px}.ppCard .files{margin:8px 0 0}.ppCard .files li{flex-wrap:wrap}#ppInv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 8px;align-items:center}#ppInv .ppCardH{grid-column:1/-1;margin-bottom:2px}#ppInv label{margin:0;font-size:12px}#ppInv input,#ppInv select{padding:6px 8px;font-size:13px}#ppTasks{margin:0;padding:0}#ppTasks li{cursor:pointer}@media(max-width:900px){.ppLay{grid-template-columns:1fr}.ppSide{position:static}}#taskDlg{z-index:12}#coDlg{z-index:13}.coGrid{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:8px 10px;align-items:center}.coGrid label{margin:0}.coGrid button{padding:4px 12px;font-size:13px}
 .coGrid{max-width:560px}
+.coGrid [hidden]{display:none!important}
 #coBox .coCon input{min-width:0}
 .coConH{display:flex;align-items:center;gap:8px;margin:14px 0 6px}
-.coCon{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) auto minmax(0,.9fr) minmax(0,1fr) auto;gap:6px 8px;align-items:center;margin-bottom:6px}
+.coCon{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) auto minmax(0,.9fr) minmax(0,1fr) minmax(0,1.4fr) auto;gap:6px 8px;align-items:center;margin-bottom:6px}
 .coCon>span{font-size:12px;font-weight:600;color:var(--muted)}
 .coCon button{padding:4px 10px;font-size:13px}.coSub{grid-column:1/-1;margin:8px 0 0}.coPw{display:flex;gap:6px;min-width:0}.coPw input{flex:1;min-width:0}
 #polBox{background:var(--polbg);width:80vw;max-width:100%;max-height:calc(100vh - 32px);overflow-y:auto}#polBox{width:95vw}#polBox .ppLay{grid-template-columns:repeat(3,minmax(0,1fr))}#polBox .ppSide{grid-column:3;grid-row:1/span 2}#ppExtraWrap{grid-column:1/3;min-width:0}.ppCol{display:grid;gap:12px;min-width:0}#polBox .ppCard{background:var(--polcard);border-color:var(--polline)}#polBox label{color:var(--pollabel);font-size:13.5px}[data-prenew]{background:#1f9d55;border-color:#1f9d55;color:#fff}[data-prenew]:hover{background:#17804a;border-color:#17804a}.ppInfo{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 10px;align-items:center}.ppInfo label{margin:0}.ppInfo textarea{min-height:110px}.ppPick{display:flex;gap:6px;align-items:center;min-width:0}.ppPick input{flex:1;min-width:0}.ppPick button{padding:1px 9px;font-size:12px;border-radius:999px;white-space:nowrap}#polBox #ppFees{grid-template-columns:minmax(0,1fr) minmax(0,150px)}#ppFees input.ppOtherL{text-align:left;font-size:13px;padding:5px 8px}#ppUser{background:var(--chip);cursor:default}@media(max-width:1100px){#polBox .ppLay{grid-template-columns:1fr 1fr}#polBox .ppSide{grid-column:1/-1;grid-row:auto}#ppExtraWrap{grid-column:1/-1}}@media(max-width:760px){#polBox .ppLay{grid-template-columns:1fr}#polBox .ppSide,#ppExtraWrap{grid-column:auto}}#polBox>.row{justify-content:flex-end;margin-top:14px}#polBox .grid{margin-top:8px}#polBox textarea{min-height:110px}.stbtn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;font-weight:600;white-space:nowrap}.stbtn::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--dot,#1f9d55)}.poltab .stbtn{padding:5px 10px}#polBox .stbtn{width:100%;justify-content:flex-start;padding:10px 12px}.pptwrap{overflow-x:auto}.pptab{width:100%;border-collapse:collapse;font-size:13px}.pptab th{background:#d5e5f9;color:#1d3f6e;font-size:11px;text-align:left;padding:2px 3px;white-space:nowrap}.pptab td{padding:2px 3px}.pptab input,.pptab select{width:100%;min-width:52px;padding:5px 6px;font-size:13px}.pptab .pn{font-weight:700;vertical-align:top;padding-top:9px}.pptab tr.r2 td{padding-bottom:8px;border-bottom:1px solid #d6dbe3}.pp2{display:flex;gap:8px}.pp2 label{display:flex;flex-direction:column;font-size:11px;margin:0;min-width:80px}#ppFees{display:grid;grid-template-columns:150px minmax(0,200px);gap:6px 12px;align-items:center}#ppFees label{margin:0}#ppFees input{text-align:right}#ppFees .tot{font-weight:700;border-top:2px solid currentColor;padding-top:6px}#ppFees input.tot{background:transparent;border:0;border-top:2px solid #333;border-radius:0}.poltab td{padding:3px 4px}.poltab th{position:static;background:#cdebd5;color:#2f5d3e}.poltab th:first-child{border-top-left-radius:11px}.poltab th:last-child{border-top-right-radius:11px}
@@ -403,13 +408,13 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="small" id="coKind" style="font-weight:600"></div><h3 id="coTitleH" style="margin:2px 0 10px"></h3>
   <div class="coGrid">
     <label for="co_code">Agency code</label><input id="co_code"><span></span>
-    <label for="co_user">User name</label><input id="co_user" autocomplete="off"><button type="button" data-copy="co_user">Copy</button>
-    <label for="co_pass">Password</label><div class="coPw"><input id="co_pass" type="password" autocomplete="new-password"><button type="button" id="coShowPass">Show</button></div><button type="button" data-copy="co_pass">Copy</button>
+    <label for="co_user" class="coSec">User name</label><input id="co_user" class="coSec" autocomplete="off"><button type="button" class="coSec" data-copy="co_user">Copy</button>
+    <label for="co_pass" class="coSec">Password</label><div class="coPw coSec"><input id="co_pass" type="password" autocomplete="new-password"><button type="button" id="coShowPass">Show</button></div><button type="button" class="coSec" data-copy="co_pass">Copy</button>
     <label for="co_phone">Phone number</label><input id="co_phone" inputmode="tel"><span></span>
     <label for="co_url">Website</label><input id="co_url" placeholder="www.example.com"><button type="button" class="pri" id="coWeb">Go ↗</button>
   </div>
   <div class="coConH"><h4 class="coSub" style="margin:0 auto 0 0">Contacts</h4><button type="button" class="pri" id="coAddCon">+ Add contact</button></div>
-  <div class="coCon"><span>Name</span><span>Email</span><span></span><span>Phone</span><span>Line of business</span><span></span></div>
+  <div class="coCon"><span>Name</span><span>Email</span><span></span><span>Phone</span><span>Line of business</span><span>Note</span><span></span></div>
   <div id="coCons"></div>
   <div class="small" style="margin-top:8px">Saved for everyone who signs in to the PSW database.</div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="coCancel">Cancel</button><button class="pri" id="coSave">Save</button></div>
@@ -420,7 +425,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="small" id="noteWhen" style="margin-top:6px"></div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="noteCancel">Cancel</button><button class="pri" id="noteSave">Save note</button></div>
 </div></div>
-<div class="mbg" id="admDlg" role="dialog" aria-modal="true" aria-labelledby="admTitleH"><div class="mbox adm" style="width:min(860px,100%);max-height:90vh;overflow:auto">
+<div class="mbg" id="admDlg" role="dialog" aria-modal="true" aria-labelledby="admTitleH"><div class="mbox adm" style="width:96vw;max-height:90vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="admTitleH" style="margin:0">Admin</h3><button class="pri" id="admAdd" type="button">+ Add user</button></div>
   <form id="admForm" hidden style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px">
     <div class="admgrid">
@@ -434,7 +439,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </form>
   <div class="msg" id="admMsg"></div>
   <div class="admlink" id="admLinkRow" hidden><input id="admLink" readonly><button type="button" class="pri" id="admCopy">Copy link</button></div>
-  <table style="margin-top:12px"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Added</th><th></th></tr></thead><tbody id="admRows"><tr><td colspan="7">Loading…</td></tr></tbody></table>
+  <table style="margin-top:12px;width:100%"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Added</th><th></th><th title="Can they see company and GA user names and passwords?">User/Pass</th></tr></thead><tbody id="admRows"><tr><td colspan="8">Loading…</td></tr></tbody></table>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
@@ -1748,7 +1753,7 @@ function renderMyTasks(){const el=$('myTasks');if(!myName){el.hidden=true;return
   const n=tasks.filter(t=>!t.done&&sameAgent(t.assignedTo,myName)).length;el.hidden=false;el.innerHTML=`Current Open Tasks For ${esc(myName)}: <b>${n}</b>`}
 $('myTasks').onclick=()=>{setView('tasks');const o=[...$('tfAssign').options].find(x=>x.value&&sameAgent(x.value,myName));if(o)$('tfAssign').value=o.value;$('tfStatus').value='open';renderTasks()};
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u)return;const nm=String(u.name||u.username||'').trim();
-  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner}).catch(()=>{});
+  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets}).catch(()=>{});
 
 /* ---------- admin panel (owner only; the server checks too) ---------- */
 {const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1756,9 +1761,9 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
  const msg=(t,ok)=>{$('admMsg').className='msg '+(ok?'ok':'err');$('admMsg').textContent=t};
  async function admLoad(){try{const r=await fetch('/api/admin/users',{credentials:'same-origin'});if(!r.ok)throw 0;const d=await r.json();
    const em=u=>`<input type="email" class="admEm" data-u="${esc(u.username)}" value="${esc(u.email)}" data-was="${esc(u.email)}" placeholder="Add email" aria-label="Email for ${esc(u.name)}">`;
-   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Removed'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td><td>${u.username===d.me?'':u.active?`<button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button>`:`<button type="button" class="admRs" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Restore</button>`}</td></tr>`)
-     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td><td><button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button></td></tr>`));
-   $('admRows').innerHTML=rows.join('')||'<tr><td colspan="7">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="7">Couldn’t load the user list.</td></tr>'}}
+   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Removed'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td><td>${u.username===d.me?'':u.active?`<button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button>`:`<button type="button" class="admRs" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Restore</button>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.secrets?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.secrets?'':'on'}">No</button></div>`}</td></tr>`)
+     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td><td><button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button></td><td class="small">No (set after sign-up)</td></tr>`));
+   $('admRows').innerHTML=rows.join('')||'<tr><td colspan="8">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="8">Couldn’t load the user list.</td></tr>'}}
  const formOpen=on=>{$('admForm').hidden=!on;$('admAdd').hidden=on;if(on){$('admForm').reset();setTimeout(()=>$('admName').focus(),30)}};
  const open=()=>{formOpen(false);$('admMsg').textContent='';$('admLinkRow').hidden=true;$('admDlg').classList.add('on');admLoad()};
  const close=()=>$('admDlg').classList.remove('on');
@@ -1783,6 +1788,12 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
    if(!on&&!(await sure(`Remove ${n}? They’ll be signed out and can’t sign in anymore. Their leads, tasks and notes stay.`)))return;bt.disabled=true;
    try{const r=await fetch(`/api/admin/users/${encodeURIComponent(bt.dataset.u)}/active`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:on})});
      const d=await r.json().catch(()=>({}));if(!r.ok){bt.disabled=false;return msg(ERR[d.code]||'Couldn’t change that user.')}msg(on?`${n} can sign in again.`:`${n} was removed.`,true);admLoad()}catch(_){bt.disabled=false;msg('Couldn’t reach the server.')}});
+ $('admRows').addEventListener('click',async e=>{const b=e.target.closest('.admYN [data-yn]');if(!b||b.classList.contains('on'))return;const box=b.parentElement,on=b.dataset.yn==='1',n=box.dataset.n;
+   box.querySelectorAll('button').forEach(x=>x.disabled=true);
+   try{const r=await fetch(`/api/admin/users/${encodeURIComponent(box.dataset.u)}/secrets`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({secrets:on})});
+     const d=await r.json().catch(()=>({}));if(!r.ok)return msg(ERR[d.code]||'Couldn’t change that user.');
+     box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));msg(on?`${n} can see company and GA user names and passwords.`:`${n} can no longer see company and GA user names and passwords.`,true)}
+   catch(_){msg('Couldn’t reach the server.')}finally{box.querySelectorAll('button').forEach(x=>x.disabled=false)}});
  $('admRows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('.admEm'))e.target.blur()});
  $('admCopy').onclick=()=>{$('admLink').select();(navigator.clipboard?navigator.clipboard.writeText($('admLink').value):Promise.reject()).then(()=>toast('Link copied'),()=>document.execCommand('copy'))};
 }
@@ -1903,12 +1914,12 @@ addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','le
 // company / GA info: "Open" (once one is picked) shows a pop-up with agency code, login, phone, website and contact, shared with everyone
 const siteCol=db.collection('siteLinks'),sites=new Map(),siteKey=(kind,n)=>kind+':'+n.trim().toLowerCase();
 const siteFix=u=>{u=u.trim();return !u?'':/^https?:\/\//i.test(u)?u:'https://'+u};
-const CO_FIELDS=['code','user','pass','phone','url'];let coCur=null;
+const CO_FIELDS=['code','user','pass','phone','url'];let coCur=null,canSecrets=false; // canSecrets: Admin's User/Pass Yes for this person (the server hides them too)
 // contacts: one row each (name, email, phone, line of business); the first one is also kept in contactName/contactEmail/contactPhone
 function coConRow(c={}){const r=document.createElement('div');r.className='coCon';
-  r.innerHTML=`<input data-c="name" placeholder="Name" title="Contact name"><input data-c="email" type="email" placeholder="Email" title="Contact email"><button type="button" data-ccopy>Copy</button><input data-c="phone" inputmode="tel" placeholder="Phone" title="Contact phone"><input data-c="line" list="lobList" placeholder="Line of business" title="Line of business"><button type="button" class="danger" data-cdel title="Remove contact">✕</button>`;
+  r.innerHTML=`<input data-c="name" placeholder="Name" title="Contact name"><input data-c="email" type="email" placeholder="Email" title="Contact email"><button type="button" data-ccopy>Copy</button><input data-c="phone" inputmode="tel" placeholder="Phone" title="Contact phone"><input data-c="line" list="lobList" placeholder="Line of business" title="Line of business"><input data-c="note" placeholder="Note" title="Note"><button type="button" class="danger" data-cdel title="Remove contact">✕</button>`;
   r.querySelectorAll('[data-c]').forEach(el=>el.value=c[el.dataset.c]||'');$('coCons').appendChild(r);return r}
-const coConVals=()=>[...$('coCons').querySelectorAll('.coCon')].map(r=>{const o={};r.querySelectorAll('[data-c]').forEach(el=>o[el.dataset.c]=el.value.trim());return o}).filter(o=>o.name||o.email||o.phone||o.line);
+const coConVals=()=>[...$('coCons').querySelectorAll('.coCon')].map(r=>{const o={};r.querySelectorAll('[data-c]').forEach(el=>o[el.dataset.c]=el.value.trim());return o}).filter(o=>o.name||o.email||o.phone||o.line||o.note);
 $('coAddCon').onclick=()=>coConRow().querySelector('input').focus();
 $('coCons').addEventListener('click',async e=>{const r=e.target.closest('.coCon');if(!r)return;
   if(e.target.closest('[data-ccopy]')){const v=r.querySelector('[data-c=email]').value.trim();if(!v)return;try{await navigator.clipboard.writeText(v);toast('Copied')}catch(_){toast('Could not copy')}return}
@@ -1917,7 +1928,7 @@ function siteBtns(){[['ppCompany','ppCoGo','company'],['ppCarrier','ppGaGo','ga'
 siteCol.onSnapshot(s=>{sites.clear();s.docs.forEach(d=>{const x=d.data();if(x.kind&&x.name)sites.set(siteKey(x.kind,x.name),{id:d.id,...x})});siteBtns()},()=>{});
 function openCoInfo(kind,n){const hit=sites.get(siteKey(kind,n))||{};coCur={kind,name:n.trim(),id:hit.id||''};
   $('coTitleH').textContent=n.trim();$('coKind').textContent=kind==='ga'?'General agent':'Company';
-  CO_FIELDS.forEach(k=>$('co_'+k).value=hit[k]||'');$('coCons').innerHTML='';{const cs=Array.isArray(hit.contacts)&&hit.contacts.length?hit.contacts:(hit.contactName||hit.contactEmail||hit.contactPhone)?[{name:hit.contactName,email:hit.contactEmail,phone:hit.contactPhone}]:[{}];cs.forEach(c=>coConRow(c))}$('co_pass').type='password';$('coShowPass').textContent='Show';coWebBtn();$('coDlg').classList.add('on');setTimeout(()=>$('co_code').focus(),30)}
+  CO_FIELDS.forEach(k=>$('co_'+k).value=hit[k]||'');document.querySelectorAll('#coDlg .coSec').forEach(el=>el.hidden=!canSecrets);$('coCons').innerHTML='';{const cs=Array.isArray(hit.contacts)&&hit.contacts.length?hit.contacts:(hit.contactName||hit.contactEmail||hit.contactPhone)?[{name:hit.contactName,email:hit.contactEmail,phone:hit.contactPhone}]:[{}];cs.forEach(c=>coConRow(c))}$('co_pass').type='password';$('coShowPass').textContent='Show';coWebBtn();$('coDlg').classList.add('on');setTimeout(()=>$('co_code').focus(),30)}
 const coWebBtn=()=>{$('coWeb').disabled=!$('co_url').value.trim()};
 $('co_url').addEventListener('input',coWebBtn);
 $('coWeb').onclick=()=>{const u=siteFix($('co_url').value);if(u)window.open(u,'_blank','noopener')};
@@ -1925,7 +1936,7 @@ $('coShowPass').onclick=()=>{const sh=$('co_pass').type==='password';$('co_pass'
 $('coDlg').addEventListener('click',async e=>{const c=e.target.closest('[data-copy]');if(!c)return;const v=$(c.dataset.copy).value;if(!v)return;try{await navigator.clipboard.writeText(v);toast('Copied')}catch(_){toast('Could not copy')}});
 const closeCo=()=>{$('coDlg').classList.remove('on');coCur=null};
 $('coCancel').onclick=closeCo;$('coDlg').addEventListener('click',e=>{if(e.target===$('coDlg'))closeCo()});
-$('coSave').onclick=async()=>{if(!coCur)return;const d={};CO_FIELDS.forEach(k=>d[k]=$('co_'+k).value.trim());if(d.url)d.url=siteFix(d.url);d.contacts=coConVals();{const f=d.contacts[0]||{};d.contactName=f.name||'';d.contactEmail=f.email||'';d.contactPhone=f.phone||''}
+$('coSave').onclick=async()=>{if(!coCur)return;const d={};CO_FIELDS.forEach(k=>{if(canSecrets||!['user','pass'].includes(k))d[k]=$('co_'+k).value.trim()});if(d.url)d.url=siteFix(d.url);d.contacts=coConVals();{const f=d.contacts[0]||{};d.contactName=f.name||'';d.contactEmail=f.email||'';d.contactPhone=f.phone||''}
   try{if(coCur.id)await siteCol.doc(coCur.id).update(d);else{const r=await siteCol.add({kind:coCur.kind,name:coCur.name,...d,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});coCur.id=r&&r.id||''}
     sites.set(siteKey(coCur.kind,coCur.name),{id:coCur.id,kind:coCur.kind,name:coCur.name,...d});toast(`Saved ${coCur.name}`);closeCo()}catch(err){toast(errText(err))}};
 [['ppCompany','ppCoGo','company'],['ppCarrier','ppGaGo','ga']].forEach(([box,go,kind])=>{
