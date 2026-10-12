@@ -718,14 +718,14 @@ const OWNER_COLS=[{k:'first',label:'First name',w:1.2},{k:'last',label:'Last nam
 const QS_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
  {title:'Client info',fields:[{k:'client_name',n:1,label:'Client Name'},{k:'dba',n:2,label:'DBA'},{k:'entity_type',n:3,label:'Ind/Corp/LLC/Part',radio:['Individual','Corporation','LLC','Partnership']},{k:'contact_first',n:4,label:'Contact first name',label2:'Contact last name',pair:'contact_last'},{k:'phone',n:5,label:'Phone Number',label2:'Email Address',pair:'email'},{k:'mailing_address',n:7,label:'Mailing Address'},{k:'property_address',n:8,label:'Property Address'},{k:'description',n:9,label:'Description of Business'},{k:'detailed_description',n:10,label:'Detailed description',area:1},{k:'line_of_business',n:11,label:'Line of Business'},{k:'eff_date',n:12,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
- {title:'Company info',fields:[{k:'currently_insured',n:14,label:'Currently insured?',label2:'Current price',pair:'current_carrier_price'},{k:'year_started',n:16,label:'Year biz started',label2:'Years exp',pair:'years_experience'},{k:'gross_receipts',n:18,label:'Gross Rec',label2:'Payroll',pair:'payroll'},{k:'full_time',n:20,label:'# Full time emp',label2:'# Part time emp',pair:'part_time'},{k:'claims',n:22,label:'Any claims'},{k:'claims_detail',n:1,label:'Claims details',area:1}]},
+ {title:'Company info',fields:[{k:'currently_insured',n:14,label:'Currently insured?',label2:'Current price',pair:'current_carrier_price'},{k:'year_started',n:16,label:'Year biz started',label2:'Years exp',pair:'years_experience'},{k:'num_owners',n:18,label:'# Owners',also:[{k:'gross_receipts',label:'Gross Rec'},{k:'payroll',label:'Payroll'}]},{k:'full_time',n:20,label:'# Full time emp',label2:'# Part time emp',pair:'part_time'},{k:'claims',n:22,label:'Any claims'},{k:'claims_detail',n:1,label:'Claims details',area:1}]},
  {title:'Building info',bldg:[{k:'address',n:23,label:'Address'},{k:'yr',n:24,label:'yr built'},{k:'sqft',n:25,label:'sq ft'},{k:'const',n:26,label:'construction type'},{k:'roof',n:27,label:'roof type'},{k:'dwelling',n:28,label:'Dwelling amount',money:1},{k:'bpp',n:29,label:'BPP/TI',money:1},{k:'rents',n:30,label:'Loss of rents',money:1},{k:'wiring',n:31,label:'Wiring update'},{k:'roofup',n:32,label:'Roof update'},{k:'plumbing',n:33,label:'Plumbing update'},{k:'heating',n:34,label:'Heating update'}]},
  {title:'Workers comp',fields:[{k:'tax_id',n:29,label:'Tax ID'}],rowgrid:[{prefix:'o',nums:[30,31,32,33],label:'Owner',cols:OWNER_COLS,total:'pct'},{prefix:'cc',nums:[34,35,36,37],label:'Class',cols:CLASS_COLS}]},
  {title:'Umbrella / Excess',excess:[{k:'auto',n:38,label:'Auto excess'},{k:'gl',n:39,label:'GL excess'},{k:'wc',n:40,label:'WC excess'}]},
  {title:'AI / Waiver of sub',rowgrid:[{prefix:'ai',nums:[1,2,3,4],label:'AI',cols:[{k:'name',label:'Name',w:1},{k:'address',label:'Address',w:1.6}]}]}];
 // items are numbered 1, 2, 3... straight through the sheet (two-box rows are Na / Nb)
 {let c=0;QS_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>{if(f.n)f.n=++c});(s.bldg||[]).forEach(f=>f.n=++c);(s.rowgrid||[]).forEach(g=>{g.nums=g.nums.map(()=>++c)});(s.excess||[]).forEach(r=>r.n=++c)})}
-const QS_KEYS=[];
+const QS_KEYS=[];QS_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>(f.also||[]).forEach(a=>QS_KEYS.push([a.k,a.label]))));
 // % owned boxes -> number; total shows under the % column
 const pctNum=x=>{const m=String(x||'').replace(/,/g,'').match(/-?\d+(\.\d+)?/);return m?+m[0]:null};
 const pctTotal=get=>{let t=0,any=false;for(let i=1;i<=4;i++){const n=pctNum(get(i));if(n!=null){t+=n;any=true}}return any?(Math.round(t*100)/100)+'%':''};
@@ -740,7 +740,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-20',FONT_MARK='psw-font-embedded';
+const PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
