@@ -130,6 +130,12 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .confirm.on{display:block}
 .drop{border:2px dashed var(--line);border-radius:12px;padding:12px;background:var(--card)}
 .drop.over{border-color:var(--acc);background:var(--soft)}
+.fileDrops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:8px;align-items:stretch}
+@media (max-width:800px){.fileDrops{grid-template-columns:1fr}}
+#feeRow{display:flex;flex-direction:column;gap:6px;padding:10px 12px}
+#feeRow input[type=file]{max-width:100%}
+#feeRow .feeAmt{display:flex;align-items:center;gap:6px;margin:0;font-weight:600}
+#feeRow .feeAmt input{width:110px;text-align:right}
 .drop textarea{min-height:64px;border-style:solid}
 .drop label[hidden]{display:none!important}#keepWrap{display:flex}
 .drop .hint{font-size:13px;color:var(--mute);margin-bottom:8px}
@@ -265,8 +271,11 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="sec" id="fileSec">
       <h3>Files</h3>
-      <div class="drop row" id="upRow" style="padding:10px 12px;margin-bottom:8px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
-      <div class="msg" id="fileMsg"></div>
+      <div class="fileDrops">
+      <div class="drop row" id="upRow" style="padding:10px 12px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
+      <div class="drop" id="feeRow"><span style="font-weight:600">Add PSW fee: drop the carrier quote PDF here, or</span><input type="file" id="feeIn" accept=".pdf,application/pdf"><label class="feeAmt" for="feeAmt">PSW Agency Fee <span>$</span><input id="feeAmt" value="200.00" inputmode="decimal"></label><span class="small">The quote with the fee added and totals updated is saved under Files as “… for ins.pdf”.</span></div>
+      </div>
+      <div class="msg" id="fileMsg"></div><div class="msg" id="feeMsg"></div>
       <ul class="files" id="files"></ul>
     </div>
 
@@ -1360,6 +1369,25 @@ $('files').addEventListener('dragend',e=>{const li=e.target.closest&&e.target.cl
 ['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{if(own(e))return;e.preventDefault();if(assets)fz.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{if(own(e))return;e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
 fz.addEventListener('drop',e=>{if(!own(e))addFiles([...(e.dataTransfer.files||[])])});}
+// Add PSW fee: the carrier quote gets a "PSW Agency Fee" line under its fees, new totals and the PSW header (same as the PSW Agency Fee quote tool), then is attached here
+async function addPswFee(f){
+  const m=$('feeMsg');if(!f)return;if(!assets){m.className='msg err';m.textContent='File storage isn’t available here.';return}
+  if(!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf'){m.className='msg err';m.textContent=`${f.name} isn’t a PDF. Drop the carrier’s quote PDF.`;return}
+  const fee=parseFloat(String($('feeAmt').value).replace(/[^\d.]/g,''));if(!(fee>0)){m.className='msg err';m.textContent='Type the PSW Agency Fee amount first.';$('feeAmt').focus();return}
+  if(!(await ensureSaved()))return;
+  m.className='msg';m.textContent=`Adding the fee to ${f.name}…`;
+  try{await Promise.all([loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js'),loadJs(CDN+'pdf.js/3.11.174/pdf.min.js'),loadJs(CDN+'pako/2.1.0/pako.min.js')]);
+    pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';await loadJs('psw-fee.js');
+    const r=await PSWFee.add(new Uint8Array(await f.arrayBuffer()),fee,'PSW Agency Fee');
+    const base=(r.insured||f.name.replace(/\.pdf$/i,'')).replace(/[\\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(),name=base+' for ins.pdf';
+    const ok=await uploadOne(new File([r.bytes],name,{type:'application/pdf'}));
+    if(ok!==true)return;
+    m.className='msg '+(r.warn?'err':'ok');m.textContent=`Added ${r.fee}: carrier total ${r.oldTotal}, new total ${r.newTotal}. Saved as “${name}” under Files.`+(r.warn?' '+r.warn:'')}
+  catch(err){m.className='msg err';m.textContent=`${f.name}: ${err&&err.message?err.message:'couldn’t add the fee'}. If it’s password-protected, save an unlocked copy and try again.`}}
+$('feeIn').onchange=()=>{const f=$('feeIn').files[0];$('feeIn').value='';addPswFee(f)};
+{const fz=$('feeRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+fz.addEventListener('drop',e=>addPswFee((e.dataTransfer.files||[])[0]))}
 // Some computers' PDF uploads are refused by file storage; then the PDF is stored as base64 text and decoded when read back
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function storeBytes(buf,type){
