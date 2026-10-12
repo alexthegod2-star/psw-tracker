@@ -1906,7 +1906,7 @@ $('tDel').onclick=async()=>{if(!editTask)return;if(!(await sureDel(`Delete the t
 const clientsCol=db.collection('clients');let clients=[],editClient=null;
 const clientName=c=>c.company||[c.firstName,c.lastName].filter(Boolean).join(' ')||'(no name)';
 const nextRenew=c=>(c.policies||[]).map(p=>p.exp).filter(x=>x&&x>=todayISO()).sort()[0]||'';
-clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
+clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients();clStaleCheck()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
 function renderClients(){
   $('clientCount').textContent=clients.length;
   if(view==='clients')$('count').textContent=clients.length?`${clients.length} client${clients.length===1?'':'s'}`:'No clients yet';
@@ -2103,7 +2103,19 @@ $('clientBox').addEventListener('focusout',e=>{const el=e.target;
   if(el.dataset.p==='premium'&&el.value.trim()){el.value=fmtMoney(el.value);return}
   if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso);
   if(el.dataset.p==='eff'&&/^\d{4}-/.test(iso)){const x=el.closest('tr').querySelector('[data-p=exp]');if(!x.value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);x.value=fmtDate(d.toISOString().slice(0,10))}}});
-function openClient(c,preset){editClient=c||null;const v=c||preset||{};
+// Two tabs (or two people) on the same client: every save bumps the client's rev, and Save client warns before replacing changes made elsewhere
+let clBaseRev=0;
+const clFresh=async()=>{const d=await clientsCol.doc(editClient.id).get();return d.exists?d.data():null};
+// clDirty: something was typed or clicked in this client since it opened. Untouched, the screen just reloads with the new copy; touched, it warns instead.
+let clDirty=false;
+function clStaleCheck(){if(!editClient||!$('clientDlg').classList.contains('on'))return;const fr=clients.find(x=>x.id===editClient.id);
+  if(!fr||(fr.rev||0)===clBaseRev)return;
+  if(!clDirty&&!['polDlg','noteDlg','sureDlg'].some(id=>$(id).classList.contains('on'))){const sc=$('clientBox').scrollTop;openClient(fr,null,true);$('clientBox').scrollTop=sc;toast('Client updated with changes saved somewhere else');return}
+  const m=$('clientMsg');m.className='msg err';m.textContent='This client was just changed in another tab or by someone else. Close and reopen it to see those changes before you save.'}
+$('clientDlg').addEventListener('input',()=>{clDirty=true});$('clientDlg').addEventListener('change',()=>{clDirty=true});
+$('clientDlg').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!/^(clCancel|clCancelTop|clSave|clSaveTop|clAddNote)$/.test(b.id)&&!b.closest('#clNoteLog')&&!b.matches('[data-open],[data-save],[data-dl]'))clDirty=true});
+$('polRows').addEventListener('click',()=>{clDirty=true}); // opening a policy may change it
+function openClient(c,preset,quiet){editClient=c||null;const v=c||preset||{};clBaseRev=(c&&c.rev)||0;clDirty=false;
   $('clientTitleH').textContent=c?'Edit client':'New client';
   [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPref','preferredName'],['clDob','dob'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clLocation','location'],['clBusType','busType'],['clWork','workPhone'],['clRel','relationship'],['clCity','city'],['clState','state'],['clZip','zip'],['clLocCity','locCity'],['clLocState','locState'],['clLocZip','locZip'],['clSource','leadSource']].forEach(([id,k])=>$(id).value=v[k]||'');$('clStatus').value=v.status||'Active';$('clWork').value=fmtClPhone($('clWork').value);
   $('clPeople').innerHTML='';(v.people||[]).forEach(addPerson);
@@ -2115,7 +2127,7 @@ function openClient(c,preset){editClient=c||null;const v=c||preset||{};
     (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
   $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);clPending=[];renderClFiles(c);clNoteLog=[...(v.noteLog||[])];if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
   $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
-  $('clientDlg').classList.add('on');setTimeout(()=>$('clCompany').focus(),30)}
+  $('clientDlg').classList.add('on');if(!quiet)setTimeout(()=>$('clCompany').focus(),30)}
 // more people on the client: same boxes as the first person, saved as people:[{firstName,...}]
 const PERSON_FIELDS=[['firstName','First name'],['lastName','Last name'],['preferredName','Preferred name'],['dob','Date of birth'],['phone','Cell phone',1],['email','Primary email'],['phone2','Home phone',1],['email2','Secondary email'],['workPhone','Work phone',1],['relationship','Relationship']];
 function addPerson(p){p=p||{};const box=document.createElement('div');box.className='clPerson';
@@ -2151,9 +2163,12 @@ const closeNote=()=>$('noteDlg').classList.remove('on');
 $('noteCancel').onclick=closeNote;$('noteDlg').addEventListener('click',e=>{if(e.target===$('noteDlg'))closeNote()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('noteDlg').classList.contains('on')){e.stopImmediatePropagation();closeNote()}},true);
 $('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('noteText').focus();return}
-  if(noteIdx>=0&&clNoteLog[noteIdx])clNoteLog[noteIdx]={...clNoteLog[noteIdx],text:t,editedAt:new Date().toISOString()};
-  else clNoteLog.push({at:new Date().toISOString(),text:t,...(me?{by:me}:{})});renderClNotes();closeNote();
-  if(editClient){try{await clientsCol.doc(editClient.id).update({noteLog:clNoteLog,notes:''});editClient.notes='';editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
+  const was=noteIdx>=0&&clNoteLog[noteIdx]?clNoteLog[noteIdx]:null,apply=log=>{const i=was?log.findIndex(n=>n.at===was.at):-1;
+    if(i>=0)log[i]={...log[i],text:t,editedAt:new Date().toISOString()};else if(was)log.push({...was,text:t,editedAt:new Date().toISOString()});else log.push({at:new Date().toISOString(),text:t,...(me?{by:me}:{})});return log};
+  apply(clNoteLog);renderClNotes();closeNote();
+  if(editClient){try{const fr=await clFresh()||{},same=(fr.rev||0)===clBaseRev,rev=(fr.rev||0)+1;
+      if(!same&&Array.isArray(fr.noteLog)){clNoteLog=apply([...fr.noteLog]);renderClNotes()} // notes saved elsewhere are kept, this one is added to them
+      await clientsCol.doc(editClient.id).update({noteLog:clNoteLog,notes:'',rev});if(same)clBaseRev=rev;editClient.notes='';editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
   else toast('Note added. Hit Save client to keep it.')};
 $('clCancel').onclick=closeClient;$('clCancelTop').onclick=()=>$('clCancel').click();$('clSaveTop').onclick=()=>$('clSave').click(); // top-right copies of the bottom buttons
 $('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
@@ -2169,6 +2184,10 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
     return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes'),status:g('status')||'Active',producer:g('producer'),state:g('state'),nb:g('nb'),cdate:iso(g('cdate'),`policy ${i+1} cancel date`),cstatus:g('cstatus'),pid:g('pid'),extra:(()=>{try{return JSON.parse(g('extra')||'{}')}catch(_){return {}}})()}}).filter(p=>Object.entries(p).some(([k,v])=>k==='pid'||k==='status'?false:k==='extra'?Object.keys(v).length:v)).map(p=>{if(!Object.keys(p.extra).length)delete p.extra;return p});
   if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(', ')} as MM/DD/YYYY.`;return}
   $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
+  if(editClient){let fr=null;try{fr=await clFresh()}catch(_){}
+    if(fr&&(fr.rev||0)!==clBaseRev&&!(await sure('This client was changed in another tab or by someone else after you opened it. Saving now replaces those changes with what’s on your screen. Save anyway?'))){
+      $('clSave').disabled=false;m.className='msg err';m.textContent='Not saved. Close and reopen this client to see the latest, then make your change again.';return}
+    data.rev=((fr&&fr.rev)||0)+1}
   try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;if(clPending.length)data.files=clPending;await clientsCol.add(data)}
     clPending=[];closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
 $('clDel').onclick=async()=>{if(!editClient)return;{const nm=editClient.company||[editClient.firstName,editClient.lastName].filter(Boolean).join(' ')||'this client';if(!(await sureDel(`Delete ${nm}, their policies and their files for everyone? This can’t be undone.`)))return}
@@ -2301,7 +2320,7 @@ $('c2Go').onclick=async()=>{if(!c2)return;const m=$('c2Msg'),src=(leads.find(x=>
   $('c2Go').disabled=true;const added=[],failed=[];
   try{for(const f of pick){m.className='msg';m.textContent=`Copying ${f.name}…`;
       try{const r=await storeBytes(await fileBytes(f),f.type||'application/pdf');added.push({id:r.id,name:f.name,type:f.type,size:r.sizeBytes||f.size,enc:r.enc||'',at:new Date().toISOString(),fromLead:c2.lead.id})}catch(_){failed.push(f.name)}}
-    if(c2.have){const now=clients.find(c=>c.id===c2.have.id)||c2.have;await clientsCol.doc(now.id).update({...c2.fill,...(added.length?{files:[...(now.files||[]),...added]}:{})})}
+    if(c2.have){const now=clients.find(c=>c.id===c2.have.id)||c2.have;await clientsCol.doc(now.id).update({...c2.fill,rev:(now.rev||0)+1,...(added.length?{files:[...(now.files||[]),...added]}:{})})}
     else{const ref=await clientsCol.add({...c2.fill,policies:[],notes:'',files:added,createdAt:new Date().toISOString(),...(me?{createdBy:me}:{})});c2.id=ref.id}
     m.className=failed.length?'msg err':'msg ok';
     m.textContent=`${c2.have?'Updated':'Made'} ${c2.name} in PSW Clients`+(added.length?` and copied ${added.length} file${added.length===1?'':'s'}`:'')+'.'+(failed.length?` Couldn’t copy: ${failed.join(', ')}.`:'');
