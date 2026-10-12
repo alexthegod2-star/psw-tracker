@@ -1864,8 +1864,8 @@ addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','le
 document.addEventListener('change',e=>{const el=e.target,L=el&&{lobList:LOBS,coList:COMPANIES,gaList:GAS}[el.getAttribute&&el.getAttribute('list')];if(!L)return;const v=el.value.trim().toLowerCase();if(!v)return;
   const hit=L.find(x=>x.toLowerCase()===v)||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().startsWith(v)))||(m=>m.length===1?m[0]:null)(L.filter(x=>x.toLowerCase().includes(v)));
   if(hit&&hit!==el.value)el.value=hit},true);
-// policy status: Active (green dot) -> Expired (purple) -> Cancelled (red); a click moves to the next one
-const PSTAT={Active:'#1f9d55',Expired:'#7e3fbf',Cancelled:'#d92d20'},PSTATS=Object.keys(PSTAT);
+// policy status: Active (green dot) -> Prior term (blue) -> Expired (purple) -> Cancelled (red); a click moves to the next one
+const PSTAT={Active:'#1f9d55','Prior term':'#1f6fe0',Expired:'#7e3fbf',Cancelled:'#d92d20'},PSTATS=Object.keys(PSTAT);
 const showStatus=(btn,v)=>{v=PSTAT[v]?v:'Active';btn.textContent=v;btn.style.setProperty('--dot',PSTAT[v])};
 const nextStatus=v=>PSTATS[(PSTATS.indexOf(PSTAT[v]?v:'Active')+1)%PSTATS.length];
 const US_STATES='AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY'.split(' ');
