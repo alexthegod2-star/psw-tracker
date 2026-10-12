@@ -418,8 +418,6 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
   <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Done</button></div>
   <div class="ppLay"><div class="ppMain">
-  <div class="drop row" id="ppReadRow" style="padding:10px 12px;margin-top:8px"><span style="font-weight:600">Drop a quote sheet, dec page or binder to fill this policy, or</span><input type="file" id="ppReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*" style="flex:1"></div>
-  <div class="msg" id="ppReadMsg"></div>
   <div class="grid">
     <div><label for="ppLine">Line of business</label><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"></div>
     <div><label for="ppCarrier" style="display:flex;align-items:center;gap:8px">General Agent <button type="button" class="pri" id="ppAddGa" style="padding:1px 10px;font-size:12px;border-radius:999px">+ Add GA</button></label><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"></div>
@@ -449,6 +447,9 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="full"><label for="ppNotes">Notes</label><textarea id="ppNotes" data-pp="notes" placeholder="Coverages, limits, deductibles, anything about this policy"></textarea></div>
   </div>
   </div><aside class="ppSide">
+    <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
+      <div class="drop" id="ppReadRow"><span style="font-weight:600">Drop a quote sheet, dec page or binder here to fill this policy, or</span><input type="file" id="ppReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*" style="flex:1"></div>
+      <div class="msg" id="ppReadMsg"></div></section>
     <section class="ppCard"><div class="ppCardH"><h4>Tasks</h4><button type="button" class="pri" id="ppTaskAdd">+ Add task</button></div>
       <ul class="tasks" id="ppTasks"></ul><div class="small" id="ppTasksNone">No tasks for this policy yet.</div></section>
     <section class="ppCard"><div class="ppCardH"><h4>Files</h4></div>
