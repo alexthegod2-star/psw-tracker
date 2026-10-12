@@ -85,6 +85,8 @@ def init_db():
                 c.execute(f"ALTER TABLE {t} ADD COLUMN email TEXT NOT NULL DEFAULT ''")
         if "secrets" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # can this person see company/GA user names and passwords
             c.execute("ALTER TABLE users ADD COLUMN secrets INTEGER NOT NULL DEFAULT 0")
+        if "can_delete" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Delete Yes/No (everyone could delete before this)
+            c.execute("ALTER TABLE users ADD COLUMN can_delete INTEGER NOT NULL DEFAULT 1")
 
 
 # ---------- passwords ----------
@@ -267,7 +269,7 @@ def me(request: Request):
     u = need_user(request)
     return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
             "binder": u["username"] in BINDER_OWNERS and not bearer(request),
-            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u)}
+            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u)}
 
 
 @app.get("/api/auth/profiles")
@@ -317,7 +319,7 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created,secrets FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
@@ -392,6 +394,22 @@ async def admin_set_secrets(username: str, request: Request):
     if not n:
         err(404, "no_such_user")
     return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/delete")
+async def admin_set_delete(username: str, request: Request):
+    """Delete Yes or No: whether this person can delete leads, clients, tasks, notes and files."""
+    need_owner(request)
+    on = bool((await request.json()).get("delete"))
+    with db() as c:
+        n = c.execute("UPDATE users SET can_delete=? WHERE username=?", (1 if on else 0, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+def may_delete(u):
+    return u["username"] in PANEL_OWNERS or bool(u["can_delete"])
 
 
 # ---------- company/GA logins ----------
@@ -541,7 +559,10 @@ async def doc_update(request: Request):
 @app.delete("/api/tracker/doc")
 def doc_delete(request: Request, path: str):
     need_module("tracker"); u = need_user(request)
-    guard(request, u, split_path(path, "doc"))
+    segs = split_path(path, "doc")
+    guard(request, u, segs)
+    if segs[0] != "private" and not may_delete(u):
+        err(403, "no_delete")
     with db() as c:
         c.execute("DELETE FROM tracker_docs WHERE path=?", (path,))
         bump(c)

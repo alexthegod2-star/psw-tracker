@@ -439,7 +439,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </form>
   <div class="msg" id="admMsg"></div>
   <div class="admlink" id="admLinkRow" hidden><input id="admLink" readonly><button type="button" class="pri" id="admCopy">Copy link</button></div>
-  <table style="margin-top:12px;width:100%"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Added</th><th></th><th title="Can they see company and GA user names and passwords?">User/Pass</th></tr></thead><tbody id="admRows"><tr><td colspan="8">Loading…</td></tr></tbody></table>
+  <table style="margin-top:12px;width:100%"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Added</th><th></th><th title="Can they see company and GA user names and passwords?">User/Pass</th><th title="Can they delete leads, clients, policies, tasks, notes and files?">Delete</th></tr></thead><tbody id="admRows"><tr><td colspan="9">Loading…</td></tr></tbody></table>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
@@ -1285,7 +1285,7 @@ const closeTx=()=>$('txDlg').classList.remove('on');$('txCancel').onclick=closeT
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('txDlg').classList.contains('on')){e.stopImmediatePropagation();closeTx()}},true);
 $('log').addEventListener('click',async e=>{
   const id=e.target.dataset.del;if(!id)return;
-  if(!(await sure('Delete this contact log entry? This can’t be undone.')))return;
+  if(!(await sureDel('Delete this contact log entry? This can’t be undone.')))return;
   try{await leadsCol.doc(cur.id).collection('contacts').doc(id).delete();contacts=contacts.filter(c=>c.id!==id);await syncLatest();renderLog()}
   catch(err){$('logMsg').className='msg err';$('logMsg').textContent=errText(err)}
 });
@@ -1393,7 +1393,7 @@ $('files').addEventListener('click',async e=>{
   if(op){const f=(cur.files||[]).find(x=>x.id===op);if(f)openEditor(f);return}
   if(sv){const f=(cur.files||[]).find(x=>x.id===sv);try{const b=await fileBytes(f);await dl.save({filename:f.name,data:b})}catch(err){if(err&&err.code!=='declined'){m.className='msg err';m.textContent=errText(err)}}}
   if(rm){
-    {const f=(cur.files||[]).find(x=>x.id===rm);if(!(await sure(`Delete the file ${f?f.name:''} from this lead? This can’t be undone.`)))return}
+    {const f=(cur.files||[]).find(x=>x.id===rm);if(!(await sureDel(`Delete the file ${f?f.name:''} from this lead? This can’t be undone.`)))return}
     try{const fresh=leads.find(l=>l.id===cur.id)||cur;const files=(fresh.files||[]).filter(x=>x.id!==rm);
       await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();try{await assets.delete(rm)}catch(_){}}
     catch(err){m.className='msg err';m.textContent=errText(err)}
@@ -1695,12 +1695,15 @@ $('bindList').addEventListener('click',e=>{const bt=e.target.closest('[data-na]'
 let sureDone=null;
 function sure(text){if(sureDone)sureDone(false);$('sureText').textContent=text;$('sureDlg').classList.add('on');setTimeout(()=>$('sureNo').focus(),30);
   return new Promise(res=>{sureDone=v=>{sureDone=null;$('sureDlg').classList.remove('on');res(v)}})}
+let canDelete=true; // Admin's Delete Yes/No for this person (the server blocks deleting records too)
+const noDelete=()=>{toast('You don’t have permission to delete. Ask Alex.');return false};
+const sureDel=text=>canDelete?sure(text):Promise.resolve(noDelete());
 $('sureYes').onclick=()=>sureDone&&sureDone(true);$('sureNo').onclick=()=>sureDone&&sureDone(false);
 $('sureDlg').addEventListener('click',e=>{if(e.target===$('sureDlg')&&sureDone)sureDone(false)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sureDone){e.stopImmediatePropagation();sureDone(false)}},true);
 /* ---------- delete lead (pop-up asks first) ---------- */
 let delTarget=null;
-function askDelete(id){const l=leads.find(x=>x.id===id)||(cur&&cur.id===id?cur:null);if(!l)return;delTarget=l;
+function askDelete(id){if(!canDelete)return noDelete();const l=leads.find(x=>x.id===id)||(cur&&cur.id===id?cur:null);if(!l)return;delTarget=l;
   const nm=[l.firstName,l.lastName].filter(Boolean).join(' ')||l.company||'this lead';
   $('askText').textContent=`Delete ${nm}${l.company&&nm!==l.company?' ('+l.company+')':''}, its contact log and its ${(l.files||[]).length} file${(l.files||[]).length===1?'':'s'} for everyone? This can’t be undone.`;
   $('askDel').classList.add('on');$('askNo').focus()}
@@ -1753,7 +1756,7 @@ function renderMyTasks(){const el=$('myTasks');if(!myName){el.hidden=true;return
   const n=tasks.filter(t=>!t.done&&sameAgent(t.assignedTo,myName)).length;el.hidden=false;el.innerHTML=`Current Open Tasks For ${esc(myName)}: <b>${n}</b>`}
 $('myTasks').onclick=()=>{setView('tasks');const o=[...$('tfAssign').options].find(x=>x.value&&sameAgent(x.value,myName));if(o)$('tfAssign').value=o.value;$('tfStatus').value='open';renderTasks()};
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u)return;const nm=String(u.name||u.username||'').trim();
-  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets}).catch(()=>{});
+  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets;canDelete=u.delete!==false}).catch(()=>{});
 
 /* ---------- admin panel (owner only; the server checks too) ---------- */
 {const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1761,9 +1764,9 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
  const msg=(t,ok)=>{$('admMsg').className='msg '+(ok?'ok':'err');$('admMsg').textContent=t};
  async function admLoad(){try{const r=await fetch('/api/admin/users',{credentials:'same-origin'});if(!r.ok)throw 0;const d=await r.json();
    const em=u=>`<input type="email" class="admEm" data-u="${esc(u.username)}" value="${esc(u.email)}" data-was="${esc(u.email)}" placeholder="Add email" aria-label="Email for ${esc(u.name)}">`;
-   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Removed'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td><td>${u.username===d.me?'':u.active?`<button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button>`:`<button type="button" class="admRs" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Restore</button>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.secrets?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.secrets?'':'on'}">No</button></div>`}</td></tr>`)
-     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td><td><button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button></td><td class="small">No (set after sign-up)</td></tr>`));
-   $('admRows').innerHTML=rows.join('')||'<tr><td colspan="8">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="8">Couldn’t load the user list.</td></tr>'}}
+   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Removed'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td><td>${u.username===d.me?'':u.active?`<button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button>`:`<button type="button" class="admRs" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Restore</button>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.secrets?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.secrets?'':'on'}">No</button></div>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-what="delete" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.can_delete?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.can_delete?'':'on'}">No</button></div>`}</td></tr>`)
+     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td><td><button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button></td><td class="small">No (set after sign-up)</td><td class="small">Yes (set after sign-up)</td></tr>`));
+   $('admRows').innerHTML=rows.join('')||'<tr><td colspan="9">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="9">Couldn’t load the user list.</td></tr>'}}
  const formOpen=on=>{$('admForm').hidden=!on;$('admAdd').hidden=on;if(on){$('admForm').reset();setTimeout(()=>$('admName').focus(),30)}};
  const open=()=>{formOpen(false);$('admMsg').textContent='';$('admLinkRow').hidden=true;$('admDlg').classList.add('on');admLoad()};
  const close=()=>$('admDlg').classList.remove('on');
@@ -1788,11 +1791,11 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
    if(!on&&!(await sure(`Remove ${n}? They’ll be signed out and can’t sign in anymore. Their leads, tasks and notes stay.`)))return;bt.disabled=true;
    try{const r=await fetch(`/api/admin/users/${encodeURIComponent(bt.dataset.u)}/active`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:on})});
      const d=await r.json().catch(()=>({}));if(!r.ok){bt.disabled=false;return msg(ERR[d.code]||'Couldn’t change that user.')}msg(on?`${n} can sign in again.`:`${n} was removed.`,true);admLoad()}catch(_){bt.disabled=false;msg('Couldn’t reach the server.')}});
- $('admRows').addEventListener('click',async e=>{const b=e.target.closest('.admYN [data-yn]');if(!b||b.classList.contains('on'))return;const box=b.parentElement,on=b.dataset.yn==='1',n=box.dataset.n;
+ $('admRows').addEventListener('click',async e=>{const b=e.target.closest('.admYN [data-yn]');if(!b||b.classList.contains('on'))return;const box=b.parentElement,on=b.dataset.yn==='1',n=box.dataset.n,del=box.dataset.what==='delete';
    box.querySelectorAll('button').forEach(x=>x.disabled=true);
-   try{const r=await fetch(`/api/admin/users/${encodeURIComponent(box.dataset.u)}/secrets`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({secrets:on})});
+   try{const r=await fetch(`/api/admin/users/${encodeURIComponent(box.dataset.u)}/${del?'delete':'secrets'}`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(del?{delete:on}:{secrets:on})});
      const d=await r.json().catch(()=>({}));if(!r.ok)return msg(ERR[d.code]||'Couldn’t change that user.');
-     box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));msg(on?`${n} can see company and GA user names and passwords.`:`${n} can no longer see company and GA user names and passwords.`,true)}
+     box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));msg(del?(on?`${n} can delete things again.`:`${n} can no longer delete anything.`):on?`${n} can see company and GA user names and passwords.`:`${n} can no longer see company and GA user names and passwords.`,true)}
    catch(_){msg('Couldn’t reach the server.')}finally{box.querySelectorAll('button').forEach(x=>x.disabled=false)}});
  $('admRows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('.admEm'))e.target.blur()});
  $('admCopy').onclick=()=>{$('admLink').select();(navigator.clipboard?navigator.clipboard.writeText($('admLink').value):Promise.reject()).then(()=>toast('Link copied'),()=>document.execCommand('copy'))};
@@ -1850,7 +1853,7 @@ $('tFileIn').onchange=()=>{const list=[...$('tFileIn').files];$('tFileIn').value
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
  fz.addEventListener('drop',e=>addTaskFiles([...(e.dataTransfer.files||[])]))}
 $('tFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.topen||b.dataset.tsave||b.dataset.trm,f=tFiles.find(x=>x.id===id);if(!f)return;
-  if(b.dataset.trm){if(!(await sure(`Remove the file ${f.name} from this task?`)))return;tFiles=tFiles.filter(x=>x.id!==id);renderTaskFiles();return}
+  if(b.dataset.trm){if(!(await sureDel(`Remove the file ${f.name} from this task?`)))return;tFiles=tFiles.filter(x=>x.id!==id);renderTaskFiles();return}
   try{const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
     if(b.dataset.tsave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
     else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
@@ -1867,7 +1870,7 @@ $('tSave').onclick=async()=>{const m=$('taskMsg'),title=$('tTitle').value.trim()
   $('tSave').disabled=true;m.className='msg';m.textContent='Saving…';
   try{if(editTask)await tasksCol.doc(editTask.id).update(data);else{data.done=false;data.doneAt='';data.createdAt=new Date().toISOString();if(me)data.createdBy=me;await tasksCol.add(data)}
     gone.forEach(f=>assets&&assets.delete(f.id).catch(()=>{}));closeTask(true);toast('Task saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('tSave').disabled=false}};
-$('tDel').onclick=async()=>{if(!editTask)return;if(!(await sure(`Delete the task “${editTask.title||'this task'}” and its files? This can’t be undone.`)))return;
+$('tDel').onclick=async()=>{if(!editTask)return;if(!(await sureDel(`Delete the task “${editTask.title||'this task'}” and its files? This can’t be undone.`)))return;
   try{const fs=editTask.files||[];await tasksCol.doc(editTask.id).delete();fs.forEach(f=>assets&&assets.delete(f.id).catch(()=>{}));closeTask();toast('Task deleted')}catch(e){$('taskMsg').className='msg err';$('taskMsg').textContent=errText(e)}};
 
 /* ---------- PSW clients: clients/<id> {company, dba, firstName, lastName, phone, email, address, agent, since YYYY-MM-DD, leadId, notes,
@@ -1923,7 +1926,7 @@ const coConVals=()=>[...$('coCons').querySelectorAll('.coCon')].map(r=>{const o=
 $('coAddCon').onclick=()=>coConRow().querySelector('input').focus();
 $('coCons').addEventListener('click',async e=>{const r=e.target.closest('.coCon');if(!r)return;
   if(e.target.closest('[data-ccopy]')){const v=r.querySelector('[data-c=email]').value.trim();if(!v)return;try{await navigator.clipboard.writeText(v);toast('Copied')}catch(_){toast('Could not copy')}return}
-  if(e.target.closest('[data-cdel]')){const n=r.querySelector('[data-c=name]').value.trim();if(await sure(`Remove ${n||'this contact'}?`))r.remove();if(!$('coCons').children.length)coConRow()}});
+  if(e.target.closest('[data-cdel]')){const n=r.querySelector('[data-c=name]').value.trim();if(await sureDel(`Remove ${n||'this contact'}?`))r.remove();if(!$('coCons').children.length)coConRow()}});
 function siteBtns(){[['ppCompany','ppCoGo','company'],['ppCarrier','ppGaGo','ga']].forEach(([box,go,kind])=>{const n=$(box).value.trim();$(go).hidden=!n||/^n\/?a$/i.test(n)})}
 siteCol.onSnapshot(s=>{sites.clear();s.docs.forEach(d=>{const x=d.data();if(x.kind&&x.name)sites.set(siteKey(x.kind,x.name),{id:d.id,...x})});siteBtns()},()=>{});
 function openCoInfo(kind,n){const hit=sites.get(siteKey(kind,n))||{};coCur={kind,name:n.trim(),id:hit.id||''};
@@ -1960,7 +1963,7 @@ const polRow=p=>{p=p||{};const tr=document.createElement('tr');
   $('polRows').appendChild(tr)};
 $('polAdd').onclick=()=>{let r=$('polRows').lastElementChild;if(!r||[...r.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim())){polRow();r=$('polRows').lastElementChild}openPolicy(r,true)}; // a blank row is reused
 // the policy line is display only: a click anywhere on it (except ✕) opens the policy pop-up
-$('polRows').addEventListener('click',e=>{if(e.target.closest('[data-prenew]')){renewPolicy(e.target.closest('tr'));return}const b=e.target.closest('[data-prm]');if(b){const tr=b.closest('tr'),ln=tr.querySelector('[data-p=line]');sure(`Remove this ${ln&&ln.value.trim()?ln.value.trim()+' policy':'policy'} from the client? It’s gone once you save the client.`).then(y=>{if(y)tr.remove()});return}const tr=e.target.closest('tr');if(!tr)return;
+$('polRows').addEventListener('click',e=>{if(e.target.closest('[data-prenew]')){renewPolicy(e.target.closest('tr'));return}const b=e.target.closest('[data-prm]');if(b){const tr=b.closest('tr'),ln=tr.querySelector('[data-p=line]');sureDel(`Remove this ${ln&&ln.value.trim()?ln.value.trim()+' policy':'policy'} from the client? It’s gone once you save the client.`).then(y=>{if(y)tr.remove()});return}const tr=e.target.closest('tr');if(!tr)return;
   openPolicy(tr,![...tr.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim()))});
 // policy pop-up: edits one row of the client's policy table (kept in the row until Save client)
 let polTr=null,polNew=false;const PP=['line','carrier','company','number','premium','tag','eff','exp','notes','status','producer','state','nb','cdate','cstatus'];
@@ -2024,7 +2027,7 @@ $('ppEff').addEventListener('input',()=>setTimeout(()=>{if($('ppEff').value.leng
 $('ppStatusBtn').onclick=()=>{$('ppStatus').value=nextStatus($('ppStatus').value);showStatus($('ppStatusBtn'),$('ppStatus').value)};
 $('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click(); // top-right copies of the bottom buttons
 
-$('ppDel').onclick=async()=>{if(!(await sure('Remove this policy from the client? It’s gone once you save the client.')))return;if(polTr)polTr.remove();polTr=null;closePolicy(true)};
+$('ppDel').onclick=async()=>{if(!(await sureDel('Remove this policy from the client? It’s gone once you save the client.')))return;if(polTr)polTr.remove();polTr=null;closePolicy(true)};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
 // right side of the policy pop-up: this policy's tasks, files and invoice
 const ppPid=()=>polTr?polTr.querySelector('[data-p=pid]').value:'';
@@ -2094,7 +2097,7 @@ function addPerson(p){p=p||{};const box=document.createElement('div');box.classN
 const readPeople=()=>[...$('clPeople').children].map(b=>Object.fromEntries([...b.querySelectorAll('[data-k]')].map(el=>[el.dataset.k,el.dataset.pf?fmtClPhone(el.value):el.value.trim()]))).filter(p=>Object.values(p).some(Boolean));
 $('clAddPerson').onclick=()=>{const b=addPerson();setTimeout(()=>b.querySelector('[data-k=firstName]').focus(),30)};
 $('clPeople').addEventListener('click',async e=>{const b=e.target.closest('[data-rmperson]');if(!b)return;const box=b.closest('.clPerson'),nm=[...box.querySelectorAll('[data-k=firstName],[data-k=lastName]')].map(x=>x.value.trim()).filter(Boolean).join(' ');
-  if(!(await sure(`Remove ${nm||'this person'} from the client?`)))return;box.remove();[...$('clPeople').children].forEach((x,i)=>{x.querySelector('.clPersonH').firstChild.textContent=`Person ${i+2}`})});
+  if(!(await sureDel(`Remove ${nm||'this person'} from the client?`)))return;box.remove();[...$('clPeople').children].forEach((x,i)=>{x.querySelector('.clPersonH').firstChild.textContent=`Person ${i+2}`})});
 // right side of the client: tasks for this client (and its policies) and the policies' invoices
 function renderClTasks(){if(!$('clientDlg').classList.contains('on')&&!editClient){return}const id=editClient&&editClient.id,pids=[...$('polRows').rows].map(tr=>tr.querySelector('[data-p=pid]').value).filter(Boolean);
   const rows=tasks.filter(t=>(id&&t.clientId===id)||(t.pid&&pids.includes(t.pid))).sort(taskSort);$('clTasksNone').hidden=rows.length>0;$('clTasksNone').textContent=id?'No tasks for this client yet.':'Save the client first, then add tasks.';
@@ -2140,7 +2143,7 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
   $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
   try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;if(clPending.length)data.files=clPending;await clientsCol.add(data)}
     clPending=[];closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
-$('clDel').onclick=async()=>{if(!editClient)return;{const nm=editClient.company||[editClient.firstName,editClient.lastName].filter(Boolean).join(' ')||'this client';if(!(await sure(`Delete ${nm}, their policies and their files for everyone? This can’t be undone.`)))return}
+$('clDel').onclick=async()=>{if(!editClient)return;{const nm=editClient.company||[editClient.firstName,editClient.lastName].filter(Boolean).join(' ')||'this client';if(!(await sureDel(`Delete ${nm}, their policies and their files for everyone? This can’t be undone.`)))return}
   try{const gone=editClient.files||[];await clientsCol.doc(editClient.id).delete();if(assets)for(const f of gone){try{await assets.delete(f.id)}catch(_){}}closeClient();toast('Client deleted')}catch(e){$('clientMsg').className='msg err';$('clientMsg').textContent=errText(e)}};
 // client files: copies made from a lead's files (their own stored copies, so removing the lead's file leaves the client's)
 // drop or pick files to add them to this client; for a new client they are kept and saved with Save client
@@ -2230,7 +2233,7 @@ function renderClFiles(c){const fs=(c&&c.files)||[];$('clUpRow').hidden=!assets;
   const pl=pid=>{const tr=[...$('polRows').rows].find(t=>t.querySelector('[data-p=pid]').value===pid);return tr?(tr.querySelector('[data-p=line]').value.trim()||'policy'):''};
   $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}${f.pid&&pl(f.pid)?` <span class="chip">${esc(pl(f.pid))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Drop them in the Dropbox above, or in a policy.</li>'}
 $('clFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.clopen||b.dataset.clsave||b.dataset.clrm,f=(editClient.files||[]).find(x=>x.id===id);if(!f)return;
-  try{if(b.dataset.clrm){if(!(await sure(`Delete the file ${f.name} from this client? This can’t be undone.`)))return;
+  try{if(b.dataset.clrm){if(!(await sureDel(`Delete the file ${f.name} from this client? This can’t be undone.`)))return;
       const files=(editClient.files||[]).filter(x=>x.id!==id);await clientsCol.doc(editClient.id).update({files});editClient.files=files;renderClFiles(editClient);try{await assets.delete(id)}catch(_){}return}
     const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
     if(b.dataset.clsave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
