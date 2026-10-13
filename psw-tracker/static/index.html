@@ -130,6 +130,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .confirm.on{display:block}
 .drop{border:2px dashed var(--line);border-radius:12px;padding:12px;background:var(--card)}
 .drop.over{border-color:var(--acc);background:var(--soft)}
+.lockBar{display:flex;align-items:center;gap:10px;margin:8px 0;padding:9px 12px;border-radius:10px;background:#fff4d6;border:1px solid #e0b84a;color:#5c4300;font-weight:600}
+.lockBar span{flex:1}.lockBar button{padding:4px 12px;font-size:13px}
+.lockedWin .drop{opacity:.5}
+.lockedWin input:disabled,.lockedWin select:disabled,.lockedWin textarea:disabled{background:#eceff3;color:#4a4f57}
 .fileDrops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:8px;align-items:stretch}
 @media (max-width:800px){.fileDrops{grid-template-columns:1fr}}
 #feeRow{display:flex;flex-direction:column;gap:6px;padding:10px 12px}
@@ -234,6 +238,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="ov" id="ov"></div>
 <aside class="dr" id="dr" aria-hidden="true">
   <div class="dh"><h2 id="dTitle">New lead</h2><div class="row"><button id="saveBtn" class="pri">Save</button><button class="danger" id="delTop">Delete</button><button id="closeBtn">Close</button></div></div>
+  <div class="lockBar" id="ldLockBar" hidden><span></span><button type="button" class="lockTake" hidden>Unlock and edit</button></div>
   <div class="db"><div class="dbL">
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
@@ -368,6 +373,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 </div></div>
 <div class="mbg" id="clientDlg" role="dialog" aria-modal="true" aria-labelledby="clientTitleH"><div class="mbox" id="clientBox">
   <div class="row" style="align-items:center"><h3 id="clientTitleH" style="margin:0 auto 0 0">New client</h3><button id="clCancelTop">Cancel</button><button class="pri" id="clSaveTop">Save client</button></div>
+  <div class="lockBar" id="clLockBar" hidden><span></span><button type="button" class="lockTake" hidden>Unlock and edit</button></div>
   <div class="clLay">
     <div class="clMain">
       <section class="ppCard clBiz"><div class="clg c2b"><div><label for="clCompany">Business name</label><input id="clCompany"></div>
@@ -654,7 +660,28 @@ async function toggleMade(id){
 
 /* ---------- drawer ---------- */
 function show(on){$('dr').classList.toggle('on',on);$('ov').classList.toggle('on',on);$('dr').setAttribute('aria-hidden',!on)}
-function closeLead(){show(false);if(curUnsub){curUnsub();curUnsub=null}cur=null}
+function closeLead(){show(false);lockStop('lead');if(curUnsub){curUnsub();curUnsub=null}cur=null}
+/* ---------- record locks: the first person (browser tab) to open a client or lead can edit it; anyone else sees it read-only until it's closed ---------- */
+const TAB=Math.random().toString(36).slice(2,14),LK={};let isOwner=false;
+const lockReq=(method,body)=>fetch(method==='DELETE'?`/api/tracker/lock?path=${encodeURIComponent(body.path)}&tab=${TAB}`:'/api/tracker/lock',{method,credentials:'same-origin',...(method==='DELETE'?{}:{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}).then(r=>r.ok?r.json():{ok:true}); // if the server can't answer, don't block anyone
+const isLocked=k=>!!(LK[k]&&LK[k].blocked);
+// lock or unlock the window's controls; Close/Cancel, file Open/Save/drag and the Email section stay usable
+function lockPass(win,bar,on){win.querySelectorAll('input,select,textarea,button,[contenteditable]').forEach(el=>{if(bar.contains(el)||/close|cancel/i.test(el.id)||el.matches('[data-open],[data-save],[data-dl]')||el.closest('#mailSec'))return;
+    if(on){if(!('lkPrev' in el.dataset))el.dataset.lkPrev=el.isContentEditable?'ce':el.disabled?'1':'';if(el.dataset.lkPrev==='ce')el.contentEditable='false';else el.disabled=true}
+    else if('lkPrev' in el.dataset){if(el.dataset.lkPrev==='ce')el.contentEditable='true';else el.disabled=el.dataset.lkPrev==='1';delete el.dataset.lkPrev}})}
+function lockUi(win,bar,on,text){win.classList.toggle('lockedWin',on);bar.hidden=!on;if(on)bar.querySelector('span').textContent=text;bar.querySelector('.lockTake').hidden=!(on&&isOwner);lockPass(win,bar,on);
+  if(on&&!win._lkObs){let q=false;win._lkObs=new MutationObserver(()=>{if(q)return;q=true;queueMicrotask(()=>{q=false;if(win.classList.contains('lockedWin'))lockPass(win,bar,true)})});win._lkObs.observe(win,{childList:true,subtree:true})} // lists drawn later (files, log) get locked too
+  if(!on&&win._lkObs){win._lkObs.disconnect();win._lkObs=null}}
+function lockStart(k,path,o){if(LK[k]&&LK[k].path===path){LK[k].o=o;if(LK[k].blocked)o.ui(true,LK[k].text);return}lockStop(k);const s=LK[k]={path,o,held:false,blocked:false,t:null};
+  const tick=async force=>{clearTimeout(s.t);let r;try{r=await lockReq('POST',{path,tab:TAB,force:!!force})}catch(_){r={ok:true}}if(LK[k]!==s)return;
+    const was=s.blocked;if(s.held&&!r.ok)s.lost=true;if(r.ok)s.lost=false;const lost=s.lost;s.held=!!r.ok;s.blocked=!r.ok;
+    if(s.blocked)s.o.ui(true,s.text=r.mine?`You have this ${o.what} open in another tab or window, so it’s view-only here. Close it there to edit here.`:lost?`${r.name} took over this ${o.what}. Changes you hadn’t saved here weren’t saved.`:`${r.name} is working on this ${o.what}, so it’s view-only for you. It unlocks when they close it.`);
+    else{s.o.ui(false);if(was)s.o.freed&&s.o.freed()}
+    s.t=setTimeout(tick,r.ok?30000:8000)};
+  s.take=async()=>{if(await sure(`Take over this ${o.what}? The other person can’t save their open changes after this.`))tick(true)};o.ui(false);tick(false)}
+function lockStop(k){const s=LK[k];if(!s)return;clearTimeout(s.t);delete LK[k];s.o.ui(false);if(s.held)lockReq('DELETE',{path:s.path}).catch(()=>{})}
+addEventListener('pagehide',()=>{for(const k in LK){const s=LK[k];if(s.held)navigator.sendBeacon('/api/tracker/unlock',new Blob([JSON.stringify({path:s.path,tab:TAB})],{type:'application/json'}))}});
+document.querySelectorAll('.lockBar .lockTake').forEach(b=>b.onclick=()=>{const k=b.closest('#clLockBar')?'client':'lead';LK[k]&&LK[k].take()});
 $('closeBtn').onclick=closeLead;$('ov').onclick=closeLead;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('dr').classList.contains('on'))closeLead()});
 const AZ_SELECTS=['tAssign','clAgent','ppProducer','fType','fAssign','tfAssign','cHow','clBusType','tLead','clLead'];
@@ -691,6 +718,7 @@ function openLead(l){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
   show(true);setTimeout(()=>$(has?'cNote':'firstName').focus(),220);
+  if(l&&l.id)lockStart('lead','leads/'+l.id,{what:'lead',ui:(on,t)=>lockUi($('dr'),$('ldLockBar'),on,t),freed:()=>{toast('You can edit this lead now');const fr=leads.find(x=>x.id===l.id);if(fr&&$('dr').classList.contains('on'))openLead(fr)}});else lockStop('lead');
 }
 ['phone','homePhone','workPhone'].forEach(k=>$(k).addEventListener('blur',()=>$(k).value=fmtPhone($(k).value)));
 $('xDate').addEventListener('blur',()=>$('xDate').value=fmtDate(typedISO($('xDate').value)));
@@ -1398,7 +1426,7 @@ async function fileBytes(f){const res=await fetch('/_blob/'+f.id);if(!res.ok)thr
   return f.enc==='b64'?Uint8Array.from(atob(new TextDecoder().decode(b).trim()),c=>c.charCodeAt(0)):new Uint8Array(b)}
 const attachable=f=>!!EXT[(f.name.split('.').pop()||'').toLowerCase()];
 async function uploadOne(f){
-  const m=$('fileMsg');
+  const m=$('fileMsg');if(isLocked('lead')){m.className='msg err';m.textContent='This lead is view-only right now, so files can’t be added.';return false}
   {const nn=f.name.replace(/( com (?:auto )?quote sheet)(?:\s*\(\d+\)|[\s_-]*(?:filled|completed?|signed))+\.pdf$/i,'$1.pdf');if(nn!==f.name)f=new File([f],nn,{type:f.type})} // a returned copy replaces the original
   const ext=(f.name.split('.').pop()||'').toLowerCase(),type=EXT[ext];
   if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;return}
@@ -1784,7 +1812,7 @@ function renderMyTasks(){const el=$('myTasks');if(!myName){el.hidden=true;return
   const n=tasks.filter(t=>!t.done&&sameAgent(t.assignedTo,myName)).length;el.hidden=false;el.innerHTML=`Current Open Tasks For ${esc(myName)}: <b>${n}</b>`}
 $('myTasks').onclick=()=>{setView('tasks');const o=[...$('tfAssign').options].find(x=>x.value&&sameAgent(x.value,myName));if(o)$('tfAssign').value=o.value;$('tfStatus').value='open';renderTasks()};
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u)return;const nm=String(u.name||u.username||'').trim();
-  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets;canDelete=u.delete!==false}).catch(()=>{});
+  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets;isOwner=!!u.owner;canDelete=u.delete!==false}).catch(()=>{});
 
 /* ---------- admin panel (owner only; the server checks too) ---------- */
 {const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1906,7 +1934,7 @@ $('tDel').onclick=async()=>{if(!editTask)return;if(!(await sureDel(`Delete the t
 const clientsCol=db.collection('clients');let clients=[],editClient=null;
 const clientName=c=>c.company||[c.firstName,c.lastName].filter(Boolean).join(' ')||'(no name)';
 const nextRenew=c=>(c.policies||[]).map(p=>p.exp).filter(x=>x&&x>=todayISO()).sort()[0]||'';
-clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
+clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients();clStaleCheck()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
 function renderClients(){
   $('clientCount').textContent=clients.length;
   if(view==='clients')$('count').textContent=clients.length?`${clients.length} client${clients.length===1?'':'s'}`:'No clients yet';
@@ -2103,7 +2131,20 @@ $('clientBox').addEventListener('focusout',e=>{const el=e.target;
   if(el.dataset.p==='premium'&&el.value.trim()){el.value=fmtMoney(el.value);return}
   if(!(el.dataset.p==='eff'||el.dataset.p==='exp'||el.id==='clSince'))return;const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso);
   if(el.dataset.p==='eff'&&/^\d{4}-/.test(iso)){const x=el.closest('tr').querySelector('[data-p=exp]');if(!x.value.trim()){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);x.value=fmtDate(d.toISOString().slice(0,10))}}});
-function openClient(c,preset){editClient=c||null;const v=c||preset||{};
+// Two tabs (or two people) on the same client: every save bumps the client's rev, and Save client warns before replacing changes made elsewhere
+let clBaseRev=0;
+const clFresh=async()=>{const d=await clientsCol.doc(editClient.id).get();return d.exists?d.data():null};
+// clDirty: something was typed or clicked in this client since it opened. Untouched, the screen just reloads with the new copy; touched, it warns instead.
+let clDirty=false;
+function clStaleCheck(){if(!editClient||!$('clientDlg').classList.contains('on'))return;const fr=clients.find(x=>x.id===editClient.id);
+  if(!fr||(fr.rev||0)===clBaseRev)return;
+  if((!clDirty||isLocked('client'))&&!['polDlg','noteDlg','sureDlg'].some(id=>$(id).classList.contains('on'))){const sc=$('clientBox').scrollTop;openClient(fr,null,true);$('clientBox').scrollTop=sc;toast('Client updated with changes saved somewhere else');return}
+  const m=$('clientMsg');m.className='msg err';m.textContent='This client was just changed in another tab or by someone else. Close and reopen it to see those changes before you save.'}
+$('clientDlg').addEventListener('input',()=>{clDirty=true});$('clientDlg').addEventListener('change',()=>{clDirty=true});
+$('clientDlg').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!/^(clCancel|clCancelTop|clSave|clSaveTop|clAddNote)$/.test(b.id)&&!b.closest('#clNoteLog')&&!b.matches('[data-open],[data-save],[data-dl]'))clDirty=true});
+$('polRows').addEventListener('click',()=>{clDirty=true}); // opening a policy may change it
+function openClient(c,preset,quiet){editClient=c||null;const v=c||preset||{};clBaseRev=(c&&c.rev)||0;clDirty=false;
+  setTimeout(()=>{if(c&&editClient===c)lockStart('client','clients/'+c.id,{what:'client',ui:(on,t)=>lockUi($('clientDlg'),$('clLockBar'),on,t),freed:()=>{const fr=clients.find(x=>x.id===c.id);if(fr&&$('clientDlg').classList.contains('on'))openClient(fr,null,true);toast('You can edit this client now')}});else if(!c)lockStop('client')},0);
   $('clientTitleH').textContent=c?'Edit client':'New client';
   [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPref','preferredName'],['clDob','dob'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clLocation','location'],['clBusType','busType'],['clWork','workPhone'],['clRel','relationship'],['clCity','city'],['clState','state'],['clZip','zip'],['clLocCity','locCity'],['clLocState','locState'],['clLocZip','locZip'],['clSource','leadSource']].forEach(([id,k])=>$(id).value=v[k]||'');$('clStatus').value=v.status||'Active';$('clWork').value=fmtClPhone($('clWork').value);
   $('clPeople').innerHTML='';(v.people||[]).forEach(addPerson);
@@ -2115,7 +2156,7 @@ function openClient(c,preset){editClient=c||null;const v=c||preset||{};
     (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
   $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);clPending=[];renderClFiles(c);clNoteLog=[...(v.noteLog||[])];if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
   $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
-  $('clientDlg').classList.add('on');setTimeout(()=>$('clCompany').focus(),30)}
+  $('clientDlg').classList.add('on');if(!quiet)setTimeout(()=>$('clCompany').focus(),30)}
 // more people on the client: same boxes as the first person, saved as people:[{firstName,...}]
 const PERSON_FIELDS=[['firstName','First name'],['lastName','Last name'],['preferredName','Preferred name'],['dob','Date of birth'],['phone','Cell phone',1],['email','Primary email'],['phone2','Home phone',1],['email2','Secondary email'],['workPhone','Work phone',1],['relationship','Relationship']];
 function addPerson(p){p=p||{};const box=document.createElement('div');box.className='clPerson';
@@ -2136,7 +2177,7 @@ function renderClInv(){const rows=[...$('polRows').rows].map(tr=>{let x={};try{x
   $('clInvNone').hidden=rows.length>0;
   $('clInv').innerHTML=rows.map((r,i)=>`<li class="tli" data-inv="${[...$('polRows').rows].indexOf(r.tr)}"><span class="tt">${esc(r.x.invNo?'#'+r.x.invNo:'Invoice')}${r.line?' · '+esc(r.line):''}</span><span class="small">${esc(r.x.invAmt||r.x.total||'')}</span><span class="chip">${esc(r.x.invPaid||'Unpaid')}</span></li>`).join('')}
 $('clInv').addEventListener('click',e=>{const li=e.target.closest('[data-inv]');if(!li)return;const tr=$('polRows').rows[+li.dataset.inv];if(tr)openPolicy(tr,false)});
-function closeClient(){$('clientDlg').classList.remove('on');editClient=null;if(assets)clPending.forEach(f=>assets.delete(f.id).catch(()=>{}));clPending=[]} // files dropped into a new client you cancel are thrown away
+function closeClient(){$('clientDlg').classList.remove('on');lockStop('client');editClient=null;if(assets)clPending.forEach(f=>assets.delete(f.id).catch(()=>{}));clPending=[]} // files dropped into a new client you cancel are thrown away
 // client notes: "+ Add note" opens a pop-up; each note is kept with its date and time (newest first), saved to the client right away
 let clNoteLog=[];
 async function renderClNotes(){const ids=[...new Set(clNoteLog.map(n=>n.by).filter(x=>x&&!(x in names)))];
@@ -2150,10 +2191,13 @@ $('clAddNote').onclick=()=>{noteMode(-1);$('noteText').value='';$('noteWhen').te
 const closeNote=()=>$('noteDlg').classList.remove('on');
 $('noteCancel').onclick=closeNote;$('noteDlg').addEventListener('click',e=>{if(e.target===$('noteDlg'))closeNote()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('noteDlg').classList.contains('on')){e.stopImmediatePropagation();closeNote()}},true);
-$('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('noteText').focus();return}
-  if(noteIdx>=0&&clNoteLog[noteIdx])clNoteLog[noteIdx]={...clNoteLog[noteIdx],text:t,editedAt:new Date().toISOString()};
-  else clNoteLog.push({at:new Date().toISOString(),text:t,...(me?{by:me}:{})});renderClNotes();closeNote();
-  if(editClient){try{await clientsCol.doc(editClient.id).update({noteLog:clNoteLog,notes:''});editClient.notes='';editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
+$('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('noteText').focus();return}if(isLocked('client')){toast('This client is view-only right now.');return}
+  const was=noteIdx>=0&&clNoteLog[noteIdx]?clNoteLog[noteIdx]:null,apply=log=>{const i=was?log.findIndex(n=>n.at===was.at):-1;
+    if(i>=0)log[i]={...log[i],text:t,editedAt:new Date().toISOString()};else if(was)log.push({...was,text:t,editedAt:new Date().toISOString()});else log.push({at:new Date().toISOString(),text:t,...(me?{by:me}:{})});return log};
+  apply(clNoteLog);renderClNotes();closeNote();
+  if(editClient){try{const fr=await clFresh()||{},same=(fr.rev||0)===clBaseRev,rev=(fr.rev||0)+1;
+      if(!same&&Array.isArray(fr.noteLog)){clNoteLog=apply([...fr.noteLog]);renderClNotes()} // notes saved elsewhere are kept, this one is added to them
+      await clientsCol.doc(editClient.id).update({noteLog:clNoteLog,notes:'',rev});if(same)clBaseRev=rev;editClient.notes='';editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
   else toast('Note added. Hit Save client to keep it.')};
 $('clCancel').onclick=closeClient;$('clCancelTop').onclick=()=>$('clCancel').click();$('clSaveTop').onclick=()=>$('clSave').click(); // top-right copies of the bottom buttons
 $('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
@@ -2169,6 +2213,10 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
     return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes'),status:g('status')||'Active',producer:g('producer'),state:g('state'),nb:g('nb'),cdate:iso(g('cdate'),`policy ${i+1} cancel date`),cstatus:g('cstatus'),pid:g('pid'),extra:(()=>{try{return JSON.parse(g('extra')||'{}')}catch(_){return {}}})()}}).filter(p=>Object.entries(p).some(([k,v])=>k==='pid'||k==='status'?false:k==='extra'?Object.keys(v).length:v)).map(p=>{if(!Object.keys(p.extra).length)delete p.extra;return p});
   if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(', ')} as MM/DD/YYYY.`;return}
   $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
+  if(editClient){let fr=null;try{fr=await clFresh()}catch(_){}
+    if(fr&&(fr.rev||0)!==clBaseRev&&!(await sure('This client was changed in another tab or by someone else after you opened it. Saving now replaces those changes with what’s on your screen. Save anyway?'))){
+      $('clSave').disabled=false;m.className='msg err';m.textContent='Not saved. Close and reopen this client to see the latest, then make your change again.';return}
+    data.rev=((fr&&fr.rev)||0)+1}
   try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;if(clPending.length)data.files=clPending;await clientsCol.add(data)}
     clPending=[];closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
 $('clDel').onclick=async()=>{if(!editClient)return;{const nm=editClient.company||[editClient.firstName,editClient.lastName].filter(Boolean).join(' ')||'this client';if(!(await sureDel(`Delete ${nm}, their policies and their files for everyone? This can’t be undone.`)))return}
@@ -2176,7 +2224,7 @@ $('clDel').onclick=async()=>{if(!editClient)return;{const nm=editClient.company|
 // client files: copies made from a lead's files (their own stored copies, so removing the lead's file leaves the client's)
 // drop or pick files to add them to this client; for a new client they are kept and saved with Save client
 let clPending=[];
-async function addClientFiles(list,pid){if(!assets)return;const m=pid?$('ppMsg'):$('clientMsg');
+async function addClientFiles(list,pid){if(!assets)return;const m=pid?$('ppMsg'):$('clientMsg');if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now, so files can’t be added.';return}
   for(const f of list){const type=EXT[(f.name.split('.').pop()||'').toLowerCase()];
     if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;continue}
     m.className='msg';m.textContent=`Uploading ${f.name}…`;
@@ -2301,7 +2349,7 @@ $('c2Go').onclick=async()=>{if(!c2)return;const m=$('c2Msg'),src=(leads.find(x=>
   $('c2Go').disabled=true;const added=[],failed=[];
   try{for(const f of pick){m.className='msg';m.textContent=`Copying ${f.name}…`;
       try{const r=await storeBytes(await fileBytes(f),f.type||'application/pdf');added.push({id:r.id,name:f.name,type:f.type,size:r.sizeBytes||f.size,enc:r.enc||'',at:new Date().toISOString(),fromLead:c2.lead.id})}catch(_){failed.push(f.name)}}
-    if(c2.have){const now=clients.find(c=>c.id===c2.have.id)||c2.have;await clientsCol.doc(now.id).update({...c2.fill,...(added.length?{files:[...(now.files||[]),...added]}:{})})}
+    if(c2.have){const now=clients.find(c=>c.id===c2.have.id)||c2.have;await clientsCol.doc(now.id).update({...c2.fill,rev:(now.rev||0)+1,...(added.length?{files:[...(now.files||[]),...added]}:{})})}
     else{const ref=await clientsCol.add({...c2.fill,policies:[],notes:'',files:added,createdAt:new Date().toISOString(),...(me?{createdBy:me}:{})});c2.id=ref.id}
     m.className=failed.length?'msg err':'msg ok';
     m.textContent=`${c2.have?'Updated':'Made'} ${c2.name} in PSW Clients`+(added.length?` and copied ${added.length} file${added.length===1?'':'s'}`:'')+'.'+(failed.length?` Couldn’t copy: ${failed.join(', ')}.`:'');
