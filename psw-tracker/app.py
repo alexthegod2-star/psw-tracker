@@ -85,6 +85,7 @@ def init_db():
                 c.execute(f"ALTER TABLE {t} ADD COLUMN email TEXT NOT NULL DEFAULT ''")
         if "secrets" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # can this person see company/GA user names and passwords
             c.execute("ALTER TABLE users ADD COLUMN secrets INTEGER NOT NULL DEFAULT 0")
+        c.execute("CREATE TABLE IF NOT EXISTS locks(path TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL, tab TEXT NOT NULL, expires REAL NOT NULL)")
         if "can_delete" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Delete Yes/No (everyone could delete before this)
             c.execute("ALTER TABLE users ADD COLUMN can_delete INTEGER NOT NULL DEFAULT 1")
 
@@ -567,6 +568,58 @@ def doc_delete(request: Request, path: str):
         c.execute("DELETE FROM tracker_docs WHERE path=?", (path,))
         bump(c)
     return {"ok": True}
+
+
+# ---------- record locks ----------
+# Whoever opens a client or lead first holds it (one browser tab); everyone else sees it read-only.
+# The open tab renews the lock every 30 seconds, so a closed or crashed tab frees it within LOCK_TTL.
+LOCK_TTL = 90
+LOCKABLE = ("clients", "leads")
+
+
+def lock_args(body):
+    path, tab = str(body.get("path", "")), str(body.get("tab", ""))
+    segs = split_path(path, "doc")
+    if len(segs) != 2 or segs[0] not in LOCKABLE or not re.fullmatch(r"[A-Za-z0-9]{6,40}", tab):
+        err(400, "bad_lock")
+    return path, tab
+
+
+@app.post("/api/tracker/lock")
+async def lock_take(request: Request):
+    """Take or renew the lock. force (owners only) takes it from whoever has it."""
+    need_module("tracker"); u = need_user(request)
+    body = await request.json()
+    path, tab = lock_args(body)
+    force = bool(body.get("force")) and u["username"] in PANEL_OWNERS and not bearer(request)
+    now = time.time()
+    with db() as c:
+        r = c.execute("SELECT * FROM locks WHERE path=?", (path,)).fetchone()
+        if r and r["expires"] > now and not (r["user_id"] == u["id"] and r["tab"] == tab) and not force:
+            return {"ok": False, "name": r["name"], "mine": r["user_id"] == u["id"]}
+        c.execute("INSERT INTO locks(path,user_id,name,tab,expires) VALUES(?,?,?,?,?) ON CONFLICT(path) DO UPDATE SET "
+                  "user_id=excluded.user_id, name=excluded.name, tab=excluded.tab, expires=excluded.expires",
+                  (path, u["id"], u["name"], tab, now + LOCK_TTL))
+    return {"ok": True}
+
+
+def lock_drop(u, path, tab):
+    with db() as c:
+        c.execute("DELETE FROM locks WHERE path=? AND user_id=? AND tab=?", (path, u["id"], tab))
+    return {"ok": True}
+
+
+@app.delete("/api/tracker/lock")
+def lock_release(request: Request, path: str = "", tab: str = ""):
+    need_module("tracker"); u = need_user(request)
+    return lock_drop(u, *lock_args({"path": path, "tab": tab}))
+
+
+@app.post("/api/tracker/unlock")
+async def lock_release_beacon(request: Request):
+    """Same as DELETE, for navigator.sendBeacon when a tab closes."""
+    need_module("tracker"); u = need_user(request)
+    return lock_drop(u, *lock_args(json.loads(await request.body() or b"{}")))
 
 
 # ---------- tracker module: files ----------
