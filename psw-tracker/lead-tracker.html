@@ -1,9 +1,9 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Pacific Southwest Insurance Services Database</title>
 <style>
-:root{--panel:#eef5ff;--drbg:#d5e5f9;--clcard:#c4d8f2;--cllabel:#0f2a4a;--clline:#adc6e8;--polbg:#dcf2e2;--polcard:#c8e8d1;--polline:#a9d6b6;--pollabel:#0f2e1c;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}}
-:root[data-theme="dark"]{--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}
+:root{--panel:#eef5ff;--drbg:#d5e5f9;--clcard:#c4d8f2;--cllabel:#0f2a4a;--clline:#adc6e8;--polbg:#dcf2e2;--taskbg:#efe7fb;--polcard:#c8e8d1;--polline:#a9d6b6;--pollabel:#0f2e1c;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--taskbg:#221a33;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}}
+:root[data-theme="dark"]{--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--taskbg:#221a33;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 .wrap{max-width:none;margin:0 auto;padding:20px 24px 60px}
@@ -123,7 +123,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .bchk{display:flex;gap:8px;align-items:center;padding-top:20px}.bchk input{width:auto;flex:none;margin:0;accent-color:var(--ok)}.bchk label{margin:0;font-size:14px;color:var(--ink);font-weight:400;cursor:pointer}
 .bcalc{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:12px;background:var(--soft);border-radius:10px;padding:10px}.bcalc span{display:block;font-size:11px;color:var(--mute)}.bcalc b{font-variant-numeric:tabular-nums}
 #bpBox{width:min(640px,100%)}#bpBox textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:12px}#bpBox .row{margin-top:10px}#bpBox .row select,#bpBox .row input{width:auto}
-#taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
+#taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;background:var(--taskbg)}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
 .msg{font-size:13px;margin-top:6px}
 .msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
 .confirm{display:none;background:var(--soft);border:1px solid var(--bad);border-radius:10px;padding:10px;margin-top:8px}
@@ -458,7 +458,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
-  <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Done</button></div>
+  <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Save</button></div>
   <div class="ppLay">
   <div class="ppCol">
     <section class="ppCard ppInfo">
@@ -520,7 +520,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </aside>
   <div id="ppExtraWrap" hidden><h4 id="ppExtraH" style="margin:0"></h4><div class="grid" id="ppExtra"></div></div></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
-  <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Done</button></div>
+  <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Save</button></div>
 </div></div>
 <div class="mbg" id="binDlg" role="dialog" aria-modal="true" aria-labelledby="binTitleH"><div class="mbox" id="binBox">
   <h3 id="binTitleH">Add sale</h3>
@@ -2019,9 +2019,9 @@ const polRow=p=>{p=p||{};const tr=document.createElement('tr');
   $('polRows').appendChild(tr)};
 $('polAdd').onclick=()=>{let r=$('polRows').lastElementChild;if(!r||[...r.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim())){polRow();r=$('polRows').lastElementChild}openPolicy(r,true)}; // a blank row is reused
 // the policy line is display only: a click anywhere on it (except ✕) opens the policy pop-up
-$('polRows').addEventListener('click',e=>{if(e.target.closest('[data-prenew]')){renewPolicy(e.target.closest('tr'));return}const b=e.target.closest('[data-prm]');if(b){const tr=b.closest('tr'),ln=tr.querySelector('[data-p=line]');sureDel(`Remove this ${ln&&ln.value.trim()?ln.value.trim()+' policy':'policy'} from the client? It’s gone once you save the client.`).then(y=>{if(y)tr.remove()});return}const tr=e.target.closest('tr');if(!tr)return;
+$('polRows').addEventListener('click',e=>{if(e.target.closest('[data-prenew]')){renewPolicy(e.target.closest('tr'));return}const b=e.target.closest('[data-prm]');if(b){const tr=b.closest('tr'),ln=tr.querySelector('[data-p=line]');sureDel(`Remove this ${ln&&ln.value.trim()?ln.value.trim()+' policy':'policy'} from the client?`).then(y=>{if(y){tr.remove();renderClInv();savePolicies('Policy removed')}});return}const tr=e.target.closest('tr');if(!tr)return;
   openPolicy(tr,![...tr.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim()))});
-// policy pop-up: edits one row of the client's policy table (kept in the row until Save client)
+// policy pop-up: edits one row of the client's policy table; Save writes the client's policies right away
 let polTr=null,polNew=false;const PP=['line','carrier','company','number','premium','tag','eff','exp','notes','status','producer','state','nb','cdate','cstatus'];
 // each line of business adds its own basic fields to the pop-up (kept with the policy as "extra"); a's' field is a bigger box
 const LOB_FIELDS={
@@ -2058,6 +2058,18 @@ function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;{const cur=tr.querySelecto
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   siteBtns();$('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
+// the client's policy lines as saved (iso turns a typed date into YYYY-MM-DD and notes the bad ones)
+function readPolicies(iso){
+  return [...$('polRows').rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-p=${k}]`).value.trim();
+    return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes'),status:g('status')||'Active',producer:g('producer'),state:g('state'),nb:g('nb'),cdate:iso(g('cdate'),`policy ${i+1} cancel date`),cstatus:g('cstatus'),pid:g('pid'),extra:(()=>{try{return JSON.parse(g('extra')||'{}')}catch(_){return {}}})()}}).filter(p=>Object.entries(p).some(([k,v])=>k==='pid'||k==='status'?false:k==='extra'?Object.keys(v).length:v)).map(p=>{if(!Object.keys(p.extra).length)delete p.extra;return p});
+}
+const clIso=bad=>(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
+// Save in the policy pop-up writes the client's policies straight away (no Save client needed). If the client changed elsewhere, only this screen's policies are put into the latest copy.
+async function savePolicies(msg){if(!editClient)return toast('Policy added. Hit Save client to save the new client.');if(isLocked('client'))return toast('This client is view-only right now.');
+  const bad=[],pols=readPolicies(clIso(bad));if(bad.length)return toast(`Type ${bad.join(', ')} as MM/DD/YYYY, then save the policy again.`);
+  try{const fr=await clFresh()||{},same=(fr.rev||0)===clBaseRev,rev=(fr.rev||0)+1;let out=pols;
+    if(!same){const mine=new Map(pols.map(p=>[p.pid,p]));out=(fr.policies||[]).map(p=>mine.get(p.pid)||p);for(const p of pols)if(!out.some(o=>o.pid===p.pid))out.push(p)}
+    await clientsCol.doc(editClient.id).update({policies:out,rev});if(same)clBaseRev=rev;editClient.policies=out;toast(msg||'Policy saved')}catch(e){toast(errText(e))}}
 function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim()))polTr.remove();$('polDlg').classList.remove('on');polTr=null}
 $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#polBox [data-pp=${k}]`).value.trim();
   for(const k of PP){let v=g(k);if(k==='state'&&/^[a-z]{2}$/i.test(v))v=v.toUpperCase();if((k==='eff'||k==='exp'||k==='cdate')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
@@ -2065,7 +2077,7 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
   $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee||ex.other1||ex.other2)ex.total=$('ppTotal').value;{const t=$('ppTerm').value,u=$('ppUser').value.trim(),o1=$('ppOther1L').value.trim(),o2=$('ppOther2L').value.trim();if(t&&t!=='12')ex.term=t;if(u)ex.enteredBy=u;if(o1)ex.other1Label=o1;if(o2)ex.other2Label=o2}
   $('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.inv]=v});
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';showStatus(polTr.querySelector('[data-pstat]'),g('status'));
-  closePolicy(true);renderClInv()};
+  closePolicy(true);renderClInv();savePolicies()};
 // Total = premium + every fee box, kept up to date as you type
 function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):'';$('ppInvAmt').placeholder=$('ppTotal').value?`${$('ppTotal').value} (Total)`:'Same as Total'}
 $('ppFees').addEventListener('input',ppTotal);
@@ -2083,7 +2095,7 @@ $('ppEff').addEventListener('input',()=>setTimeout(()=>{if($('ppEff').value.leng
 $('ppStatusBtn').onclick=()=>{$('ppStatus').value=nextStatus($('ppStatus').value);showStatus($('ppStatusBtn'),$('ppStatus').value)};
 $('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click(); // top-right copies of the bottom buttons
 
-$('ppDel').onclick=async()=>{if(!(await sureDel('Remove this policy from the client? It’s gone once you save the client.')))return;if(polTr)polTr.remove();polTr=null;closePolicy(true)};
+$('ppDel').onclick=async()=>{if(!(await sureDel('Remove this policy from the client?')))return;if(polTr)polTr.remove();polTr=null;closePolicy(true);savePolicies('Policy removed')};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
 // right side of the policy pop-up: this policy's tasks, files and invoice
 const ppPid=()=>polTr?polTr.querySelector('[data-p=pid]').value:'';
@@ -2209,8 +2221,7 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
   if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
   data.since=iso($('clSince').value,'Client since');
-  data.policies=[...$('polRows').rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-p=${k}]`).value.trim();
-    return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes'),status:g('status')||'Active',producer:g('producer'),state:g('state'),nb:g('nb'),cdate:iso(g('cdate'),`policy ${i+1} cancel date`),cstatus:g('cstatus'),pid:g('pid'),extra:(()=>{try{return JSON.parse(g('extra')||'{}')}catch(_){return {}}})()}}).filter(p=>Object.entries(p).some(([k,v])=>k==='pid'||k==='status'?false:k==='extra'?Object.keys(v).length:v)).map(p=>{if(!Object.keys(p.extra).length)delete p.extra;return p});
+  data.policies=readPolicies(iso);
   if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(', ')} as MM/DD/YYYY.`;return}
   $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
   if(editClient){let fr=null;try{fr=await clFresh()}catch(_){}
