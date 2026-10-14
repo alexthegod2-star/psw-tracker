@@ -1,9 +1,9 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Pacific Southwest Insurance Services Database</title>
 <style>
-:root{--panel:#eef5ff;--drbg:#d5e5f9;--clcard:#c4d8f2;--cllabel:#0f2a4a;--clline:#adc6e8;--polbg:#dcf2e2;--polcard:#c8e8d1;--polline:#a9d6b6;--pollabel:#0f2e1c;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}}
-:root[data-theme="dark"]{--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}
+:root{--panel:#eef5ff;--drbg:#d5e5f9;--clcard:#c4d8f2;--cllabel:#0f2a4a;--clline:#adc6e8;--polbg:#dcf2e2;--taskbg:#efe7fb;--polcard:#c8e8d1;--polline:#a9d6b6;--pollabel:#0f2e1c;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--taskbg:#221a33;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}}
+:root[data-theme="dark"]{--panel:#171e27;--drbg:#0f141a;--clcard:#171e27;--cllabel:#e6ebf1;--clline:#2a3442;--polbg:#13261a;--taskbg:#221a33;--polcard:#1a3223;--polline:#2a4a35;--pollabel:#e6ebf1;--bg:#0f141a;--card:#171e27;--ink:#e6ebf1;--mute:#97a3b3;--line:#2a3442;--acc:#5b9cf2;--acc-ink:#0b1320;--soft:#1b2a3d;--bad:#f07167;--ok:#4cc38a;--chip:#222c39}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 .wrap{max-width:none;margin:0 auto;padding:20px 24px 60px}
@@ -100,7 +100,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 #txBox{width:min(520px,100%)}
 #clientBox label{color:var(--cllabel);font-size:13.5px}.siteGo,.siteEd{padding:1px 10px;font-size:12px;border-radius:999px;white-space:nowrap}.siteEd{padding:1px 7px}#clFiles{margin:0}#clFiles li{background:var(--card);gap:6px;padding:7px 9px}#clFiles .nm{flex:1 1 100%;white-space:normal;overflow-wrap:anywhere;font-weight:600}#clFiles .sz{margin-right:auto}#clFiles button{padding:2px 10px;font-size:12px}#clientBox .ppCard,#clientBox .clPerson{background:var(--clcard);border:1px solid var(--clline);border-radius:12px;padding:10px 12px}.clBiz{display:grid;gap:8px}#clPeople{display:grid;gap:12px}#clientBox{background:var(--drbg);width:95vw;max-width:100%;height:calc(100vh - 32px);max-height:calc(100vh - 32px);overflow-y:auto;padding:24px 28px}.clLay{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start;margin:10px 0 6px}.clMain{display:grid;gap:12px;min-width:0}.clg{display:grid;gap:8px 12px}.clg label{margin-bottom:2px}.clg.c2{grid-template-columns:1fr 1fr}.clg.c2b{grid-template-columns:2fr 1fr}.clg.c4{grid-template-columns:2fr 1.2fr .6fr .8fr}.clPerson{display:grid;gap:8px}.clFirstL{display:flex;align-items:center;gap:8px}.clFirstL button,.clPersonH button{padding:1px 10px;font-size:12px;border-radius:999px;white-space:nowrap}.clPersonH{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}.clMid{display:grid;gap:12px;min-width:0}.clInfo{display:grid;grid-template-columns:100px minmax(0,1fr);gap:6px 8px;align-items:center}.clInfo label{margin:0;font-size:12px}.clSrc{display:flex;gap:8px;align-items:center;min-width:0}.clSrc input{flex:1;min-width:0}.clSrc button{padding:1px 10px;font-size:12px;border-radius:999px;white-space:nowrap}#clInv li,#clTasks li{cursor:pointer}@media(max-width:1200px){.clLay{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.clSide{grid-column:1/-1;position:static}}@media(max-width:760px){.clLay{grid-template-columns:1fr}.clg.c4{grid-template-columns:1fr 1fr}}#clientBox>.row{justify-content:flex-end;margin-top:14px}#clientBox .grid{margin-top:8px}
 #polRows tr{cursor:pointer}#polRows tr:hover td{background:var(--soft)}#polRows input[readonly]{cursor:pointer;pointer-events:none;background:transparent;border-color:transparent;color:var(--ink)}#polRows .stbtn{pointer-events:none}.poltab input,.poltab select{width:100%;min-width:70px;padding:5px 6px}.poltab select,.poltab [data-p=line]{min-width:150px}.poltab td:last-child{white-space:nowrap}.poltab button{padding:5px 10px}
-.ppLay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start;margin-top:8px}.ppSide{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}.ppCard{background:#fff;border:1px solid #c9dccf;border-radius:12px;padding:10px 12px}.ppCardH{display:flex;align-items:center;gap:8px;margin-bottom:8px}.ppCardH h4{margin:0 auto 0 0;color:#2f5d3e}.ppCardH button{padding:3px 12px;font-size:12px;border-radius:999px}.ppCard .drop{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px;font-size:13px}.ppCard .drop input{max-width:100%;font-size:12px}.ppCard .files{margin:8px 0 0}.ppCard .files li{flex-wrap:wrap}#ppInv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 8px;align-items:center}#ppInv .ppCardH{grid-column:1/-1;margin-bottom:2px}#ppInv label{margin:0;font-size:12px}#ppInv input,#ppInv select{padding:6px 8px;font-size:13px}#ppTasks{margin:0;padding:0}#ppTasks li{cursor:pointer}@media(max-width:900px){.ppLay{grid-template-columns:1fr}.ppSide{position:static}}#taskDlg{z-index:12}#coDlg{z-index:13}.coGrid{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:8px 10px;align-items:center}.coGrid label{margin:0}.coGrid button{padding:4px 12px;font-size:13px}
+.ppLay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start;margin-top:8px}.ppSide{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}.ppCard{background:#fff;border:1px solid #c9dccf;border-radius:12px;padding:10px 12px}.ppCardH{display:flex;align-items:center;gap:8px;margin-bottom:8px}.ppCardH h4{margin:0 auto 0 0;color:#2f5d3e}.ppCardH button{padding:3px 12px;font-size:12px;border-radius:999px}.ppCard .drop{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px;font-size:13px}.ppCard .drop input{max-width:100%;font-size:12px}.ppCard .files{margin:8px 0 0}.ppCard .files li{flex-wrap:wrap}.clPolPick{flex-basis:100%;padding:4px 8px;font-size:12px}#ppInv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 8px;align-items:center}#ppInv .ppCardH{grid-column:1/-1;margin-bottom:2px}#ppInv label{margin:0;font-size:12px}#ppInv input,#ppInv select{padding:6px 8px;font-size:13px}#ppTasks{margin:0;padding:0}#ppTasks li{cursor:pointer}@media(max-width:900px){.ppLay{grid-template-columns:1fr}.ppSide{position:static}}#taskDlg{z-index:12}#coDlg{z-index:13}.coGrid{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:8px 10px;align-items:center}.coGrid label{margin:0}.coGrid button{padding:4px 12px;font-size:13px}
 .coGrid{max-width:560px}
 .coGrid [hidden]{display:none!important}
 #coBox .coCon input{min-width:0}
@@ -123,7 +123,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .bchk{display:flex;gap:8px;align-items:center;padding-top:20px}.bchk input{width:auto;flex:none;margin:0;accent-color:var(--ok)}.bchk label{margin:0;font-size:14px;color:var(--ink);font-weight:400;cursor:pointer}
 .bcalc{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:12px;background:var(--soft);border-radius:10px;padding:10px}.bcalc span{display:block;font-size:11px;color:var(--mute)}.bcalc b{font-variant-numeric:tabular-nums}
 #bpBox{width:min(640px,100%)}#bpBox textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:12px}#bpBox .row{margin-top:10px}#bpBox .row select,#bpBox .row input{width:auto}
-#taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
+#taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;background:var(--taskbg)}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
 .msg{font-size:13px;margin-top:6px}
 .msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
 .confirm{display:none;background:var(--soft);border:1px solid var(--bad);border-radius:10px;padding:10px;margin-top:8px}
@@ -403,11 +403,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
         <ul class="log" id="clNoteLog" style="margin:0"></ul></section>
     </div>
     <aside class="ppSide clSide">
-      <section class="ppCard"><div class="ppCardH"><h4>Dropbox</h4></div>
-        <div class="drop" id="clUpRow"><span style="font-weight:600">Drop files here, or</span><input type="file" id="clFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*"></div></section>
       <section class="ppCard"><div class="ppCardH"><h4>Tasks</h4><button type="button" class="pri" id="clTaskAdd">+ Add task</button></div>
         <ul class="tasks" id="clTasks"></ul><div class="small" id="clTasksNone">No tasks for this client yet.</div></section>
-      <section class="ppCard"><div class="ppCardH"><h4>Files</h4></div>
+      <section class="ppCard"><div class="ppCardH"><h4>Files</h4><button type="button" class="pri" id="clFileAdd">+ Add file</button></div>
+        <div class="drop" id="clUpRow"><span style="font-weight:600">Drop files here, or</span><input type="file" id="clFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*"></div>
         <ul class="files" id="clFiles"></ul></section>
       <section class="ppCard"><div class="ppCardH"><h4>Invoice</h4></div>
         <ul class="tasks" id="clInv"></ul><div class="small" id="clInvNone">No invoices yet. Open a policy to make one.</div></section>
@@ -458,7 +457,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
-  <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Done</button></div>
+  <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Save</button></div>
   <div class="ppLay">
   <div class="ppCol">
     <section class="ppCard ppInfo">
@@ -498,11 +497,11 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div></section>
   </div>
   <aside class="ppSide">
-    <section class="ppCard"><div class="ppCardH"><h4>Dropbox</h4></div>
+    <section class="ppCard"><div class="ppCardH"><h4>Files</h4><button type="button" class="pri" id="ppFileAdd">+ Add file</button></div>
       <div class="drop" id="ppUpRow"><span style="font-weight:600">Drop files here, or</span><input type="file" id="ppFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*"></div>
       <ul class="files" id="ppFiles"></ul>
-      <div class="msg" id="ppMsg"></div>
-      <div class="small" style="margin:10px 0 4px;font-weight:600">Fill this policy from a document</div>
+      <div class="msg" id="ppMsg"></div></section>
+    <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
       <div class="drop" id="ppReadRow"><span style="font-weight:600">Drop a quote sheet, dec page or binder here to fill this policy, or</span><input type="file" id="ppReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*" style="flex:1"></div>
       <div class="msg" id="ppReadMsg"></div></section>
     <section class="ppCard"><div class="ppCardH"><h4>Tasks</h4><button type="button" class="pri" id="ppTaskAdd">+ Add task</button></div>
@@ -520,7 +519,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </aside>
   <div id="ppExtraWrap" hidden><h4 id="ppExtraH" style="margin:0"></h4><div class="grid" id="ppExtra"></div></div></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
-  <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Done</button></div>
+  <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Save</button></div>
 </div></div>
 <div class="mbg" id="binDlg" role="dialog" aria-modal="true" aria-labelledby="binTitleH"><div class="mbox" id="binBox">
   <h3 id="binTitleH">Add sale</h3>
@@ -2019,9 +2018,9 @@ const polRow=p=>{p=p||{};const tr=document.createElement('tr');
   $('polRows').appendChild(tr)};
 $('polAdd').onclick=()=>{let r=$('polRows').lastElementChild;if(!r||[...r.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim())){polRow();r=$('polRows').lastElementChild}openPolicy(r,true)}; // a blank row is reused
 // the policy line is display only: a click anywhere on it (except ✕) opens the policy pop-up
-$('polRows').addEventListener('click',e=>{if(e.target.closest('[data-prenew]')){renewPolicy(e.target.closest('tr'));return}const b=e.target.closest('[data-prm]');if(b){const tr=b.closest('tr'),ln=tr.querySelector('[data-p=line]');sureDel(`Remove this ${ln&&ln.value.trim()?ln.value.trim()+' policy':'policy'} from the client? It’s gone once you save the client.`).then(y=>{if(y)tr.remove()});return}const tr=e.target.closest('tr');if(!tr)return;
+$('polRows').addEventListener('click',e=>{if(e.target.closest('[data-prenew]')){renewPolicy(e.target.closest('tr'));return}const b=e.target.closest('[data-prm]');if(b){const tr=b.closest('tr'),ln=tr.querySelector('[data-p=line]');sureDel(`Remove this ${ln&&ln.value.trim()?ln.value.trim()+' policy':'policy'} from the client?`).then(y=>{if(y){tr.remove();renderClInv();reClFiles();savePolicies('Policy removed')}});return}const tr=e.target.closest('tr');if(!tr)return;
   openPolicy(tr,![...tr.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim()))});
-// policy pop-up: edits one row of the client's policy table (kept in the row until Save client)
+// policy pop-up: edits one row of the client's policy table; Save writes the client's policies right away
 let polTr=null,polNew=false;const PP=['line','carrier','company','number','premium','tag','eff','exp','notes','status','producer','state','nb','cdate','cstatus'];
 // each line of business adds its own basic fields to the pop-up (kept with the policy as "extra"); a's' field is a bigger box
 const LOB_FIELDS={
@@ -2058,6 +2057,18 @@ function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;{const cur=tr.querySelecto
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   siteBtns();$('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
+// the client's policy lines as saved (iso turns a typed date into YYYY-MM-DD and notes the bad ones)
+function readPolicies(iso){
+  return [...$('polRows').rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-p=${k}]`).value.trim();
+    return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes'),status:g('status')||'Active',producer:g('producer'),state:g('state'),nb:g('nb'),cdate:iso(g('cdate'),`policy ${i+1} cancel date`),cstatus:g('cstatus'),pid:g('pid'),extra:(()=>{try{return JSON.parse(g('extra')||'{}')}catch(_){return {}}})()}}).filter(p=>Object.entries(p).some(([k,v])=>k==='pid'||k==='status'?false:k==='extra'?Object.keys(v).length:v)).map(p=>{if(!Object.keys(p.extra).length)delete p.extra;return p});
+}
+const clIso=bad=>(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
+// Save in the policy pop-up writes the client's policies straight away (no Save client needed). If the client changed elsewhere, only this screen's policies are put into the latest copy.
+async function savePolicies(msg){if(!editClient)return toast('Policy added. Hit Save client to save the new client.');if(isLocked('client'))return toast('This client is view-only right now.');
+  const bad=[],pols=readPolicies(clIso(bad));if(bad.length)return toast(`Type ${bad.join(', ')} as MM/DD/YYYY, then save the policy again.`);
+  try{const fr=await clFresh()||{},same=(fr.rev||0)===clBaseRev,rev=(fr.rev||0)+1;let out=pols;
+    if(!same){const mine=new Map(pols.map(p=>[p.pid,p]));out=(fr.policies||[]).map(p=>mine.get(p.pid)||p);for(const p of pols)if(!out.some(o=>o.pid===p.pid))out.push(p)}
+    await clientsCol.doc(editClient.id).update({policies:out,rev});if(same)clBaseRev=rev;editClient.policies=out;toast(msg||'Policy saved')}catch(e){toast(errText(e))}}
 function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim()))polTr.remove();$('polDlg').classList.remove('on');polTr=null}
 $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#polBox [data-pp=${k}]`).value.trim();
   for(const k of PP){let v=g(k);if(k==='state'&&/^[a-z]{2}$/i.test(v))v=v.toUpperCase();if((k==='eff'||k==='exp'||k==='cdate')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
@@ -2065,7 +2076,7 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
   $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee||ex.other1||ex.other2)ex.total=$('ppTotal').value;{const t=$('ppTerm').value,u=$('ppUser').value.trim(),o1=$('ppOther1L').value.trim(),o2=$('ppOther2L').value.trim();if(t&&t!=='12')ex.term=t;if(u)ex.enteredBy=u;if(o1)ex.other1Label=o1;if(o2)ex.other2Label=o2}
   $('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.inv]=v});
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';showStatus(polTr.querySelector('[data-pstat]'),g('status'));
-  closePolicy(true);renderClInv()};
+  closePolicy(true);renderClInv();reClFiles();savePolicies()};
 // Total = premium + every fee box, kept up to date as you type
 function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):'';$('ppInvAmt').placeholder=$('ppTotal').value?`${$('ppTotal').value} (Total)`:'Same as Total'}
 $('ppFees').addEventListener('input',ppTotal);
@@ -2083,7 +2094,7 @@ $('ppEff').addEventListener('input',()=>setTimeout(()=>{if($('ppEff').value.leng
 $('ppStatusBtn').onclick=()=>{$('ppStatus').value=nextStatus($('ppStatus').value);showStatus($('ppStatusBtn'),$('ppStatus').value)};
 $('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click(); // top-right copies of the bottom buttons
 
-$('ppDel').onclick=async()=>{if(!(await sureDel('Remove this policy from the client? It’s gone once you save the client.')))return;if(polTr)polTr.remove();polTr=null;closePolicy(true)};
+$('ppDel').onclick=async()=>{if(!(await sureDel('Remove this policy from the client?')))return;if(polTr)polTr.remove();polTr=null;closePolicy(true);reClFiles();savePolicies('Policy removed')};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
 // right side of the policy pop-up: this policy's tasks, files and invoice
 const ppPid=()=>polTr?polTr.querySelector('[data-p=pid]').value:'';
@@ -2209,8 +2220,7 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
   if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
   data.since=iso($('clSince').value,'Client since');
-  data.policies=[...$('polRows').rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-p=${k}]`).value.trim();
-    return {line:g('line'),carrier:g('carrier'),company:g('company'),number:g('number'),eff:iso(g('eff'),`policy ${i+1} eff date`),exp:iso(g('exp'),`policy ${i+1} exp date`),premium:g('premium')?fmtMoney(g('premium')):'',tag:g('tag'),notes:g('notes'),status:g('status')||'Active',producer:g('producer'),state:g('state'),nb:g('nb'),cdate:iso(g('cdate'),`policy ${i+1} cancel date`),cstatus:g('cstatus'),pid:g('pid'),extra:(()=>{try{return JSON.parse(g('extra')||'{}')}catch(_){return {}}})()}}).filter(p=>Object.entries(p).some(([k,v])=>k==='pid'||k==='status'?false:k==='extra'?Object.keys(v).length:v)).map(p=>{if(!Object.keys(p.extra).length)delete p.extra;return p});
+  data.policies=readPolicies(iso);
   if(bad.length){m.className='msg err';m.textContent=`Type ${bad.join(', ')} as MM/DD/YYYY.`;return}
   $('clSave').disabled=true;m.className='msg';m.textContent='Saving…';
   if(editClient){let fr=null;try{fr=await clFresh()}catch(_){}
@@ -2233,17 +2243,17 @@ async function addClientFiles(list,pid){if(!assets)return;const m=pid?$('ppMsg')
       if(editClient){const files=[...(editClient.files||[]),entry];await clientsCol.doc(editClient.id).update({files});editClient.files=files;renderClFiles(editClient)}
       else{clPending.push(entry);renderClFiles({files:clPending})}
       if(pid)renderPpFiles();
-      m.className='msg ok';m.textContent=pid?`Added ${f.name} to this policy and the client's files. Click Done, then Save client.`:`Added ${f.name}.`}
+      m.className='msg ok';m.textContent=pid?`Added ${f.name} to this policy and the client's files.`:`Added ${f.name}.`}
     catch(e){m.className='msg err';m.textContent=`${f.name}: ${errText(e)}`}}}
-$('clFileIn').onchange=()=>{const list=[...$('clFileIn').files];$('clFileIn').value='';addClientFiles(list)};
+$('clFileAdd').onclick=()=>$('clFileIn').click();$('clFileIn').onchange=()=>{const list=[...$('clFileIn').files];$('clFileIn').value='';addClientFiles(list)};
 {const fz=$('clUpRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
  fz.addEventListener('drop',e=>addClientFiles([...(e.dataTransfer.files||[])]))}
 // policy files: dropped in the policy pop-up, stored with the client (tagged to the policy) so they show in both places
 const clFileList=()=>editClient?(editClient.files||[]):clPending;
-function renderPpFiles(){const pid=polTr&&polTr.querySelector('[data-p=pid]').value,fs=clFileList().filter(f=>pid&&f.pid===pid);$('ppUpRow').hidden=!assets;
-  $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button></li>`).join('')}
-$('ppFileIn').onchange=()=>{const list=[...$('ppFileIn').files];$('ppFileIn').value='';if(polTr)addClientFiles(list,polTr.querySelector('[data-p=pid]').value)};
+function renderPpFiles(){const pid=polTr&&polTr.querySelector('[data-p=pid]').value,fs=clFileList().filter(f=>pid&&f.pid===pid);$('ppUpRow').hidden=!assets;$('ppFileAdd').hidden=!assets;
+  $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-prmf="${esc(f.id)}">Remove</button>`:''}</li>`).join('')||'<li class="small" style="border:none;padding:0">No files for this policy yet.</li>'}
+$('ppFileAdd').onclick=()=>$('ppFileIn').click();$('ppFileIn').onchange=()=>{const list=[...$('ppFileIn').files];$('ppFileIn').value='';if(polTr)addClientFiles(list,polTr.querySelector('[data-p=pid]').value)};
 /* ---------- policy pop-up: drop a quote sheet, dec page or binder to fill the policy ---------- */
 // our own personal auto quote sheet is read straight from its form boxes; anything else goes to Claude (when the server has it turned on)
 const PP_FEES={policyFee:'Policy fee',gaFee:'GA fee',tax:'Tax',stamping:'Stamping',filingFee:'State filing fee',pswFee:'PSW agency fee'};
@@ -2300,17 +2310,26 @@ $('ppReadIn').onchange=()=>{const f=$('ppReadIn').files[0];$('ppReadIn').value='
 {const fz=$('ppUpRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
  fz.addEventListener('drop',e=>{if(polTr)addClientFiles([...(e.dataTransfer.files||[])],polTr.querySelector('[data-p=pid]').value)})}
-$('ppFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.popen||b.dataset.psave,f=clFileList().find(x=>x.id===id);if(!f)return;
-  try{const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
+$('ppFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.popen||b.dataset.psave||b.dataset.prmf,f=clFileList().find(x=>x.id===id);if(!f)return;
+  try{if(b.dataset.prmf){if(!(await sureDel(`Delete the file ${f.name}? It comes off this policy and the client. This can’t be undone.`)))return;await dropClFile(id);return}
+    const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
     if(b.dataset.psave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
     else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
   catch(err){$('ppMsg').className='msg err';$('ppMsg').textContent=`${f.name}: ${errText(err)}`}});
-function renderClFiles(c){const fs=(c&&c.files)||[];$('clUpRow').hidden=!assets;
-  const pl=pid=>{const tr=[...$('polRows').rows].find(t=>t.querySelector('[data-p=pid]').value===pid);return tr?(tr.querySelector('[data-p=line]').value.trim()||'policy'):''};
-  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}${f.pid&&pl(f.pid)?` <span class="chip">${esc(pl(f.pid))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Drop them in the Dropbox above, or in a policy.</li>'}
+function renderClFiles(c){const fs=(c&&c.files)||[];$('clUpRow').hidden=!assets;$('clFileAdd').hidden=!assets;
+  const pols=[...$('polRows').rows].map(t=>{const v=k=>t.querySelector(`[data-p=${k}]`).value.trim();return['line','number','carrier','company'].some(v)&&{pid:v('pid'),name:[v('line')||'Policy',v('number'),v('eff')].filter(Boolean).join(' · ')}}).filter(Boolean);
+  const pick=f=>`<select class="clPolPick" data-clpol="${esc(f.id)}" title="Which policy this file belongs to"><option value="">${f.pid&&pols.some(p=>p.pid===f.pid)?'No policy (client only)':'Assign to policy…'}</option>${pols.map(p=>`<option value="${esc(p.pid)}"${p.pid===f.pid?' selected':''}>${esc(p.name)}</option>`).join('')}</select>`;
+  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}${pols.length?pick(f):''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use + Add file or drop them above, or add them in a policy.</li>'}
+const reClFiles=()=>renderClFiles(editClient||{files:clPending});
+// a client file's list changed: save it (or keep it pending on a new client) and redraw both lists
+async function putClFiles(files){if(editClient){await clientsCol.doc(editClient.id).update({files});editClient.files=files}else clPending.splice(0,clPending.length,...files);reClFiles();if(polTr)renderPpFiles()}
+async function dropClFile(id){const m=polTr?$('ppMsg'):$('clientMsg');try{await putClFiles(clFileList().filter(x=>x.id!==id));if(editClient)try{await assets.delete(id)}catch(_){}}catch(e){m.className='msg err';m.textContent=errText(e)}}
+$('clFiles').addEventListener('change',async e=>{const sel=e.target.closest('[data-clpol]');if(!sel)return;if(isLocked('client')){reClFiles();return toast('This client is view-only right now.')}
+  const id=sel.dataset.clpol,pid=sel.value,files=clFileList().map(x=>x.id!==id?x:(({pid:_,...r})=>pid?{...r,pid}:r)(x));
+  try{await putClFiles(files);const pn=sel.selectedOptions[0];toast(pid?`File moved to ${pn?pn.textContent:'the policy'}`:'File is now client only')}catch(err){toast(errText(err));reClFiles()}});
 $('clFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.clopen||b.dataset.clsave||b.dataset.clrm,f=(editClient.files||[]).find(x=>x.id===id);if(!f)return;
   try{if(b.dataset.clrm){if(!(await sureDel(`Delete the file ${f.name} from this client? This can’t be undone.`)))return;
-      const files=(editClient.files||[]).filter(x=>x.id!==id);await clientsCol.doc(editClient.id).update({files});editClient.files=files;renderClFiles(editClient);try{await assets.delete(id)}catch(_){}return}
+      await dropClFile(id);return}
     const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
     if(b.dataset.clsave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
     else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
