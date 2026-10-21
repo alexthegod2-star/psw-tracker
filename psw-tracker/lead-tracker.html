@@ -933,7 +933,7 @@ async function basicSheets(n,which,f){if(!n)return '';f=f||{};
   const wantA=which==='auto'||which==='both'||(which==='detect'&&hasAuto(f.auto)),wantQ=which==='quote'||which==='both'||(which==='detect'&&!(wantA&&f.autoOnly));
   const as=wantA?await makeAutoSheet(f.auto||null,true):'';return (wantQ?await makeQuoteSheet(f.quote||null):'')+as}
 // basic (no Claude) read: labeled web-form answers first, then the simple patterns
-function basicRead(text){const f=formFill(text)||rowFill(text),o=regexFill(text);if(f)for(const [k,v] of Object.entries(f.lead))if(v)o[k]=v;return {lead:o,f}}
+function basicRead(text){const f=formFill(text)||inlineFill(text)||rowFill(text),o=regexFill(text);if(f)for(const [k,v] of Object.entries(f.lead))if(v)o[k]=v;return {lead:o,f}}
 // Build "<client> com auto quote sheet.pdf" from what was pasted (now if saved, else on Save)
 async function makeAutoSheet(q,force){
   if(!assets)return '';if(!q||typeof q!=='object'){if(!force)return '';q={}}
@@ -1087,8 +1087,14 @@ function formFill(t){
     if(/address/i.test(label))for(let j=i+1;j<L.length&&L[j].trim()&&!ind(L[j]);j++){const x=L[j].trim();if(!/^(united states|usa|map it)$/i.test(x))v+=', '+x}
     // more answers under the same label (bullet lists)
     const prev=pairs.length&&pairs[pairs.length-1];if(prev&&prev.i===k)prev.v+=', '+v;else pairs.push({label,v,i:k})}
-  if(pairs.length<3)return null;
-  const lead={},quote={},auto={},seek=[];let biz='',drv=1,veh=1;
+  return pairs.length<3?null:pairsFill(pairs)}
+// copied web-page lead ("Name Jane Doe", "Business Name Up LLC": label and answer on one line, maybe tab-separated): no Claude needed
+const INLINE_LABELS=['Business Name','Business Description','Business Address','Mailing Address','Requested Coverage','Legal Entity','Years in Business','Annual Revenue','Number of Employees','First Name','Last Name','Company Name','Company','DBA','Name','Phone','Email','Type','Address','SIC','NAICS'];
+function inlineFill(t){const pairs=[],re=new RegExp('^('+INLINE_LABELS.join('|')+')\\s*:?\\s+(\\S.*)$','i');
+  for(const seg of String(t||'').replace(/\r/g,'').split(/[\n\t]+/)){const m=re.exec(seg.trim());if(m)pairs.push({label:m[1],v:m[2].trim()})}
+  return pairs.length<3?null:pairsFill(pairs)}
+function pairsFill(pairs){
+  const lead={},quote={},auto={},seek=[],more=[];let biz='',drv=1,veh=1;
   const yn=v=>/^(y|yes)\b/i.test(v)?'Yes':/^(n|no)\b/i.test(v)?'No':v,num=(l,d)=>{const m=l.match(/#\s*(\d+)/);return m?+m[1]:d};
   const dmy=v=>{const m=v.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/);return m?`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3].length===2?'19'+m[3]:m[3]}`:v};
   const ent=v=>/llc|limited liability/i.test(v)?'LLC':/corp|inc\b/i.test(v)?'Corporation':/partner/i.test(v)?'Partnership':/individual|sole/i.test(v)?'Individual':v;
@@ -1104,9 +1110,15 @@ function formFill(t){
       else{const vin=v.match(/\b[A-HJ-NPR-Z0-9]{17}\b/i);if(vin)auto[k+'vin']=vin[0].toUpperCase();const rest=v.replace(vin?vin[0]:'','').trim();
         const m=rest.match(/^((?:19|20)\d\d)\s+(\S+)\s*(.*)$/);if(m){auto[k+'year']=m[1];auto[k+'make']=m[2];if(m[3])auto[k+'model']=m[3]}}
       continue}
+    if(/^first name$/i.test(l)){lead.firstName=quote.contact_first=auto.owner_first=v;continue}
+    if(/^last name$/i.test(l)){lead.lastName=quote.contact_last=auto.owner_last=v;continue}
+    if(/^(lead )?type$/i.test(l)){const lt=LEAD_TYPES.find(x=>x.toLowerCase()===v.toLowerCase());if(lt)lead.leadType=lt;continue}
+    if(/^(sic|naics)$/i.test(l)){more.push(l.toUpperCase()+' '+v);continue}
+    if(/requested coverage/i.test(l)){quote.line_of_business=v;seek.push(...v.split(/,\s*/));continue}
+    if(/years? in business/i.test(l)){const y=parseInt(v,10);if(y>=0&&y<200){quote.year_started=auto.year_started=String(new Date().getFullYear()-y);quote.years_experience=String(y)}continue}
     if(/^(full |your |contact )?name$/i.test(l)){const p=v.split(/\s+/);lead.firstName=p[0];lead.lastName=p.slice(1).join(' ');quote.contact_first=lead.firstName;quote.contact_last=lead.lastName;auto.owner_first=lead.firstName;auto.owner_last=lead.lastName;auto.contact_name=v}
     else if(/business name|dba|company/i.test(l)){lead.company=v;quote.client_name=auto.client_name=v}
-    else if(/address/i.test(l)){quote.mailing_address=auto.mailing_address=auto.garaging_address=v}
+    else if(/address/i.test(l)){quote.mailing_address=auto.mailing_address=auto.garaging_address=v;if(/business/i.test(l))quote.property_address=v}
     else if(/e-?mail/i.test(l)){lead.email=quote.email=auto.email=v}
     else if(/phone/i.test(l)){lead.phone=quote.phone=auto.phone=v}
     else if(/structure|entity/i.test(l))quote.entity_type=auto.entity_type=ent(v);
@@ -1120,6 +1132,7 @@ function formFill(t){
     else if(/claims|losses/i.test(l))quote.claims=auto.claims=v}
   if(biz){quote.description=quote.description?`${biz}: ${quote.description}`:biz;auto.description=quote.description;
     const lt=LEAD_TYPES.find(x=>x.toLowerCase()===biz.toLowerCase());if(lt)lead.leadType=lt}
+  if(more.length)quote.detailed_description=[quote.detailed_description,more.join(', ')].filter(Boolean).join('\n');
   if(!lead.leadType&&(lead.company||quote.description))lead.leadType='Commercial';
   return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
 }
