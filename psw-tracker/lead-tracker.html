@@ -253,7 +253,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <h3 style="display:flex;align-items:center;gap:10px">Lead info <button type="button" class="pri" id="copyClient" style="padding:3px 12px;font-size:12px;font-weight:600;border-radius:999px">Copy to PSW Client</button></h3>
       <div class="grid">
         <div><label for="leadDate">Date of lead</label><input id="leadDate" type="date"></div>
-        <div><label for="leadSource">Lead source</label><input id="leadSource" list="sourceList" placeholder="Pick or type a source"></div>
+        <div><label for="leadSource">Lead source</label><div class="clSrc"><input id="leadSource" list="sourceList" placeholder="Pick or type a source"><button type="button" class="pri" id="ldAddSource">+ Add source</button></div></div>
         <div class="full"><label for="assignedTo">Assigned to</label><input id="assignedTo" list="assignList" placeholder="Pick an agent"></div>
         <div><label for="firstName">First name</label><input id="firstName"></div>
         <div><label for="lastName">Last name</label><input id="lastName"></div>
@@ -2065,16 +2065,16 @@ $('lobList').innerHTML=LOBS.map(x=>`<option value="${esc(x)}">`).join('');
 const COMPANIES=['Kemper','Progressive','Bristol West','Mercury/SmartChoice','Aspire','Safeway','Crum and Forster','Richmond National','Ategrity','Bamboo/Incline Casualty','Lightspeed'].sort((a,b)=>a.localeCompare(b));
 const GAS=['N/A','Greenwood General','Baker and Bonds','Burns and Wilcox'].sort((a,b)=>a.localeCompare(b));
 // "+ Add company" / "+ Add GA" save a name to a shared list (everyone sees it in that dropdown), kept A-Z with the built-in names
-function addableList(list,listId,colName,btn,box,what){const base=[...list],col=db.collection(colName),fill=()=>{$(listId).innerHTML=list.map(x=>`<option value="${esc(x)}">`).join('')};fill();
+function addableList(list,listId,colName,btn,box,what,more=[]){const base=[...list],col=db.collection(colName),fill=()=>{$(listId).innerHTML=list.map(x=>`<option value="${esc(x)}">`).join('')};fill();
   col.onSnapshot(s=>{const m=new Map(base.map(x=>[x.toLowerCase(),x]));s.docs.forEach(d=>{const n=String(d.data().name||'').trim();if(n&&!m.has(n.toLowerCase()))m.set(n.toLowerCase(),n)});
     list.splice(0,list.length,...[...m.values()].sort((a,b)=>a.localeCompare(b)));fill()},()=>{});
-  $(btn).onclick=async()=>{const n=(prompt(`New ${what} to add to the list:`,$(box).value.trim())||'').trim();if(!n)return;
-    const have=list.find(x=>x.toLowerCase()===n.toLowerCase());if(have){$(box).value=have;toast(have+' is already in the list');return}
-    try{await col.add({name:n,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});$(box).value=n;toast(`Added ${n} to the ${what} list`)}catch(e){toast(errText(e))}}}
+  for(const [b,x] of [[btn,box],...more])$(b).onclick=async()=>{const n=(prompt(`New ${what} to add to the list:`,$(x).value.trim())||'').trim();if(!n)return;
+    const have=list.find(y=>y.toLowerCase()===n.toLowerCase());if(have){$(x).value=have;toast(have+' is already in the list');return}
+    try{await col.add({name:n,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});$(x).value=n;toast(`Added ${n} to the ${what} list`)}catch(e){toast(errText(e))}}}
 addableList(COMPANIES,'coList','companies','ppAddCo','ppCompany','company');
 addableList(GAS,'gaList','generalAgents','ppAddGa','ppCarrier','general agent');
 addableList(LOBS,'lobList','linesOfBusiness','ppAddLine','ppLine','line of business');
-addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','lead source');
+addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','lead source',[['ldAddSource','leadSource']]);
 // company / GA info: "Open" (once one is picked) shows a pop-up with agency code, login, phone, website and contact, shared with everyone
 const siteCol=db.collection('siteLinks'),sites=new Map(),siteKey=(kind,n)=>kind+':'+n.trim().toLowerCase();
 const siteFix=u=>{u=u.trim();return !u?'':/^https?:\/\//i.test(u)?u:'https://'+u};
