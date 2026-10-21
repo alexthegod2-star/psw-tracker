@@ -318,7 +318,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
   </div><div class="dbR">
     <div class="sec" id="contactSec">
-      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button><button type="button" class="tgl" id="deadTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="deadTxt">Not dead</span></button></h3>
+      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" title="Click to change: Not sold, Sold, Dead"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button></h3>
       <div class="grid">
         <div><label for="cAt">Date / time</label><input id="cAt" type="datetime-local"></div>
         <div><label for="cHow">How contacted</label>
@@ -704,11 +704,12 @@ function azSort(el){const os=[...el.querySelectorAll('option')];if(os.length<3)r
   run();document.querySelectorAll('datalist').forEach(d=>mo.observe(d,{childList:true}));AZ_SELECTS.forEach(id=>{const el=$(id);if(el)mo.observe(el,{childList:true})})}
 $('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):view==='clients'?openClient(null,{}):view==='binder'?openBin(null,{month:monKey(new Date())}):openLead(null);
 
+// one button cycles the lead's outcome: Not sold -> Sold -> Dead -> Not sold
+const saleState=l=>l&&l.dead===true?'dead':l&&l.sold===true?'sold':'not',SALE_TXT={not:'Not sold',sold:'Sold',dead:'Dead'},SALE_NEXT={not:'sold',sold:'dead',dead:'not'};
 function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact';
-  const so=!!(cur&&cur.sold===true),st=$('soldTgl');st.setAttribute('aria-checked',so);st.firstChild.className='cdot '+(so?'yes':'no');$('soldTxt').textContent=so?'Sold':'Not sold';
-  const dd=!!(cur&&cur.dead===true),dt=$('deadTgl');dt.setAttribute('aria-checked',dd);dt.firstChild.className='cdot '+(dd?'dead':'no');$('deadTxt').textContent=dd?'Dead':'Not dead'}
-$('soldTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=cur.sold!==true;try{await leadsCol.doc(cur.id).update({sold:on});cur.sold=on;showMade();toast(on?'Marked sold':'Marked not sold')}catch(e){toast(errText(e))}};
-$('deadTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=cur.dead!==true;try{await leadsCol.doc(cur.id).update({dead:on});cur.dead=on;showMade();toast(on?'Marked dead':'Marked not dead')}catch(e){toast(errText(e))}};
+  const st=saleState(cur);$('soldTgl').firstChild.className='cdot '+(st==='dead'?'dead':st==='sold'?'yes':'no');$('soldTxt').textContent=SALE_TXT[st]}
+$('soldTgl').onclick=async()=>{if(!(await ensureSaved()))return;const nx=SALE_NEXT[saleState(cur)],up={sold:nx==='sold',dead:nx==='dead'};
+  try{await leadsCol.doc(cur.id).update(up);Object.assign(cur,up);showMade();toast('Marked '+SALE_TXT[nx].toLowerCase())}catch(e){toast(errText(e))}};
 $('madeTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=!made(cur);try{await leadsCol.doc(cur.id).update({contactMade:on});cur.contactMade=on;showMade()}catch(e){toast(errText(e))}};
 function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').value=fmtDT(cur&&cur.lastContacted)}
 function openLead(l){
