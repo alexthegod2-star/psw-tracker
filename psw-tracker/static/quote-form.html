@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Quote Information | Pacific Southwest Insurance Services</title>
+<style>
+:root{--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#d3dbe6;--acc:#1f5fbf;--ok:#137a3f;--bad:#b42318;--soft:#eaf1fb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Helvetica,Arial,sans-serif}
+header{background:#fff;border-bottom:3px solid #1b2a5c;padding:14px 16px;text-align:center}
+header img{height:46px;vertical-align:middle}
+header h1{font-size:16px;letter-spacing:.04em;margin:6px 0 0;color:#1b2a5c}
+main{max-width:760px;margin:0 auto;padding:16px}
+.intro,.sec{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.intro p{margin:0 0 6px}.intro p:last-child{margin:0}
+.sec h2{font-size:15px;margin:0 0 12px;color:#1b2a5c}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}.f.wide{grid-column:1/-1}
+label,.lbl{font-size:13px;font-weight:600;color:#33445a}
+input,textarea,select{font:inherit;color:inherit;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fff}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--acc);outline-offset:0;border-color:var(--acc)}
+textarea{min-height:80px;resize:vertical}
+.radios{display:flex;flex-wrap:wrap;gap:8px}
+.radios label{font-weight:400;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;background:#fff}
+.radios input{width:auto;margin:0}
+.empty input:not([type=radio]),.empty textarea,.empty select{background:#fffbea;border-color:#e8d58a}
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 22px;background:var(--acc);color:#fff;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+.msg{font-size:14px}.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+.small{font-size:13px;color:var(--mute)}
+.done{text-align:center;padding:30px 16px}.done h2{color:var(--ok);margin:0 0 8px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><img src="/psw-logo.png" alt="Pacific Southwest Insurance Services"><h1>QUOTE INFORMATION</h1></header>
+<main id="app"><div class="intro"><p>Loading…</p></div></main>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tok=decodeURIComponent(location.pathname.split('/').pop()||'');
+const OFFICE='(818) 701-1033';
+const gone=code=>`<div class="intro done"><h2>${code==='submitted'?'Thank you, we already have your answers.':code==='expired'?'This link has expired.':'This link isn’t valid.'}</h2><p class="small">Questions? Call us at <a href="tel:8187011033">${OFFICE}</a>.</p></div>`;
+function field(f,v){const id='q_'+f.k,val=v[f.k]||'',cls='f'+(f.wide||f.type==='area'?' wide':'')+(val?'':' empty');
+  if(f.type==='radio')return `<div class="${cls}"><span class="lbl">${esc(f.label)}</span><div class="radios">${f.opts.map(o=>`<label><input type="radio" name="${id}" value="${esc(o)}"${o.toLowerCase()===val.toLowerCase()?' checked':''}>${esc(o)}</label>`).join('')}</div></div>`;
+  if(f.type==='select')return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><select id="${id}"><option value=""></option>${f.opts.map(o=>`<option${o.toLowerCase()===val.toLowerCase()?' selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+  if(f.type==='area')return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(val)}</textarea></div>`;
+  return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><input id="${id}" value="${esc(val)}"${/email/i.test(f.k)?' type="email"':/phone/i.test(f.k)?' type="tel"':''}></div>`}
+function read(form){const a={};for(const s of form)for(const f of s.fields){const id='q_'+f.k;let v='';
+  if(f.type==='radio'){const r=document.querySelector(`input[name="${id}"]:checked`);v=r?r.value:''}else v=$(id).value;if(String(v).trim())a[f.k]=String(v).trim()}return a}
+(async()=>{let d;
+  try{const r=await fetch('/api/public/quote/'+encodeURIComponent(tok));if(!r.ok){const e=await r.json().catch(()=>({}));$('app').innerHTML=gone(e.code);return}d=await r.json()}
+  catch(e){$('app').innerHTML='<div class="intro"><p class="msg err">Couldn’t load the form. Check your connection and refresh the page.</p></div>';return}
+  const v=d.values||{};
+  $('app').innerHTML=`<div class="intro"><p><b>${esc(d.title||'Your quote')}</b></p><p>${esc(d.agent||'Your agent')} at Pacific Southwest Insurance Services started this quote for you. Please check what’s filled in, fill in the blanks (highlighted in yellow), and press <b>Send to my agent</b> at the bottom.</p><p class="small">Leave anything you don’t know blank. You can send this form once.</p></div>`+
+    d.form.map(s=>`<section class="sec"><h2>${esc(s.title)}</h2><div class="grid">${s.fields.map(f=>field(f,v)).join('')}</div></section>`).join('')+
+    `<div class="sec bar"><button id="send">Send to my agent</button><span class="msg" id="msg"></span></div>`;
+  $('app').addEventListener('input',e=>{const w=e.target.closest('.f');if(w)w.classList.toggle('empty',!(e.target.type==='radio'||String(e.target.value).trim()))});
+  $('send').onclick=async()=>{const b=$('send'),m=$('msg');b.disabled=true;m.className='msg';m.textContent='Sending…';
+    try{const r=await fetch('/api/public/quote/'+encodeURIComponent(tok),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({answers:read(d.form)})});
+      if(!r.ok){const e=await r.json().catch(()=>({}));if(r.status===410){$('app').innerHTML=gone(e.code);return}throw new Error()}
+      $('app').innerHTML=`<div class="intro done"><h2>Thank you!</h2><p>Your answers went to ${esc(d.agent||'your agent')}. We’ll be in touch with your quote.</p><p class="small">Questions? Call us at <a href="tel:8187011033">${OFFICE}</a>.</p></div>`;scrollTo(0,0)}
+    catch(e){m.className='msg err';m.textContent='Couldn’t send. Check your connection and try again.';b.disabled=false}}
+})();
+</script>
+</body>
+</html>

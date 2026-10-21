@@ -36,8 +36,8 @@ tbody tr{cursor:pointer}
 tbody tr:hover{background:var(--soft)}
 tbody tr:last-child td{border-bottom:none}
 .cdot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.15);padding:0;margin-right:8px;vertical-align:-3px;cursor:pointer;display:inline-block}
-.cdot.yes{background:#1f9d55}.cdot.no{background:#d64545}
-.sold{display:inline-block;background:#1f9d55;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}
+.cdot.yes{background:#1f9d55}.cdot.no{background:#d64545}.cdot.dead{background:#111}.qlBox{margin-top:10px;padding:10px 12px;border:1px solid #c9b6f0;background:#f3eefc;border-radius:10px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:13.5px}.qlBox .msg{flex-basis:100%;margin:0}.qlBox .msg:empty{display:none}#qlDlgBox{width:min(720px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#qlFields{max-height:56vh;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:4px 10px}#qlFields fieldset{border:0;padding:6px 0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}#qlFields legend{font-weight:700;font-size:13px;padding:6px 0 2px}#qlFields label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;margin:0;min-width:0}#qlFields input{width:auto;flex:none}#qlFields span{flex:0 1 auto}#qlFields em{flex:1 0 60px;color:var(--mute);font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}@media(max-width:640px){#qlFields fieldset{grid-template-columns:1fr}}#qlUrl{font-size:13px}
+.sold{display:inline-block;background:#1f9d55;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}.dead{display:inline-block;background:#111;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
@@ -246,6 +246,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><select id="fillWhich" style="width:auto;flex:none" title="Which sheet Quick fill makes"><option value="detect">Auto-detect</option><option value="quote">Com quote</option><option value="auto">Com auto quote</option><option value="both">Both</option></select><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button><button class="pri" id="newPauto">Personal auto quote</button></div>
       <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
       <div class="msg" id="fillMsg"></div>
+      <div class="qlBox" id="qlBox" hidden><span id="qlTxt"></span><button class="pri" id="qlApply" hidden>Update quote sheet</button><div class="msg" id="qlMsg"></div></div>
     </div>
 
     <div class="sec">
@@ -317,7 +318,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
   </div><div class="dbR">
     <div class="sec" id="contactSec">
-      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button></h3>
+      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button><button type="button" class="tgl" id="deadTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="deadTxt">Not dead</span></button></h3>
       <div class="grid">
         <div><label for="cAt">Date / time</label><input id="cAt" type="datetime-local"></div>
         <div><label for="cHow">How contacted</label>
@@ -531,11 +532,11 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div><label for="bnType">Type of coverage</label><input id="bnType" list="bnTypes" placeholder="GL, WC, Auto…"></div>
     <div><label for="bnGa">GA</label><input id="bnGa" list="bnGas" placeholder="General agent"></div>
     <div><label for="bnCo">Company</label><input id="bnCo" list="bnCos" placeholder="Carrier"></div>
-    <div><label for="bnTerm">Term</label><input id="bnTerm" inputmode="numeric" placeholder="1" title="Terms in a year: 1 for annual, 2 for 6-month"></div>
+    <div><label for="bnTerm">Term</label><input id="bnTerm" inputmode="numeric" placeholder="12" title="Months (12 or 6). 1 or 2 also works as terms in a year"></div>
     <div><label for="bnPrem">Premium</label><input id="bnPrem" inputmode="decimal" placeholder="$"></div>
     <div><label for="bnPct">Com %</label><input id="bnPct" inputmode="decimal" placeholder="%"></div>
     <div><label for="bnComm">Comm amount</label><input id="bnComm" inputmode="decimal" title="Works itself out from premium x com %; type an amount to use your own"></div>
-    <div><label for="bnYrc">Yr commission amount</label><input id="bnYrc" inputmode="decimal" title="Works itself out from comm x term; type an amount to use your own"></div>
+    <div><label for="bnYrc">Yr commission amount</label><input id="bnYrc" inputmode="decimal" title="Annual commission: works itself out from the term commission (12-month = same, 6-month = x2); type an amount to use your own"></div>
     <div><label for="bnBf">BF</label><input id="bnBf" inputmode="decimal" placeholder="$ (minus for money out)"></div>
     <div><label for="bnFin">Finance</label><input id="bnFin" placeholder="Finance co. or amount"></div>
     <div><label for="bnSplit">Split %</label><input id="bnSplit" inputmode="decimal" placeholder="Blank = 100%"></div>
@@ -561,6 +562,16 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div id="c2FilesWrap"><label>Files to copy to the client</label><div class="mpick" id="c2Files"></div></div>
   <div class="msg" id="c2Msg"></div>
   <div class="row"><button id="c2Cancel">Cancel</button><button class="pri" id="c2Go">Copy</button><button class="pri" id="c2Open" hidden>Open client</button></div>
+</div></div>
+<div class="mbg" id="qlDlg" role="dialog" aria-modal="true" aria-labelledby="qlTitleH"><div class="mbox" id="qlDlgBox">
+  <h3 id="qlTitleH">Com quote link for the client</h3>
+  <div id="qlPickWrap"><p class="small" style="margin:0 0 8px">Tick the boxes the client should fill in. Only those show on their page (what you already have is shown in gray next to each box).</p>
+    <div class="row" style="gap:6px;margin-bottom:8px"><button type="button" id="qlBlanks">Blanks only</button><button type="button" id="qlAll">All</button><button type="button" id="qlNone">None</button><span class="small" id="qlCount" style="margin-left:auto"></span></div>
+    <div id="qlFields"></div></div>
+  <div id="qlLinkWrap" hidden><p class="small" style="margin:0 0 8px">The client opens this link, fills in the boxes you ticked and presses Send. Their answers come back to this lead and you get a task. The link works once and expires in 14 days. Sending a new link cancels the old one.</p>
+    <input id="qlUrl" readonly></div>
+  <div class="msg" id="qlDlgMsg"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="qlClose">Close</button><button class="pri" id="qlMake">Make link</button><button id="qlCopy">Copy link</button><button class="pri" id="qlText">Text to client</button><a class="btn pri" id="qlEmail" target="_blank" rel="noopener">Email to client</a></div>
 </div></div>
 <div class="mbg" id="txDlg" role="dialog" aria-modal="true" aria-labelledby="txTitleH"><div class="mbox" id="txBox">
   <h3 id="txTitleH">Text customer</h3>
@@ -613,7 +624,7 @@ const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','
 leadsCol.onSnapshot(s=>{
   leads=s.docs.map(d=>({id:d.id,...d.data()}));
   render();renderTasks();
-  if(cur&&cur.id){const l=leads.find(x=>x.id===cur.id);if(l){cur=l;fillMeta();renderFiles()}}
+  if(cur&&cur.id){const l=leads.find(x=>x.id===cur.id);if(l){cur=l;fillMeta();renderFiles();renderQl()}}
 },e=>{$('count').textContent=errText(e)});
 
 function opts(sel,vals,first){const v=sel.value;sel.innerHTML=`<option value="">${first}</option>`+vals.map(x=>`<option>${esc(x)}</option>`).join('');sel.value=vals.includes(v)?v:''}
@@ -631,7 +642,7 @@ function render(){
     const hay=[l.firstName,l.lastName,l.company,l.email,l.phone,l.homePhone,l.workPhone,l.assignedTo,l.leadType].join(' ').toLowerCase();
     return hay.includes(q)||(qd.length>=3&&[l.phone,l.homePhone,l.workPhone].some(x=>String(x||'').replace(/\D/g,'').includes(qd)));
   });
-  const sv=l=>sortK==='nfiles'?(l.files||[]).length:sortK==='status'?(l.sold===true?2:made(l)?1:0):String(l[sortK]||''); // status order: No contact, Contacted, Sold
+  const sv=l=>sortK==='nfiles'?(l.files||[]).length:sortK==='status'?(l.dead===true?3:l.sold===true?2:made(l)?1:0):String(l[sortK]||''); // status order: No contact, Contacted, Sold, Dead
   rows.sort((a,b)=>{const va=sv(a),vb=sv(b);
     if(va===vb)return String(b.createdAt||'').localeCompare(String(a.createdAt||''));
     if(va==='')return 1;if(vb==='')return -1;
@@ -640,14 +651,14 @@ function render(){
   $('empty').hidden=leads.length>0;
   if(leads.length&&!rows.length){$('empty').hidden=false;$('empty').innerHTML='<b>No matches</b>Try a different search or filter.'}
   else $('empty').innerHTML='<b>No leads yet</b>Click “+ New lead” to add your first one.';
-  $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td style="white-space:nowrap">${dot(l)}${l.sold===true?'':`<span class="small">${made(l)?'Contacted':'No contact'}</span>`}</td><td>${esc(l.assignedTo)}</td><td>${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(fmtPhone(l.phone))}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
+  $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td style="white-space:nowrap">${dot(l)}${l.sold===true||l.dead===true?'':`<span class="small">${made(l)?'Contacted':'No contact'}</span>`}</td><td>${esc(l.assignedTo)}</td><td>${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(fmtPhone(l.phone))}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
   $('cards').innerHTML=rows.map(l=>`<div class="lc" data-id="${esc(l.id)}"><button class="danger delrow" style="float:right" data-del-lead="${esc(l.id)}">Delete</button><div class="t">${dot(l)}${esc([l.firstName,l.lastName].filter(Boolean).join(' ')||'(no name)')}${l.company?' · '+esc(l.company):''}</div><div class="m">${esc(fmtDate(l.leadDate))}${l.assignedTo?' · '+esc(l.assignedTo):''}${l.leadType?' · '+esc(l.leadType):''}</div><div class="m">${l.lastContacted?'Last contact '+esc(fmtDT(l.lastContacted))+' ('+esc(l.howContacted)+')':'Not contacted yet'}${l.xDate?' · X date '+esc(fmtDate(l.xDate)):''}</div></div>`).join('');
   document.querySelectorAll('th').forEach(th=>th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.k===sortK?(sortDir>0?' ▲':' ▼'):''));
 }
 ['q','fType','fAssign'].forEach(id=>$(id).addEventListener('input',render));
 document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=/Date|Contacted|nfiles|status/.test(k)?-1:1}render()});
 const made=l=>l.contactMade===true;
-const dot=l=>l.sold===true?'<span class="sold" title="Sold">SOLD</span>':`<button class="cdot ${made(l)?'yes':'no'}" data-dot="${esc(l.id)}" title="${made(l)?'Contact made (click to mark no contact)':'No contact yet (click to mark contact made)'}" aria-label="${made(l)?'Contact made':'No contact'}"></button>`;
+const dot=l=>l.dead===true?'<span class="dead" title="Dead lead">DEAD</span>':l.sold===true?'<span class="sold" title="Sold">SOLD</span>':`<button class="cdot ${made(l)?'yes':'no'}" data-dot="${esc(l.id)}" title="${made(l)?'Contact made (click to mark no contact)':'No contact yet (click to mark contact made)'}" aria-label="${made(l)?'Contact made':'No contact'}"></button>`;
 const openFromRow=e=>{const dlb=e.target.closest('[data-del-lead]');if(dlb){e.stopPropagation();askDelete(dlb.dataset.delLead);return}const d=e.target.closest('[data-dot]');if(d){e.stopPropagation();toggleMade(d.dataset.dot);return}const r=e.target.closest('[data-id]');if(r)openLead(leads.find(l=>l.id===r.dataset.id))};
 $('tb').addEventListener('click',openFromRow);$('cards').addEventListener('click',openFromRow);
 
@@ -694,8 +705,10 @@ function azSort(el){const os=[...el.querySelectorAll('option')];if(os.length<3)r
 $('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):view==='clients'?openClient(null,{}):view==='binder'?openBin(null,{month:monKey(new Date())}):openLead(null);
 
 function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact';
-  const so=!!(cur&&cur.sold===true),st=$('soldTgl');st.setAttribute('aria-checked',so);st.firstChild.className='cdot '+(so?'yes':'no');$('soldTxt').textContent=so?'Sold':'Not sold'}
+  const so=!!(cur&&cur.sold===true),st=$('soldTgl');st.setAttribute('aria-checked',so);st.firstChild.className='cdot '+(so?'yes':'no');$('soldTxt').textContent=so?'Sold':'Not sold';
+  const dd=!!(cur&&cur.dead===true),dt=$('deadTgl');dt.setAttribute('aria-checked',dd);dt.firstChild.className='cdot '+(dd?'dead':'no');$('deadTxt').textContent=dd?'Dead':'Not dead'}
 $('soldTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=cur.sold!==true;try{await leadsCol.doc(cur.id).update({sold:on});cur.sold=on;showMade();toast(on?'Marked sold':'Marked not sold')}catch(e){toast(errText(e))}};
+$('deadTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=cur.dead!==true;try{await leadsCol.doc(cur.id).update({dead:on});cur.dead=on;showMade();toast(on?'Marked dead':'Marked not dead')}catch(e){toast(errText(e))}};
 $('madeTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=!made(cur);try{await leadsCol.doc(cur.id).update({contactMade:on});cur.contactMade=on;showMade()}catch(e){toast(errText(e))}};
 function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').value=fmtDT(cur&&cur.lastContacted)}
 function openLead(l){
@@ -712,7 +725,7 @@ function openLead(l){
   $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each. Drag a file out to your desktop or an email.');
-  $('log').innerHTML=has?'':'';renderFiles();
+  $('log').innerHTML=has?'':'';renderFiles();renderQl();$('qlMsg').textContent='';
   if(has){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
@@ -931,7 +944,7 @@ async function basicSheets(n,which,f){if(!n)return '';f=f||{};
   const wantA=which==='auto'||which==='both'||(which==='detect'&&hasAuto(f.auto)),wantQ=which==='quote'||which==='both'||(which==='detect'&&!(wantA&&f.autoOnly));
   const as=wantA?await makeAutoSheet(f.auto||null,true):'';return (wantQ?await makeQuoteSheet(f.quote||null):'')+as}
 // basic (no Claude) read: labeled web-form answers first, then the simple patterns
-function basicRead(text){const f=formFill(text)||rowFill(text),o=regexFill(text);if(f)for(const [k,v] of Object.entries(f.lead))if(v)o[k]=v;return {lead:o,f}}
+function basicRead(text){const f=formFill(text)||inlineFill(text)||rowFill(text),o=regexFill(text);if(f)for(const [k,v] of Object.entries(f.lead))if(v)o[k]=v;return {lead:o,f}}
 // Build "<client> com auto quote sheet.pdf" from what was pasted (now if saved, else on Save)
 async function makeAutoSheet(q,force){
   if(!assets)return '';if(!q||typeof q!=='object'){if(!force)return '';q={}}
@@ -1040,6 +1053,86 @@ async function makeQuoteSheet(q){
     addPending(file);return `, and a quote sheet is ready to attach when you save`;
   }catch(e){return ` (the quote sheet couldn’t be made: ${e.message||'error'})`}
 }
+/* ---------- com quote link: the client fills in the com quote sheet on a web page ---------- */
+// the web form is built from the com quote sheet (lead date/source, exp date, WC owners/classes, excess and AIs stay office-only)
+const QL_LABEL={client_name:'Business name',dba:'DBA (if any)',entity_type:'Business type',contact_first:'Your first name',contact_last:'Your last name',phone:'Phone',email:'Email',mailing_address:'Mailing address',property_address:'Business / property address',description:'What does your business do?',detailed_description:'More about your business',line_of_business:'Coverage you want',eff_date:'Date you want coverage to start (MM/DD/YYYY)',currently_insured:'Are you insured now?',current_carrier_price:'Current insurance company and price',year_started:'Year the business started',years_experience:'Years of experience in this business',num_owners:'Number of owners',gross_receipts:'Yearly gross sales',payroll:'Yearly payroll',full_time:'Full time employees',part_time:'Part time employees',claims:'Any claims in the last 5 years?',claims_detail:'Claim details',
+  b1_address:'Building address',b1_yr:'Year built',b1_sqft:'Square feet',b1_const:'Construction (frame, masonry…)',b1_roof:'Roof type',b1_dwelling:'Building value',b1_bpp:'Contents / equipment value',b1_rents:'Loss of rents',b1_wiring:'Year wiring updated',b1_roofup:'Year roof updated',b1_plumbing:'Year plumbing updated',b1_heating:'Year heating updated'};
+const QL_SKIP=new Set(['lead_date','lead_source','exp_date','tax_id']),QL_TITLE={'Client info':'Your business','Company info':'Business details','Building info':'Building (if you own or rent one)'};
+function qlForm(){const out=[];
+  for(const s of QS_SECTIONS){const fs=[],add=(k,label,o)=>{if(!QL_SKIP.has(k))fs.push({k,label:QL_LABEL[k]||label,...o})};
+    for(const f of s.fields||[]){add(f.k,f.label,f.radio?{type:'radio',opts:f.radio}:f.opts?{type:'select',opts:f.opts}:f.area?{type:'area'}:{});
+      if(f.pair)add(f.pair,f.label2||f.pair,f.opts2?{type:'select',opts:f.opts2}:{});(f.also||[]).forEach(a=>add(a.k,a.label,a.opts?{type:'select',opts:a.opts}:{}))}
+    (s.bldg||[]).forEach(f=>add('b1_'+f.k,f.label,{}));
+    if(fs.length)out.push({title:QL_TITLE[s.title]||s.title,fields:fs})}
+  return out}
+const latestQs=()=>[...((cur&&cur.files)||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
+// every box on a PSW quote sheet PDF, by key (text boxes are f_<key>, building/grid boxes are the key itself)
+async function readQsValues(f){await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const pdf=await PDFLib.PDFDocument.load(await fileBytes(f)),v={};
+  for(const fl of pdf.getForm().getFields()){const n=fl.getName().replace(/^f_/,'');
+    if(fl instanceof PDFLib.PDFTextField)v[n]=fl.getText()||'';else if(fl instanceof PDFLib.PDFCheckBox)v[n]=fl.isChecked()?'Yes':'';else if(fl instanceof PDFLib.PDFRadioGroup||fl instanceof PDFLib.PDFDropdown)v[n]=[].concat(fl.getSelected()||'')[0]||''}
+  return v}
+let qlForUrl='';
+// Send quote link: first pick which boxes the client sees (blank ones start ticked; the last choice is remembered), then make the link
+let qlPick=null;
+$('mailBtns').addEventListener('click',async e=>{if(!e.target.closest('#qlSend'))return;e.preventDefault();e.stopImmediatePropagation();
+  if(!(await ensureSaved()))return;if(isLocked('lead'))return toast('This lead is view-only right now.');
+  const b=$('qlSend');b.disabled=true;b.textContent='Reading…';
+  try{const form=qlForm(),qs=latestQs();let v={};if(qs)try{v=await readQsValues(qs)}catch(_){}
+    const g=k=>$(k).value.trim(),person=[g('firstName'),g('lastName')].filter(Boolean).join(' ');
+    v.client_name=v.client_name||g('company')||person;v.contact_first=v.contact_first||g('firstName');v.contact_last=v.contact_last||g('lastName');v.phone=v.phone||fmtPhone(g('phone'));v.email=v.email||g('email');
+    const values={};for(const s of form)for(const f of s.fields)if(v[f.k]!=null&&String(v[f.k]).trim())values[f.k]=String(v[f.k]).trim();
+    let saved=null;try{saved=JSON.parse(localStorage.getItem('psw-ql-pick')||'null')}catch(_){}
+    qlPick={form,values,title:`Quote for ${v.client_name||person||'your business'}`};
+    $('qlFields').innerHTML=form.map((s,si)=>`<fieldset><legend>${esc(s.title)}</legend>${s.fields.map(f=>{const on=saved?saved.includes(f.k):!values[f.k];
+      return `<label><input type="checkbox" data-qk="${esc(f.k)}"${on?' checked':''}><span>${esc(f.label)}</span>${values[f.k]?`<em title="${esc(values[f.k])}">${esc(values[f.k])}</em>`:''}</label>`}).join('')}</fieldset>`).join('');
+    qlStage('pick');qlCount();$('qlDlg').classList.add('on')}
+  catch(err){toast(err.message||errText(err))}
+  finally{b.disabled=false;b.textContent='Send quote link'}},true);
+function qlStage(st){$('qlPickWrap').hidden=st!=='pick';$('qlLinkWrap').hidden=st!=='link';['qlAll','qlNone','qlBlanks','qlMake'].forEach(id=>$(id).hidden=st!=='pick');['qlCopy','qlText','qlEmail'].forEach(id=>$(id).hidden=st!=='link');$('qlDlgMsg').textContent=''}
+const qlChecked=()=>[...$('qlFields').querySelectorAll('[data-qk]:checked')].map(x=>x.dataset.qk);
+function qlCount(){$('qlCount').textContent=`${qlChecked().length} box${qlChecked().length===1?'':'es'} ticked`}
+$('qlFields').addEventListener('change',qlCount);
+$('qlAll').onclick=()=>{$('qlFields').querySelectorAll('[data-qk]').forEach(x=>x.checked=true);qlCount()};
+$('qlNone').onclick=()=>{$('qlFields').querySelectorAll('[data-qk]').forEach(x=>x.checked=false);qlCount()};
+$('qlBlanks').onclick=()=>{$('qlFields').querySelectorAll('[data-qk]').forEach(x=>x.checked=!(qlPick&&qlPick.values[x.dataset.qk]));qlCount()};
+$('qlMake').onclick=async()=>{const keys=qlChecked(),m=$('qlDlgMsg');if(!keys.length){m.className='msg err';m.textContent='Tick at least one box for the client to fill in.';return}
+  try{localStorage.setItem('psw-ql-pick',JSON.stringify(keys))}catch(_){}
+  const ks=new Set(keys),form=qlPick.form.map(s=>({title:s.title,fields:s.fields.filter(f=>ks.has(f.k))})).filter(s=>s.fields.length);
+  const values={};for(const k of keys)if(qlPick.values[k])values[k]=qlPick.values[k];
+  $('qlMake').disabled=true;m.className='msg';m.textContent='Making the link…';
+  try{const r=await fetch('/api/tracker/quote-link',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead:'leads/'+cur.id,form,values,title:qlPick.title})});
+    const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.code==='not_found'?'Save the lead first.':'Couldn’t make the link. Try again.');
+    const g=k=>$(k).value.trim();qlForUrl=location.origin+j.url;const msg=`Hi ${g('firstName')||'there'}, please fill in the missing info for your insurance quote here: ${qlForUrl}\nThank you, ${myName||'PSW Insurance'} (818) 701-1033`;
+    $('qlUrl').value=qlForUrl;qlStage('link');cur.qlink={state:'sent',sentAt:Date.now()/1000,expires:j.expires};renderQl();
+    $('qlEmail').href=`mailto:${encodeURIComponent(g('email'))}?subject=${encodeURIComponent('Your insurance quote: a few questions')}&body=${encodeURIComponent(msg)}`;
+    $('qlText').onclick=()=>{closeQl();$('textBtn').click();setTimeout(()=>{$('txMsg').value=msg;$('txMsg').dispatchEvent(new Event('input'))},60)};
+    setTimeout(()=>$('qlUrl').select(),30)}
+  catch(err){m.className='msg err';m.textContent=err.message||errText(err)}
+  finally{$('qlMake').disabled=false}};
+const closeQl=()=>$('qlDlg').classList.remove('on');$('qlClose').onclick=closeQl;$('qlDlg').addEventListener('click',e=>{if(e.target===$('qlDlg'))closeQl()});
+$('qlCopy').onclick=async()=>{try{await navigator.clipboard.writeText(qlForUrl);$('qlDlgMsg').className='msg ok';$('qlDlgMsg').textContent='Link copied.'}catch(_){$('qlUrl').select();$('qlDlgMsg').className='msg err';$('qlDlgMsg').textContent='Couldn’t copy; the link is selected, press Ctrl+C.'}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('qlDlg').classList.contains('on')){e.stopImmediatePropagation();closeQl()}},true);
+function renderQl(){const q=cur&&cur.qlink,box=$('qlBox');if(!q||!q.state){box.hidden=true;return}box.hidden=false;
+  const d=t=>t?fmtDate(new Date(t*1000).toISOString().slice(0,10)):'';
+  if(q.state==='done'&&!q.applied){$('qlTxt').innerHTML=`<b>The client filled in the quote link</b> on ${esc(d(q.doneAt))}.`;$('qlApply').hidden=false}
+  else if(q.state==='done'){$('qlTxt').textContent=`The client’s quote link answers are on the quote sheet (${d(q.doneAt)}).`;$('qlApply').hidden=true}
+  else{const exp=(q.expires||0)*1000<Date.now();$('qlTxt').textContent=exp?`The quote link sent ${d(q.sentAt)} expired without an answer.`:`Quote link sent ${d(q.sentAt)}; waiting for the client.`;$('qlApply').hidden=true}}
+$('qlApply').onclick=async()=>{if(isLocked('lead'))return toast('This lead is view-only right now.');const b=$('qlApply'),m=$('qlMsg');b.disabled=true;m.className='msg';m.textContent='Updating the quote sheet…';
+  try{const r=await fetch('/api/tracker/quote-link?lead='+encodeURIComponent('leads/'+cur.id),{credentials:'same-origin'});const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.answers)throw new Error('The client’s answers weren’t found.');
+    const qs=latestQs();let v={};if(qs)try{v=await readQsValues(qs)}catch(_){}
+    const ans=j.answers,merged={...j.values,...v,...ans};
+    const g=k=>$(k).value.trim(),person=[g('firstName'),g('lastName')].filter(Boolean).join(' ');
+    merged.client_name=merged.client_name||g('company')||person;
+    ['gross_receipts','payroll'].forEach(k=>{if(ans[k])merged[k]=fmtMoney(ans[k])});QS_SECTIONS.forEach(s=>(s.bldg||[]).forEach(f=>{const k='b1_'+f.k;if(f.money&&ans[k])merged[k]=fmtMoney(ans[k])}));
+    const bytes=await buildQuotePdf(merged),name=qs?qs.name:`${String(merged.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com quote sheet.pdf`;
+    if((await uploadOne(new File([bytes],name,{type:'application/pdf'})))!==true)throw new Error('The new quote sheet couldn’t be attached (see Files below).');
+    // empty lead boxes take the client's answers too
+    const up={qlink:{...cur.qlink,applied:true}},put=(k,x)=>{if(x&&!String(cur[k]||'').trim()){up[k]=x;$(k).value=x}};
+    put('firstName',ans.contact_first);put('lastName',ans.contact_last);put('company',ans.client_name);put('phone',ans.phone&&fmtPhone(ans.phone));put('email',ans.email);
+    await leadsCol.doc(cur.id).update(up);Object.assign(cur,up);renderQl();m.className='msg ok';m.textContent=`${name} now has the client’s answers.`}
+  catch(e){m.className='msg err';m.textContent=e.message||errText(e)}
+  finally{b.disabled=false}};
 function addPending(f){pending=pending.filter(x=>x.name!==f.name);pending.push(f);showKeep()}
 function showKeep(){$('keepWrap').hidden=!(assets&&pending.length);$('keepName').textContent=pending.map(f=>f.name).join(' and ')}
 
@@ -1085,8 +1178,14 @@ function formFill(t){
     if(/address/i.test(label))for(let j=i+1;j<L.length&&L[j].trim()&&!ind(L[j]);j++){const x=L[j].trim();if(!/^(united states|usa|map it)$/i.test(x))v+=', '+x}
     // more answers under the same label (bullet lists)
     const prev=pairs.length&&pairs[pairs.length-1];if(prev&&prev.i===k)prev.v+=', '+v;else pairs.push({label,v,i:k})}
-  if(pairs.length<3)return null;
-  const lead={},quote={},auto={},seek=[];let biz='',drv=1,veh=1;
+  return pairs.length<3?null:pairsFill(pairs)}
+// copied web-page lead ("Name Jane Doe", "Business Name Up LLC": label and answer on one line, maybe tab-separated): no Claude needed
+const INLINE_LABELS=['Business Name','Business Description','Business Address','Mailing Address','Requested Coverage','Legal Entity','Years in Business','Annual Revenue','Number of Employees','First Name','Last Name','Company Name','Company','DBA','Name','Phone','Email','Type','Address','SIC','NAICS'];
+function inlineFill(t){const pairs=[],re=new RegExp('^('+INLINE_LABELS.join('|')+')\\s*:?\\s+(\\S.*)$','i');
+  for(const seg of String(t||'').replace(/\r/g,'').split(/[\n\t]+/)){const m=re.exec(seg.trim());if(m)pairs.push({label:m[1],v:m[2].trim()})}
+  return pairs.length<3?null:pairsFill(pairs)}
+function pairsFill(pairs){
+  const lead={},quote={},auto={},seek=[],more=[];let biz='',drv=1,veh=1;
   const yn=v=>/^(y|yes)\b/i.test(v)?'Yes':/^(n|no)\b/i.test(v)?'No':v,num=(l,d)=>{const m=l.match(/#\s*(\d+)/);return m?+m[1]:d};
   const dmy=v=>{const m=v.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/);return m?`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3].length===2?'19'+m[3]:m[3]}`:v};
   const ent=v=>/llc|limited liability/i.test(v)?'LLC':/corp|inc\b/i.test(v)?'Corporation':/partner/i.test(v)?'Partnership':/individual|sole/i.test(v)?'Individual':v;
@@ -1102,9 +1201,15 @@ function formFill(t){
       else{const vin=v.match(/\b[A-HJ-NPR-Z0-9]{17}\b/i);if(vin)auto[k+'vin']=vin[0].toUpperCase();const rest=v.replace(vin?vin[0]:'','').trim();
         const m=rest.match(/^((?:19|20)\d\d)\s+(\S+)\s*(.*)$/);if(m){auto[k+'year']=m[1];auto[k+'make']=m[2];if(m[3])auto[k+'model']=m[3]}}
       continue}
+    if(/^first name$/i.test(l)){lead.firstName=quote.contact_first=auto.owner_first=v;continue}
+    if(/^last name$/i.test(l)){lead.lastName=quote.contact_last=auto.owner_last=v;continue}
+    if(/^(lead )?type$/i.test(l)){const lt=LEAD_TYPES.find(x=>x.toLowerCase()===v.toLowerCase());if(lt)lead.leadType=lt;continue}
+    if(/^(sic|naics)$/i.test(l)){more.push(l.toUpperCase()+' '+v);continue}
+    if(/requested coverage/i.test(l)){quote.line_of_business=v;seek.push(...v.split(/,\s*/));continue}
+    if(/years? in business/i.test(l)){const y=parseInt(v,10);if(y>=0&&y<200){quote.year_started=auto.year_started=String(new Date().getFullYear()-y);quote.years_experience=String(y)}continue}
     if(/^(full |your |contact )?name$/i.test(l)){const p=v.split(/\s+/);lead.firstName=p[0];lead.lastName=p.slice(1).join(' ');quote.contact_first=lead.firstName;quote.contact_last=lead.lastName;auto.owner_first=lead.firstName;auto.owner_last=lead.lastName;auto.contact_name=v}
     else if(/business name|dba|company/i.test(l)){lead.company=v;quote.client_name=auto.client_name=v}
-    else if(/address/i.test(l)){quote.mailing_address=auto.mailing_address=auto.garaging_address=v}
+    else if(/address/i.test(l)){quote.mailing_address=auto.mailing_address=auto.garaging_address=v;if(/business/i.test(l))quote.property_address=v}
     else if(/e-?mail/i.test(l)){lead.email=quote.email=auto.email=v}
     else if(/phone/i.test(l)){lead.phone=quote.phone=auto.phone=v}
     else if(/structure|entity/i.test(l))quote.entity_type=auto.entity_type=ent(v);
@@ -1118,6 +1223,7 @@ function formFill(t){
     else if(/claims|losses/i.test(l))quote.claims=auto.claims=v}
   if(biz){quote.description=quote.description?`${biz}: ${quote.description}`:biz;auto.description=quote.description;
     const lt=LEAD_TYPES.find(x=>x.toLowerCase()===biz.toLowerCase());if(lt)lead.leadType=lt}
+  if(more.length)quote.detailed_description=[quote.detailed_description,more.join(', ')].filter(Boolean).join('\n');
   if(!lead.leadType&&(lead.company||quote.description))lead.leadType='Commercial';
   return {lead,quote,auto,autoOnly:seek.length>0&&seek.every(x=>/auto/i.test(x))};
 }
@@ -1334,7 +1440,7 @@ function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
   const fs=(cur&&cur.files)||[];
   $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
-  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">Email ${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a>`;
+  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">Email ${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
 }
 $('mailPick').addEventListener('change',e=>{const id=e.target.dataset.mf;if(!id)return;e.target.checked?mailSel.add(id):mailSel.delete(id)});
 function mailClient(){const v=k=>$(k).value.trim(),nm=[v('firstName'),v('lastName')].filter(Boolean).join(' ');return {nm,co:v('company')}}
@@ -2389,7 +2495,9 @@ const bPctTxt=n=>n==null?'':`${String(n).includes('.')&&String(n).split('.')[1].
 const monKey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
 const monName=k=>{const m=/^(\d{4})-(\d\d)$/.exec(k||'');return m?`${MON[+m[2]-1]} ${m[1]}`:'No month'};
 // COMM = premium x com %; YR COMM = COMM x term; split % is your share (blank = 100%); TOTAL MADE = com split + BF split
-function bCalc(r){const comm=r.commAmt!=null?r.commAmt:r.premium==null||r.comPct==null?null:r2(r.premium*r.comPct/100),yr=r.yrAmt!=null?r.yrAmt:comm==null?null:r2(comm*(r.term||1)),sp=r.splitPct==null?100:r.splitPct;
+// Term can be typed as months (6, 12) or as terms in a year (1, 2); annual commission = one term's commission x terms in a year
+const bPerYr=t=>!t||t<=0?1:t<=2?t:12/t;
+function bCalc(r){const comm=r.commAmt!=null?r.commAmt:r.premium==null||r.comPct==null?null:r2(r.premium*r.comPct/100),yr=r.yrAmt!=null?r.yrAmt:comm==null?null:r2(comm*bPerYr(r.term)),sp=r.splitPct==null?100:r.splitPct;
   const comSplit=yr==null?null:r2(yr*sp/100),bfSplit=r.bf==null?null:r2(r.bf*sp/100);return {comm,yr,comSplit,bfSplit,total:r2((comSplit||0)+(bfSplit||0))}}
 const monOpts=sel=>{const now=new Date(),ks=new Set([sel,...binder.map(b=>b.month)].filter(Boolean));for(let i=-24;i<=3;i++)ks.add(monKey(new Date(now.getFullYear(),now.getMonth()+i,1)));
   return [...ks].sort().reverse().map(k=>`<option value="${esc(k)}"${k===sel?' selected':''}>${esc(monName(k))}</option>`).join('')};
