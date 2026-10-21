@@ -954,7 +954,7 @@ async function makeAutoSheet(q,force){
     if(!Object.keys(v).length&&!force)return '';
     const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
     v.client_name=v.client_name||$('company').value.trim()||person;
-    v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
+    v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=$('leadSource').value.trim()||v.lead_source;
     const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
     const eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);if(eff)v.eff_date=mdy(eff);
     for(let n=1;n<=6;n++){
@@ -1014,8 +1014,9 @@ async function upgradeAuto(f){
     let raw;try{raw=await fileBytes(f)}catch(_){return false}
     const doc=await PDFLib.PDFDocument.load(raw);
     const kw=doc.getKeywords()||'';if(!/^psw-(auto-)?quote-sheet$/.test(doc.getSubject()||''))return false;
-    if(kw.includes(FONT_MARK)&&kw.includes(auto?AUTO_LAYOUT:QS_LAYOUT))return false;
-    const v=sheetValues(doc);
+    const v=sheetValues(doc),src=cur&&cur.id?$('leadSource').value.trim():'',srcOff=!!src&&String(v.lead_source||'').trim()!==src; // the lead's Lead source is the one that counts
+    if(kw.includes(FONT_MARK)&&kw.includes(auto?AUTO_LAYOUT:QS_LAYOUT)&&!srcOff)return false;
+    if(src)v.lead_source=src;
     for(let n=1;n<=6;n++){
       const ymm=v[`v${n}_ymm`];if(ymm&&!v[`v${n}_year`]){const p=ymm.trim().split(/\s+/);if(/^\d{2,4}$/.test(p[0]))v[`v${n}_year`]=p.shift();if(p.length)v[`v${n}_make`]=p.shift();if(p.length)v[`v${n}_model`]=p.join(' ')}
       const nm=v[`d${n}_name`];if(nm&&!v[`d${n}_first`]){const p=nm.trim().split(/\s+/);v[`d${n}_first`]=p.shift();v[`d${n}_last`]=p.join(' ')}
@@ -1041,7 +1042,7 @@ async function makeQuoteSheet(q){
     const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
     v.client_name=v.client_name||$('company').value.trim()||person;
     if(v.contact_name&&!v.contact_first&&!v.contact_last){const nm=v.contact_name.split(/\s+/);v.contact_first=nm[0];v.contact_last=nm.slice(1).join(' ')}delete v.contact_name;
-    if(!v.contact_first&&!v.contact_last){v.contact_first=$('firstName').value.trim();v.contact_last=$('lastName').value.trim()}v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
+    if(!v.contact_first&&!v.contact_last){v.contact_first=$('firstName').value.trim();v.contact_last=$('lastName').value.trim()}v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=$('leadSource').value.trim()||v.lead_source;
     const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
     let eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);
     if(eff){v.eff_date=mdy(eff);if(!parseMdy(v.exp_date))v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()))}
@@ -1335,7 +1336,7 @@ $('fillStop').onclick=()=>fillCtl&&fillCtl.abort();
 $('fillBtn').onclick=()=>{const t=$('dropText').value.trim();if(!t){$('fillMsg').className='msg err';$('fillMsg').textContent='Paste some text first, or drop a file.';return}quickFill(t,null,'')};
 function quoteFill(q){
   // PSW quote sheet PDF: read its own form fields directly, no Claude needed
-  const o={company:q.f_client_name,phone:q.f_phone,email:q.f_email,leadSource:q.f_lead_source};
+  const o={company:q.f_client_name,phone:q.f_phone,email:q.f_email,leadSource:$('leadSource').value.trim()?'':q.f_lead_source};
   if(q.f_contact_first||q.f_contact_last){o.firstName=String(q.f_contact_first||'').trim();o.lastName=String(q.f_contact_last||'').trim()}
   else{const nm=String(q.f_contact_name||'').trim().split(/\s+/).filter(Boolean);  // quote sheets saved before the name was split
   if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}}
