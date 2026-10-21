@@ -36,7 +36,7 @@ tbody tr{cursor:pointer}
 tbody tr:hover{background:var(--soft)}
 tbody tr:last-child td{border-bottom:none}
 .cdot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.15);padding:0;margin-right:8px;vertical-align:-3px;cursor:pointer;display:inline-block}
-.cdot.yes{background:#1f9d55}.cdot.no{background:#d64545}.cdot.dead{background:#111}
+.cdot.yes{background:#1f9d55}.cdot.no{background:#d64545}.cdot.dead{background:#111}.qlBox{margin-top:10px;padding:10px 12px;border:1px solid #c9b6f0;background:#f3eefc;border-radius:10px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:13.5px}.qlBox .msg{flex-basis:100%;margin:0}.qlBox .msg:empty{display:none}#qlDlgBox{width:min(560px,100%)}#qlUrl{font-size:13px}
 .sold{display:inline-block;background:#1f9d55;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}.dead{display:inline-block;background:#111;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
@@ -246,6 +246,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><select id="fillWhich" style="width:auto;flex:none" title="Which sheet Quick fill makes"><option value="detect">Auto-detect</option><option value="quote">Com quote</option><option value="auto">Com auto quote</option><option value="both">Both</option></select><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button><button class="pri" id="newPauto">Personal auto quote</button></div>
       <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
       <div class="msg" id="fillMsg"></div>
+      <div class="qlBox" id="qlBox" hidden><span id="qlTxt"></span><button class="pri" id="qlApply" hidden>Update quote sheet</button><div class="msg" id="qlMsg"></div></div>
     </div>
 
     <div class="sec">
@@ -562,6 +563,13 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="msg" id="c2Msg"></div>
   <div class="row"><button id="c2Cancel">Cancel</button><button class="pri" id="c2Go">Copy</button><button class="pri" id="c2Open" hidden>Open client</button></div>
 </div></div>
+<div class="mbg" id="qlDlg" role="dialog" aria-modal="true" aria-labelledby="qlTitleH"><div class="mbox" id="qlDlgBox">
+  <h3 id="qlTitleH">Com quote link for the client</h3>
+  <p class="small" style="margin:0 0 8px">The client opens this link, fills in the blanks on the com quote and presses Send. Their answers come back to this lead and you get a task. The link works once and expires in 14 days. Sending a new link cancels the old one.</p>
+  <input id="qlUrl" readonly>
+  <div class="msg" id="qlDlgMsg"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="qlClose">Close</button><button id="qlCopy">Copy link</button><button class="pri" id="qlText">Text to client</button><a class="btn pri" id="qlEmail" target="_blank" rel="noopener">Email to client</a></div>
+</div></div>
 <div class="mbg" id="txDlg" role="dialog" aria-modal="true" aria-labelledby="txTitleH"><div class="mbox" id="txBox">
   <h3 id="txTitleH">Text customer</h3>
   <div class="grid" style="grid-template-columns:1fr">
@@ -613,7 +621,7 @@ const FIELDS=['leadDate','assignedTo','firstName','lastName','company','phone','
 leadsCol.onSnapshot(s=>{
   leads=s.docs.map(d=>({id:d.id,...d.data()}));
   render();renderTasks();
-  if(cur&&cur.id){const l=leads.find(x=>x.id===cur.id);if(l){cur=l;fillMeta();renderFiles()}}
+  if(cur&&cur.id){const l=leads.find(x=>x.id===cur.id);if(l){cur=l;fillMeta();renderFiles();renderQl()}}
 },e=>{$('count').textContent=errText(e)});
 
 function opts(sel,vals,first){const v=sel.value;sel.innerHTML=`<option value="">${first}</option>`+vals.map(x=>`<option>${esc(x)}</option>`).join('');sel.value=vals.includes(v)?v:''}
@@ -714,7 +722,7 @@ function openLead(l){
   $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each. Drag a file out to your desktop or an email.');
-  $('log').innerHTML=has?'':'';renderFiles();
+  $('log').innerHTML=has?'':'';renderFiles();renderQl();$('qlMsg').textContent='';
   if(has){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
@@ -1042,6 +1050,66 @@ async function makeQuoteSheet(q){
     addPending(file);return `, and a quote sheet is ready to attach when you save`;
   }catch(e){return ` (the quote sheet couldn’t be made: ${e.message||'error'})`}
 }
+/* ---------- com quote link: the client fills in the com quote sheet on a web page ---------- */
+// the web form is built from the com quote sheet (lead date/source, exp date, WC owners/classes, excess and AIs stay office-only)
+const QL_LABEL={client_name:'Business name',dba:'DBA (if any)',entity_type:'Business type',contact_first:'Your first name',contact_last:'Your last name',phone:'Phone',email:'Email',mailing_address:'Mailing address',property_address:'Business / property address',description:'What does your business do?',detailed_description:'More about your business',line_of_business:'Coverage you want',eff_date:'Date you want coverage to start (MM/DD/YYYY)',currently_insured:'Are you insured now?',current_carrier_price:'Current insurance company and price',year_started:'Year the business started',years_experience:'Years of experience in this business',num_owners:'Number of owners',gross_receipts:'Yearly gross sales',payroll:'Yearly payroll',full_time:'Full time employees',part_time:'Part time employees',claims:'Any claims in the last 5 years?',claims_detail:'Claim details',
+  b1_address:'Building address',b1_yr:'Year built',b1_sqft:'Square feet',b1_const:'Construction (frame, masonry…)',b1_roof:'Roof type',b1_dwelling:'Building value',b1_bpp:'Contents / equipment value',b1_rents:'Loss of rents',b1_wiring:'Year wiring updated',b1_roofup:'Year roof updated',b1_plumbing:'Year plumbing updated',b1_heating:'Year heating updated'};
+const QL_SKIP=new Set(['lead_date','lead_source','exp_date','tax_id']),QL_TITLE={'Client info':'Your business','Company info':'Business details','Building info':'Building (if you own or rent one)'};
+function qlForm(){const out=[];
+  for(const s of QS_SECTIONS){const fs=[],add=(k,label,o)=>{if(!QL_SKIP.has(k))fs.push({k,label:QL_LABEL[k]||label,...o})};
+    for(const f of s.fields||[]){add(f.k,f.label,f.radio?{type:'radio',opts:f.radio}:f.opts?{type:'select',opts:f.opts}:f.area?{type:'area'}:{});
+      if(f.pair)add(f.pair,f.label2||f.pair,f.opts2?{type:'select',opts:f.opts2}:{});(f.also||[]).forEach(a=>add(a.k,a.label,a.opts?{type:'select',opts:a.opts}:{}))}
+    (s.bldg||[]).forEach(f=>add('b1_'+f.k,f.label,{}));
+    if(fs.length)out.push({title:QL_TITLE[s.title]||s.title,fields:fs})}
+  return out}
+const latestQs=()=>[...((cur&&cur.files)||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
+// every box on a PSW quote sheet PDF, by key (text boxes are f_<key>, building/grid boxes are the key itself)
+async function readQsValues(f){await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const pdf=await PDFLib.PDFDocument.load(await fileBytes(f)),v={};
+  for(const fl of pdf.getForm().getFields()){const n=fl.getName().replace(/^f_/,'');
+    if(fl instanceof PDFLib.PDFTextField)v[n]=fl.getText()||'';else if(fl instanceof PDFLib.PDFCheckBox)v[n]=fl.isChecked()?'Yes':'';else if(fl instanceof PDFLib.PDFRadioGroup||fl instanceof PDFLib.PDFDropdown)v[n]=[].concat(fl.getSelected()||'')[0]||''}
+  return v}
+let qlForUrl='';
+$('mailBtns').addEventListener('click',async e=>{if(!e.target.closest('#qlSend'))return;e.preventDefault();e.stopImmediatePropagation();
+  if(!(await ensureSaved()))return;if(isLocked('lead'))return toast('This lead is view-only right now.');
+  const b=$('qlSend');b.disabled=true;b.textContent='Making link…';
+  try{const form=qlForm(),keys=new Set(form.flatMap(s=>s.fields.map(f=>f.k))),qs=latestQs();let v={};
+    if(qs)try{v=await readQsValues(qs)}catch(_){}
+    const g=k=>$(k).value.trim(),person=[g('firstName'),g('lastName')].filter(Boolean).join(' ');
+    v.client_name=v.client_name||g('company')||person;v.contact_first=v.contact_first||g('firstName');v.contact_last=v.contact_last||g('lastName');v.phone=v.phone||fmtPhone(g('phone'));v.email=v.email||g('email');
+    const values={};for(const k of keys)if(v[k]!=null&&String(v[k]).trim())values[k]=String(v[k]).trim();
+    const r=await fetch('/api/tracker/quote-link',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead:'leads/'+cur.id,form,values,title:`Quote for ${v.client_name||person||'your business'}`})});
+    const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.code==='not_found'?'Save the lead first.':'Couldn’t make the link. Try again.');
+    qlForUrl=location.origin+j.url;const first=g('firstName')||'there',msg=`Hi ${first}, please fill in the missing info for your insurance quote here: ${qlForUrl}\nThank you, ${myName||'PSW Insurance'} (818) 701-1033`;
+    $('qlUrl').value=qlForUrl;$('qlDlgMsg').textContent='';
+    $('qlEmail').href=`mailto:${encodeURIComponent(g('email'))}?subject=${encodeURIComponent('Your insurance quote: a few questions')}&body=${encodeURIComponent(msg)}`;
+    $('qlText').onclick=()=>{closeQl();$('textBtn').click();setTimeout(()=>{$('txMsg').value=msg;$('txMsg').dispatchEvent(new Event('input'))},60)};
+    $('qlDlg').classList.add('on');setTimeout(()=>$('qlUrl').select(),30)}
+  catch(err){toast(err.message||errText(err))}
+  finally{b.disabled=false;b.textContent='Send quote link'}},true);
+const closeQl=()=>$('qlDlg').classList.remove('on');$('qlClose').onclick=closeQl;$('qlDlg').addEventListener('click',e=>{if(e.target===$('qlDlg'))closeQl()});
+$('qlCopy').onclick=async()=>{try{await navigator.clipboard.writeText(qlForUrl);$('qlDlgMsg').className='msg ok';$('qlDlgMsg').textContent='Link copied.'}catch(_){$('qlUrl').select();$('qlDlgMsg').className='msg err';$('qlDlgMsg').textContent='Couldn’t copy; the link is selected, press Ctrl+C.'}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('qlDlg').classList.contains('on')){e.stopImmediatePropagation();closeQl()}},true);
+function renderQl(){const q=cur&&cur.qlink,box=$('qlBox');if(!q||!q.state){box.hidden=true;return}box.hidden=false;
+  const d=t=>t?fmtDate(new Date(t*1000).toISOString().slice(0,10)):'';
+  if(q.state==='done'&&!q.applied){$('qlTxt').innerHTML=`<b>The client filled in the quote link</b> on ${esc(d(q.doneAt))}.`;$('qlApply').hidden=false}
+  else if(q.state==='done'){$('qlTxt').textContent=`The client’s quote link answers are on the quote sheet (${d(q.doneAt)}).`;$('qlApply').hidden=true}
+  else{const exp=(q.expires||0)*1000<Date.now();$('qlTxt').textContent=exp?`The quote link sent ${d(q.sentAt)} expired without an answer.`:`Quote link sent ${d(q.sentAt)}; waiting for the client.`;$('qlApply').hidden=true}}
+$('qlApply').onclick=async()=>{if(isLocked('lead'))return toast('This lead is view-only right now.');const b=$('qlApply'),m=$('qlMsg');b.disabled=true;m.className='msg';m.textContent='Updating the quote sheet…';
+  try{const r=await fetch('/api/tracker/quote-link?lead='+encodeURIComponent('leads/'+cur.id),{credentials:'same-origin'});const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.answers)throw new Error('The client’s answers weren’t found.');
+    const qs=latestQs();let v={};if(qs)try{v=await readQsValues(qs)}catch(_){}
+    const ans=j.answers,merged={...j.values,...v,...ans};
+    const g=k=>$(k).value.trim(),person=[g('firstName'),g('lastName')].filter(Boolean).join(' ');
+    merged.client_name=merged.client_name||g('company')||person;
+    ['gross_receipts','payroll'].forEach(k=>{if(ans[k])merged[k]=fmtMoney(ans[k])});QS_SECTIONS.forEach(s=>(s.bldg||[]).forEach(f=>{const k='b1_'+f.k;if(f.money&&ans[k])merged[k]=fmtMoney(ans[k])}));
+    const bytes=await buildQuotePdf(merged),name=qs?qs.name:`${String(merged.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com quote sheet.pdf`;
+    if((await uploadOne(new File([bytes],name,{type:'application/pdf'})))!==true)throw new Error('The new quote sheet couldn’t be attached (see Files below).');
+    // empty lead boxes take the client's answers too
+    const up={qlink:{...cur.qlink,applied:true}},put=(k,x)=>{if(x&&!String(cur[k]||'').trim()){up[k]=x;$(k).value=x}};
+    put('firstName',ans.contact_first);put('lastName',ans.contact_last);put('company',ans.client_name);put('phone',ans.phone&&fmtPhone(ans.phone));put('email',ans.email);
+    await leadsCol.doc(cur.id).update(up);Object.assign(cur,up);renderQl();m.className='msg ok';m.textContent=`${name} now has the client’s answers.`}
+  catch(e){m.className='msg err';m.textContent=e.message||errText(e)}
+  finally{b.disabled=false}};
 function addPending(f){pending=pending.filter(x=>x.name!==f.name);pending.push(f);showKeep()}
 function showKeep(){$('keepWrap').hidden=!(assets&&pending.length);$('keepName').textContent=pending.map(f=>f.name).join(' and ')}
 
@@ -1349,7 +1417,7 @@ function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
   const fs=(cur&&cur.files)||[];
   $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
-  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">Email ${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a>`;
+  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">Email ${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
 }
 $('mailPick').addEventListener('change',e=>{const id=e.target.dataset.mf;if(!id)return;e.target.checked?mailSel.add(id):mailSel.delete(id)});
 function mailClient(){const v=k=>$(k).value.trim(),nm=[v('firstName'),v('lastName')].filter(Boolean).join(' ');return {nm,co:v('company')}}

@@ -88,6 +88,8 @@ def init_db():
         c.execute("CREATE TABLE IF NOT EXISTS locks(path TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL, tab TEXT NOT NULL, expires REAL NOT NULL)")
         if "can_delete" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Delete Yes/No (everyone could delete before this)
             c.execute("ALTER TABLE users ADD COLUMN can_delete INTEGER NOT NULL DEFAULT 1")
+        c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
+                  "vals TEXT NOT NULL, answers TEXT, agent TEXT NOT NULL, created REAL NOT NULL, created_by TEXT NOT NULL, expires REAL NOT NULL, submitted REAL)")
 
 
 # ---------- passwords ----------
@@ -741,6 +743,118 @@ async def sample(request: Request):
         err(502, "unavailable")
     text = "".join(b.get("text", "") for b in out.get("content", []) if b.get("type") == "text")
     return {"text": text, "truncated": out.get("stop_reason") == "max_tokens"}
+
+
+# ---------- tracker module: com quote fill-in link for the client ----------
+# An agent sends the client a private link (/q/<token>) to a web copy of the lead's com quote sheet.
+# The client fills in the blanks and submits once; the answers wait on the lead, and the lead's agent gets a task.
+LINK_DAYS = 14
+LEAD_PATH = re.compile(r"^leads/[A-Za-z0-9_\-]{1,64}$")
+QKEY = re.compile(r"^[a-z0-9_]{1,40}$")
+
+
+def form_keys(form):
+    return {f.get("k") for s in form for f in (s.get("fields") or []) if isinstance(f, dict)}
+
+
+def lead_patch(c, lead, patch):
+    r = c.execute("SELECT data FROM tracker_docs WHERE path=?", (lead,)).fetchone()
+    if r:
+        d = json.loads(r["data"]); d.update(patch)
+        c.execute("UPDATE tracker_docs SET data=?, updated=? WHERE path=?", (clean_data(d), time.time(), lead))
+    return json.loads(r["data"]) if r else None
+
+
+@app.post("/api/tracker/quote-link")
+async def quote_link_new(request: Request):
+    need_module("tracker"); u = need_user(request)
+    body = await request.json()
+    lead, form, vals = body.get("lead", ""), body.get("form"), body.get("values") or {}
+    if not LEAD_PATH.match(lead) or not isinstance(form, list) or not isinstance(vals, dict):
+        err(400, "bad_data")
+    keys = form_keys(form)
+    if not keys or not all(isinstance(k, str) and QKEY.match(k) for k in keys):
+        err(400, "bad_form")
+    vals = {k: str(v)[:4000] for k, v in vals.items() if k in keys and v not in (None, "")}
+    title = str(body.get("title") or "")[:200]
+    form_s, vals_s = json.dumps(form), json.dumps(vals)
+    if len(form_s) + len(vals_s) > MAX_DOC:
+        err(413, "too_large")
+    tok = secrets.token_urlsafe(24)
+    now = time.time()
+    with db() as c:
+        if not c.execute("SELECT 1 FROM tracker_docs WHERE path=?", (lead,)).fetchone():
+            err(404, "not_found")
+        c.execute("DELETE FROM quote_links WHERE lead=? AND submitted IS NULL", (lead,))  # one open link per lead: a new one replaces it
+        c.execute("INSERT INTO quote_links(token_hash,lead,title,form,vals,agent,created,created_by,expires) VALUES(?,?,?,?,?,?,?,?,?)",
+                  (token_hash(tok), lead, title, form_s, vals_s, u["name"], now, u["id"], now + LINK_DAYS * 86400))
+        lead_patch(c, lead, {"qlink": {"state": "sent", "sentAt": now, "expires": now + LINK_DAYS * 86400}})
+        bump(c)
+    return {"token": tok, "url": f"/q/{tok}", "expires": now + LINK_DAYS * 86400}
+
+
+@app.get("/api/tracker/quote-link")
+def quote_link_get(request: Request, lead: str):
+    need_module("tracker"); need_user(request)
+    if not LEAD_PATH.match(lead):
+        err(400, "bad_data")
+    with db() as c:
+        r = c.execute("SELECT * FROM quote_links WHERE lead=? ORDER BY created DESC LIMIT 1", (lead,)).fetchone()
+    if not r:
+        return {"exists": False}
+    return {"exists": True, "submitted": r["submitted"], "expires": r["expires"], "values": json.loads(r["vals"]),
+            "answers": json.loads(r["answers"]) if r["answers"] else None}
+
+
+def open_link(c, tok):
+    r = c.execute("SELECT * FROM quote_links WHERE token_hash=?", (token_hash(tok or ""),)).fetchone()
+    if not r:
+        err(404, "not_found")
+    if r["submitted"]:
+        err(410, "submitted")
+    if r["expires"] < time.time():
+        err(410, "expired")
+    return r
+
+
+@app.get("/api/public/quote/{tok}")
+def quote_public_get(tok: str):
+    with db() as c:
+        r = open_link(c, tok)
+    return {"title": r["title"], "agent": r["agent"], "form": json.loads(r["form"]), "values": json.loads(r["vals"])}
+
+
+@app.post("/api/public/quote/{tok}")
+async def quote_public_submit(tok: str, request: Request):
+    body = await request.json()
+    ans = body.get("answers")
+    if not isinstance(ans, dict):
+        err(400, "bad_data")
+    with db() as c:
+        r = open_link(c, tok)
+        keys = form_keys(json.loads(r["form"]))
+        ans = {k: str(v).strip()[:4000] for k, v in ans.items() if k in keys and isinstance(v, (str, int, float)) and str(v).strip()}
+        now = time.time()
+        if c.execute("UPDATE quote_links SET answers=?, submitted=? WHERE token_hash=? AND submitted IS NULL",
+                     (json.dumps(ans), now, r["token_hash"])).rowcount != 1:
+            err(410, "submitted")
+        d = lead_patch(c, r["lead"], {"qlink": {"state": "done", "sentAt": r["created"], "doneAt": now}}) or {}
+        who = " ".join(x for x in (d.get("firstName", ""), d.get("lastName", "")) if x).strip() or d.get("company") or r["title"] or "A client"
+        task = {"title": f"{who} filled in the com quote link: open the lead and click Update quote sheet",
+                "firstName": d.get("firstName", ""), "lastName": d.get("lastName", ""), "company": d.get("company", ""),
+                "assignedTo": d.get("assignedTo") or r["agent"], "due": time.strftime("%Y-%m-%d"), "priority": "High",
+                "leadId": r["lead"].split("/", 1)[1], "notes": "", "files": [], "done": False, "doneAt": "",
+                "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+        i = new_id()
+        c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
+                  (f"tasks/{i}", "tasks", i, clean_data(task), now, r["created_by"]))
+        bump(c)
+    return {"ok": True}
+
+
+@app.get("/q/{tok}")
+def quote_public_page(tok: str):
+    return FileResponse(STATIC / "quote-form.html", headers={**NO_STORE, "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer"})
 
 
 # ---------- pages and supporting files ----------
