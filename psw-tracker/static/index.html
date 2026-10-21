@@ -318,7 +318,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
   </div><div class="dbR">
     <div class="sec" id="contactSec">
-      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button><button type="button" class="tgl" id="deadTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="deadTxt">Not dead</span></button></h3>
+      <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" title="Click to change: Not sold, Sold, Dead"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button></h3>
       <div class="grid">
         <div><label for="cAt">Date / time</label><input id="cAt" type="datetime-local"></div>
         <div><label for="cHow">How contacted</label>
@@ -704,11 +704,12 @@ function azSort(el){const os=[...el.querySelectorAll('option')];if(os.length<3)r
   run();document.querySelectorAll('datalist').forEach(d=>mo.observe(d,{childList:true}));AZ_SELECTS.forEach(id=>{const el=$(id);if(el)mo.observe(el,{childList:true})})}
 $('newBtn').onclick=()=>view==='tasks'?openTask(null,{}):view==='clients'?openClient(null,{}):view==='binder'?openBin(null,{month:monKey(new Date())}):openLead(null);
 
+// one button cycles the lead's outcome: Not sold -> Sold -> Dead -> Not sold
+const saleState=l=>l&&l.dead===true?'dead':l&&l.sold===true?'sold':'not',SALE_TXT={not:'Not sold',sold:'Sold',dead:'Dead'},SALE_NEXT={not:'sold',sold:'dead',dead:'not'};
 function showMade(){const on=!!(cur&&made(cur));const t=$('madeTgl');t.setAttribute('aria-checked',on);t.firstChild.className='cdot '+(on?'yes':'no');$('madeTxt').textContent=on?'Contact made':'No contact';
-  const so=!!(cur&&cur.sold===true),st=$('soldTgl');st.setAttribute('aria-checked',so);st.firstChild.className='cdot '+(so?'yes':'no');$('soldTxt').textContent=so?'Sold':'Not sold';
-  const dd=!!(cur&&cur.dead===true),dt=$('deadTgl');dt.setAttribute('aria-checked',dd);dt.firstChild.className='cdot '+(dd?'dead':'no');$('deadTxt').textContent=dd?'Dead':'Not dead'}
-$('soldTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=cur.sold!==true;try{await leadsCol.doc(cur.id).update({sold:on});cur.sold=on;showMade();toast(on?'Marked sold':'Marked not sold')}catch(e){toast(errText(e))}};
-$('deadTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=cur.dead!==true;try{await leadsCol.doc(cur.id).update({dead:on});cur.dead=on;showMade();toast(on?'Marked dead':'Marked not dead')}catch(e){toast(errText(e))}};
+  const st=saleState(cur);$('soldTgl').firstChild.className='cdot '+(st==='dead'?'dead':st==='sold'?'yes':'no');$('soldTxt').textContent=SALE_TXT[st]}
+$('soldTgl').onclick=async()=>{if(!(await ensureSaved()))return;const nx=SALE_NEXT[saleState(cur)],up={sold:nx==='sold',dead:nx==='dead'};
+  try{await leadsCol.doc(cur.id).update(up);Object.assign(cur,up);showMade();toast('Marked '+SALE_TXT[nx].toLowerCase())}catch(e){toast(errText(e))}};
 $('madeTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=!made(cur);try{await leadsCol.doc(cur.id).update({contactMade:on});cur.contactMade=on;showMade()}catch(e){toast(errText(e))}};
 function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').value=fmtDT(cur&&cur.lastContacted)}
 function openLead(l){
@@ -953,7 +954,7 @@ async function makeAutoSheet(q,force){
     if(!Object.keys(v).length&&!force)return '';
     const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
     v.client_name=v.client_name||$('company').value.trim()||person;
-    v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
+    v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=$('leadSource').value.trim()||v.lead_source;
     const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
     const eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);if(eff)v.eff_date=mdy(eff);
     for(let n=1;n<=6;n++){
@@ -1013,8 +1014,9 @@ async function upgradeAuto(f){
     let raw;try{raw=await fileBytes(f)}catch(_){return false}
     const doc=await PDFLib.PDFDocument.load(raw);
     const kw=doc.getKeywords()||'';if(!/^psw-(auto-)?quote-sheet$/.test(doc.getSubject()||''))return false;
-    if(kw.includes(FONT_MARK)&&kw.includes(auto?AUTO_LAYOUT:QS_LAYOUT))return false;
-    const v=sheetValues(doc);
+    const v=sheetValues(doc),src=cur&&cur.id?$('leadSource').value.trim():'',srcOff=!!src&&String(v.lead_source||'').trim()!==src; // the lead's Lead source is the one that counts
+    if(kw.includes(FONT_MARK)&&kw.includes(auto?AUTO_LAYOUT:QS_LAYOUT)&&!srcOff)return false;
+    if(src)v.lead_source=src;
     for(let n=1;n<=6;n++){
       const ymm=v[`v${n}_ymm`];if(ymm&&!v[`v${n}_year`]){const p=ymm.trim().split(/\s+/);if(/^\d{2,4}$/.test(p[0]))v[`v${n}_year`]=p.shift();if(p.length)v[`v${n}_make`]=p.shift();if(p.length)v[`v${n}_model`]=p.join(' ')}
       const nm=v[`d${n}_name`];if(nm&&!v[`d${n}_first`]){const p=nm.trim().split(/\s+/);v[`d${n}_first`]=p.shift();v[`d${n}_last`]=p.join(' ')}
@@ -1040,7 +1042,7 @@ async function makeQuoteSheet(q){
     const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
     v.client_name=v.client_name||$('company').value.trim()||person;
     if(v.contact_name&&!v.contact_first&&!v.contact_last){const nm=v.contact_name.split(/\s+/);v.contact_first=nm[0];v.contact_last=nm.slice(1).join(' ')}delete v.contact_name;
-    if(!v.contact_first&&!v.contact_last){v.contact_first=$('firstName').value.trim();v.contact_last=$('lastName').value.trim()}v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=v.lead_source||$('leadSource').value.trim();
+    if(!v.contact_first&&!v.contact_last){v.contact_first=$('firstName').value.trim();v.contact_last=$('lastName').value.trim()}v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=$('leadSource').value.trim()||v.lead_source;
     const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
     let eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);
     if(eff){v.eff_date=mdy(eff);if(!parseMdy(v.exp_date))v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()))}
@@ -1334,7 +1336,7 @@ $('fillStop').onclick=()=>fillCtl&&fillCtl.abort();
 $('fillBtn').onclick=()=>{const t=$('dropText').value.trim();if(!t){$('fillMsg').className='msg err';$('fillMsg').textContent='Paste some text first, or drop a file.';return}quickFill(t,null,'')};
 function quoteFill(q){
   // PSW quote sheet PDF: read its own form fields directly, no Claude needed
-  const o={company:q.f_client_name,phone:q.f_phone,email:q.f_email,leadSource:q.f_lead_source};
+  const o={company:q.f_client_name,phone:q.f_phone,email:q.f_email,leadSource:$('leadSource').value.trim()?'':q.f_lead_source};
   if(q.f_contact_first||q.f_contact_last){o.firstName=String(q.f_contact_first||'').trim();o.lastName=String(q.f_contact_last||'').trim()}
   else{const nm=String(q.f_contact_name||'').trim().split(/\s+/).filter(Boolean);  // quote sheets saved before the name was split
   if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}}
