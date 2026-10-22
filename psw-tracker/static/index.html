@@ -790,7 +790,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-1',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-2',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -934,11 +934,13 @@ const YN=['No','Yes'],HOME_YN=['earthquake','water_backup','brush','lapse','uw_b
 const HOME_DEDS=['$500','$1,000','$2,500','$5,000'],HOME_ALARM=['None','Local','Central'];
 const HOME_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Occupation',pair:'occupation'},{k:'co_first',n:1,label:'Co-applicant (first / last)',pair:'co_last'},{k:'co_dob',n:1,label:'Co-applicant birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},{k:'occupation',n:1,label:'Occupation',label2:'Employer',pair:'employer'},{k:'employer_address',n:1,label:'Employer address'},
    {k:'phone',n:1,label:'Phone Number',label2:'Email',pair:'email'},{k:'property_address',n:1,label:'Property address'},{k:'mailing_address',n:1,label:'Mailing address'},{k:'years_at_address',n:1,label:'Years at address',label2:'Prior address',pair:'prior_address'},{k:'eff_date',n:1,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
+ {title:'Second insured',fields:[{k:'co_first',n:1,label:'Name (first / last)',pair:'co_last'},{k:'co_dob',n:1,label:'Birthdate',label2:'Occupation',pair:'co_occupation'},{k:'co_employer',n:1,label:'Employer'},{k:'co_employer_address',n:1,label:'Employer address'}]},
  {title:'Policy',fields:[{k:'form_type',n:1,label:'Policy form',label2:'Occupancy',pair:'occupancy',opts:['HO-3','HO-5','HO-4 (renters)','HO-6 (condo)','DP-1','DP-3'],opts2:['Owner','Tenant','Secondary','Vacant']},{k:'currently_insured',n:1,label:'Insured now?',label2:'Current carrier',pair:'current_carrier',opts:['Yes','No']},{k:'current_premium',n:1,label:'Current premium',label2:'Policy expires',pair:'current_exp'},{k:'years_insured',n:1,label:'Years with carrier',label2:'Lapse in coverage?',pair:'lapse',opts2:YN}]},
- {title:'Coverages',fields:[{k:'dwelling',n:1,label:'Dwelling (A)',label2:'Other structures (B)',pair:'other_structures'},{k:'personal_property',n:1,label:'Personal property (C)',label2:'Loss of use (D)',pair:'loss_of_use'},{k:'liability',n:1,label:'Liability (E)',label2:'Med pay (F)',pair:'med_pay',opts:['$100,000','$300,000','$500,000'],opts2:['$1,000','$5,000']},
-   {k:'deductible',n:1,label:'Deductible',label2:'Wind / hail ded',pair:'wind_ded',opts:HOME_DEDS,opts2:['Same','1%','2%','5%']},{k:'earthquake',n:1,label:'Earthquake?',label2:'Water backup?',pair:'water_backup',opts:YN,opts2:YN},{k:'rc_contents',n:1,label:'Replacement cost contents?',label2:'Scheduled items',pair:'scheduled',opts:YN}]},
+ {title:'Coverages',fields:[{k:'dwelling',n:1,label:'Dwelling (A)',label2:'Deductible',pair:'deductible',opts2:HOME_DEDS},{k:'other_structures',n:1,label:'Other structures (B)',label2:'Wind / hail ded',pair:'wind_ded',opts2:['Same','1%','2%','5%']},
+   {k:'personal_property',n:1,label:'Personal property (C)',label2:'Earthquake?',pair:'earthquake',opts2:YN},{k:'loss_of_use',n:1,label:'Loss of use (D)',label2:'Water backup?',pair:'water_backup',opts2:YN},
+   {k:'liability',n:1,label:'Liability (E)',label2:'Repl cost contents?',pair:'rc_contents',opts:['$100,000','$300,000','$500,000'],opts2:YN},{k:'med_pay',n:1,label:'Med pay (F)',label2:'Scheduled items',pair:'scheduled',opts:['$1,000','$5,000']}]},
  {title:'Dwelling',fields:[{k:'year_built',n:1,label:'Year built',label2:'Square feet',pair:'sq_ft'},{k:'stories',n:1,label:'Stories',label2:'Construction',pair:'construction',opts:['1','2','3','4+'],opts2:['Frame','Masonry','Masonry veneer','Fire resistive']},{k:'roof_type',n:1,label:'Roof type',label2:'Roof year',pair:'roof_year',opts:['Composition shingle','Tile','Metal','Wood shake','Flat / tar']},
    {k:'foundation',n:1,label:'Foundation',label2:'Number of families',pair:'families',opts:['Slab','Raised','Basement'],opts2:['1','2','3','4']},{k:'wiring_year',n:1,label:'Wiring updated (yr)',label2:'Plumbing updated',pair:'plumbing_year'},{k:'heating_year',n:1,label:'Heating updated (yr)',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
    {k:'garage',n:1,label:'Garage',label2:'Bathrooms',pair:'bathrooms',opts:['Attached','Detached','Carport','None']},{k:'purchase_date',n:1,label:'Purchase date',label2:'Purchase price',pair:'purchase_price'},{k:'hydrant_ft',n:1,label:'Feet to hydrant',label2:'Miles to fire stn',pair:'station_mi'},{k:'protection_class',n:1,label:'Protection class',label2:'Brush / wildfire area?',pair:'brush',opts2:YN}]},
@@ -998,6 +1000,10 @@ async function newSheet(kind){
   const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':kind==='pauto'?' personal auto quote sheet.pdf':kind==='home'?' personal home quote sheet.pdf':' com quote sheet.pdf';
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
+  if(have&&kind==='home'){try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const d=await PDFLib.PDFDocument.load(await fileBytes(have));
+    if(d.getSubject()==='psw-home-quote-sheet'&&!(d.getKeywords()||'').includes(HOME_LAYOUT)){const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;
+      if(await uploadOne(new File([await buildQuotePdf(hv,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet')],have.name,{type:'application/pdf'}))){
+        m.className='msg ok';m.textContent=`${have.name} was updated to the new layout with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}}catch(_){}}
   if(have&&(kind==='qs'||auto)){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
   if(have){m.textContent=`This lead already has ${have.name}. Opening it.`;openEditor(have);return}
   const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
@@ -1795,14 +1801,14 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   // applicant and co-applicant
   const ins=[g('ins_first'),g('ins_last')].filter(Boolean).join(' '),co=[g('co_first'),g('co_last')].filter(Boolean).join(' ');
   set('NamedInsured_FullName_A',[ins,co].filter(Boolean).join(' & '));
-  set('NamedInsured_GivenName_A',g('ins_first'));set('NamedInsured_Surname_A',g('ins_last'));set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));
+  set('NamedInsured_GivenName_A',g('ins_first'));set('NamedInsured_Surname_A',g('ins_last'));set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));set('Employer_FullName_A',g('employer'));if(g('employer_address')){const e=A(g('employer_address'),'_A');addr('Employer_PhysicalAddress',e)}
   {const ms=g('ins_marital').toUpperCase()[0];if(ms&&'SMDW'.includes(ms))set('NamedInsured_MaritalStatusCode_A',ms)}
   set('NamedInsured_Primary_PhoneNumber_A',g('phone'));set('NamedInsured_Primary_EmailAddress_A',g('email'));
   const prop=A(g('property_address'),'_A'),mail=A(g('mailing_address')||g('property_address'),'_A');
   addr('NamedInsured_MailingAddress',mail);addr('NamedInsured_PhysicalAddress',prop);
   if(!g('mailing_address')||g('mailing_address').toLowerCase()===g('property_address').toLowerCase())set('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A',true);
   if(g('prior_address'))set('Residence_PreviousAddress_LineOne_A',g('prior_address'));
-  if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
+  if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_OccupationDescription_B',g('co_occupation'));set('Employer_FullName_B',g('co_employer'));if(g('co_employer_address')){const e=A(g('co_employer_address'),'_B');addr('Employer_PhysicalAddress',e)}set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
   // policy
   const occ=g('occupancy').toLowerCase(),form=g('form_type');
   set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
