@@ -1784,12 +1784,12 @@ $('edLead').onclick=async()=>{
   $('edLead').disabled=true;await $('saveBtn').onclick();$('edLead').disabled=false;
   const ok=$('saveMsg').classList.contains('ok');edMsg(ok?`Filled ${n} lead field${n===1?'':'s'} from this sheet and saved the lead.`:$('saveMsg').textContent,ok?'ok':'err');
 };
-// excess eff/exp dates tidy to MM/DD/YYYY; exp fills in one year after eff (until you type your own)
-$('edBody').addEventListener('focusout',e=>{const el=e.target,m=el&&/^x_(auto|gl|wc)_(eff|exp)$/.exec(el.name||'');if(!m)return;
+// policy and excess eff/exp dates tidy to MM/DD/YYYY; exp fills in one year after eff (until you type your own)
+$('edBody').addEventListener('focusout',e=>{const el=e.target,m=el&&/^(?:x_(?:auto|gl|wc)_(eff|exp)|f_(eff|exp)_date)$/.exec(el.name||'');if(!m)return;const which=m[1]||m[2];
   const put=(x,v)=>{if(x.value===v)return;x.value=v;x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}))};
   const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))put(el,fmtDate(iso));
-  if(m[2]==='exp'){el.dataset.auto='';return}
-  const d=parseMdy(el.value),ex=document.querySelector(`#edBody .annotationLayer [name="x_${m[1]}_exp"]`);
+  if(which==='exp'){el.dataset.auto='';return}
+  const d=parseMdy(el.value),ex=document.querySelector(`#edBody .annotationLayer [name="${el.name.replace('eff','exp')}"]`);
   if(d&&ex&&(!ex.value.trim()||ex.dataset.auto==='1')){put(ex,mdy(new Date(d.getFullYear()+1,d.getMonth(),d.getDate())));ex.dataset.auto='1'}});
 // personal auto sheet: driver 1 follows the named insured's name, birthdate, sex and marital status (until you type over it)
 {const D1={f_ins_first:'d1_first',f_ins_last:'d1_last',f_ins_dob:'d1_dob',f_ins_sex:'d1_sex',f_ins_marital:'d1_mar'};let copying=false,lic=false;
