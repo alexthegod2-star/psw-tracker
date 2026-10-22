@@ -1948,12 +1948,14 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   set('NamedInsured_Primary_PhoneNumber_A',g('phone'));set('NamedInsured_Primary_EmailAddress_A',g('email'));
   const prop=A(g('property_address'),'_A'),mail=A(g('mailing_address')||g('property_address'),'_A');
   addr('NamedInsured_MailingAddress',mail);addr('NamedInsured_PhysicalAddress',prop);
+  // mailing address under the name in the NAMED INSURED(S) box
+  if(v.NamedInsured_FullName_A){const cs=[mail.city,[mail.state,mail.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');set('NamedInsured_FullName_A',[v.NamedInsured_FullName_A,mail.street,cs].filter(Boolean).join('\n'))}
   if(!g('mailing_address')||g('mailing_address').toLowerCase()===g('property_address').toLowerCase())set('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A',true);
   if(g('prior_address'))set('Residence_PreviousAddress_LineOne_A',g('prior_address'));
   if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_OccupationDescription_B',g('co_occupation'));set('Employer_FullName_B',g('co_employer'));if(g('co_employer_address')){const e=A(g('co_employer_address'),'_B');addr('Employer_PhysicalAddress',e)}set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
   // policy
   const occ=g('occupancy').toLowerCase(),form=g('form_type');
-  set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
+  set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_Status_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
   set('ResidentialStructure_PolicyForm_FormTypeCode_A',form.replace(/\s*\(.*\)$/,''));
   if(occ==='owner'){set('Residence_Current_OwnedIndicator_A',true);set('ResidenceOccupancy_OccupancyType_OwnerIndicator_A',true)}
   // coverages
@@ -1963,6 +1965,7 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   set('ResidentialCoverage_Deductible_BaseAmount_A',money('deductible'));
   {const w=g('wind_ded');if(/%$/.test(w))set('ResidentialCoverage_Deductible_WindHailPercent_A',w.replace('%',''));else if(w&&!/same/i.test(w))set('ResidentialCoverage_Deductible_WindHailAmount_A',w.replace(/^\$\s*/,''))}
   if(yes('rc_contents'))set('ResidentialCoverage_ReplacementCostContents_IncludedIndicator_A',true);
+  set('ResidentialCoverage_ReplacementCostFullValue_IncludedIndicator_A',true);set('ResidentialCoverage_ReplacementCostDwelling_IncludedIndicator_A',true);
   // rating / underwriting (page 2)
   const con=g('construction').toLowerCase();
   if(con==='frame')set('Construction_ConstructionType_FrameIndicator_A',true);else if(con==='masonry')set('Construction_ConstructionType_MasonryIndicator_A',true);else if(con==='masonry veneer')set('Construction_ConstructionType_MasonryVeneerIndicator_A',true);
@@ -1978,7 +1981,11 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   {const sp=g('sprinklers').toLowerCase();if(sp==='partial')set('BuildingFireProtection_Sprinkler_PartialIndicator_A',true);else if(sp==='full')set('BuildingFireProtection_Sprinkler_FullIndicator_A',true)}
   set('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A',g('heating_type'));
   set('Construction_BuiltYear_A',g('year_built'));set('ResidentialStructure_TotalLivingArea_A',g('sq_ft'));set('ResidenceOccupancy_FamilyCount_A',g('families'));
-  {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else if(f==='basement')set('Construction_Foundation_ClosedIndicator_A',true)}
+  {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else set('Construction_Foundation_ClosedIndicator_A',true)}
+  // PSW defaults: excellent condition, extinguisher, copper wiring on breakers, 120 amps, in city limits
+  ['Housekeeping','PlumbingCondition','RoofCondition'].forEach(t=>set(`ResidentialStructure_${t}_ExcellentIndicator_A`,true));
+  set('BuildingFireProtection_ExtinguisherCode_A','Y');set('ResidentialStructure_Wiring_CopperIndicator_A',true);set('Construction_ElectricalPanel_CircuitBreakersIndicator_A',true);
+  set('Construction_ElectricalPanel_AmpereCount_A','120');set('ResidentialLocation_RiskLocation_InCityLimitsIndicator_A',true);
   if(g('uw_pool')&&!yes('uw_pool'))set('SwimmingPool_NoIndicator_A',true);
   if(yes('uw_wood_stove'))set('ResidentialStructure_Fireplace_WoodStoveInsertCount_A','1');
   ['Wiring','Plumbing','Heating','Roofing'].forEach(t=>{const k=t==='Roofing'?'roof':t.toLowerCase();if(yes(k+'_part'))set(`BuildingImprovement_${t}PartialIndicator_A`,true);if(yes(k+'_comp'))set(`BuildingImprovement_${t}CompleteIndicator_A`,true)});set('BuildingImprovement_WiringYear_A',g('wiring_year'));set('BuildingImprovement_PlumbingYear_A',g('plumbing_year'));set('BuildingImprovement_HeatingYear_A',g('heating_year'));set('BuildingImprovement_RoofingYear_A',g('roof_year'));
