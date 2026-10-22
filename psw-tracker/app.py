@@ -785,7 +785,7 @@ async def quote_link_new(request: Request):
     with db() as c:
         if not c.execute("SELECT 1 FROM tracker_docs WHERE path=?", (lead,)).fetchone():
             err(404, "not_found")
-        c.execute("DELETE FROM quote_links WHERE lead=? AND submitted IS NULL", (lead,))  # one open link per lead: a new one replaces it
+        # earlier links stay open until they expire, so a client holding an older link can still send it
         c.execute("INSERT INTO quote_links(token_hash,lead,title,form,vals,agent,created,created_by,expires) VALUES(?,?,?,?,?,?,?,?,?)",
                   (token_hash(tok), lead, title, form_s, vals_s, u["name"], now, u["id"], now + LINK_DAYS * 86400))
         lead_patch(c, lead, {"qlink": {"state": "sent", "sentAt": now, "expires": now + LINK_DAYS * 86400}})
@@ -799,7 +799,7 @@ def quote_link_get(request: Request, lead: str):
     if not LEAD_PATH.match(lead):
         err(400, "bad_data")
     with db() as c:
-        r = c.execute("SELECT * FROM quote_links WHERE lead=? ORDER BY created DESC LIMIT 1", (lead,)).fetchone()
+        r = c.execute("SELECT * FROM quote_links WHERE lead=? ORDER BY submitted IS NULL, COALESCE(submitted, created) DESC LIMIT 1", (lead,)).fetchone()
     if not r:
         return {"exists": False}
     return {"exists": True, "submitted": r["submitted"], "expires": r["expires"], "values": json.loads(r["vals"]),

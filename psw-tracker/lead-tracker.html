@@ -243,7 +243,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="drop" id="drop">
       <div class="hint"><b style="color:var(--ink)">Quick fill:</b> paste copied text here, or drop a file (PDF, picture, email, Word, Excel, text). Claude fills in the lead for you to review.</div>
       <textarea id="dropText" placeholder="Paste text from an email, web form, text message…"></textarea>
-      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><select id="fillWhich" style="width:auto;flex:none" title="Which sheet Quick fill makes"><option value="detect">Auto-detect</option><option value="quote">Com quote</option><option value="auto">Com auto quote</option><option value="both">Both</option></select><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button><button class="pri" id="newPauto">Personal auto quote</button></div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="fillBtn">Fill from text</button><select id="fillWhich" style="width:auto;flex:none" title="Which sheet Quick fill makes"><option value="detect">Auto-detect</option><option value="quote">Com quote</option><option value="auto">Com auto quote</option><option value="both">Both</option></select><label class="btn" style="margin:0;font-weight:400;color:var(--ink)">Choose file<input type="file" id="dropFile" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><button id="fillStop" hidden>Stop</button><button class="pri" id="newQs">Com quote</button><button class="pri" id="newAuto">Com auto quote</button><button class="pri" id="newPauto">Personal auto quote</button><button class="pri" id="newHome">Personal home quote</button></div>
       <label class="small" id="keepWrap" hidden style="margin-top:8px;font-weight:400;gap:6px;align-items:center"><input type="checkbox" id="keepFile" checked style="width:auto"> Attach <span id="keepName"></span> to this lead when you save</label>
       <div class="msg" id="fillMsg"></div>
       <div class="qlBox" id="qlBox" hidden><span id="qlTxt"></span><button class="pri" id="qlApply" hidden>Update quote sheet</button><div class="msg" id="qlMsg"></div></div>
@@ -288,7 +288,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="acordSec">
       <h3>ACORD forms</h3>
       <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
-      <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="140">Create 140</button><button class="pri" data-acord="131">Create 131</button></div>
+      <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="140">Create 140</button><button class="pri" data-acord="131">Create 131</button><button class="pri" data-acord="80">Create 80</button></div>
       <div class="msg" id="acordMsg"></div>
     </div>
 
@@ -726,7 +726,7 @@ function openLead(l){
   $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each. Drag a file out to your desktop or an email.');
-  $('log').innerHTML=has?'':'';renderFiles();renderQl();$('qlMsg').textContent='';
+  $('log').innerHTML=has?'':'';renderFiles();renderQl();$('qlMsg').textContent='';if(has)qlCheck(l.id);
   if(has){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
@@ -790,7 +790,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-1',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -828,7 +828,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
   const {PDFDocument,StandardFonts,rgb}=PDFLib;
   const doc=await PDFDocument.create();doc.setTitle(TITLE.replace(/^PACIFIC SOUTHWEST INSURANCE/,'PSW'));doc.setSubject(SUBJ);
   const {font,bold,embedded}=await sheetFonts(doc),form=doc.getForm();
-  doc.setKeywords([SECS===AUTO_SECTIONS?AUTO_LAYOUT:SECS===PAUTO_SECTIONS?PAUTO_LAYOUT:QS_LAYOUT,...(embedded?[FONT_MARK]:[])]);
+  doc.setKeywords([SECS===AUTO_SECTIONS?AUTO_LAYOUT:SECS===PAUTO_SECTIONS?PAUTO_LAYOUT:SECS===HOME_SECTIONS?HOME_LAYOUT:QS_LAYOUT,...(embedded?[FONT_MARK]:[])]);
   const W=612,H=792,L=36,R=W-36,ink=rgb(0.11,0.14,0.19),muted=rgb(0.4,0.44,0.52),line=rgb(0.75,0.78,0.83),band=rgb(0.8,0.87,0.96),pageBg=rgb(0.9,0.95,1);
   let page,y,newPage=()=>{page=doc.addPage([W,H]);y=H-40};const need=h=>{if(y-h<36)newPage()};
   const clean=x=>[...String(x||'')].map(ch=>{try{font.encodeText(ch);return ch}catch(_){return ' '}}).join('');
@@ -929,6 +929,26 @@ const PAUTO_SECTIONS=[
  {title:'Discounts',fields:[{k:'discounts',n:17,label:'Discounts',area:1}]},
  {title:'Notes',fields:[{k:'notes',n:18,label:'Notes',area:1}]}];
 {let c=0;PAUTO_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>{if(f.n)f.n=++c}))} // items numbered 1, 2, 3... straight through
+// personal home quote sheet: same look as the other sheets, with the homeowners (ACORD 80) questions; the yes/no questions start at No
+const YN=['No','Yes'],HOME_YN=['earthquake','water_backup','brush','lapse','uw_business','uw_pool','uw_trampoline','uw_wood_stove','uw_dog','uw_bite','uw_flood','uw_rented','uw_construction','uw_foreclosure','uw_cancelled'];
+const HOME_DEDS=['$500','$1,000','$2,500','$5,000'],HOME_ALARM=['None','Local','Central'];
+const HOME_SECTIONS=[
+ {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Occupation',pair:'occupation'},{k:'co_first',n:1,label:'Co-applicant (first / last)',pair:'co_last'},{k:'co_dob',n:1,label:'Co-applicant birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},
+   {k:'phone',n:1,label:'Phone Number',label2:'Email',pair:'email'},{k:'property_address',n:1,label:'Property address'},{k:'mailing_address',n:1,label:'Mailing address'},{k:'years_at_address',n:1,label:'Years at address',label2:'Prior address',pair:'prior_address'},{k:'eff_date',n:1,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
+ {title:'Policy',fields:[{k:'form_type',n:1,label:'Policy form',label2:'Occupancy',pair:'occupancy',opts:['HO-3','HO-5','HO-4 (renters)','HO-6 (condo)','DP-1','DP-3'],opts2:['Owner','Tenant','Secondary','Vacant']},{k:'currently_insured',n:1,label:'Insured now?',label2:'Current carrier',pair:'current_carrier',opts:['Yes','No']},{k:'current_premium',n:1,label:'Current premium',label2:'Policy expires',pair:'current_exp'},{k:'years_insured',n:1,label:'Years with carrier',label2:'Lapse in coverage?',pair:'lapse',opts2:YN}]},
+ {title:'Coverages',fields:[{k:'dwelling',n:1,label:'Dwelling (A)',label2:'Other structures (B)',pair:'other_structures'},{k:'personal_property',n:1,label:'Personal property (C)',label2:'Loss of use (D)',pair:'loss_of_use'},{k:'liability',n:1,label:'Liability (E)',label2:'Med pay (F)',pair:'med_pay',opts:['$100,000','$300,000','$500,000'],opts2:['$1,000','$5,000']},
+   {k:'deductible',n:1,label:'Deductible',label2:'Wind / hail ded',pair:'wind_ded',opts:HOME_DEDS,opts2:['Same','1%','2%','5%']},{k:'earthquake',n:1,label:'Earthquake?',label2:'Water backup?',pair:'water_backup',opts:YN,opts2:YN},{k:'rc_contents',n:1,label:'Replacement cost contents?',label2:'Scheduled items',pair:'scheduled',opts:YN}]},
+ {title:'Dwelling',fields:[{k:'year_built',n:1,label:'Year built',label2:'Square feet',pair:'sq_ft'},{k:'stories',n:1,label:'Stories',label2:'Construction',pair:'construction',opts:['1','2','3','4+'],opts2:['Frame','Masonry','Masonry veneer','Fire resistive']},{k:'roof_type',n:1,label:'Roof type',label2:'Roof year',pair:'roof_year',opts:['Composition shingle','Tile','Metal','Wood shake','Flat / tar']},
+   {k:'foundation',n:1,label:'Foundation',label2:'Number of families',pair:'families',opts:['Slab','Raised','Basement'],opts2:['1','2','3','4']},{k:'wiring_year',n:1,label:'Wiring updated (yr)',label2:'Plumbing updated',pair:'plumbing_year'},{k:'heating_year',n:1,label:'Heating updated (yr)',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
+   {k:'garage',n:1,label:'Garage',label2:'Bathrooms',pair:'bathrooms',opts:['Attached','Detached','Carport','None']},{k:'purchase_date',n:1,label:'Purchase date',label2:'Purchase price',pair:'purchase_price'},{k:'hydrant_ft',n:1,label:'Feet to hydrant',label2:'Miles to fire stn',pair:'station_mi'},{k:'protection_class',n:1,label:'Protection class',label2:'Brush / wildfire area?',pair:'brush',opts2:YN}]},
+ {title:'Protection',fields:[{k:'smoke',n:1,label:'Smoke detectors?',label2:'Burglar alarm',pair:'burglar_alarm',opts:YN,opts2:HOME_ALARM},{k:'fire_alarm',n:1,label:'Fire alarm',label2:'Sprinklers',pair:'sprinklers',opts:HOME_ALARM,opts2:['None','Partial','Full']},{k:'deadbolts',n:1,label:'Deadbolts?',label2:'Gated community?',pair:'gated',opts:YN,opts2:YN}]},
+ {title:'Mortgagee',table:{prefix:'mg',rows:2,cols:[{k:'name',label:'Mortgagee / lender',w:2},{k:'address',label:'Address',w:2.2},{k:'city',label:'City',w:1.2},{k:'state',label:'St',w:.45},{k:'zip',label:'Zip',w:.7},{k:'loan',label:'Loan #',w:1.3}]}},
+ {title:'Underwriting',fields:[{k:'uw_business',n:1,label:'Business on premises?',label2:'Pool or hot tub?',pair:'uw_pool',opts:YN,opts2:YN},{k:'uw_trampoline',n:1,label:'Trampoline?',label2:'Wood stove?',pair:'uw_wood_stove',opts:YN,opts2:YN},{k:'uw_dog',n:1,label:'Dogs or animals?',label2:'Dog breed(s)',pair:'uw_dog_breed',opts:YN},{k:'uw_bite',n:1,label:'Animal bite history?',label2:'In a flood zone?',pair:'uw_flood',opts:YN,opts2:YN},
+   {k:'uw_rented',n:1,label:'Rented / short-term rental?',label2:'Renovation now?',pair:'uw_construction',opts:YN,opts2:YN},{k:'uw_foreclosure',n:1,label:'Foreclosure / bankruptcy?',label2:'Cancelled / non-renewed?',pair:'uw_cancelled',opts:YN,opts2:YN},{k:'uw_explain',n:1,label:'Explain any Yes',area:1}]},
+ {title:'Loss history',fields:[{k:'claims',n:1,label:'Claims last 5 yrs',area:1}]},
+ {title:'Notes',fields:[{k:'notes',n:1,label:'Notes',area:1}]}];
+{let c=0;HOME_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>{if(f.n)f.n=++c}))}
 {let c=0;AUTO_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>{if(f.n)f.n=++c}))} // same on the com auto sheet, so moving a box keeps the numbers in order
 const AUTO_KEYS=[];
 AUTO_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>{(f.also||[]).forEach(a=>AUTO_KEYS.push([a.k,a.label+(a.opts?' ('+a.opts.join(' or ')+')':'')]));f.pair?AUTO_KEYS.push([f.k,'Owner first name'],[f.pair,'Owner last name']):AUTO_KEYS.push([f.k,f.label+(f.k==='entity_type'?' (Individual, Corporation, Partnership or LLC)':/date|dob/.test(f.k)?' (MM/DD/YYYY)':f.k==='client_note'?' (website)':f.k==='client_name'?' (business name)':f.k==='garaging_address'?' (where the vehicles are kept)':'')])});
@@ -975,10 +995,10 @@ async function newSheet(kind){
   const m=$('fillMsg');m.className='msg';
   if(!assets){m.className='msg err';m.textContent='You have view-only access, so you can’t add files.';return}
   if(!(await ensureSaved()))return;
-  const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':kind==='pauto'?' personal auto quote sheet.pdf':' com quote sheet.pdf';
+  const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':kind==='pauto'?' personal auto quote sheet.pdf':kind==='home'?' personal home quote sheet.pdf':' com quote sheet.pdf';
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
-  if(have&&kind!=='pauto'){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
+  if(have&&(kind==='qs'||auto)){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
   if(have){m.textContent=`This lead already has ${have.name}. Opening it.`;openEditor(have);return}
   const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
   const v={client_name:$('company').value.trim()||person,contact_name:person,phone:fmtPhone($('phone').value),email:$('email').value.trim(),lead_source:$('leadSource').value.trim()};
@@ -986,10 +1006,11 @@ async function newSheet(kind){
   v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
   if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
+  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner'});HOME_YN.forEach(k=>v[k]='No')}
   const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
-  const b=$(auto?'newAuto':kind==='pauto'?'newPauto':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
+  const b=$(auto?'newAuto':kind==='pauto'?'newPauto':kind==='home'?'newHome':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
-    const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):kind==='pauto'?await buildQuotePdf(v,PAUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL AUTO QUOTE SHEET','psw-pauto-quote-sheet'):await buildQuotePdf(v);
+    const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):kind==='pauto'?await buildQuotePdf(v,PAUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL AUTO QUOTE SHEET','psw-pauto-quote-sheet'):kind==='home'?await buildQuotePdf(v,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet'):await buildQuotePdf(v);
     if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){
       const f=(cur.files||[]).find(x=>x.name===name);m.className='msg ok';m.textContent=`${name} is attached. Fill it in, then hit Save to lead.`;if(f)openEditor(f)}
     else{m.className='msg err';m.textContent=$('fileMsg').textContent}
@@ -1032,7 +1053,7 @@ async function upgradeAuto(f){
   }catch(e){return false}
 }
 
-$('newQs').onclick=()=>newSheet('qs');$('newAuto').onclick=()=>newSheet('auto');$('newPauto').onclick=()=>newSheet('pauto');
+$('newQs').onclick=()=>newSheet('qs');$('newAuto').onclick=()=>newSheet('auto');$('newPauto').onclick=()=>newSheet('pauto');$('newHome').onclick=()=>newSheet('home');
 
 // Build "<client> com quote sheet.pdf" from what was pasted, and attach it to the lead (now if saved, else on Save)
 async function makeQuoteSheet(q){
@@ -1114,6 +1135,11 @@ $('qlMake').onclick=async()=>{const keys=qlChecked(),m=$('qlDlgMsg');if(!keys.le
 const closeQl=()=>$('qlDlg').classList.remove('on');$('qlClose').onclick=closeQl;$('qlDlg').addEventListener('click',e=>{if(e.target===$('qlDlg'))closeQl()});
 $('qlCopy').onclick=async()=>{try{await navigator.clipboard.writeText(qlForUrl);$('qlDlgMsg').className='msg ok';$('qlDlgMsg').textContent='Link copied.'}catch(_){$('qlUrl').select();$('qlDlgMsg').className='msg err';$('qlDlgMsg').textContent='Couldn’t copy; the link is selected, press Ctrl+C.'}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('qlDlg').classList.contains('on')){e.stopImmediatePropagation();closeQl()}},true);
+// a lead still showing "waiting" asks the server whether the client already sent the link, and catches up if so
+async function qlCheck(id){const q=cur&&cur.qlink;if(!q||q.state!=='sent')return;
+  try{const r=await fetch('/api/tracker/quote-link?lead='+encodeURIComponent('leads/'+id),{credentials:'same-origin'});const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.submitted||!cur||cur.id!==id)return;const up={qlink:{state:'done',sentAt:q.sentAt,doneAt:j.submitted}};
+    cur.qlink=up.qlink;renderQl();if(assets&&!isLocked('lead'))await leadsCol.doc(id).update(up)}catch(_){}}
 function renderQl(){const q=cur&&cur.qlink,box=$('qlBox');if(!q||!q.state){box.hidden=true;return}box.hidden=false;
   const d=t=>t?fmtDate(new Date(t*1000).toISOString().slice(0,10)):'';
   if(q.state==='done'&&!q.applied){$('qlTxt').innerHTML=`<b>The client filled in the quote link</b> on ${esc(d(q.doneAt))}.`;$('qlApply').hidden=false}
@@ -1544,7 +1570,7 @@ async function uploadOne(f){
   if(type==='application/pdf'&&!head.startsWith('%PDF')){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF (it starts with “${head}”), so it can’t be stored.`;return false}
   try{const r=await storeBytes(buf,type);
     const fresh=leads.find(l=>l.id===cur.id)||cur,entry={id:r.id,name:f.name,type,size:r.sizeBytes,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{})};
-    const old=/ (com quote sheet|com auto quote sheet|personal auto quote sheet|125|126|125 126|130|140)\.pdf$/i.test(f.name)?(fresh.files||[]).find(x=>x.name===f.name):null; // a new quote sheet replaces the old one
+    const old=/ (com quote sheet|com auto quote sheet|personal auto quote sheet|personal home quote sheet|125|126|125 126|130|140|80)\.pdf$/i.test(f.name)?(fresh.files||[]).find(x=>x.name===f.name):null; // a new quote sheet replaces the old one
     const files=old?(fresh.files||[]).map(x=>x===old?entry:x):[...(fresh.files||[]),entry];
     await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();m.className='msg ok';m.textContent=old?`${f.name} updated.`:`${f.name} attached.`;
     if(old){try{await assets.delete(old.id)}catch(_){}}
@@ -1753,9 +1779,108 @@ function build131(C,data,fields,checks,today){
   v.notes=rows.length?[]:['no Umbrella / Excess rows are checked on the quote sheet, so the underlying insurance lines are blank'];
   return v;
 }
+/* ---------- ACORD 80 (homeowner application) from the personal home quote sheet ---------- */
+let tpl80=null;
+async function acord80Tpl(){if(!tpl80){const r=await fetch('tpl80.pdf');if(!r.ok)throw new Error('ACORD 80 template missing');tpl80=new Uint8Array(await r.arrayBuffer())}return tpl80}
+// home sheet values -> ACORD 80 boxes (short names, without the F[0].Pn[0]. wrapper); true checks a box
+function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim(),yes=k=>/^y/i.test(g(k)),money=k=>g(k).replace(/^\$\s*/,''),today=new Date(),notes=[];
+  const set=(k,x)=>{if(x!=null&&x!==''&&x!==false)v[k]=x},addr=(pre,a)=>{set(pre+'_LineOne'+a.sfx,a.street);set(pre+'_CityName'+a.sfx,a.city);set(pre+'_StateOrProvinceCode'+a.sfx,a.state);set(pre+'_PostalCode'+a.sfx,a.zip)};
+  const A=(raw,sfx)=>Object.assign(C.parseAddress(raw),{sfx});
+  set('Form_CompletionDate_A',C.fmtDate(today));
+  // agency, same as the 125
+  set('Producer_FullName_A',S.agency_name);set('Producer_MailingAddress_LineOne_A',S.agency_street);
+  {const m=S.agency_city_state_zip.match(/^(.*),\s*([A-Z]{2})\s+(\d{5})/);if(m){set('Producer_MailingAddress_CityName_A',m[1]);set('Producer_MailingAddress_StateOrProvinceCode_A',m[2]);set('Producer_MailingAddress_PostalCode_A',m[3])}}
+  set('Producer_ContactPerson_FullName_A',S.producer_name);set('Producer_ContactPerson_PhoneNumber_A',S.producer_phone);set('Producer_FaxNumber_A',S.producer_fax);set('Producer_ContactPerson_EmailAddress_A',S.producer_email);
+  set('Producer_AuthorizedRepresentative_FullName_A',S.producer_name);set('Producer_StateLicenseIdentifier_A','0F41718');
+  // applicant and co-applicant
+  const ins=[g('ins_first'),g('ins_last')].filter(Boolean).join(' '),co=[g('co_first'),g('co_last')].filter(Boolean).join(' ');
+  set('NamedInsured_FullName_A',[ins,co].filter(Boolean).join(' & '));
+  set('NamedInsured_GivenName_A',g('ins_first'));set('NamedInsured_Surname_A',g('ins_last'));set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));
+  {const ms=g('ins_marital').toUpperCase()[0];if(ms&&'SMDW'.includes(ms))set('NamedInsured_MaritalStatusCode_A',ms)}
+  set('NamedInsured_Primary_PhoneNumber_A',g('phone'));set('NamedInsured_Primary_EmailAddress_A',g('email'));
+  const prop=A(g('property_address'),'_A'),mail=A(g('mailing_address')||g('property_address'),'_A');
+  addr('NamedInsured_MailingAddress',mail);addr('NamedInsured_PhysicalAddress',prop);
+  if(!g('mailing_address')||g('mailing_address').toLowerCase()===g('property_address').toLowerCase())set('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A',true);
+  if(g('prior_address'))set('Residence_PreviousAddress_LineOne_A',g('prior_address'));
+  if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
+  // policy
+  const occ=g('occupancy').toLowerCase(),form=g('form_type');
+  set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
+  set('ResidentialStructure_PolicyForm_FormTypeCode_A',form.replace(/\s*\(.*\)$/,''));
+  if(occ==='owner'){set('Residence_Current_OwnedIndicator_A',true);set('ResidenceOccupancy_OccupancyType_OwnerIndicator_A',true)}
+  // coverages
+  set('ResidentialCoverage_Dwelling_LimitAmount_A',money('dwelling'));set('ResidentialCoverage_OtherStructures_LimitAmount_A',money('other_structures'));
+  set('ResidentialCoverage_PersonalProperty_LimitAmount_A',money('personal_property'));set('ResidentialCoverage_LossofUse_LimitAmount_A',money('loss_of_use'));
+  set('ResidentialCoverage_PersonalLiability_EachOccurrenceLimitAmount_A',money('liability'));set('ResidentialCoverage_MedicalPayments_EachPersonLimitAmount_A',money('med_pay'));
+  set('ResidentialCoverage_Deductible_BaseAmount_A',money('deductible'));
+  {const w=g('wind_ded');if(/%$/.test(w))set('ResidentialCoverage_Deductible_WindHailPercent_A',w.replace('%',''));else if(w&&!/same/i.test(w))set('ResidentialCoverage_Deductible_WindHailAmount_A',w.replace(/^\$\s*/,''))}
+  if(yes('rc_contents'))set('ResidentialCoverage_ReplacementCostContents_IncludedIndicator_A',true);
+  // rating / underwriting (page 2)
+  const con=g('construction').toLowerCase();
+  if(con==='frame')set('Construction_ConstructionType_FrameIndicator_A',true);else if(con==='masonry')set('Construction_ConstructionType_MasonryIndicator_A',true);else if(con==='masonry veneer')set('Construction_ConstructionType_MasonryVeneerIndicator_A',true);
+  else if(con){set('Construction_ConstructionType_OtherIndicator_A',true);set('Construction_ConstructionCode_A',g('construction'))}
+  if(occ==='owner'||occ==='tenant')set('ResidenceOccupancy_Usage_PrimaryIndicator_A',true);else if(occ==='secondary')set('ResidenceOccupancy_Usage_SecondaryIndicator_A',true);
+  if(occ==='tenant')set('ResidenceOccupancy_OccupancyType_TenantIndicator_A',true);else if(occ==='vacant')set('ResidenceOccupancy_OccupancyType_VacantIndicator_A',true);
+  if(/HO-6/.test(form))set('ResidenceOccupancy_ResidenceType_CondominiumIndicator_A',true);else if(/HO-4/.test(form)){}else if(form)set('ResidenceOccupancy_ResidenceType_DwellingIndicator_A',true);
+  set('Construction_RoofMaterialCode_A',g('roof_type'));set('ResidentialStructure_PurchasePriceAmount_A',money('purchase_price'));set('ResidentialStructure_PurchaseDate_A',g('purchase_date'));
+  const al={central:'CentralStation',local:'LocalGong'},ba=al[g('burglar_alarm').toLowerCase()],fa=al[g('fire_alarm').toLowerCase()];
+  if(ba)set(`Alarm_Burglar_${ba}Indicator_A`,true);if(fa)set(`Alarm_Smoke_${fa}Indicator_A`,true);else if(yes('smoke'))set('Alarm_Smoke_LocalGongIndicator_A',true);
+  set('BuildingFireProtection_HydrantDistanceFeetCount_A',g('hydrant_ft'));set('BuildingFireProtection_FireStationDistanceMileCount_A',g('station_mi'));set('BuildingFireProtection_ProtectionClassCode_A',g('protection_class'));
+  if(yes('deadbolts'))set('ResidentialStructure_Security_DoorLockDeadboltIndicator_A',true);
+  {const sp=g('sprinklers').toLowerCase();if(sp==='partial')set('BuildingFireProtection_Sprinkler_PartialIndicator_A',true);else if(sp==='full')set('BuildingFireProtection_Sprinkler_FullIndicator_A',true)}
+  set('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A',g('heating_type'));
+  set('Construction_BuiltYear_A',g('year_built'));set('ResidentialStructure_TotalLivingArea_A',g('sq_ft'));set('ResidenceOccupancy_FamilyCount_A',g('families'));
+  {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else if(f==='basement')set('Construction_Foundation_ClosedIndicator_A',true)}
+  if(g('uw_pool')&&!yes('uw_pool'))set('SwimmingPool_NoIndicator_A',true);
+  if(yes('uw_wood_stove'))set('ResidentialStructure_Fireplace_WoodStoveInsertCount_A','1');
+  set('BuildingImprovement_WiringYear_A',g('wiring_year'));set('BuildingImprovement_PlumbingYear_A',g('plumbing_year'));set('BuildingImprovement_HeatingYear_A',g('heating_year'));set('BuildingImprovement_RoofingYear_A',g('roof_year'));
+  if(g('property_address')){set('Location_ProducerIdentifier_A','1');addr('Location_PhysicalAddress',prop)}
+  // prior coverage and losses
+  if(/^n/i.test(g('currently_insured'))&&!g('current_carrier'))set('PriorCoverage_NoPriorCoverageIndicator_A',true);
+  set('PriorCoverage_InsurerFullName_A',g('current_carrier'));set('PriorCoverage_ExpirationDate_A',g('current_exp'));
+  {const cl=g('claims');set('LossHistory_InformationYearCount_A','5');if(!cl||/^(none|no|n|0|clean)\b/i.test(cl))set('LossHistory_PriorLossesCode_A','N');else{set('LossHistory_PriorLossesCode_A','Y');set('LossHistory_OccurrenceDescription_A',cl)}}
+  // general information: Y/N pre-answered N, the sheet's answers where it has them
+  ['KAA','KAB','KAH','KAI','KAD','KAE','KAF','KAG'].forEach(q=>set(`PersonalPolicy_Question_${q}Code_A`,'N'));
+  ['KAZ','KBA','KBB','KBC','AAH','KBD','KBE','KBF','KBG','KBH','KBI','KBJ','ABA','KBK'].forEach(q=>set(`Residential_Question_${q}Code_A`,'N'));
+  set('Residential_Question_ABBCode_A','Y');set('Residential_Question_KDZCode_A',occ==='tenant'?'N':'Y');
+  const yn=(q,k,pre='Residential')=>{if(yes(k))v[`${pre}_Question_${q}Code_A`]='Y'};
+  yn('KAB','uw_cancelled','PersonalPolicy');yn('KAH','uw_foreclosure','PersonalPolicy');yn('KAZ','uw_business');yn('KBC','uw_dog');yn('KBG','uw_trampoline');yn('ABA','gated');yn('KBK','uw_construction');
+  if(yes('brush')||yes('uw_flood'))v.Residential_Question_KBBCode_A='Y';
+  if(yes('uw_dog')){set('AnimalExposure_AnimalTypeCode_A','Dog');set('AnimalExposure_BreedCode_A',g('uw_dog_breed'));set('AnimalExposure_BiteHistoryCode_A',yes('uw_bite')?'Y':'N')}
+  // mortgagees
+  [['1','_A','_A'],['2','_C','_B']].forEach(([n,nm,ad])=>{const name=g(`mg${n}_name`);if(!name)return;const a=n==='1'?'_A':'_B';
+    set('AdditionalInterest_Interest_MortgageeIndicator'+a,true);set('AdditionalInterest_InterestRank'+a,n);set('AdditionalInterest_FullName'+nm,name);
+    set('AdditionalInterest_MailingAddress_LineOne'+ad,g(`mg${n}_address`));set('AdditionalInterest_MailingAddress_CityName'+ad,g(`mg${n}_city`));set('AdditionalInterest_MailingAddress_StateOrProvinceCode'+ad,g(`mg${n}_state`).toUpperCase());set('AdditionalInterest_MailingAddress_PostalCode'+ad,g(`mg${n}_zip`));set('AdditionalInterest_AccountNumberIdentifier'+ad,g(`mg${n}_loan`))});
+  // anything else the sheet says goes in the remarks
+  const rem=[];if(yes('earthquake'))rem.push('Earthquake coverage requested');if(yes('water_backup'))rem.push('Water backup requested');if(g('scheduled'))rem.push('Scheduled items: '+g('scheduled'));
+  if(yes('uw_rented'))rem.push('Property is rented to others / short-term rental');if(yes('uw_pool'))rem.push('Pool or hot tub on premises');if(g('uw_explain'))rem.push(g('uw_explain'));if(g('notes'))rem.push(g('notes'));
+  if(g('stories'))rem.push('Stories: '+g('stories'));if(g('garage')&&!/none/i.test(g('garage')))rem.push('Garage: '+g('garage'));if(g('bathrooms'))rem.push('Bathrooms: '+g('bathrooms'));
+  set('Residential_RemarkText_A',rem.join('\n'));
+  if(!g('property_address'))notes.push('the home sheet has no property address');
+  return {v,notes}}
+async function fill80(v){const L=PDFLib,doc=await L.PDFDocument.load(await acord80Tpl()),f=doc.getForm(),helv=await doc.embedFont(L.StandardFonts.Helvetica);
+  const by={};for(const fl of f.getFields()){const k=fl.getName().replace(/^F\[0\]\.P\d+\[0\]\./,'').replace(/\[0\]$/,'');(by[k]=by[k]||[]).push(fl)}
+  for(const [k,val] of Object.entries(v))for(const fl of by[k]||[]){
+    if(fl instanceof L.PDFCheckBox){if(val)fl.check();continue}if(!(fl instanceof L.PDFTextField))continue;
+    const text=String(val).replace(/[^\x0A\x20-\x7E\xA0-\xFF]/g,''),r=fl.acroField.getWidgets()[0].getRectangle();let size=10;
+    if(!fl.isMultiline()){while(size>6&&helv.widthOfTextAtSize(text,size)>r.width-4)size-=0.5;size=Math.min(size,Math.max(6,r.height-2))}
+    else{const est=()=>text.split('\n').reduce((a,ln)=>a+Math.max(1,Math.ceil(helv.widthOfTextAtSize(ln,size)/(r.width-6))),0)*size*1.17;while(size>6&&est()>r.height-2)size-=0.5}
+    try{fl.setText(text)}catch(_){fl.setMaxLength(undefined);fl.setText(text)}{const da=fl.acroField.getDefaultAppearance()||'';if(/\\057|^$/.test(da))fl.acroField.setDefaultAppearance(da.replace(/\\057/g,'/')||'/Helv 10 Tf 0 g')}fl.setFontSize(size)}
+  f.updateFieldAppearances(helv);return await doc.save()}
+async function make80(m){const fresh=leads.find(l=>l.id===cur.id)||cur,hs=[...(fresh.files||[])].reverse().find(x=>/ personal home quote sheet\.pdf$/i.test(x.name));
+  if(!hs){m.className='msg err';m.textContent='This lead has no personal home quote sheet yet. Click Personal home quote at the top first.';return}
+  m.className='msg';m.textContent=`Reading ${hs.name}…`;await acordReady();
+  let raw;try{raw=await fileBytes(hs)}catch(_){throw new Error('the home quote sheet file is missing')}
+  const h=sheetValues(await PDFLib.PDFDocument.load(raw)),{v,notes}=build80(window.AcordCore,h),bytes=await fill80(v);
+  const client=([h.ins_first,h.ins_last].filter(Boolean).join(' ')||'Client').replace(/[\\/:*?"<>|]+/g,'').trim(),name=`${client} 80.pdf`;
+  if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(notes.length?`<div class="small" style="margin-top:4px">Heads up: ${notes.map(esc).join(' · ')}</div>`:'')}
+  else{m.className='msg err';m.textContent=$('fileMsg').textContent}}
 $('acordSec').addEventListener('click',async e=>{
   const forms=e.target.dataset.acord;if(!forms||!cur||!cur.id)return;
   const m=$('acordMsg'),btn=e.target,label=btn.textContent;
+  if(forms==='80'){document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=true);btn.textContent='Working…';
+    try{await make80(m)}catch(err){m.className='msg err';m.textContent='Couldn’t make the ACORD: '+(err.message||err.code||'error')}
+    document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=false);btn.textContent=label;return}
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
   if(!qs){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
@@ -2368,6 +2493,8 @@ const PP_FEES={policyFee:'Policy fee',gaFee:'GA fee',tax:'Tax',stamping:'Stampin
 const PP_MAIN={line:'Line of business, one of '+JSON.stringify(LOBS),carrier:'General agent / wholesaler / MGA, if any',company:'Insurance company (carrier)',number:'Policy or binder number',eff:'Effective date MM/DD/YYYY',exp:'Expiration date MM/DD/YYYY',premium:'Premium (base premium before fees and taxes)',state:'Policy state, 2-letter code',nb:'"New" or "Renewal" if stated',...PP_FEES};
 const ppDetailKeys=line=>(LOB_FIELDS[line]||[]).flatMap(([k,l])=>{if(k[0]!=='#')return [[k,l]];const t0=PAUTO_SECTIONS.find(x=>x.title===k.slice(1)).table,cols=k==='#Vehicles'?[...t0.cols,...t0.cols2.filter(c=>c.k!=='owned')]:t0.cols;
   return Array.from({length:t0.rows},(_,j)=>cols.map(c=>[`${t0.prefix}${j+1}_${c.k}`,`${k==='#Drivers'?'Driver':'Vehicle'} ${j+1} ${c.label}`+(c.opts?' ('+c.opts.join(' / ')+')':'')+(c.k==='dob'?' MM/DD/YYYY':'')])).flat()});
+function ppFromHome(q){ // PSW personal home quote sheet boxes -> Personal Home policy fields
+  const g=k=>q['f_'+k]||'';return {line:'Personal Home',eff:g('eff_date'),exp:g('exp_date'),extra:{address:g('property_address'),year_built:g('year_built'),dwelling:g('dwelling'),other_structures:g('other_structures'),personal_property:g('personal_property'),loss_of_use:g('loss_of_use'),liability:g('liability'),med:g('med_pay'),deductible:g('deductible'),sq_ft:g('sq_ft'),construction:g('construction'),roof:g('roof_year')}}}
 function ppFromSheet(q){ // PSW personal auto quote sheet boxes -> policy fields
   const x={bi:q.f_bi_limit,pd:q.f_pd_limit,um:q.f_um_uim,med:q.f_med_pay,comp:q.f_comp_ded,coll:q.f_coll_ded,rental:q.f_rental,towing:q.f_towing};
   for(const [k,v] of Object.entries(q))if(/^[dv]\d+_/.test(k))x[k]=v;return {line:'Personal Auto',eff:q.f_eff_date||'',extra:x}}
@@ -2394,6 +2521,7 @@ async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=
   if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value); // keep the document with the policy too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let t='';
   if(!isImg){try{t=(await fileText(f)).trim()}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
+    if(lastFields.f_property_address||lastFields.f_dwelling||lastFields.f_uw_bite){const n=ppApply(ppFromHome(lastFields));lastFields={};m.className='msg ok';m.textContent=`Personal home quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}
     if(lastFields.f_ins_first||lastFields.f_bi_limit||lastFields.d1_first){const n=ppApply(ppFromSheet(lastFields));lastFields={};m.className='msg ok';m.textContent=`Personal auto quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}
     lastFields={};if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}}
   else if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t turned on for this database. Drop the PDF instead.';return}
