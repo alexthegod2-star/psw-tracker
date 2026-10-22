@@ -1005,7 +1005,7 @@ async function newSheet(kind){
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
   if(have&&kind==='home'){try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const d=await PDFLib.PDFDocument.load(await fileBytes(have));
-    if(d.getSubject()==='psw-home-quote-sheet'&&!(d.getKeywords()||'').includes(HOME_LAYOUT)){const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;
+    if(d.getSubject()==='psw-home-quote-sheet'&&!(d.getKeywords()||'').includes(HOME_LAYOUT)){const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;if(!hv.heating_type)hv.heating_type='Central gas';['smoke','deadbolts'].forEach(k=>{if(!hv[k])hv[k]='Yes'});
       if(await uploadOne(new File([await buildQuotePdf(hv,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet')],have.name,{type:'application/pdf'}))){
         m.className='msg ok';m.textContent=`${have.name} was updated to the new layout with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}}catch(_){}}
   if(have&&(kind==='qs'||auto)){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
@@ -1016,7 +1016,7 @@ async function newSheet(kind){
   v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
   if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
-  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner'});HOME_YN.forEach(k=>v[k]='No')}
+  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',smoke:'Yes',deadbolts:'Yes'});HOME_YN.forEach(k=>v[k]='No')}
   const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
   const b=$(auto?'newAuto':kind==='pauto'?'newPauto':kind==='home'?'newHome':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
