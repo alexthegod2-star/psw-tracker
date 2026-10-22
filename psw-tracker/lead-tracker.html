@@ -727,7 +727,7 @@ function openLead(l){
   $('cAt').value=nowLocal();$('cNote').value='';fillMeta();
   pending=[];showKeep();$('dropText').value='';$('fillMsg').textContent='';
   const has=!!l;
-  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
+  $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!assets;$('supSec').hidden=!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each. Drag a file out to your desktop or an email.');
   $('log').innerHTML=has?'':'';renderFiles();renderQl();$('qlMsg').textContent='';if(has)qlCheck(l.id);
@@ -2015,7 +2015,7 @@ async function make80(m){const fresh=leads.find(l=>l.id===cur.id)||cur,hs=[...(f
   if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(notes.length?`<div class="small" style="margin-top:4px">Heads up: ${notes.map(esc).join(' · ')}</div>`:'')}
   else{m.className='msg err';m.textContent=$('fileMsg').textContent}}
 $('acordSec').addEventListener('click',async e=>{
-  const forms=e.target.dataset.acord;if(!forms||!cur||!cur.id)return;
+  const forms=e.target.dataset.acord;if(!forms||!(await ensureSaved()))return;
   const m=$('acordMsg'),btn=e.target,label=btn.textContent;
   if(forms==='80'){document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=true);btn.textContent='Working…';
     try{await make80(m)}catch(err){m.className='msg err';m.textContent='Couldn’t make the ACORD: '+(err.message||err.code||'error')}
@@ -2897,7 +2897,7 @@ const SUPS={'burns-gl':{file:'tpl-burns-gl.pdf',suffix:'Burns GL sup',fill:(g,to
   // SL-2 diligent search report: Alex's filled form with the insurers, licensee and signature kept; 2A name, 2B = quote sheet item 8, declinations this month
   'sl2':{file:'tpl-sl2.pdf',suffix:'SL2',noSheet:true,fill:(g,today)=>{const my=`${pad(today.getMonth()+1)}/${today.getFullYear()}`;
     return {'Name of Insured':g('f_client_name'),'Description of Risk':g('f_description'),'Declination 1':my,'Declination 2':my,'Declination 3':my,'Date':mdy(today)}}}};
-$('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data-sup]');if(!btn||!cur||!cur.id)return;const S=SUPS[btn.dataset.sup],m=$('supMsg'),label=btn.textContent;
+$('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data-sup]');if(!btn||!(await ensureSaved()))return;const S=SUPS[btn.dataset.sup],m=$('supMsg'),label=btn.textContent;
   const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
   if(!qs&&!S.noSheet){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
   btn.disabled=true;btn.textContent='Working…';m.className='msg';m.textContent='Working…';
