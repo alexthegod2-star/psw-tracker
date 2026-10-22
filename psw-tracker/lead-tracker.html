@@ -1041,6 +1041,7 @@ function codeOnly(sel){const o=[...sel.options].filter(x=>x.value);if(!o.length|
   const full=()=>o.forEach(x=>{x.text=x.dataset.full});short();
   sel.addEventListener('mousedown',full);sel.addEventListener('focus',full);sel.addEventListener('change',short);sel.addEventListener('blur',short)}
 function sheetValues(doc){const v={};for(const fl of doc.getForm().getFields())if(fl instanceof PDFLib.PDFTextField){const t=fl.getText();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFDropdown){const t=fl.getSelected()[0];if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFRadioGroup){const t=fl.getSelected();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFCheckBox){if(fl.isChecked())v[fl.getName()]='Yes'}return v}
+const isQuoteSheet=n=>/ (com auto|com|personal auto|personal home) quote sheet\.pdf$/i.test(n); // no free-text notes on PSW quote sheets
 const sheetKind=n=>/ com auto quote sheet\.pdf$/i.test(n)?'auto':/ com quote sheet\.pdf$/i.test(n)?'qs':'';
 async function upgradeAuto(f){
   try{
@@ -1617,7 +1618,7 @@ async function openEditor(f){
   ed={f,kind,notes:[],fields:[],dirty:false};
   {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('ed').classList.toggle('side',home);$('edDropMsg').textContent=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
-  $('edSave').hidden=!assets;$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text';$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+  $('edSave').hidden=!assets;$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
   try{
     ed.bytes=await fileBytes(f);
@@ -1640,7 +1641,7 @@ async function openEditor(f){
         al.querySelectorAll('select').forEach(codeOnly);
       }
       ed.pdf.annotationStorage.onSetModified=()=>{ed&&(ed.dirty=true)};
-      edMsg(fillable?'Type into the blue boxes to edit. Use “+ Add text” to write anywhere else. Then hit Save to lead.':'Use “+ Add text”, then click where you want to type. Hit Save to lead when done.');
+      edMsg(fillable?(isQuoteSheet(f.name)?'Type into the blue boxes to edit, then hit Save to lead.':'Type into the blue boxes to edit. Use “+ Add text” to write anywhere else. Then hit Save to lead.'):'Use “+ Add text”, then click where you want to type. Hit Save to lead when done.');
     }else if(kind==='img'){
       const url=URL.createObjectURL(new Blob([ed.bytes],{type:f.type}));const img=new Image();img.src=url;await img.decode();
       const scale=Math.min(1,W/img.naturalWidth);const wrap=document.createElement('div');wrap.className='pg';wrap.dataset.page=0;wrap.dataset.scale=scale;
