@@ -726,7 +726,7 @@ function openLead(l){
   $('logBtn').disabled=false;document.querySelectorAll('#contactSec button[data-q]').forEach(b=>{b.disabled=false;b.classList.remove('done');b.textContent=b.dataset.label||b.dataset.q});$('fileIn').disabled=!assets;$('delSec').hidden=!has;$('delTop').hidden=!has;$('acordSec').hidden=!has||!assets;$('supSec').hidden=!has||!assets;$('supMsg').textContent='';$('acordMsg').textContent='';
   $('logHint').textContent='';
   $('upRow').querySelector('.small').textContent=(!assets?'You have view-only access, so you can’t attach files.':'PDF, images, CSV or text, up to 20 MB each. Drag a file out to your desktop or an email.');
-  $('log').innerHTML=has?'':'';renderFiles();renderQl();$('qlMsg').textContent='';
+  $('log').innerHTML=has?'':'';renderFiles();renderQl();$('qlMsg').textContent='';if(has)qlCheck(l.id);
   if(has){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
@@ -1135,6 +1135,11 @@ $('qlMake').onclick=async()=>{const keys=qlChecked(),m=$('qlDlgMsg');if(!keys.le
 const closeQl=()=>$('qlDlg').classList.remove('on');$('qlClose').onclick=closeQl;$('qlDlg').addEventListener('click',e=>{if(e.target===$('qlDlg'))closeQl()});
 $('qlCopy').onclick=async()=>{try{await navigator.clipboard.writeText(qlForUrl);$('qlDlgMsg').className='msg ok';$('qlDlgMsg').textContent='Link copied.'}catch(_){$('qlUrl').select();$('qlDlgMsg').className='msg err';$('qlDlgMsg').textContent='Couldn’t copy; the link is selected, press Ctrl+C.'}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('qlDlg').classList.contains('on')){e.stopImmediatePropagation();closeQl()}},true);
+// a lead still showing "waiting" asks the server whether the client already sent the link, and catches up if so
+async function qlCheck(id){const q=cur&&cur.qlink;if(!q||q.state!=='sent')return;
+  try{const r=await fetch('/api/tracker/quote-link?lead='+encodeURIComponent('leads/'+id),{credentials:'same-origin'});const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.submitted||!cur||cur.id!==id)return;const up={qlink:{state:'done',sentAt:q.sentAt,doneAt:j.submitted}};
+    cur.qlink=up.qlink;renderQl();if(assets&&!isLocked('lead'))await leadsCol.doc(id).update(up)}catch(_){}}
 function renderQl(){const q=cur&&cur.qlink,box=$('qlBox');if(!q||!q.state){box.hidden=true;return}box.hidden=false;
   const d=t=>t?fmtDate(new Date(t*1000).toISOString().slice(0,10)):'';
   if(q.state==='done'&&!q.applied){$('qlTxt').innerHTML=`<b>The client filled in the quote link</b> on ${esc(d(q.doneAt))}.`;$('qlApply').hidden=false}

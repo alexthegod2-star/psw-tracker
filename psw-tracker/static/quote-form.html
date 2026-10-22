@@ -43,7 +43,7 @@ button:disabled{opacity:.6;cursor:default}
 const $=id=>document.getElementById(id),esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tok=decodeURIComponent(location.pathname.split('/').pop()||'');
 const OFFICE='(818) 701-1033';
-const gone=code=>`<div class="intro done"><h2>${code==='submitted'?'Thank you, we already have your answers.':code==='expired'?'This link has expired.':'This link isn’t valid.'}</h2><p class="small">Questions? Call us at <a href="tel:8187011033">${OFFICE}</a>.</p></div>`;
+const gone=code=>`<div class="intro done"><h2>${code==='submitted'?'Thank you, we already have your answers.':code==='expired'?'This link has expired.':'This link isn’t valid.'}</h2><p class="small">${code==='submitted'?'':'Please ask your agent for a new link. '}Questions? Call us at <a href="tel:8187011033">${OFFICE}</a>.</p></div>`;
 function field(f,v){const id='q_'+f.k,val=v[f.k]||'',cls='f'+(f.wide||f.type==='area'?' wide':'')+(val?'':' empty');
   if(f.type==='radio')return `<div class="${cls}"><span class="lbl">${esc(f.label)}</span><div class="radios">${f.opts.map(o=>`<label><input type="radio" name="${id}" value="${esc(o)}"${o.toLowerCase()===val.toLowerCase()?' checked':''}>${esc(o)}</label>`).join('')}</div></div>`;
   if(f.type==='select')return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><select id="${id}"><option value=""></option>${f.opts.map(o=>`<option${o.toLowerCase()===val.toLowerCase()?' selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
@@ -61,7 +61,7 @@ function read(form){const a={};for(const s of form)for(const f of s.fields){cons
   $('app').addEventListener('input',e=>{const w=e.target.closest('.f');if(w)w.classList.toggle('empty',!(e.target.type==='radio'||String(e.target.value).trim()))});
   $('send').onclick=async()=>{const b=$('send'),m=$('msg');b.disabled=true;m.className='msg';m.textContent='Sending…';
     try{const r=await fetch('/api/public/quote/'+encodeURIComponent(tok),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({answers:read(d.form)})});
-      if(!r.ok){const e=await r.json().catch(()=>({}));if(r.status===410){$('app').innerHTML=gone(e.code);return}throw new Error()}
+      if(!r.ok){const e=await r.json().catch(()=>({}));if(r.status===410||r.status===404){$('app').innerHTML=gone(e.code);scrollTo(0,0);return}throw new Error()}
       $('app').innerHTML=`<div class="intro done"><h2>Thank you!</h2><p>Your answers went to ${esc(d.agent||'your agent')}. We’ll be in touch with your quote.</p><p class="small">Questions? Call us at <a href="tel:8187011033">${OFFICE}</a>.</p></div>`;scrollTo(0,0)}
     catch(e){m.className='msg err';m.textContent='Couldn’t send. Check your connection and try again.';b.disabled=false}}
 })();
