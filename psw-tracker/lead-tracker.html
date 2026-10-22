@@ -64,11 +64,11 @@ button.delrow{padding:3px 8px;font-size:12px}
 /* drawer */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:5}
 .ov.on{display:block}
-.dr{position:fixed;top:0;right:0;height:100%;width:max(min(680px,100%),80vw);background:var(--drbg);border-left:1px solid var(--line);z-index:6;transform:translateX(100%);transition:transform .2s;overflow-y:auto}
+.dr{position:fixed;top:0;right:0;height:100%;width:100vw;background:var(--drbg);border-left:1px solid var(--line);z-index:6;transform:translateX(100%);transition:transform .2s;overflow-y:auto}
 .dr.on{transform:none}
 .dh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:1}
 .dh h2{margin:0;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.db{padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(340px,40%);align-items:start}.dbL{display:grid;gap:16px;min-width:0}.dbR{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;border-radius:12px}@media(max-width:1000px){.db{grid-template-columns:1fr}.dbR{position:static;max-height:none;grid-row:2}}
+.db{padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(340px,1fr);align-items:start}.dbL,.dbM{display:grid;gap:16px;min-width:0}.dbR{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;border-radius:12px}@media(max-width:1300px){.db{grid-template-columns:minmax(0,1fr) minmax(340px,40%)}.dbR{grid-column:2;grid-row:1/span 2}.dbM{grid-column:1}}@media(max-width:1000px){.db{grid-template-columns:1fr}.dbR{position:static;max-height:none;grid-row:2}.dbM{grid-row:3}}
 .sec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
 .sec h3{margin:0 0 10px;font-size:14px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -286,6 +286,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <ul class="files" id="files"></ul>
     </div>
 
+    <div class="sec" id="delSec">
+      <button class="danger" id="delBtn">Delete this lead</button>
+    </div>
+  </div><div class="dbM">
     <div class="sec" id="acordSec">
       <h3>ACORD forms</h3>
       <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
@@ -314,9 +318,6 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="msg" id="bindMsg"></div>
     </div>
 
-    <div class="sec" id="delSec">
-      <button class="danger" id="delBtn">Delete this lead</button>
-    </div>
   </div><div class="dbR">
     <div class="sec" id="contactSec">
       <h3 style="display:flex;align-items:center;gap:10px">Contact log <button type="button" class="tgl" id="madeTgl" role="switch" aria-checked="false"><span class="cdot no"></span><span id="madeTxt">No contact</span></button><button type="button" class="tgl" id="soldTgl" title="Click to change: Not sold, Sold, Dead"><span class="cdot no"></span><span id="soldTxt">Not sold</span></button></h3>
