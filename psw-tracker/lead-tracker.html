@@ -795,7 +795,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-5',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-6',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -939,6 +939,8 @@ const PAUTO_SECTIONS=[
 {let c=0;PAUTO_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>{if(f.n)f.n=++c}))} // items numbered 1, 2, 3... straight through
 // personal home quote sheet: same look as the other sheets, with the homeowners (ACORD 80) questions; the yes/no questions start at No
 const YN=['No','Yes'],HOME_YN=['earthquake','water_backup','brush','lapse','uw_business','uw_pool','uw_trampoline','uw_wood_stove','uw_dog','uw_bite','uw_flood','uw_rented','uw_construction','uw_foreclosure','uw_cancelled'];
+// siding choices are the ACORD 80's siding boxes
+const HOME_SIDING=[['Aluminum','Aluminium'],['Stucco','Stucco'],['Vinyl / plastic','VinylPlastic'],['Cedar / wood / shingle','CedarWoodShingle'],['EIFS on cinder block','ExteriorInsulationCinderBlock'],['EIFS on studs','ExteriorInsulationStuds']];
 const HOME_DEDS=['$500','$1,000','$2,500','$5,000','$10,000','$25,000'],HOME_ALARM=['None','Local','Central'];
 const HOME_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
@@ -952,7 +954,7 @@ const HOME_SECTIONS=[
  {title:'Dwelling',fields:[{k:'year_built',n:1,label:'Year built',label2:'Square feet',pair:'sq_ft'},{k:'stories',n:1,label:'Stories',label2:'Construction',pair:'construction',opts:['1','2','3','4+'],opts2:['Frame','Masonry','Masonry veneer','Fire resistive']},{k:'roof_type',n:1,label:'Roof type',label2:'Foundation',pair:'foundation',opts:['Composition shingle','Tile','Metal','Wood shake','Flat / tar'],opts2:['Slab','Raised','Basement']},
    {k:'families',n:1,label:'Number of families',label2:'Garage',pair:'garage',opts:['1','2','3','4'],opts2:['Attached','Detached','Carport','None']},{k:'bathrooms',n:1,label:'Bathrooms',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
    {k:'wiring_year',n:1,label:'Wiring updated (yr)',pc:'wiring',label2:'Purchase date',pair:'purchase_date'},{k:'plumbing_year',n:1,label:'Plumbing updated (yr)',pc:'plumbing',label2:'Purchase price',pair:'purchase_price'},{k:'heating_year',n:1,label:'Heating updated (yr)',pc:'heating',label2:'Feet to hydrant',pair:'hydrant_ft'},{k:'roof_year',n:1,label:'Roof updated (yr)',pc:'roof',label2:'Miles to fire stn',pair:'station_mi'},
-   {k:'protection_class',n:1,label:'Protection class',label2:'Brush / wildfire area?',pair:'brush',opts2:YN}]},
+   {k:'siding',n:1,label:'Siding',label2:'Brush / wildfire area?',pair:'brush',opts:HOME_SIDING.map(x=>x[0]),opts2:YN}]},
  {title:'Protection',fields:[{k:'smoke',n:1,label:'Smoke detectors?',label2:'Burglar alarm',pair:'burglar_alarm',opts:YN,opts2:HOME_ALARM},{k:'fire_alarm',n:1,label:'Fire alarm',label2:'Sprinklers',pair:'sprinklers',opts:HOME_ALARM,opts2:['None','Partial','Full']},{k:'deadbolts',n:1,label:'Deadbolts?',label2:'Gated community?',pair:'gated',opts:YN,opts2:YN}]},
  {title:'Mortgagee',table:{prefix:'mg',rows:2,cols:[{k:'name',label:'Mortgagee / lender',w:2},{k:'address',label:'Address',w:2.2},{k:'city',label:'City',w:1.2},{k:'state',label:'St',w:.45},{k:'zip',label:'Zip',w:.7},{k:'loan',label:'Loan #',w:1.3}]}},
  {title:'Underwriting',fields:[{k:'uw_business',n:1,label:'Business on premises?',label2:'Pool or hot tub?',pair:'uw_pool',opts:YN,opts2:YN},{k:'uw_trampoline',n:1,label:'Trampoline?',label2:'Wood stove?',pair:'uw_wood_stove',opts:YN,opts2:YN},{k:'uw_dog',n:1,label:'Dogs or animals?',label2:'Dog breed(s)',pair:'uw_dog_breed',opts:YN},{k:'uw_bite',n:1,label:'Animal bite history?',label2:'In a flood zone?',pair:'uw_flood',opts:YN,opts2:YN},
@@ -1010,7 +1012,7 @@ async function newSheet(kind){
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
   if(have&&kind==='home'){try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const d=await PDFLib.PDFDocument.load(await fileBytes(have));
-    if(d.getSubject()==='psw-home-quote-sheet'&&!(d.getKeywords()||'').includes(HOME_LAYOUT)){const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;if(!hv.heating_type)hv.heating_type='Central gas';['smoke','deadbolts'].forEach(k=>{if(!hv[k])hv[k]='Yes'});
+    if(d.getSubject()==='psw-home-quote-sheet'&&!(d.getKeywords()||'').includes(HOME_LAYOUT)){const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;if(!hv.heating_type)hv.heating_type='Central gas';if(!hv.siding)hv.siding='Stucco';['smoke','deadbolts'].forEach(k=>{if(!hv[k])hv[k]='Yes'});
       if(await uploadOne(new File([await buildQuotePdf(hv,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet')],have.name,{type:'application/pdf'}))){
         m.className='msg ok';m.textContent=`${have.name} was updated to the new layout with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}}catch(_){}}
   if(have&&(kind==='qs'||auto)){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
@@ -1021,7 +1023,7 @@ async function newSheet(kind){
   v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
   if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
-  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',smoke:'Yes',deadbolts:'Yes'});HOME_YN.forEach(k=>v[k]='No')}
+  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',siding:'Stucco',smoke:'Yes',deadbolts:'Yes'});HOME_YN.forEach(k=>v[k]='No')}
   const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
   const b=$(auto?'newAuto':kind==='pauto'?'newPauto':kind==='home'?'newHome':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
@@ -1685,7 +1687,7 @@ function from80(a){const v={},g=k=>String(a[k]==null||a[k]===true?'':a[k]).trim(
   put('roof_type',g('Construction_RoofMaterialCode_A'));put('purchase_price',money('ResidentialStructure_PurchasePriceAmount_A'));put('purchase_date',g('ResidentialStructure_PurchaseDate_A'));
   const al=k=>on(`Alarm_${k}_CentralStationIndicator_A`)?'Central':on(`Alarm_${k}_LocalGongIndicator_A`)||on(`Alarm_${k}_DirectIndicator_A`)?'Local':'';
   put('burglar_alarm',al('Burglar'));put('fire_alarm',al('Smoke'));if(al('Smoke'))v.smoke='Yes';
-  put('hydrant_ft',g('BuildingFireProtection_HydrantDistanceFeetCount_A'));put('station_mi',g('BuildingFireProtection_FireStationDistanceMileCount_A'));put('protection_class',g('BuildingFireProtection_ProtectionClassCode_A'));
+  put('hydrant_ft',g('BuildingFireProtection_HydrantDistanceFeetCount_A'));put('station_mi',g('BuildingFireProtection_FireStationDistanceMileCount_A'));{const m=HOME_SIDING.find(x=>on(`Construction_Siding_${x[1]}Indicator_A`));put('siding',m?m[0]:g('Construction_Siding_OtherDescription_A'))}
   if(on('ResidentialStructure_Security_DoorLockDeadboltIndicator_A'))v.deadbolts='Yes';
   put('sprinklers',on('BuildingFireProtection_Sprinkler_FullIndicator_A')?'Full':on('BuildingFireProtection_Sprinkler_PartialIndicator_A')?'Partial':'');
   put('heating_type',g('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A'));
@@ -1973,7 +1975,7 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   set('Construction_RoofMaterialCode_A',g('roof_type'));set('ResidentialStructure_PurchasePriceAmount_A',money('purchase_price'));set('ResidentialStructure_PurchaseDate_A',g('purchase_date'));
   const al={central:'CentralStation',local:'LocalGong'},ba=al[g('burglar_alarm').toLowerCase()],fa=al[g('fire_alarm').toLowerCase()];
   if(ba)set(`Alarm_Burglar_${ba}Indicator_A`,true);if(fa)set(`Alarm_Smoke_${fa}Indicator_A`,true);else if(yes('smoke'))set('Alarm_Smoke_LocalGongIndicator_A',true);
-  set('BuildingFireProtection_HydrantDistanceFeetCount_A',g('hydrant_ft'));set('BuildingFireProtection_FireStationDistanceMileCount_A',g('station_mi'));set('BuildingFireProtection_ProtectionClassCode_A',g('protection_class'));
+  set('BuildingFireProtection_HydrantDistanceFeetCount_A',g('hydrant_ft'));set('BuildingFireProtection_FireStationDistanceMileCount_A',g('station_mi'));{const sd=g('siding'),m=HOME_SIDING.find(x=>x[0].toLowerCase()===sd.toLowerCase());if(m)set(`Construction_Siding_${m[1]}Indicator_A`,true);else if(sd){set('Construction_Siding_OtherIndicator_A',true);set('Construction_Siding_OtherDescription_A',sd)}}
   if(yes('deadbolts'))set('ResidentialStructure_Security_DoorLockDeadboltIndicator_A',true);
   {const sp=g('sprinklers').toLowerCase();if(sp==='partial')set('BuildingFireProtection_Sprinkler_PartialIndicator_A',true);else if(sp==='full')set('BuildingFireProtection_Sprinkler_FullIndicator_A',true)}
   set('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A',g('heating_type'));
