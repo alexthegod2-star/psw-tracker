@@ -1664,14 +1664,16 @@ async function openEditor(f){
 function from80(a){const v={},g=k=>String(a[k]==null||a[k]===true?'':a[k]).trim(),on=k=>a[k]===true,put=(k,x)=>{x=String(x==null?'':x).trim();if(x)v[k]=x};
   const adr=(pre,s)=>{const cs=[g(`${pre}_StateOrProvinceCode${s}`),g(`${pre}_PostalCode${s}`)].filter(Boolean).join(' ');return [[g(`${pre}_LineOne${s}`),g(`${pre}_LineTwo${s}`)].filter(Boolean).join(' '),g(`${pre}_CityName${s}`),cs].filter(Boolean).join(', ')};
   const money=k=>{const x=g(k);return x?fmtMoney(x):''},yn=k=>{const x=g(k).toUpperCase();return x==='Y'?'Yes':x==='N'?'No':''};
-  put('ins_first',[g('NamedInsured_GivenName_A'),g('NamedInsured_OtherGivenNameInitial_A')].filter(Boolean).join(' '));put('ins_last',g('NamedInsured_Surname_A'));put('ins_dob',g('NamedInsured_BirthDate_A'));
+  // our own 80s carry the full name in the first-name box: split off the last word when there is no last name
+  const nm=s=>{const f=[g('NamedInsured_GivenName_'+s),g('NamedInsured_OtherGivenNameInitial_'+s)].filter(Boolean).join(' '),l=g('NamedInsured_Surname_'+s);if(l||!/\s/.test(f))return [f,l];const i=f.lastIndexOf(' ');return [f.slice(0,i),f.slice(i+1)]};
+  {const [f,l]=nm('A');put('ins_first',f);put('ins_last',l)}put('ins_dob',g('NamedInsured_BirthDate_A'));
   put('ins_marital',{S:'Single',M:'Married',D:'Divorced',W:'Widowed'}[g('NamedInsured_MaritalStatusCode_A').toUpperCase()[0]]||'');
   put('occupation',g('NamedInsured_OccupationDescription_A'));put('employer',g('Employer_FullName_A'));put('employer_address',adr('Employer_PhysicalAddress','_A'));
   put('phone',g('NamedInsured_Primary_PhoneNumber_A'));put('email',g('NamedInsured_Primary_EmailAddress_A'));
   put('mailing_address',adr('NamedInsured_MailingAddress','_A')||g('NamedInsured_FullName_A').split('\n').slice(1).join(', '));put('property_address',adr('NamedInsured_PhysicalAddress','_A')||adr('Location_PhysicalAddress','_A'));
   if(on('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A')&&!v.property_address)put('property_address',v.mailing_address);
   put('prior_address',adr('Residence_PreviousAddress','_A'));
-  put('co_first',[g('NamedInsured_GivenName_B'),g('NamedInsured_OtherGivenNameInitial_B')].filter(Boolean).join(' '));put('co_last',g('NamedInsured_Surname_B'));put('co_dob',g('NamedInsured_BirthDate_B'));
+  {const [f,l]=nm('B');put('co_first',f);put('co_last',l)}put('co_dob',g('NamedInsured_BirthDate_B'));
   put('co_occupation',g('NamedInsured_OccupationDescription_B'));put('co_employer',g('Employer_FullName_B'));put('co_employer_address',adr('Employer_PhysicalAddress','_B'));
   put('eff_date',g('Policy_EffectiveDate_A'));put('exp_date',g('Policy_ExpirationDate_A'));
   {const f=g('ResidentialStructure_PolicyForm_FormTypeCode_A').toUpperCase().replace(/[^A-Z0-9]/g,''),m=f.match(/^(HO|DP)?(\d)$/)||f.match(/^(HO|DP)(\d)/);if(m)put('form_type',`${m[1]||'HO'}-${m[2]}`+({'HO-4':' (renters)','HO-6':' (condo)'}[`${m[1]||'HO'}-${m[2]}`]||''))}
@@ -1943,17 +1945,19 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   // applicant and co-applicant
   const ins=[g('ins_first'),g('ins_last')].filter(Boolean).join(' '),co=[g('co_first'),g('co_last')].filter(Boolean).join(' ');
   set('NamedInsured_FullName_A',[ins,co].filter(Boolean).join(' & '));
-  set('NamedInsured_GivenName_A',g('ins_first'));set('NamedInsured_Surname_A',g('ins_last'));set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));set('Employer_FullName_A',g('employer'));if(g('employer_address')){const e=A(g('employer_address'),'_A');addr('Employer_PhysicalAddress',e)}
+  set('NamedInsured_GivenName_A',ins);set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));set('Employer_FullName_A',g('employer'));if(g('employer_address')){const e=A(g('employer_address'),'_A');addr('Employer_PhysicalAddress',e)}
   {const ms=g('ins_marital').toUpperCase()[0];if(ms&&'SMDW'.includes(ms))set('NamedInsured_MaritalStatusCode_A',ms)}
   set('NamedInsured_Primary_PhoneNumber_A',g('phone'));set('NamedInsured_Primary_EmailAddress_A',g('email'));
   const prop=A(g('property_address'),'_A'),mail=A(g('mailing_address')||g('property_address'),'_A');
   addr('NamedInsured_MailingAddress',mail);addr('NamedInsured_PhysicalAddress',prop);
+  // mailing address under the name in the NAMED INSURED(S) box
+  if(v.NamedInsured_FullName_A){const cs=[mail.city,[mail.state,mail.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');set('NamedInsured_FullName_A',[v.NamedInsured_FullName_A,mail.street,cs].filter(Boolean).join('\n'))}
   if(!g('mailing_address')||g('mailing_address').toLowerCase()===g('property_address').toLowerCase())set('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A',true);
   if(g('prior_address'))set('Residence_PreviousAddress_LineOne_A',g('prior_address'));
-  if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_OccupationDescription_B',g('co_occupation'));set('Employer_FullName_B',g('co_employer'));if(g('co_employer_address')){const e=A(g('co_employer_address'),'_B');addr('Employer_PhysicalAddress',e)}set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
+  if(co){set('NamedInsured_GivenName_B',co);set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_OccupationDescription_B',g('co_occupation'));set('Employer_FullName_B',g('co_employer'));if(g('co_employer_address')){const e=A(g('co_employer_address'),'_B');addr('Employer_PhysicalAddress',e)}set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
   // policy
   const occ=g('occupancy').toLowerCase(),form=g('form_type');
-  set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
+  set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_Status_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
   set('ResidentialStructure_PolicyForm_FormTypeCode_A',form.replace(/\s*\(.*\)$/,''));
   if(occ==='owner'){set('Residence_Current_OwnedIndicator_A',true);set('ResidenceOccupancy_OccupancyType_OwnerIndicator_A',true)}
   // coverages
@@ -1963,6 +1967,7 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   set('ResidentialCoverage_Deductible_BaseAmount_A',money('deductible'));
   {const w=g('wind_ded');if(/%$/.test(w))set('ResidentialCoverage_Deductible_WindHailPercent_A',w.replace('%',''));else if(w&&!/same/i.test(w))set('ResidentialCoverage_Deductible_WindHailAmount_A',w.replace(/^\$\s*/,''))}
   if(yes('rc_contents'))set('ResidentialCoverage_ReplacementCostContents_IncludedIndicator_A',true);
+  set('ResidentialCoverage_ReplacementCostFullValue_IncludedIndicator_A',true);set('ResidentialCoverage_ReplacementCostDwelling_IncludedIndicator_A',true);
   // rating / underwriting (page 2)
   const con=g('construction').toLowerCase();
   if(con==='frame')set('Construction_ConstructionType_FrameIndicator_A',true);else if(con==='masonry')set('Construction_ConstructionType_MasonryIndicator_A',true);else if(con==='masonry veneer')set('Construction_ConstructionType_MasonryVeneerIndicator_A',true);
@@ -1978,7 +1983,11 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   {const sp=g('sprinklers').toLowerCase();if(sp==='partial')set('BuildingFireProtection_Sprinkler_PartialIndicator_A',true);else if(sp==='full')set('BuildingFireProtection_Sprinkler_FullIndicator_A',true)}
   set('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A',g('heating_type'));
   set('Construction_BuiltYear_A',g('year_built'));set('ResidentialStructure_TotalLivingArea_A',g('sq_ft'));set('ResidenceOccupancy_FamilyCount_A',g('families'));
-  {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else if(f==='basement')set('Construction_Foundation_ClosedIndicator_A',true)}
+  {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else set('Construction_Foundation_ClosedIndicator_A',true)}
+  // PSW defaults: excellent condition, extinguisher, copper wiring on breakers, 120 amps, in city limits
+  ['Housekeeping','PlumbingCondition','RoofCondition'].forEach(t=>set(`ResidentialStructure_${t}_ExcellentIndicator_A`,true));
+  set('BuildingFireProtection_ExtinguisherCode_A','Y');set('ResidentialStructure_Wiring_CopperIndicator_A',true);set('Construction_ElectricalPanel_CircuitBreakersIndicator_A',true);
+  set('Construction_ElectricalPanel_AmpereCount_A','120');set('ResidentialLocation_RiskLocation_InCityLimitsIndicator_A',true);
   if(g('uw_pool')&&!yes('uw_pool'))set('SwimmingPool_NoIndicator_A',true);
   if(yes('uw_wood_stove'))set('ResidentialStructure_Fireplace_WoodStoveInsertCount_A','1');
   ['Wiring','Plumbing','Heating','Roofing'].forEach(t=>{const k=t==='Roofing'?'roof':t.toLowerCase();if(yes(k+'_part'))set(`BuildingImprovement_${t}PartialIndicator_A`,true);if(yes(k+'_comp'))set(`BuildingImprovement_${t}CompleteIndicator_A`,true)});set('BuildingImprovement_WiringYear_A',g('wiring_year'));set('BuildingImprovement_PlumbingYear_A',g('plumbing_year'));set('BuildingImprovement_HeatingYear_A',g('heating_year'));set('BuildingImprovement_RoofingYear_A',g('roof_year'));
@@ -2007,6 +2016,9 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   if(!g('property_address'))notes.push('the home sheet has no property address');
   return {v,notes}}
 async function fill80(v){const L=PDFLib,doc=await L.PDFDocument.load(await acord80Tpl()),f=doc.getForm(),helv=await doc.embedFont(L.StandardFonts.Helvetica);
+  // applicant / co-applicant name: one full-name box across the first, middle and last boxes
+  for(const s of ['A','B']){const fs=f.getFields(),get=n=>fs.find(x=>x.getName().endsWith(`.NamedInsured_${n}_${s}[0]`)),gn=get('GivenName'),sn=get('Surname'),mi=get('OtherGivenNameInitial');
+    if(gn&&sn){const w=gn.acroField.getWidgets()[0],r=w.getRectangle(),e=sn.acroField.getWidgets()[0].getRectangle();w.setRectangle({x:r.x,y:r.y,width:e.x+e.width-r.x,height:r.height});for(const x of [sn,mi].filter(Boolean)){x.enableReadOnly();for(const k of x.acroField.getWidgets()){k.setRectangle({x:0,y:0,width:0,height:0});k.setFlagTo(L.AnnotationFlags.Hidden,true)}}}}
   const by={};for(const fl of f.getFields()){const k=fl.getName().replace(/^F\[0\]\.P\d+\[0\]\./,'').replace(/\[0\]$/,'');(by[k]=by[k]||[]).push(fl)}
   for(const [k,val] of Object.entries(v))for(const fl of by[k]||[]){
     if(fl instanceof L.PDFCheckBox){if(val)fl.check();continue}if(!(fl instanceof L.PDFTextField))continue;
