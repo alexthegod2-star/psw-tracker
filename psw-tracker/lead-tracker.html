@@ -152,6 +152,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .pg{position:relative;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);flex:none}
 .pg canvas,.pg img{display:block}
 .adding .pg{cursor:crosshair}
+.edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}
 .tn{position:absolute;z-index:5;min-width:40px;padding:0 2px;color:#000;background:rgba(255,235,59,.35);border:1px dashed #b58900;font-family:Helvetica,Arial,sans-serif;line-height:1.15;white-space:pre;outline:none}
 .tn:focus{background:rgba(255,235,59,.6)}
 .edtxt{width:min(900px,100%);flex:1;min-height:60vh;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
@@ -351,6 +352,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <button class="pri" id="edLead" hidden title="Copy the client name, contact, phone, email, lead date and source from this sheet into the lead">Fill lead info</button><button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button id="edClose">Close</button></div>
   <div class="edh" style="padding-top:6px;padding-bottom:6px"><span class="edmsg" id="edMsg"></span></div>
   <div class="edb" id="edBody"></div>
+  <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here (the original PDF with fill-in boxes). Its answers go into this sheet; then hit Save to lead.</p>
+    <label class="btn" style="margin:0">Choose file<input type="file" id="edDropIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edDropMsg" style="margin-top:8px"></div></div></div>
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
@@ -1611,12 +1614,13 @@ async function openEditor(f){
   if(sheetKind(f.name)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
   ed={f,kind,notes:[],fields:[],dirty:false};
+  {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('ed').classList.toggle('side',home);$('edDropMsg').textContent=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
   $('edSave').hidden=!assets;$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text';$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
   try{
     ed.bytes=await fileBytes(f);
-    const W=Math.min(980,$('edBody').clientWidth-32);
+    const W=Math.min(980,$('edBody').clientWidth-32-($('ed').classList.contains('side')?240:0));
     if(kind==='pdf'){
       await loadPdfJs();
       ed.pdf=await pdfjsLib.getDocument({data:ed.bytes.slice(),standardFontDataUrl:CDN+'pdf.js/3.11.174/standard_fonts/'}).promise;
@@ -1647,6 +1651,75 @@ async function openEditor(f){
     }
   }catch(e){edMsg(e&&e.message==='missing'?'This file is no longer stored.':'Couldn’t open this file'+(e&&e.message?` (${e.message})`:'')+'.','err')}
 }
+/* ---------- home quote sheet: drop an old ACORD 80 to fill it ---------- */
+// ACORD 80 box values (names without the F[0].Pn[0]. wrapper; ticked boxes are true) -> home sheet values
+function from80(a){const v={},g=k=>String(a[k]==null||a[k]===true?'':a[k]).trim(),on=k=>a[k]===true,put=(k,x)=>{x=String(x==null?'':x).trim();if(x)v[k]=x};
+  const adr=(pre,s)=>{const cs=[g(`${pre}_StateOrProvinceCode${s}`),g(`${pre}_PostalCode${s}`)].filter(Boolean).join(' ');return [[g(`${pre}_LineOne${s}`),g(`${pre}_LineTwo${s}`)].filter(Boolean).join(' '),g(`${pre}_CityName${s}`),cs].filter(Boolean).join(', ')};
+  const money=k=>{const x=g(k);return x?fmtMoney(x):''},yn=k=>{const x=g(k).toUpperCase();return x==='Y'?'Yes':x==='N'?'No':''};
+  put('ins_first',[g('NamedInsured_GivenName_A'),g('NamedInsured_OtherGivenNameInitial_A')].filter(Boolean).join(' '));put('ins_last',g('NamedInsured_Surname_A'));put('ins_dob',g('NamedInsured_BirthDate_A'));
+  put('ins_marital',{S:'Single',M:'Married',D:'Divorced',W:'Widowed'}[g('NamedInsured_MaritalStatusCode_A').toUpperCase()[0]]||'');
+  put('occupation',g('NamedInsured_OccupationDescription_A'));put('employer',g('Employer_FullName_A'));put('employer_address',adr('Employer_PhysicalAddress','_A'));
+  put('phone',g('NamedInsured_Primary_PhoneNumber_A'));put('email',g('NamedInsured_Primary_EmailAddress_A'));
+  put('mailing_address',adr('NamedInsured_MailingAddress','_A'));put('property_address',adr('NamedInsured_PhysicalAddress','_A')||adr('Location_PhysicalAddress','_A'));
+  if(on('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A')&&!v.property_address)put('property_address',v.mailing_address);
+  put('prior_address',adr('Residence_PreviousAddress','_A'));
+  put('co_first',[g('NamedInsured_GivenName_B'),g('NamedInsured_OtherGivenNameInitial_B')].filter(Boolean).join(' '));put('co_last',g('NamedInsured_Surname_B'));put('co_dob',g('NamedInsured_BirthDate_B'));
+  put('co_occupation',g('NamedInsured_OccupationDescription_B'));put('co_employer',g('Employer_FullName_B'));put('co_employer_address',adr('Employer_PhysicalAddress','_B'));
+  put('eff_date',g('Policy_EffectiveDate_A'));put('exp_date',g('Policy_ExpirationDate_A'));
+  {const f=g('ResidentialStructure_PolicyForm_FormTypeCode_A').toUpperCase().replace(/[^A-Z0-9]/g,''),m=f.match(/^(HO|DP)?(\d)$/)||f.match(/^(HO|DP)(\d)/);if(m)put('form_type',`${m[1]||'HO'}-${m[2]}`+({'HO-4':' (renters)','HO-6':' (condo)'}[`${m[1]||'HO'}-${m[2]}`]||''))}
+  put('occupancy',on('ResidenceOccupancy_OccupancyType_OwnerIndicator_A')?'Owner':on('ResidenceOccupancy_OccupancyType_TenantIndicator_A')?'Tenant':on('ResidenceOccupancy_OccupancyType_VacantIndicator_A')?'Vacant':on('ResidenceOccupancy_Usage_SecondaryIndicator_A')?'Secondary':'');
+  put('dwelling',money('ResidentialCoverage_Dwelling_LimitAmount_A'));put('other_structures',money('ResidentialCoverage_OtherStructures_LimitAmount_A'));put('personal_property',money('ResidentialCoverage_PersonalProperty_LimitAmount_A'));
+  put('loss_of_use',money('ResidentialCoverage_LossofUse_LimitAmount_A'));put('liability',money('ResidentialCoverage_PersonalLiability_EachOccurrenceLimitAmount_A'));put('med_pay',money('ResidentialCoverage_MedicalPayments_EachPersonLimitAmount_A'));
+  put('deductible',money('ResidentialCoverage_Deductible_BaseAmount_A'));
+  {const p=g('ResidentialCoverage_Deductible_WindHailPercent_A');put('wind_ded',p?p.replace(/%?$/,'%'):money('ResidentialCoverage_Deductible_WindHailAmount_A'))}
+  if(on('ResidentialCoverage_ReplacementCostContents_IncludedIndicator_A'))v.rc_contents='Yes';
+  put('construction',on('Construction_ConstructionType_FrameIndicator_A')?'Frame':on('Construction_ConstructionType_MasonryVeneerIndicator_A')?'Masonry veneer':on('Construction_ConstructionType_MasonryIndicator_A')?'Masonry':g('Construction_ConstructionCode_A'));
+  put('roof_type',g('Construction_RoofMaterialCode_A'));put('purchase_price',money('ResidentialStructure_PurchasePriceAmount_A'));put('purchase_date',g('ResidentialStructure_PurchaseDate_A'));
+  const al=k=>on(`Alarm_${k}_CentralStationIndicator_A`)?'Central':on(`Alarm_${k}_LocalGongIndicator_A`)||on(`Alarm_${k}_DirectIndicator_A`)?'Local':'';
+  put('burglar_alarm',al('Burglar'));put('fire_alarm',al('Smoke'));if(al('Smoke'))v.smoke='Yes';
+  put('hydrant_ft',g('BuildingFireProtection_HydrantDistanceFeetCount_A'));put('station_mi',g('BuildingFireProtection_FireStationDistanceMileCount_A'));put('protection_class',g('BuildingFireProtection_ProtectionClassCode_A'));
+  if(on('ResidentialStructure_Security_DoorLockDeadboltIndicator_A'))v.deadbolts='Yes';
+  put('sprinklers',on('BuildingFireProtection_Sprinkler_FullIndicator_A')?'Full':on('BuildingFireProtection_Sprinkler_PartialIndicator_A')?'Partial':'');
+  put('heating_type',g('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A'));
+  put('year_built',g('Construction_BuiltYear_A'));put('sq_ft',g('ResidentialStructure_TotalLivingArea_A'));put('families',g('ResidenceOccupancy_FamilyCount_A'));
+  put('foundation',on('Construction_Foundation_OpenIndicator_A')?'Raised':on('Construction_Foundation_ClosedIndicator_A')?'Basement':'');
+  if(on('SwimmingPool_NoIndicator_A'))v.uw_pool='No';else if(on('SwimmingPool_AboveGroundIndicator_A')||on('SwimmingPool_InGroundIndicator_A'))v.uw_pool='Yes';
+  if(Number(g('ResidentialStructure_Fireplace_WoodStoveInsertCount_A'))>0)v.uw_wood_stove='Yes';
+  [['Wiring','wiring'],['Plumbing','plumbing'],['Heating','heating'],['Roofing','roof']].forEach(([t,k])=>{put(k+'_year',g(`BuildingImprovement_${t}Year_A`));if(on(`BuildingImprovement_${t}PartialIndicator_A`))v[k+'_part']='Yes';if(on(`BuildingImprovement_${t}CompleteIndicator_A`))v[k+'_comp']='Yes'});
+  if(g('PriorCoverage_InsurerFullName_A')){put('current_carrier',g('PriorCoverage_InsurerFullName_A'));put('current_exp',g('PriorCoverage_ExpirationDate_A'));v.currently_insured='Yes'}else if(on('PriorCoverage_NoPriorCoverageIndicator_A'))v.currently_insured='No';
+  {const ls=['A','B','C','D'].map(r=>[g('LossHistory_OccurrenceDate_'+r),g('LossHistory_OccurrenceDescription_'+r),g('LossHistory_PaidAmount_'+r)&&'$'+g('LossHistory_PaidAmount_'+r).replace(/^\$\s*/,'')].filter(Boolean).join(' - ')).filter(Boolean);
+    if(ls.length)v.claims=ls.join('\n');else if(g('LossHistory_PriorLossesCode_A').toUpperCase()==='N')v.claims='None'}
+  [['PersonalPolicy','KAB','uw_cancelled'],['PersonalPolicy','KAH','uw_foreclosure'],['Residential','KAZ','uw_business'],['Residential','KBC','uw_dog'],['Residential','KBG','uw_trampoline'],['Residential','ABA','gated'],['Residential','KBK','uw_construction'],['Residential','KBB','brush']]
+    .forEach(([pre,q,k])=>put(k,yn(`${pre}_Question_${q}Code_A`)));
+  put('uw_dog_breed',[g('AnimalExposure_BreedCode_A'),g('AnimalExposure_BreedCode_B')].filter(Boolean).join(', '));{const b=[yn('AnimalExposure_BiteHistoryCode_A'),yn('AnimalExposure_BiteHistoryCode_B')];if(b.includes('Yes'))v.uw_bite='Yes';else if(b.includes('No'))v.uw_bite='No'}
+  [['1','_A','_A'],['2','_C','_B']].forEach(([n,nm,ad])=>{put(`mg${n}_name`,g('AdditionalInterest_FullName'+nm));if(!v[`mg${n}_name`])return;
+    put(`mg${n}_address`,[g('AdditionalInterest_MailingAddress_LineOne'+ad),g('AdditionalInterest_MailingAddress_LineTwo'+ad)].filter(Boolean).join(' '));put(`mg${n}_city`,g('AdditionalInterest_MailingAddress_CityName'+ad));
+    put(`mg${n}_state`,g('AdditionalInterest_MailingAddress_StateOrProvinceCode'+ad));put(`mg${n}_zip`,g('AdditionalInterest_MailingAddress_PostalCode'+ad));put(`mg${n}_loan`,g('AdditionalInterest_AccountNumberIdentifier'+ad))});
+  put('notes',g('Residential_RemarkText_A'));
+  return v}
+// read an ACORD's fill-in boxes (works on password-protected ACORDs too)
+async function acordBoxes(bytes){await loadPdfJs();const doc=await pdfjsLib.getDocument({data:bytes}).promise,a={};
+  try{for(let i=1;i<=doc.numPages;i++)for(const x of await (await doc.getPage(i)).getAnnotations()){if(!x.fieldName)continue;const k=x.fieldName.replace(/^F\[0\]\.P\d+\[0\]\./,'').replace(/\[0\]$/,'');
+    if(x.checkBox){if(x.fieldValue&&x.fieldValue!=='Off')a[k]=true}else{const t=Array.isArray(x.fieldValue)?x.fieldValue[0]:x.fieldValue;if(t!=null&&String(t).trim()&&!(k in a))a[k]=String(t)}}}
+  finally{doc.destroy()}return a}
+// put values into the open sheet's boxes the same way typing would
+function edPut(vals){let n=0;const L=document.querySelector('#edBody');
+  for(const [k,x] of Object.entries(vals)){
+    const cb=L.querySelector(`.annotationLayer input[type=checkbox][name="${k}"]`);
+    if(cb){const want=/^yes$/i.test(x);if(cb.checked!==want){cb.checked=want;cb.dispatchEvent(new Event('change',{bubbles:true}));n++}continue}
+    const el=L.querySelector(`.annotationLayer [name="f_${k}"]`)||L.querySelector(`.annotationLayer [name="${k}"]`);if(!el)continue;
+    if(el.tagName==='SELECT'){let o=[...el.options].find(o=>o.value.toLowerCase()===x.toLowerCase()||o.text.toLowerCase()===x.toLowerCase());if(!o){o=new Option(x,x);el.add(o)}el.value=o.value}else el.value=x;
+    el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur'));n++}
+  if(n&&ed)ed.dirty=true;return n}
+async function edDropTake(f){const m=$('edDropMsg');m.className='msg small';m.textContent=`Reading ${f.name}…`;
+  try{const a=await acordBoxes(new Uint8Array(await f.arrayBuffer()));
+    if(!Object.keys(a).length){m.className='msg small err';m.textContent=`${f.name} has no fill-in boxes (it was probably printed or scanned to PDF), so it can’t be read. Drop the original ACORD 80 file instead.`;return}
+    if(!Object.keys(a).some(k=>/^(NamedInsured|ResidentialCoverage|ResidentialStructure)_/.test(k))){m.className='msg small err';m.textContent=`${f.name} doesn’t look like an ACORD 80.`;return}
+    const n=edPut(from80(a));m.className=n?'msg small ok':'msg small err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} from ${f.name}. Check them, then hit Save to lead.`:`Nothing in ${f.name} matched this sheet.`}
+  catch(e){m.className='msg small err';m.textContent=`${f.name}: couldn’t be read (${e.message||'error'}).`}}
+{const d=$('edDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)edDropTake(f)});
+  $('edDropIn').onchange=()=>{const f=$('edDropIn').files[0];$('edDropIn').value='';if(f)edDropTake(f)}}
 // "Fill lead info": the quote sheet's client details go into the lead, then the lead is saved
 $('edLead').onclick=async()=>{
   if(!ed||!cur)return;const q={};
