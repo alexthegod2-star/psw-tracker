@@ -790,7 +790,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-3',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-4',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -938,7 +938,7 @@ const HOME_DEDS=['$500','$1,000','$2,500','$5,000'],HOME_ALARM=['None','Local','
 const HOME_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
  {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},{k:'occupation',n:1,label:'Occupation',label2:'Employer',pair:'employer'},{k:'employer_address',n:1,label:'Employer address'},
-   {k:'phone',n:1,label:'Phone Number',label2:'Email',pair:'email'},{k:'property_address',n:1,label:'Property address'},{k:'mailing_address',n:1,label:'Mailing address'},{k:'years_at_address',n:1,label:'Years at address',label2:'Prior address',pair:'prior_address'},{k:'eff_date',n:1,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
+   {k:'phone',n:1,label:'Phone Number',label2:'Email',pair:'email'},{k:'mailing_address',n:1,label:'Mailing address'},{k:'property_address',n:1,label:'Property address'},{k:'years_at_address',n:1,label:'Years at address',label2:'Prior address',pair:'prior_address'},{k:'eff_date',n:1,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Second insured',fields:[{k:'co_first',n:1,label:'Name (first / last)',pair:'co_last'},{k:'co_dob',n:1,label:'Birthdate',label2:'Occupation',pair:'co_occupation'},{k:'co_employer',n:1,label:'Employer'},{k:'co_employer_address',n:1,label:'Employer address'}]},
  {title:'Policy',fields:[{k:'form_type',n:1,label:'Policy form',label2:'Occupancy',pair:'occupancy',opts:['HO-3','HO-5','HO-4 (renters)','HO-6 (condo)','DP-1','DP-3'],opts2:['Owner','Tenant','Secondary','Vacant']},{k:'currently_insured',n:1,label:'Insured now?',label2:'Current carrier',pair:'current_carrier',opts:['Yes','No']},{k:'current_premium',n:1,label:'Current premium',label2:'Policy expires',pair:'current_exp'},{k:'years_insured',n:1,label:'Years with carrier',label2:'Lapse in coverage?',pair:'lapse',opts2:YN}]},
  {title:'Coverages',fields:[{k:'dwelling',n:1,label:'Dwelling (A)',label2:'Deductible',pair:'deductible',opts2:HOME_DEDS},{k:'other_structures',n:1,label:'Other structures (B)',label2:'Wind / hail ded',pair:'wind_ded',opts2:['Same','1%','2%','5%']},
