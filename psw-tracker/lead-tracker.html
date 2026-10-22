@@ -162,9 +162,9 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .annotationLayer{position:absolute;top:0;left:0;pointer-events:none;transform-origin:0 0;z-index:3}
 .annotationLayer section{position:absolute;text-align:initial;pointer-events:auto;box-sizing:border-box;transform-origin:0 0}
 .annotationLayer .linkAnnotation>a{position:absolute;inset:0}
-.annotationLayer .textWidgetAnnotation :is(input,textarea),.annotationLayer .choiceWidgetAnnotation select{background:rgba(0,54,255,.10);border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px;vertical-align:top}
+.annotationLayer .textWidgetAnnotation :is(input,textarea),.annotationLayer .choiceWidgetAnnotation select{background:rgba(0,54,255,.10)!important;border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px;vertical-align:top}
 .annotationLayer .textWidgetAnnotation textarea{resize:none}
-.annotationLayer .textWidgetAnnotation :is(input,textarea):focus,.annotationLayer .choiceWidgetAnnotation select:focus{background:rgba(0,54,255,.04);border-color:#1f5fbf;outline:none}
+.annotationLayer .textWidgetAnnotation :is(input,textarea):focus,.annotationLayer .choiceWidgetAnnotation select:focus{background:rgba(0,54,255,.04)!important;border-color:#1f5fbf;outline:none}
 .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{width:100%;height:100%;margin:0;accent-color:#1f5fbf}
 .annotationLayer .popupAnnotation,.annotationLayer .popupTriggerArea{display:none}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
@@ -1609,6 +1609,8 @@ $('files').addEventListener('click',async e=>{
 /* ---------- open / edit an attachment, save it back to the lead ---------- */
 let ed=null; // {f, kind, bytes, pdf, notes:[]}
 const edMsg=(t,c)=>{$('edMsg').textContent=t;$('edMsg').style.color=c==='err'?'var(--bad)':c==='ok'?'var(--ok)':''};
+// draw the PDF's own unembedded fonts (Arial etc.) with pdf.js's bundled copies, not whatever the computer has installed under that name
+const PDF_FONTS={standardFontDataUrl:CDN+'pdf.js/3.11.174/standard_fonts/',useSystemFonts:false};
 async function loadPdfJs(){await loadJs(CDN+'pdf.js/3.11.174/pdf.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js'}
 const LINKS={externalLinkEnabled:true,getDestinationHash:()=>'#',getAnchorUrl:()=>'#',addLinkAttributes(a,url){a.href=url;a.target='_blank';a.rel='noopener noreferrer'},isPageVisible:()=>true,isPageCached:()=>true,goToDestination(){},navigateTo(){},executeNamedAction(){},executeSetOCGState(){},cachePageRef(){},goToPage(){}};
 function closeEditor(){$('ed').classList.remove('on');$('ed').setAttribute('aria-hidden','true');$('edBody').innerHTML='';if(ed&&ed.pdf)ed.pdf.destroy();ed=null}
@@ -1629,7 +1631,7 @@ async function openEditor(f){
     const W=Math.min(980,$('edBody').clientWidth-32-($('ed').classList.contains('side')?240:0));
     if(kind==='pdf'){
       await loadPdfJs();
-      ed.pdf=await pdfjsLib.getDocument({data:ed.bytes.slice(),standardFontDataUrl:CDN+'pdf.js/3.11.174/standard_fonts/'}).promise;
+      ed.pdf=await pdfjsLib.getDocument({data:ed.bytes.slice(),...PDF_FONTS}).promise;
       let fillable=false;
       for(let i=1;i<=ed.pdf.numPages;i++){
         const page=await ed.pdf.getPage(i),base=page.getViewport({scale:1}),scale=W/base.width,vp=page.getViewport({scale});
@@ -1734,7 +1736,7 @@ let tessWorker=null;
 async function tess(){if(!tessWorker){await loadJs(NPM+'tesseract.js@5.1.1/dist/tesseract.min.js');
   tessWorker=await Tesseract.createWorker('eng',1,{workerPath:NPM+'tesseract.js@5.1.1/dist/worker.min.js',corePath:NPM+'tesseract.js-core@5.1.1',langPath:NPM+'@tesseract.js-data/eng@1.0.0/4.0.0_best_int'});
   await tessWorker.setParameters({tessedit_pageseg_mode:'11',preserve_interword_spaces:'1'})}return tessWorker}
-async function ocrAcord80(bytes,say){await loadPdfJs();const W=1836,doc=await pdfjsLib.getDocument({data:bytes}).promise,tdoc=await pdfjsLib.getDocument({data:(await acord80Tpl()).slice()}).promise,a={};
+async function ocrAcord80(bytes,say){await loadPdfJs();const W=1836,doc=await pdfjsLib.getDocument({data:bytes,...PDF_FONTS}).promise,tdoc=await pdfjsLib.getDocument({data:(await acord80Tpl()).slice(),...PDF_FONTS}).promise,a={};
   try{const T=[];for(let j=1;j<=tdoc.numPages;j++){say(`Lining up page ${j} of the blank form…`);const pg=await tdoc.getPage(j),k=W/pg.getViewport({scale:1}).width,ph=pg.getViewport({scale:1}).height;
       T.push({...await pageInk(pg,W),fields:(await pg.getAnnotations()).filter(x=>x.fieldName&&x.rect).map(x=>({k:x.fieldName.replace(/^F\[0\]\.P\d+\[0\]\./,'').replace(/\[0\]$/,''),cb:!!x.checkBox,
         x0:x.rect[0]*k,x1:x.rect[2]*k,y0:(ph-x.rect[3])*k,y1:(ph-x.rect[1])*k}))})}
