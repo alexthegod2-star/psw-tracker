@@ -68,7 +68,7 @@ button.delrow{padding:3px 8px;font-size:12px}
 .dr.on{transform:none}
 .dh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:1}
 .dh h2{margin:0;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.db{padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(340px,1fr);align-items:start}.dbL,.dbM{display:grid;gap:16px;min-width:0}.dbR{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;border-radius:12px}@media(max-width:1300px){.db{grid-template-columns:minmax(0,1fr) minmax(340px,40%)}.dbR{grid-column:2;grid-row:1/span 2}.dbM{grid-column:1}}@media(max-width:1000px){.db{grid-template-columns:1fr}.dbR{position:static;max-height:none;grid-row:2}.dbM{grid-row:3}}
+.db{padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.3fr) minmax(320px,.85fr);align-items:start}.dbL,.dbM{display:grid;gap:16px;min-width:0;grid-template-columns:minmax(0,1fr)}.db .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dbR{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;border-radius:12px}@media(max-width:1300px){.db{grid-template-columns:minmax(0,1fr) minmax(320px,32%)}.dbR{grid-column:2;grid-row:1/span 2}.dbM{grid-column:1}}@media(max-width:1000px){.db{grid-template-columns:1fr}.dbR{position:static;max-height:none;grid-row:2}.dbM{grid-row:3}}
 .sec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
 .sec h3{margin:0 0 10px;font-size:14px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -80,7 +80,7 @@ button.delrow{padding:3px 8px;font-size:12px}
 .log .when{font-weight:600}.log .how{margin-left:6px}
 .log .by{color:var(--mute);font-size:12px}
 .log .note{margin-top:4px;white-space:pre-wrap}
-.files{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.files{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px;grid-template-columns:minmax(0,1fr)}
 .files li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .files .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .files .sz{color:var(--mute);font-size:12px}
@@ -276,16 +276,6 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <ul class="tasks" id="leadTasks"></ul>
       <div class="small" id="leadTasksNone">No tasks for this lead yet.</div>
     </div>
-    <div class="sec" id="fileSec">
-      <h3>Files</h3>
-      <div class="fileDrops">
-      <div class="drop row" id="upRow" style="padding:10px 12px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
-      <div class="drop" id="feeRow"><span style="font-weight:600">Add PSW fee: drop the carrier quote PDF here, or</span><input type="file" id="feeIn" accept=".pdf,application/pdf"><label class="feeAmt" for="feeAmt">PSW Agency Fee <span>$</span><input id="feeAmt" value="200.00" inputmode="decimal"></label><span class="small">The quote with the fee added and totals updated is saved under Files as “… for ins.pdf”.</span></div>
-      </div>
-      <div class="msg" id="fileMsg"></div><div class="msg" id="feeMsg"></div>
-      <ul class="files" id="files"></ul>
-    </div>
-
     <div class="sec" id="delSec">
       <button class="danger" id="delBtn">Delete this lead</button>
     </div>
@@ -316,6 +306,16 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <h3>Binding docs checklist</h3>
       <div class="mpick" id="bindList"></div>
       <div class="msg" id="bindMsg"></div>
+    </div>
+
+    <div class="sec" id="fileSec">
+      <h3>Files</h3>
+      <div class="fileDrops">
+      <div class="drop row" id="upRow" style="padding:10px 12px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
+      <div class="drop" id="feeRow"><span style="font-weight:600">Add PSW fee: drop the carrier quote PDF here, or</span><input type="file" id="feeIn" accept=".pdf,application/pdf"><label class="feeAmt" for="feeAmt">PSW Agency Fee <span>$</span><input id="feeAmt" value="200.00" inputmode="decimal"></label><span class="small">The quote with the fee added and totals updated is saved under Files as “… for ins.pdf”.</span></div>
+      </div>
+      <div class="msg" id="fileMsg"></div><div class="msg" id="feeMsg"></div>
+      <ul class="files" id="files"></ul>
     </div>
 
   </div><div class="dbR">
