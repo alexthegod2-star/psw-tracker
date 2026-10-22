@@ -790,7 +790,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-1',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-4',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -877,7 +877,10 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
         free=(R-L-LW-ls.reduce((a,b)=>a+b,0)-6*f.also.length-fw)/ws.filter(w=>!w).length;let x=L+LW;
         [f,...f.also].forEach((a,i)=>{if(i){text(a.label,x,8.5,font,muted);x+=ls[i-1]}const w=ws[i]||free;a.opts?combo('f_'+a.k,(t=>/^y(es)?$/i.test(t)?'Yes':/^no?$/i.test(t)?'No':t||a.def||'')(String(v[a.k]||'').trim()),a.opts,x,w,16):field('f_'+a.k,v[a.k],x,w,16);x+=w+6});y-=19;continue}
       if(f.pair&&f.label2){need(19);text((f.n?f.n+'a. ':'')+f.label,L+4,8.5,font,muted);const l2=(f.n?f.n+'b. ':'')+f.label2,lw=Math.max(92,font.widthOfTextAtSize(l2,8.5)+8),w=(R-L-LW-lw-6)/2;
-        f.opts?combo('f_'+f.k,v[f.k],f.opts,L+LW,w,16):field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);f.opts2?combo('f_'+f.pair,v[f.pair],f.opts2,L+LW+w+6+lw,w,16):field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
+        // an update year (home sheet) gets Part / Comp check boxes after its box
+        if(f.pc){const bw=w-92,box=(k,x)=>{const c=form.createCheckBox(k);c.addToPage(page,{x,y:y-13,width:11,height:11,borderColor:line,borderWidth:0.8,backgroundColor:rgb(1,1,1)});if(/^(yes|true|on|x)$/i.test(String(v[k]||'')))c.check()};
+          field('f_'+f.k,v[f.k],L+LW,bw,16);box(f.pc+'_part',L+LW+bw+6);text('Part',L+LW+bw+20,8.5,font,muted);box(f.pc+'_comp',L+LW+bw+48);text('Comp',L+LW+bw+62,8.5,font,muted)}
+        else f.opts?combo('f_'+f.k,v[f.k],f.opts,L+LW,w,16):field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);f.opts2?combo('f_'+f.pair,v[f.pair],f.opts2,L+LW+w+6+lw,w,16):field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
       if(f.pair){need(19);text(label,L+4,8.5,font,muted);const w=(R-L-LW-6)/2;field('f_'+f.k,v[f.k],L+LW,w,16);field('f_'+f.pair,v[f.pair],L+LW+w+6,w,16);y-=19;continue}
       if(f.radio){need(19);text(label,L+4,8.5,font,muted);radios('f_'+f.k,v[f.k],f.radio,L+LW,R-L-LW);y-=19;continue}
       if(f.opts){need(19);text(label,L+4,8.5,font,muted);combo('f_'+f.k,v[f.k],f.opts,L+LW,R-L-LW,16);y-=19;continue}
@@ -934,14 +937,17 @@ const YN=['No','Yes'],HOME_YN=['earthquake','water_backup','brush','lapse','uw_b
 const HOME_DEDS=['$500','$1,000','$2,500','$5,000'],HOME_ALARM=['None','Local','Central'];
 const HOME_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Occupation',pair:'occupation'},{k:'co_first',n:1,label:'Co-applicant (first / last)',pair:'co_last'},{k:'co_dob',n:1,label:'Co-applicant birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},
-   {k:'phone',n:1,label:'Phone Number',label2:'Email',pair:'email'},{k:'property_address',n:1,label:'Property address'},{k:'mailing_address',n:1,label:'Mailing address'},{k:'years_at_address',n:1,label:'Years at address',label2:'Prior address',pair:'prior_address'},{k:'eff_date',n:1,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},{k:'occupation',n:1,label:'Occupation',label2:'Employer',pair:'employer'},{k:'employer_address',n:1,label:'Employer address'},
+   {k:'phone',n:1,label:'Phone Number',label2:'Email',pair:'email'},{k:'mailing_address',n:1,label:'Mailing address'},{k:'property_address',n:1,label:'Property address'},{k:'years_at_address',n:1,label:'Years at address',label2:'Prior address',pair:'prior_address'},{k:'eff_date',n:1,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
+ {title:'Second insured',fields:[{k:'co_first',n:1,label:'Name (first / last)',pair:'co_last'},{k:'co_dob',n:1,label:'Birthdate',label2:'Occupation',pair:'co_occupation'},{k:'co_employer',n:1,label:'Employer'},{k:'co_employer_address',n:1,label:'Employer address'}]},
  {title:'Policy',fields:[{k:'form_type',n:1,label:'Policy form',label2:'Occupancy',pair:'occupancy',opts:['HO-3','HO-5','HO-4 (renters)','HO-6 (condo)','DP-1','DP-3'],opts2:['Owner','Tenant','Secondary','Vacant']},{k:'currently_insured',n:1,label:'Insured now?',label2:'Current carrier',pair:'current_carrier',opts:['Yes','No']},{k:'current_premium',n:1,label:'Current premium',label2:'Policy expires',pair:'current_exp'},{k:'years_insured',n:1,label:'Years with carrier',label2:'Lapse in coverage?',pair:'lapse',opts2:YN}]},
- {title:'Coverages',fields:[{k:'dwelling',n:1,label:'Dwelling (A)',label2:'Other structures (B)',pair:'other_structures'},{k:'personal_property',n:1,label:'Personal property (C)',label2:'Loss of use (D)',pair:'loss_of_use'},{k:'liability',n:1,label:'Liability (E)',label2:'Med pay (F)',pair:'med_pay',opts:['$100,000','$300,000','$500,000'],opts2:['$1,000','$5,000']},
-   {k:'deductible',n:1,label:'Deductible',label2:'Wind / hail ded',pair:'wind_ded',opts:HOME_DEDS,opts2:['Same','1%','2%','5%']},{k:'earthquake',n:1,label:'Earthquake?',label2:'Water backup?',pair:'water_backup',opts:YN,opts2:YN},{k:'rc_contents',n:1,label:'Replacement cost contents?',label2:'Scheduled items',pair:'scheduled',opts:YN}]},
- {title:'Dwelling',fields:[{k:'year_built',n:1,label:'Year built',label2:'Square feet',pair:'sq_ft'},{k:'stories',n:1,label:'Stories',label2:'Construction',pair:'construction',opts:['1','2','3','4+'],opts2:['Frame','Masonry','Masonry veneer','Fire resistive']},{k:'roof_type',n:1,label:'Roof type',label2:'Roof year',pair:'roof_year',opts:['Composition shingle','Tile','Metal','Wood shake','Flat / tar']},
-   {k:'foundation',n:1,label:'Foundation',label2:'Number of families',pair:'families',opts:['Slab','Raised','Basement'],opts2:['1','2','3','4']},{k:'wiring_year',n:1,label:'Wiring updated (yr)',label2:'Plumbing updated',pair:'plumbing_year'},{k:'heating_year',n:1,label:'Heating updated (yr)',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
-   {k:'garage',n:1,label:'Garage',label2:'Bathrooms',pair:'bathrooms',opts:['Attached','Detached','Carport','None']},{k:'purchase_date',n:1,label:'Purchase date',label2:'Purchase price',pair:'purchase_price'},{k:'hydrant_ft',n:1,label:'Feet to hydrant',label2:'Miles to fire stn',pair:'station_mi'},{k:'protection_class',n:1,label:'Protection class',label2:'Brush / wildfire area?',pair:'brush',opts2:YN}]},
+ {title:'Coverages',fields:[{k:'dwelling',n:1,label:'Dwelling (A)',label2:'Deductible',pair:'deductible',opts2:HOME_DEDS},{k:'other_structures',n:1,label:'Other structures (B)',label2:'Wind / hail ded',pair:'wind_ded',opts2:['Same','1%','2%','5%']},
+   {k:'personal_property',n:1,label:'Personal property (C)',label2:'Earthquake?',pair:'earthquake',opts2:YN},{k:'loss_of_use',n:1,label:'Loss of use (D)',label2:'Water backup?',pair:'water_backup',opts2:YN},
+   {k:'liability',n:1,label:'Liability (E)',label2:'Repl cost contents?',pair:'rc_contents',opts:['$100,000','$300,000','$500,000'],opts2:YN},{k:'med_pay',n:1,label:'Med pay (F)',label2:'Scheduled items',pair:'scheduled',opts:['$1,000','$5,000']}]},
+ {title:'Dwelling',fields:[{k:'year_built',n:1,label:'Year built',label2:'Square feet',pair:'sq_ft'},{k:'stories',n:1,label:'Stories',label2:'Construction',pair:'construction',opts:['1','2','3','4+'],opts2:['Frame','Masonry','Masonry veneer','Fire resistive']},{k:'roof_type',n:1,label:'Roof type',label2:'Foundation',pair:'foundation',opts:['Composition shingle','Tile','Metal','Wood shake','Flat / tar'],opts2:['Slab','Raised','Basement']},
+   {k:'families',n:1,label:'Number of families',label2:'Garage',pair:'garage',opts:['1','2','3','4'],opts2:['Attached','Detached','Carport','None']},{k:'bathrooms',n:1,label:'Bathrooms',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
+   {k:'wiring_year',n:1,label:'Wiring updated (yr)',pc:'wiring',label2:'Purchase date',pair:'purchase_date'},{k:'plumbing_year',n:1,label:'Plumbing updated (yr)',pc:'plumbing',label2:'Purchase price',pair:'purchase_price'},{k:'heating_year',n:1,label:'Heating updated (yr)',pc:'heating',label2:'Feet to hydrant',pair:'hydrant_ft'},{k:'roof_year',n:1,label:'Roof updated (yr)',pc:'roof',label2:'Miles to fire stn',pair:'station_mi'},
+   {k:'protection_class',n:1,label:'Protection class',label2:'Brush / wildfire area?',pair:'brush',opts2:YN}]},
  {title:'Protection',fields:[{k:'smoke',n:1,label:'Smoke detectors?',label2:'Burglar alarm',pair:'burglar_alarm',opts:YN,opts2:HOME_ALARM},{k:'fire_alarm',n:1,label:'Fire alarm',label2:'Sprinklers',pair:'sprinklers',opts:HOME_ALARM,opts2:['None','Partial','Full']},{k:'deadbolts',n:1,label:'Deadbolts?',label2:'Gated community?',pair:'gated',opts:YN,opts2:YN}]},
  {title:'Mortgagee',table:{prefix:'mg',rows:2,cols:[{k:'name',label:'Mortgagee / lender',w:2},{k:'address',label:'Address',w:2.2},{k:'city',label:'City',w:1.2},{k:'state',label:'St',w:.45},{k:'zip',label:'Zip',w:.7},{k:'loan',label:'Loan #',w:1.3}]}},
  {title:'Underwriting',fields:[{k:'uw_business',n:1,label:'Business on premises?',label2:'Pool or hot tub?',pair:'uw_pool',opts:YN,opts2:YN},{k:'uw_trampoline',n:1,label:'Trampoline?',label2:'Wood stove?',pair:'uw_wood_stove',opts:YN,opts2:YN},{k:'uw_dog',n:1,label:'Dogs or animals?',label2:'Dog breed(s)',pair:'uw_dog_breed',opts:YN},{k:'uw_bite',n:1,label:'Animal bite history?',label2:'In a flood zone?',pair:'uw_flood',opts:YN,opts2:YN},
@@ -998,6 +1004,10 @@ async function newSheet(kind){
   const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':kind==='pauto'?' personal auto quote sheet.pdf':kind==='home'?' personal home quote sheet.pdf':' com quote sheet.pdf';
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
+  if(have&&kind==='home'){try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const d=await PDFLib.PDFDocument.load(await fileBytes(have));
+    if(d.getSubject()==='psw-home-quote-sheet'&&!(d.getKeywords()||'').includes(HOME_LAYOUT)){const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;if(!hv.heating_type)hv.heating_type='Central gas';['smoke','deadbolts'].forEach(k=>{if(!hv[k])hv[k]='Yes'});
+      if(await uploadOne(new File([await buildQuotePdf(hv,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet')],have.name,{type:'application/pdf'}))){
+        m.className='msg ok';m.textContent=`${have.name} was updated to the new layout with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}}catch(_){}}
   if(have&&(kind==='qs'||auto)){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
   if(have){m.textContent=`This lead already has ${have.name}. Opening it.`;openEditor(have);return}
   const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
@@ -1006,7 +1016,7 @@ async function newSheet(kind){
   v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
   if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
-  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner'});HOME_YN.forEach(k=>v[k]='No')}
+  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',smoke:'Yes',deadbolts:'Yes'});HOME_YN.forEach(k=>v[k]='No')}
   const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
   const b=$(auto?'newAuto':kind==='pauto'?'newPauto':kind==='home'?'newHome':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
@@ -1795,14 +1805,14 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   // applicant and co-applicant
   const ins=[g('ins_first'),g('ins_last')].filter(Boolean).join(' '),co=[g('co_first'),g('co_last')].filter(Boolean).join(' ');
   set('NamedInsured_FullName_A',[ins,co].filter(Boolean).join(' & '));
-  set('NamedInsured_GivenName_A',g('ins_first'));set('NamedInsured_Surname_A',g('ins_last'));set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));
+  set('NamedInsured_GivenName_A',g('ins_first'));set('NamedInsured_Surname_A',g('ins_last'));set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));set('Employer_FullName_A',g('employer'));if(g('employer_address')){const e=A(g('employer_address'),'_A');addr('Employer_PhysicalAddress',e)}
   {const ms=g('ins_marital').toUpperCase()[0];if(ms&&'SMDW'.includes(ms))set('NamedInsured_MaritalStatusCode_A',ms)}
   set('NamedInsured_Primary_PhoneNumber_A',g('phone'));set('NamedInsured_Primary_EmailAddress_A',g('email'));
   const prop=A(g('property_address'),'_A'),mail=A(g('mailing_address')||g('property_address'),'_A');
   addr('NamedInsured_MailingAddress',mail);addr('NamedInsured_PhysicalAddress',prop);
   if(!g('mailing_address')||g('mailing_address').toLowerCase()===g('property_address').toLowerCase())set('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A',true);
   if(g('prior_address'))set('Residence_PreviousAddress_LineOne_A',g('prior_address'));
-  if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
+  if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_OccupationDescription_B',g('co_occupation'));set('Employer_FullName_B',g('co_employer'));if(g('co_employer_address')){const e=A(g('co_employer_address'),'_B');addr('Employer_PhysicalAddress',e)}set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
   // policy
   const occ=g('occupancy').toLowerCase(),form=g('form_type');
   set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
@@ -1833,7 +1843,7 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else if(f==='basement')set('Construction_Foundation_ClosedIndicator_A',true)}
   if(g('uw_pool')&&!yes('uw_pool'))set('SwimmingPool_NoIndicator_A',true);
   if(yes('uw_wood_stove'))set('ResidentialStructure_Fireplace_WoodStoveInsertCount_A','1');
-  set('BuildingImprovement_WiringYear_A',g('wiring_year'));set('BuildingImprovement_PlumbingYear_A',g('plumbing_year'));set('BuildingImprovement_HeatingYear_A',g('heating_year'));set('BuildingImprovement_RoofingYear_A',g('roof_year'));
+  ['Wiring','Plumbing','Heating','Roofing'].forEach(t=>{const k=t==='Roofing'?'roof':t.toLowerCase();if(yes(k+'_part'))set(`BuildingImprovement_${t}PartialIndicator_A`,true);if(yes(k+'_comp'))set(`BuildingImprovement_${t}CompleteIndicator_A`,true)});set('BuildingImprovement_WiringYear_A',g('wiring_year'));set('BuildingImprovement_PlumbingYear_A',g('plumbing_year'));set('BuildingImprovement_HeatingYear_A',g('heating_year'));set('BuildingImprovement_RoofingYear_A',g('roof_year'));
   if(g('property_address')){set('Location_ProducerIdentifier_A','1');addr('Location_PhysicalAddress',prop)}
   // prior coverage and losses
   if(/^n/i.test(g('currently_insured'))&&!g('current_carrier'))set('PriorCoverage_NoPriorCoverageIndicator_A',true);
