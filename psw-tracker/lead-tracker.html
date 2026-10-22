@@ -350,7 +350,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="ed" id="ed" aria-hidden="true">
   <div class="edh"><span class="nm" id="edName"></span>
     <button id="edAdd" title="Click on the page to type text">+ Add text</button>
-    <button class="pri" id="edLead" hidden title="Copy the client name, contact, phone, email, lead date and source from this sheet into the lead">Fill lead info</button><button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button id="edClose">Close</button></div>
+    <button class="pri" id="edLead" hidden title="Copy the client name, contact, phone, email, lead date and source from this sheet into the lead">Fill lead info</button><button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button id="edClose">Save/Close</button></div>
   <div class="edh" style="padding-top:6px;padding-bottom:6px"><span class="edmsg" id="edMsg"></span></div>
   <div class="edb" id="edBody"></div>
   <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here, either the fillable PDF or a printed copy. Its answers go into this sheet; then hit Save to lead.</p>
@@ -1611,14 +1611,17 @@ const edMsg=(t,c)=>{$('edMsg').textContent=t;$('edMsg').style.color=c==='err'?'v
 async function loadPdfJs(){await loadJs(CDN+'pdf.js/3.11.174/pdf.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js'}
 const LINKS={externalLinkEnabled:true,getDestinationHash:()=>'#',getAnchorUrl:()=>'#',addLinkAttributes(a,url){a.href=url;a.target='_blank';a.rel='noopener noreferrer'},isPageVisible:()=>true,isPageCached:()=>true,goToDestination(){},navigateTo(){},executeNamedAction(){},executeSetOCGState(){},cachePageRef(){},goToPage(){}};
 function closeEditor(){$('ed').classList.remove('on');$('ed').setAttribute('aria-hidden','true');$('edBody').innerHTML='';if(ed&&ed.pdf)ed.pdf.destroy();ed=null}
-$('edClose').onclick=()=>{if(ed&&ed.dirty&&$('edClose').dataset.armed!=='1'){$('edClose').dataset.armed='1';$('edClose').textContent='Close without saving?';setTimeout(()=>{$('edClose').dataset.armed='';$('edClose').textContent='Close'},4000);return}$('edClose').dataset.armed='';$('edClose').textContent='Close';closeEditor()};
+// Save/Close: saves any changes to the lead, then closes (view-only users get the old close-without-saving warning)
+$('edClose').onclick=async()=>{const c=$('edClose');if(c.disabled)return;
+  if(ed&&ed.dirty&&assets&&cur&&cur.id){c.disabled=true;const ok=await saveEd(false);c.disabled=false;if(ok)closeEditor();return}
+  if(ed&&ed.dirty&&$('edClose').dataset.armed!=='1'){$('edClose').dataset.armed='1';$('edClose').textContent='Close without saving?';setTimeout(()=>{$('edClose').dataset.armed='';$('edClose').textContent='Close'},4000);return}$('edClose').dataset.armed='';$('edClose').textContent='Close';closeEditor()};
 async function openEditor(f){
   if(sheetKind(f.name)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
   ed={f,kind,notes:[],fields:[],dirty:false};
   {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('ed').classList.toggle('side',home);$('edDropMsg').textContent=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
-  $('edSave').hidden=!assets;$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+  $('edSave').hidden=!assets;$('edClose').textContent=assets?'Save/Close':'Close';$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
   try{
     ed.bytes=await fileBytes(f);
@@ -1875,8 +1878,9 @@ async function buildEdited(){
   }
   return new Blob([bytes],{type:'application/pdf'});
 }
-$('edSave').onclick=async()=>{
-  if(!ed||!ed.bytes||!cur||!cur.id)return;const b=$('edSave');b.disabled=true;edMsg('Saving…');
+// saves the open file back to the lead; reopen keeps the editor open on the saved copy. Returns true when saved.
+async function saveEd(reopen){
+  if(!ed||!ed.bytes||!cur||!cur.id)return false;edMsg('Saving…');
   try{
     const blob=await buildEdited(),old=ed.f;
     const r=await storeBytes(await blob.arrayBuffer(),blob.type);
@@ -1887,10 +1891,11 @@ $('edSave').onclick=async()=>{
     try{await assets.delete(old.id)}catch(_){}
     ed.f=files.find(x=>x.id===r.id);ed.dirty=false;edMsg('Saved to the lead.','ok');toast(`${old.name} saved`);
     // reopen from the saved copy so further edits build on it
-    const keep=ed.f;closeEditor();await openEditor(keep);edMsg('Saved to the lead. You can keep editing.','ok');
-  }catch(e){edMsg(e&&e.code?errText(e):'Couldn’t save'+(e&&e.message?` (${e.message})`:'')+'.','err')}
-  b.disabled=false;
-};
+    if(reopen){const keep=ed.f;closeEditor();await openEditor(keep);edMsg('Saved to the lead. You can keep editing.','ok')}
+    return true;
+  }catch(e){edMsg(e&&e.code?errText(e):'Couldn’t save'+(e&&e.message?` (${e.message})`:'')+'.','err');return false}
+}
+$('edSave').onclick=async()=>{const b=$('edSave');b.disabled=true;await saveEd(true);b.disabled=false};
 $('edDl').onclick=async()=>{if(!ed||!ed.bytes)return;try{const blob=await buildEdited();await dl.save({filename:ed.f.name,data:new Uint8Array(await blob.arrayBuffer())})}catch(e){if(e&&e.code!=='declined')edMsg(e.code?errText(e):'Couldn’t download.','err')}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed').classList.contains('on')){e.stopImmediatePropagation();$('edClose').click()}},true);
 
