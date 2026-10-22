@@ -1935,7 +1935,11 @@ function build131(C,data,fields,checks,today){
 let tpl80=null;
 async function acord80Tpl(){if(!tpl80){const r=await fetch('tpl80.pdf');if(!r.ok)throw new Error('ACORD 80 template missing');tpl80=new Uint8Array(await r.arrayBuffer())}return tpl80}
 // home sheet values -> ACORD 80 boxes (short names, without the F[0].Pn[0]. wrapper); true checks a box
-function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim(),yes=k=>/^y/i.test(g(k)),money=k=>g(k).replace(/^\$\s*/,''),today=new Date(),notes=[];
+function build80(C,h){
+  // "same" in an address box means the mailing address (the property address if there is no mailing address)
+  const SAME=/^\s*(same|same as .*|sam|ditto)\.?\s*$/i,propSame=SAME.test(h.property_address||'');h={...h};{const m=SAME.test(h.mailing_address||'')?'':String(h.mailing_address||'').trim(),base=m||(propSame?'':String(h.property_address||'').trim());
+    h.mailing_address=base;if(propSame)h.property_address=base;['employer_address','co_employer_address'].forEach(k=>{if(SAME.test(h[k]||''))h[k]=base})}
+  const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim(),yes=k=>/^y/i.test(g(k)),money=k=>g(k).replace(/^\$\s*/,''),today=new Date(),notes=[];
   const set=(k,x)=>{if(x!=null&&x!==''&&x!==false)v[k]=x},addr=(pre,a)=>{set(pre+'_LineOne'+a.sfx,a.street);set(pre+'_CityName'+a.sfx,a.city);set(pre+'_StateOrProvinceCode'+a.sfx,a.state);set(pre+'_PostalCode'+a.sfx,a.zip)};
   const A=(raw,sfx)=>Object.assign(C.parseAddress(raw),{sfx});
   set('Form_CompletionDate_A',C.fmtDate(today));
@@ -1962,6 +1966,7 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_Status_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
   set('ResidentialStructure_PolicyForm_FormTypeCode_A',form.replace(/\s*\(.*\)$/,''));
   if(occ==='owner'){set('Residence_Current_OwnedIndicator_A',true);set('ResidenceOccupancy_OccupancyType_OwnerIndicator_A',true)}
+  if(propSame){set('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A',true);set('Residence_Current_OwnedIndicator_A',true)}
   // coverages
   set('ResidentialCoverage_Dwelling_LimitAmount_A',money('dwelling'));set('ResidentialCoverage_OtherStructures_LimitAmount_A',money('other_structures'));
   set('ResidentialCoverage_PersonalProperty_LimitAmount_A',money('personal_property'));set('ResidentialCoverage_LossofUse_LimitAmount_A',money('loss_of_use'));
