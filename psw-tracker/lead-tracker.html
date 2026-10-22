@@ -288,7 +288,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="acordSec">
       <h3>ACORD forms</h3>
       <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
-      <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="140">Create 140</button><button class="pri" data-acord="131">Create 131</button></div>
+      <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="140">Create 140</button><button class="pri" data-acord="131">Create 131</button><button class="pri" data-acord="80">Create 80</button></div>
       <div class="msg" id="acordMsg"></div>
     </div>
 
@@ -1779,9 +1779,108 @@ function build131(C,data,fields,checks,today){
   v.notes=rows.length?[]:['no Umbrella / Excess rows are checked on the quote sheet, so the underlying insurance lines are blank'];
   return v;
 }
+/* ---------- ACORD 80 (homeowner application) from the personal home quote sheet ---------- */
+let tpl80=null;
+async function acord80Tpl(){if(!tpl80){const r=await fetch('tpl80.pdf');if(!r.ok)throw new Error('ACORD 80 template missing');tpl80=new Uint8Array(await r.arrayBuffer())}return tpl80}
+// home sheet values -> ACORD 80 boxes (short names, without the F[0].Pn[0]. wrapper); true checks a box
+function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim(),yes=k=>/^y/i.test(g(k)),money=k=>g(k).replace(/^\$\s*/,''),today=new Date(),notes=[];
+  const set=(k,x)=>{if(x!=null&&x!==''&&x!==false)v[k]=x},addr=(pre,a)=>{set(pre+'_LineOne'+a.sfx,a.street);set(pre+'_CityName'+a.sfx,a.city);set(pre+'_StateOrProvinceCode'+a.sfx,a.state);set(pre+'_PostalCode'+a.sfx,a.zip)};
+  const A=(raw,sfx)=>Object.assign(C.parseAddress(raw),{sfx});
+  set('Form_CompletionDate_A',C.fmtDate(today));
+  // agency, same as the 125
+  set('Producer_FullName_A',S.agency_name);set('Producer_MailingAddress_LineOne_A',S.agency_street);
+  {const m=S.agency_city_state_zip.match(/^(.*),\s*([A-Z]{2})\s+(\d{5})/);if(m){set('Producer_MailingAddress_CityName_A',m[1]);set('Producer_MailingAddress_StateOrProvinceCode_A',m[2]);set('Producer_MailingAddress_PostalCode_A',m[3])}}
+  set('Producer_ContactPerson_FullName_A',S.producer_name);set('Producer_ContactPerson_PhoneNumber_A',S.producer_phone);set('Producer_FaxNumber_A',S.producer_fax);set('Producer_ContactPerson_EmailAddress_A',S.producer_email);
+  set('Producer_AuthorizedRepresentative_FullName_A',S.producer_name);set('Producer_StateLicenseIdentifier_A','0F41718');
+  // applicant and co-applicant
+  const ins=[g('ins_first'),g('ins_last')].filter(Boolean).join(' '),co=[g('co_first'),g('co_last')].filter(Boolean).join(' ');
+  set('NamedInsured_FullName_A',[ins,co].filter(Boolean).join(' & '));
+  set('NamedInsured_GivenName_A',g('ins_first'));set('NamedInsured_Surname_A',g('ins_last'));set('NamedInsured_BirthDate_A',g('ins_dob'));set('NamedInsured_OccupationDescription_A',g('occupation'));
+  {const ms=g('ins_marital').toUpperCase()[0];if(ms&&'SMDW'.includes(ms))set('NamedInsured_MaritalStatusCode_A',ms)}
+  set('NamedInsured_Primary_PhoneNumber_A',g('phone'));set('NamedInsured_Primary_EmailAddress_A',g('email'));
+  const prop=A(g('property_address'),'_A'),mail=A(g('mailing_address')||g('property_address'),'_A');
+  addr('NamedInsured_MailingAddress',mail);addr('NamedInsured_PhysicalAddress',prop);
+  if(!g('mailing_address')||g('mailing_address').toLowerCase()===g('property_address').toLowerCase())set('NamedInsured_PhysicalAddress_SameAsMailingIndicator_A',true);
+  if(g('prior_address'))set('Residence_PreviousAddress_LineOne_A',g('prior_address'));
+  if(co){set('NamedInsured_GivenName_B',g('co_first'));set('NamedInsured_Surname_B',g('co_last'));set('NamedInsured_BirthDate_B',g('co_dob'));set('NamedInsured_MailingAddress_SameAsApplicantIndicator_A',true)}
+  // policy
+  const occ=g('occupancy').toLowerCase(),form=g('form_type');
+  set('Policy_EffectiveDate_A',g('eff_date'));set('Policy_ExpirationDate_A',g('exp_date'));set('Policy_Status_NewIndicator_A',true);
+  set('ResidentialStructure_PolicyForm_FormTypeCode_A',form.replace(/\s*\(.*\)$/,''));
+  if(occ==='owner'){set('Residence_Current_OwnedIndicator_A',true);set('ResidenceOccupancy_OccupancyType_OwnerIndicator_A',true)}
+  // coverages
+  set('ResidentialCoverage_Dwelling_LimitAmount_A',money('dwelling'));set('ResidentialCoverage_OtherStructures_LimitAmount_A',money('other_structures'));
+  set('ResidentialCoverage_PersonalProperty_LimitAmount_A',money('personal_property'));set('ResidentialCoverage_LossofUse_LimitAmount_A',money('loss_of_use'));
+  set('ResidentialCoverage_PersonalLiability_EachOccurrenceLimitAmount_A',money('liability'));set('ResidentialCoverage_MedicalPayments_EachPersonLimitAmount_A',money('med_pay'));
+  set('ResidentialCoverage_Deductible_BaseAmount_A',money('deductible'));
+  {const w=g('wind_ded');if(/%$/.test(w))set('ResidentialCoverage_Deductible_WindHailPercent_A',w.replace('%',''));else if(w&&!/same/i.test(w))set('ResidentialCoverage_Deductible_WindHailAmount_A',w.replace(/^\$\s*/,''))}
+  if(yes('rc_contents'))set('ResidentialCoverage_ReplacementCostContents_IncludedIndicator_A',true);
+  // rating / underwriting (page 2)
+  const con=g('construction').toLowerCase();
+  if(con==='frame')set('Construction_ConstructionType_FrameIndicator_A',true);else if(con==='masonry')set('Construction_ConstructionType_MasonryIndicator_A',true);else if(con==='masonry veneer')set('Construction_ConstructionType_MasonryVeneerIndicator_A',true);
+  else if(con){set('Construction_ConstructionType_OtherIndicator_A',true);set('Construction_ConstructionCode_A',g('construction'))}
+  if(occ==='owner'||occ==='tenant')set('ResidenceOccupancy_Usage_PrimaryIndicator_A',true);else if(occ==='secondary')set('ResidenceOccupancy_Usage_SecondaryIndicator_A',true);
+  if(occ==='tenant')set('ResidenceOccupancy_OccupancyType_TenantIndicator_A',true);else if(occ==='vacant')set('ResidenceOccupancy_OccupancyType_VacantIndicator_A',true);
+  if(/HO-6/.test(form))set('ResidenceOccupancy_ResidenceType_CondominiumIndicator_A',true);else if(/HO-4/.test(form)){}else if(form)set('ResidenceOccupancy_ResidenceType_DwellingIndicator_A',true);
+  set('Construction_RoofMaterialCode_A',g('roof_type'));set('ResidentialStructure_PurchasePriceAmount_A',money('purchase_price'));set('ResidentialStructure_PurchaseDate_A',g('purchase_date'));
+  const al={central:'CentralStation',local:'LocalGong'},ba=al[g('burglar_alarm').toLowerCase()],fa=al[g('fire_alarm').toLowerCase()];
+  if(ba)set(`Alarm_Burglar_${ba}Indicator_A`,true);if(fa)set(`Alarm_Smoke_${fa}Indicator_A`,true);else if(yes('smoke'))set('Alarm_Smoke_LocalGongIndicator_A',true);
+  set('BuildingFireProtection_HydrantDistanceFeetCount_A',g('hydrant_ft'));set('BuildingFireProtection_FireStationDistanceMileCount_A',g('station_mi'));set('BuildingFireProtection_ProtectionClassCode_A',g('protection_class'));
+  if(yes('deadbolts'))set('ResidentialStructure_Security_DoorLockDeadboltIndicator_A',true);
+  {const sp=g('sprinklers').toLowerCase();if(sp==='partial')set('BuildingFireProtection_Sprinkler_PartialIndicator_A',true);else if(sp==='full')set('BuildingFireProtection_Sprinkler_FullIndicator_A',true)}
+  set('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A',g('heating_type'));
+  set('Construction_BuiltYear_A',g('year_built'));set('ResidentialStructure_TotalLivingArea_A',g('sq_ft'));set('ResidenceOccupancy_FamilyCount_A',g('families'));
+  {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else if(f==='basement')set('Construction_Foundation_ClosedIndicator_A',true)}
+  if(g('uw_pool')&&!yes('uw_pool'))set('SwimmingPool_NoIndicator_A',true);
+  if(yes('uw_wood_stove'))set('ResidentialStructure_Fireplace_WoodStoveInsertCount_A','1');
+  set('BuildingImprovement_WiringYear_A',g('wiring_year'));set('BuildingImprovement_PlumbingYear_A',g('plumbing_year'));set('BuildingImprovement_HeatingYear_A',g('heating_year'));set('BuildingImprovement_RoofingYear_A',g('roof_year'));
+  if(g('property_address')){set('Location_ProducerIdentifier_A','1');addr('Location_PhysicalAddress',prop)}
+  // prior coverage and losses
+  if(/^n/i.test(g('currently_insured'))&&!g('current_carrier'))set('PriorCoverage_NoPriorCoverageIndicator_A',true);
+  set('PriorCoverage_InsurerFullName_A',g('current_carrier'));set('PriorCoverage_ExpirationDate_A',g('current_exp'));
+  {const cl=g('claims');set('LossHistory_InformationYearCount_A','5');if(!cl||/^(none|no|n|0|clean)\b/i.test(cl))set('LossHistory_PriorLossesCode_A','N');else{set('LossHistory_PriorLossesCode_A','Y');set('LossHistory_OccurrenceDescription_A',cl)}}
+  // general information: Y/N pre-answered N, the sheet's answers where it has them
+  ['KAA','KAB','KAH','KAI','KAD','KAE','KAF','KAG'].forEach(q=>set(`PersonalPolicy_Question_${q}Code_A`,'N'));
+  ['KAZ','KBA','KBB','KBC','AAH','KBD','KBE','KBF','KBG','KBH','KBI','KBJ','ABA','KBK'].forEach(q=>set(`Residential_Question_${q}Code_A`,'N'));
+  set('Residential_Question_ABBCode_A','Y');set('Residential_Question_KDZCode_A',occ==='tenant'?'N':'Y');
+  const yn=(q,k,pre='Residential')=>{if(yes(k))v[`${pre}_Question_${q}Code_A`]='Y'};
+  yn('KAB','uw_cancelled','PersonalPolicy');yn('KAH','uw_foreclosure','PersonalPolicy');yn('KAZ','uw_business');yn('KBC','uw_dog');yn('KBG','uw_trampoline');yn('ABA','gated');yn('KBK','uw_construction');
+  if(yes('brush')||yes('uw_flood'))v.Residential_Question_KBBCode_A='Y';
+  if(yes('uw_dog')){set('AnimalExposure_AnimalTypeCode_A','Dog');set('AnimalExposure_BreedCode_A',g('uw_dog_breed'));set('AnimalExposure_BiteHistoryCode_A',yes('uw_bite')?'Y':'N')}
+  // mortgagees
+  [['1','_A','_A'],['2','_C','_B']].forEach(([n,nm,ad])=>{const name=g(`mg${n}_name`);if(!name)return;const a=n==='1'?'_A':'_B';
+    set('AdditionalInterest_Interest_MortgageeIndicator'+a,true);set('AdditionalInterest_InterestRank'+a,n);set('AdditionalInterest_FullName'+nm,name);
+    set('AdditionalInterest_MailingAddress_LineOne'+ad,g(`mg${n}_address`));set('AdditionalInterest_MailingAddress_CityName'+ad,g(`mg${n}_city`));set('AdditionalInterest_MailingAddress_StateOrProvinceCode'+ad,g(`mg${n}_state`).toUpperCase());set('AdditionalInterest_MailingAddress_PostalCode'+ad,g(`mg${n}_zip`));set('AdditionalInterest_AccountNumberIdentifier'+ad,g(`mg${n}_loan`))});
+  // anything else the sheet says goes in the remarks
+  const rem=[];if(yes('earthquake'))rem.push('Earthquake coverage requested');if(yes('water_backup'))rem.push('Water backup requested');if(g('scheduled'))rem.push('Scheduled items: '+g('scheduled'));
+  if(yes('uw_rented'))rem.push('Property is rented to others / short-term rental');if(yes('uw_pool'))rem.push('Pool or hot tub on premises');if(g('uw_explain'))rem.push(g('uw_explain'));if(g('notes'))rem.push(g('notes'));
+  if(g('stories'))rem.push('Stories: '+g('stories'));if(g('garage')&&!/none/i.test(g('garage')))rem.push('Garage: '+g('garage'));if(g('bathrooms'))rem.push('Bathrooms: '+g('bathrooms'));
+  set('Residential_RemarkText_A',rem.join('\n'));
+  if(!g('property_address'))notes.push('the home sheet has no property address');
+  return {v,notes}}
+async function fill80(v){const L=PDFLib,doc=await L.PDFDocument.load(await acord80Tpl()),f=doc.getForm(),helv=await doc.embedFont(L.StandardFonts.Helvetica);
+  const by={};for(const fl of f.getFields()){const k=fl.getName().replace(/^F\[0\]\.P\d+\[0\]\./,'').replace(/\[0\]$/,'');(by[k]=by[k]||[]).push(fl)}
+  for(const [k,val] of Object.entries(v))for(const fl of by[k]||[]){
+    if(fl instanceof L.PDFCheckBox){if(val)fl.check();continue}if(!(fl instanceof L.PDFTextField))continue;
+    const text=String(val).replace(/[^\x0A\x20-\x7E\xA0-\xFF]/g,''),r=fl.acroField.getWidgets()[0].getRectangle();let size=10;
+    if(!fl.isMultiline()){while(size>6&&helv.widthOfTextAtSize(text,size)>r.width-4)size-=0.5;size=Math.min(size,Math.max(6,r.height-2))}
+    else{const est=()=>text.split('\n').reduce((a,ln)=>a+Math.max(1,Math.ceil(helv.widthOfTextAtSize(ln,size)/(r.width-6))),0)*size*1.17;while(size>6&&est()>r.height-2)size-=0.5}
+    try{fl.setText(text)}catch(_){fl.setMaxLength(undefined);fl.setText(text)}{const da=fl.acroField.getDefaultAppearance()||'';if(/\\057|^$/.test(da))fl.acroField.setDefaultAppearance(da.replace(/\\057/g,'/')||'/Helv 10 Tf 0 g')}fl.setFontSize(size)}
+  f.updateFieldAppearances(helv);return await doc.save()}
+async function make80(m){const fresh=leads.find(l=>l.id===cur.id)||cur,hs=[...(fresh.files||[])].reverse().find(x=>/ personal home quote sheet\.pdf$/i.test(x.name));
+  if(!hs){m.className='msg err';m.textContent='This lead has no personal home quote sheet yet. Click Personal home quote at the top first.';return}
+  m.className='msg';m.textContent=`Reading ${hs.name}…`;await acordReady();
+  let raw;try{raw=await fileBytes(hs)}catch(_){throw new Error('the home quote sheet file is missing')}
+  const h=sheetValues(await PDFLib.PDFDocument.load(raw)),{v,notes}=build80(window.AcordCore,h),bytes=await fill80(v);
+  const client=([h.ins_first,h.ins_last].filter(Boolean).join(' ')||'Client').replace(/[\\/:*?"<>|]+/g,'').trim(),name=`${client} 80.pdf`;
+  if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(notes.length?`<div class="small" style="margin-top:4px">Heads up: ${notes.map(esc).join(' · ')}</div>`:'')}
+  else{m.className='msg err';m.textContent=$('fileMsg').textContent}}
 $('acordSec').addEventListener('click',async e=>{
   const forms=e.target.dataset.acord;if(!forms||!cur||!cur.id)return;
   const m=$('acordMsg'),btn=e.target,label=btn.textContent;
+  if(forms==='80'){document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=true);btn.textContent='Working…';
+    try{await make80(m)}catch(err){m.className='msg err';m.textContent='Couldn’t make the ACORD: '+(err.message||err.code||'error')}
+    document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=false);btn.textContent=label;return}
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
   if(!qs){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
