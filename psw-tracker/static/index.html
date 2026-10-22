@@ -795,7 +795,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-6',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-7',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -954,10 +954,10 @@ const HOME_SECTIONS=[
  {title:'Dwelling',fields:[{k:'year_built',n:1,label:'Year built',label2:'Square feet',pair:'sq_ft'},{k:'stories',n:1,label:'Stories',label2:'Construction',pair:'construction',opts:['1','2','3','4+'],opts2:['Frame','Masonry','Masonry veneer','Fire resistive']},{k:'roof_type',n:1,label:'Roof type',label2:'Foundation',pair:'foundation',opts:['Composition shingle','Tile','Metal','Wood shake','Flat / tar'],opts2:['Slab','Raised','Basement']},
    {k:'families',n:1,label:'Number of families',label2:'Garage',pair:'garage',opts:['1','2','3','4'],opts2:['Attached','Detached','Carport','None']},{k:'bathrooms',n:1,label:'Bathrooms',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
    {k:'wiring_year',n:1,label:'Wiring updated (yr)',pc:'wiring',label2:'Purchase date',pair:'purchase_date'},{k:'plumbing_year',n:1,label:'Plumbing updated (yr)',pc:'plumbing',label2:'Purchase price',pair:'purchase_price'},{k:'heating_year',n:1,label:'Heating updated (yr)',pc:'heating',label2:'Feet to hydrant',pair:'hydrant_ft'},{k:'roof_year',n:1,label:'Roof updated (yr)',pc:'roof',label2:'Miles to fire stn',pair:'station_mi'},
-   {k:'siding',n:1,label:'Siding',label2:'Brush / wildfire area?',pair:'brush',opts:HOME_SIDING.map(x=>x[0]),opts2:YN}]},
+   {k:'siding',n:1,label:'Siding',label2:'Pool?',pair:'uw_pool',opts:HOME_SIDING.map(x=>x[0]),opts2:YN}]},
  {title:'Protection',fields:[{k:'smoke',n:1,label:'Smoke detectors?',label2:'Burglar alarm',pair:'burglar_alarm',opts:YN,opts2:HOME_ALARM},{k:'fire_alarm',n:1,label:'Fire alarm',label2:'Sprinklers',pair:'sprinklers',opts:HOME_ALARM,opts2:['None','Partial','Full']},{k:'deadbolts',n:1,label:'Deadbolts?',label2:'Gated community?',pair:'gated',opts:YN,opts2:YN}]},
  {title:'Mortgagee',table:{prefix:'mg',rows:2,cols:[{k:'name',label:'Mortgagee / lender',w:2},{k:'address',label:'Address',w:2.2},{k:'city',label:'City',w:1.2},{k:'state',label:'St',w:.45},{k:'zip',label:'Zip',w:.7},{k:'loan',label:'Loan #',w:1.3}]}},
- {title:'Underwriting',fields:[{k:'uw_business',n:1,label:'Business on premises?',label2:'Pool or hot tub?',pair:'uw_pool',opts:YN,opts2:YN},{k:'uw_trampoline',n:1,label:'Trampoline?',label2:'Wood stove?',pair:'uw_wood_stove',opts:YN,opts2:YN},{k:'uw_dog',n:1,label:'Dogs or animals?',label2:'Dog breed(s)',pair:'uw_dog_breed',opts:YN},{k:'uw_bite',n:1,label:'Animal bite history?',label2:'In a flood zone?',pair:'uw_flood',opts:YN,opts2:YN},
+ {title:'Underwriting',fields:[{k:'uw_business',n:1,label:'Business on premises?',opts:YN},{k:'uw_trampoline',n:1,label:'Trampoline?',label2:'Wood stove?',pair:'uw_wood_stove',opts:YN,opts2:YN},{k:'uw_dog',n:1,label:'Dogs or animals?',label2:'Dog breed(s)',pair:'uw_dog_breed',opts:YN},{k:'uw_bite',n:1,label:'Animal bite history?',label2:'In a flood zone?',pair:'uw_flood',opts:YN,opts2:YN},
    {k:'uw_rented',n:1,label:'Rented / short-term rental?',label2:'Renovation now?',pair:'uw_construction',opts:YN,opts2:YN},{k:'uw_foreclosure',n:1,label:'Foreclosure / bankruptcy?',label2:'Cancelled / non-renewed?',pair:'uw_cancelled',opts:YN,opts2:YN},{k:'uw_explain',n:1,label:'Explain any Yes',area:1}]},
  {title:'Loss history',fields:[{k:'claims',n:1,label:'Claims last 5 yrs',area:1}]},
  {title:'Notes',fields:[{k:'notes',n:1,label:'Notes',area:1}]}];
@@ -1990,7 +1990,7 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
   ['Housekeeping','PlumbingCondition','RoofCondition'].forEach(t=>set(`ResidentialStructure_${t}_ExcellentIndicator_A`,true));
   set('BuildingFireProtection_ExtinguisherCode_A','Y');set('ResidentialStructure_Wiring_CopperIndicator_A',true);set('Construction_ElectricalPanel_CircuitBreakersIndicator_A',true);
   set('Construction_ElectricalPanel_AmpereCount_A','120');set('ResidentialLocation_RiskLocation_InCityLimitsIndicator_A',true);
-  if(g('uw_pool')&&!yes('uw_pool'))set('SwimmingPool_NoIndicator_A',true);
+  if(yes('uw_pool'))set('SwimmingPool_InGroundIndicator_A',true);else if(g('uw_pool'))set('SwimmingPool_NoIndicator_A',true);
   if(yes('uw_wood_stove'))set('ResidentialStructure_Fireplace_WoodStoveInsertCount_A','1');
   ['Wiring','Plumbing','Heating','Roofing'].forEach(t=>{const k=t==='Roofing'?'roof':t.toLowerCase();if(yes(k+'_part'))set(`BuildingImprovement_${t}PartialIndicator_A`,true);if(yes(k+'_comp'))set(`BuildingImprovement_${t}CompleteIndicator_A`,true)});set('BuildingImprovement_WiringYear_A',g('wiring_year'));set('BuildingImprovement_PlumbingYear_A',g('plumbing_year'));set('BuildingImprovement_HeatingYear_A',g('heating_year'));set('BuildingImprovement_RoofingYear_A',g('roof_year'));
   if(g('property_address')){set('Location_ProducerIdentifier_A','1');addr('Location_PhysicalAddress',prop)}
@@ -2012,7 +2012,7 @@ function build80(C,h){const v={},S=C.DEFAULT_SETTINGS,g=k=>String(h[k]||'').trim
     set('AdditionalInterest_MailingAddress_LineOne'+ad,g(`mg${n}_address`));set('AdditionalInterest_MailingAddress_CityName'+ad,g(`mg${n}_city`));set('AdditionalInterest_MailingAddress_StateOrProvinceCode'+ad,g(`mg${n}_state`).toUpperCase());set('AdditionalInterest_MailingAddress_PostalCode'+ad,g(`mg${n}_zip`));set('AdditionalInterest_AccountNumberIdentifier'+ad,g(`mg${n}_loan`))});
   // anything else the sheet says goes in the remarks
   const rem=[];if(yes('earthquake'))rem.push('Earthquake coverage requested');if(yes('water_backup'))rem.push('Water backup requested');if(g('scheduled'))rem.push('Scheduled items: '+g('scheduled'));
-  if(yes('uw_rented'))rem.push('Property is rented to others / short-term rental');if(yes('uw_pool'))rem.push('Pool or hot tub on premises');if(g('uw_explain'))rem.push(g('uw_explain'));if(g('notes'))rem.push(g('notes'));
+  if(yes('uw_rented'))rem.push('Property is rented to others / short-term rental');if(yes('uw_pool'))rem.push('In-ground pool on premises');if(g('uw_explain'))rem.push(g('uw_explain'));if(g('notes'))rem.push(g('notes'));
   if(g('stories'))rem.push('Stories: '+g('stories'));if(g('garage')&&!/none/i.test(g('garage')))rem.push('Garage: '+g('garage'));if(g('bathrooms'))rem.push('Bathrooms: '+g('bathrooms'));
   set('Residential_RemarkText_A',rem.join('\n'));
   if(!g('property_address'))notes.push('the home sheet has no property address');
