@@ -2668,18 +2668,39 @@ $('clFileAdd').onclick=()=>$('clFileIn').click();$('clFileIn').onchange=()=>{con
 const clFileList=()=>editClient?(editClient.files||[]):clPending;
 function renderPpFiles(){const pid=polTr&&polTr.querySelector('[data-p=pid]').value,fs=clFileList().filter(f=>pid&&f.pid===pid).reverse();$('ppUpRow').hidden=!assets;$('ppFileAdd').hidden=!assets;
   $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button>${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-prmf="${esc(f.id)}">Remove</button>`:''}</li>`).join('')||'<li class="small" style="border:none;padding:0">No files for this policy yet.</li>'}
-$('ppFileAdd').onclick=()=>$('ppFileIn').click();$('ppFileIn').onchange=()=>{const list=[...$('ppFileIn').files];$('ppFileIn').value='';if(polTr)addClientFiles(list,polTr.querySelector('[data-p=pid]').value)};
+$('ppFileAdd').onclick=()=>$('ppFileIn').click();$('ppFileIn').onchange=()=>{const list=[...$('ppFileIn').files];$('ppFileIn').value='';if(polTr){addClientFiles(list,polTr.querySelector('[data-p=pid]').value);list.forEach(ppSheetFill)}};
 /* ---------- policy pop-up: drop a quote sheet, dec page or binder to fill the policy ---------- */
 // our own personal auto quote sheet is read straight from its form boxes; anything else goes to Claude (when the server has it turned on)
 const PP_FEES={policyFee:'Policy fee',gaFee:'GA fee',tax:'Tax',stamping:'Stamping',filingFee:'State filing fee',pswFee:'PSW agency fee'};
 const PP_MAIN={line:'Line of business, one of '+JSON.stringify(LOBS),carrier:'General agent / wholesaler / MGA, if any',company:'Insurance company (carrier)',number:'Policy or binder number',eff:'Effective date MM/DD/YYYY',exp:'Expiration date MM/DD/YYYY',premium:'Premium (base premium before fees and taxes)',state:'Policy state, 2-letter code',nb:'"New" or "Renewal" if stated',...PP_FEES};
 const ppDetailKeys=line=>(LOB_FIELDS[line]||[]).flatMap(([k,l])=>{if(k==='#Home')return HOME_PP.map(([k,l,o])=>[k,l.replace(/^\d+[ab] /,'')+(o?' ('+o.join(' / ')+')':'')]);if(k[0]!=='#')return [[k,l]];const t0=PAUTO_SECTIONS.find(x=>x.title===k.slice(1)).table,cols=k==='#Vehicles'?[...t0.cols,...t0.cols2.filter(c=>c.k!=='owned')]:t0.cols;
   return Array.from({length:t0.rows},(_,j)=>cols.map(c=>[`${t0.prefix}${j+1}_${c.k}`,`${k==='#Drivers'?'Driver':'Vehicle'} ${j+1} ${c.label}`+(c.opts?' ('+c.opts.join(' / ')+')':'')+(c.k==='dob'?' MM/DD/YYYY':'')])).flat()});
-function ppFromHome(q){ // PSW personal home quote sheet boxes -> Personal Home policy fields
-  const g=k=>q['f_'+k]||'';return {line:'Personal Home',eff:g('eff_date'),exp:g('exp_date'),extra:{address:g('property_address'),year_built:g('year_built'),dwelling:g('dwelling'),other_structures:g('other_structures'),personal_property:g('personal_property'),loss_of_use:g('loss_of_use'),liability:g('liability'),med:g('med_pay'),deductible:g('deductible'),...Object.fromEntries(HOME_PP.map(([k])=>[k,g(k==='roof'?'roof_year':k)]))}}}
+function ppFromHome(q,cur){ // PSW personal home quote sheet boxes -> Personal Home (or the policy's other home line) fields
+  const g=k=>q['f_'+k]||'';return {line:['Rental Dwelling','Secondary Home','Earthquake','DIC'].includes(cur)?cur:'Personal Home',eff:g('eff_date'),exp:g('exp_date'),extra:{contents:g('personal_property'),loss_of_rents:g('loss_of_use'),occupancy:g('occupancy'),units:g('families'),address:g('property_address'),year_built:g('year_built'),dwelling:g('dwelling'),other_structures:g('other_structures'),personal_property:g('personal_property'),loss_of_use:g('loss_of_use'),liability:g('liability'),med:g('med_pay'),deductible:g('deductible'),...Object.fromEntries(HOME_PP.map(([k])=>[k,g(k==='roof'?'roof_year':k)]))}}}
 function ppFromSheet(q){ // PSW personal auto quote sheet boxes -> policy fields
   const x={bi:q.f_bi_limit,pd:q.f_pd_limit,um:q.f_um_uim,med:q.f_med_pay,comp:q.f_comp_ded,coll:q.f_coll_ded,rental:q.f_rental,towing:q.f_towing};
   for(const [k,v] of Object.entries(q))if(/^[dv]\d+_/.test(k))x[k]=v;return {line:'Personal Auto',eff:q.f_eff_date||'',extra:x}}
+function ppFromAuto(q){ // PSW commercial auto quote sheet -> Commercial Auto policy fields (drivers and vehicles use the same keys)
+  const g=k=>q['f_'+k]||'',x={csl:g('liability_limit'),um:g('um_uim'),med:g('med_pay'),comp:g('comp_ded'),coll:g('coll_ded'),hnoa:g('hired_nonowned'),cargo:g('cargo_limit'),radius:q.v1_radius||''};
+  for(const [k,v] of Object.entries(q))if(/^[dv]\d+_/.test(k))x[k]=v;
+  for(let i=1;i<=6;i++)if(!x[`v${i}_zip`]&&q[`v${i}_use`])x[`v${i}_zip`]=q[`v${i}_use`]; // the commercial sheet keeps the garage zip under "use"
+  return {line:'Commercial Auto',eff:g('eff_date'),extra:x}}
+function ppFromQS(q,cur){ // PSW commercial quote sheet (GL / WC / property / BOP) -> fields of the policy's line, or the sheet's line of business
+  const g=k=>q['f_'+k]||'',lob=g('line_of_business').toLowerCase(),rows=(p,n,f)=>Array.from({length:n},(_,i)=>f(k=>q[`${p}${i+1}_${k}`]||'')).filter(Boolean).join('\n');
+  const line=cur||(/bop/.test(lob)?'BOP':/^wc|work/.test(lob)?'Workers Comp':/gl|liab/.test(lob)?'General Liability':/prop/.test(lob)?'Commercial Property':'');
+  const b=k=>q['b1_'+k]||'',ft=+g('full_time')||0,pt=+g('part_time')||0;
+  return {line,eff:g('eff_date'),exp:g('exp_date'),extra:{operations:[g('description'),g('detailed_description')].filter(Boolean).join('\n'),sales:g('gross_receipts'),payroll:g('payroll'),
+    address:b('address')||g('property_address'),year_built:b('yr'),sq_ft:b('sqft'),construction:b('const'),building:b('dwelling'),bpp:b('bpp'),bi:b('rents'),contents:b('bpp'),
+    employees:ft||pt?String(ft+pt):'',class_codes:rows('cc',4,c=>[c('code'),c('desc'),c('payroll')&&'payroll '+c('payroll')].filter(Boolean).join(' ')),
+    owners:rows('o',4,c=>[c('first'),c('last'),c('pct')&&c('pct')+'%',c('title')].filter(Boolean).join(' ')),addl_insured:rows('ai',4,c=>[c('name'),c('address')].filter(Boolean).join(', ')),
+    limit:[g('auto_excess')&&'Auto '+g('auto_excess'),g('gl_excess')&&'GL '+g('gl_excess'),g('wc_excess')&&'WC '+g('wc_excess')].filter(Boolean).join(', ')}}}
+// which PSW quote sheet these PDF boxes came from, as policy fields (null when it isn't one)
+function ppFromAnySheet(q){const cur=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase())||'';
+  if(q.f_dwelling||q.f_uw_bite||(q.f_property_address&&q.f_ins_first))return {kind:'Personal home',o:ppFromHome(q,cur)};
+  if(q.f_bi_limit||(q.f_ins_first&&(q.d1_first||q.v1_vin)))return {kind:'Personal auto',o:ppFromSheet(q)};
+  if(q.f_owner_first||q.f_liability_limit||q.f_dot_number||q.f_garaging_address)return {kind:'Commercial auto',o:ppFromAuto(q)};
+  if(q.f_client_name||q.f_line_of_business||q.b1_address||q.cc1_code)return {kind:'Commercial',o:ppFromQS(q,cur)};
+  return null}
 function ppApply(o){let n=0;const set=(el,v)=>{v=String(v??'').trim();if(!el||!v)return;if(el.tagName==='SELECT'&&![...el.options].some(op=>op.value===v)){const hit=[...el.options].find(op=>op.value&&op.value.toLowerCase()===v.toLowerCase());if(!hit)return;v=hit.value}el.value=v;n++};
   const line=LOBS.find(x=>x.toLowerCase()===String(o.line||'').trim().toLowerCase());if(line){setLob($('ppLine'),line);n++;renderPpExtra()}
   const dt=v=>{const x=typedISO(v);return /^\d{4}-\d\d-\d\d$/.test(x)?fmtDate(x):v};
@@ -2703,8 +2724,7 @@ async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=
   if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value); // keep the document with the policy too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let t='';
   if(!isImg){try{t=(await fileText(f)).trim()}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
-    if(lastFields.f_property_address||lastFields.f_dwelling||lastFields.f_uw_bite){const n=ppApply(ppFromHome(lastFields));lastFields={};m.className='msg ok';m.textContent=`Personal home quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}
-    if(lastFields.f_ins_first||lastFields.f_bi_limit||lastFields.d1_first){const n=ppApply(ppFromSheet(lastFields));lastFields={};m.className='msg ok';m.textContent=`Personal auto quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}
+    const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}
     lastFields={};if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}}
   else if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t turned on for this database. Drop the PDF instead.';return}
   if(!sample){const n=ppApply(ppBasic(t));m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} (basic mode, Claude isn’t turned on for this database). Check them, then Done.`:'Couldn’t find policy details in that (basic mode, Claude isn’t turned on for this database).';return}
@@ -2727,7 +2747,10 @@ $('ppReadIn').onchange=()=>{const f=$('ppReadIn').files[0];$('ppReadIn').value='
  fz.addEventListener('drop',e=>{const f=(e.dataTransfer.files||[])[0];if(f)ppRead(f)})}
 {const fz=$('ppUpRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
- fz.addEventListener('drop',e=>{if(polTr)addClientFiles([...(e.dataTransfer.files||[])],polTr.querySelector('[data-p=pid]').value)})}
+ fz.addEventListener('drop',e=>{if(!polTr)return;const fs=[...(e.dataTransfer.files||[])];addClientFiles(fs,polTr.querySelector('[data-p=pid]').value);fs.forEach(ppSheetFill)})}
+// a PSW quote sheet added to a policy's files also fills the policy's boxes
+async function ppSheetFill(f){if(!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf')return;try{await fileText(f)}catch(_){return}
+  const sh=ppFromAnySheet(lastFields);lastFields={};if(!sh)return;const n=ppApply(sh.o),m=$('ppReadMsg');m.className='msg ok';m.textContent=`${sh.kind} quote sheet ${f.name} read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`}
 $('ppFiles').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.clren)return renameClFile(b.dataset.clren);const id=b.dataset.popen||b.dataset.psave||b.dataset.prmf,f=clFileList().find(x=>x.id===id);if(!f)return;
   try{if(b.dataset.prmf){if(!(await sureDel(`Delete the file ${f.name}? It comes off this policy and the client. This can’t be undone.`)))return;await dropClFile(id);return}
     const blob=new Blob([await fileBytes(f)],{type:f.type||'application/octet-stream'});
