@@ -405,6 +405,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
         <label for="clSince">Client since</label><input id="clSince" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
         <label for="clLead">Lead</label><select id="clLead"></select>
       </section>
+      <section class="ppCard"><div class="ppCardH"><h4>Customer notes</h4></div>
+        <textarea id="clGenNotes" style="width:100%;min-height:90px" placeholder="General notes about this customer"></textarea></section>
       <section class="ppCard"><div class="ppCardH"><h4>Notes</h4><button type="button" class="pri" id="clAddNote">+ Add note</button></div>
         <ul class="log" id="clNoteLog" style="margin:0"></ul></section>
     </div>
@@ -2341,7 +2343,7 @@ function renderClients(){
   opts($('cfAgent'),[...new Set([...AGENTS,...clients.map(c=>(c.agent||'').trim()).filter(Boolean)])],'Everyone');
   const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value;
   const rows=clients.filter(c=>{if(fa&&c.agent!==fa)return false;if(!q)return true;
-    return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,c.phone,c.email,c.phone2,c.email2,c.address,c.location,c.notes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
+    return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,c.phone,c.email,c.phone2,c.email2,c.address,c.location,c.notes,c.genNotes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
     .sort((a,b)=>clientName(a).localeCompare(clientName(b)));
   const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
@@ -2566,7 +2568,7 @@ function openClient(c,preset,quiet){editClient=c||null;const v=c||preset||{};clB
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
   $('clLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('')+
     (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
-  $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);clPending=[];renderClFiles(c);clNoteLog=[...(v.noteLog||[])];if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
+  $('polRows').innerHTML='';(v.policies&&v.policies.length?v.policies:[{}]).forEach(polRow);clPending=[];renderClFiles(c);clNoteLog=[...(v.noteLog||[])];$('clGenNotes').value=v.genNotes||'';if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
   $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
   $('clientDlg').classList.add('on');if(!quiet)setTimeout(()=>$('clCompany').focus(),30)}
 // more people on the client: same boxes as the first person, saved as people:[{firstName,...}]
@@ -2617,7 +2619,7 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg'
 $('clSave').onclick=async()=>{const m=$('clientMsg');
   const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),preferredName:$('clPref').value.trim(),dob:$('clDob').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),phone2:fmtClPhone($('clPhone2').value),email2:$('clEmail2').value.trim(),
     address:$('clAddress').value.trim(),location:$('clLocation').value.trim(),agent:$('clAgent').value,busType:$('clBusType').value,workPhone:fmtClPhone($('clWork').value),relationship:$('clRel').value.trim(),
-    city:$('clCity').value.trim(),state:$('clState').value.trim(),zip:$('clZip').value.trim(),locCity:$('clLocCity').value.trim(),locState:$('clLocState').value.trim(),locZip:$('clLocZip').value.trim(),status:$('clStatus').value,leadSource:$('clSource').value.trim(),people:readPeople(),leadId:$('clLead').value,notes:'',noteLog:clNoteLog};
+    city:$('clCity').value.trim(),state:$('clState').value.trim(),zip:$('clZip').value.trim(),locCity:$('clLocCity').value.trim(),locState:$('clLocState').value.trim(),locZip:$('clLocZip').value.trim(),status:$('clStatus').value,leadSource:$('clSource').value.trim(),people:readPeople(),leadId:$('clLead').value,notes:'',genNotes:$('clGenNotes').value.trim(),noteLog:clNoteLog};
   if(!data.company&&!data.firstName&&!data.lastName){m.className='msg err';m.textContent='Give the client a name.';$('clCompany').focus();return}
   const bad=[];const iso=(v,what)=>{v=String(v||'').trim();if(!v)return '';const x=typedISO(v);if(!/^\d{4}-\d\d-\d\d$/.test(x)){bad.push(what);return ''}return x};
   data.since=iso($('clSince').value,'Client since');
