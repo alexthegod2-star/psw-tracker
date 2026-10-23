@@ -1,6 +1,7 @@
 /* PSW agency fee: adds a "PSW Agency Fee" line under a carrier quote's fees, updates every total, and puts the PSW header on page 1.
    Same engine as the "PSW Agency Fee – Quote Tool" artifact. Needs PDFLib, pdfjsLib and pako loaded first.
-   PSWFee.add(bytes, fee) -> {bytes, insured, quoteNo, oldTotal, newTotal, msg, warn} or throws Error(message). */
+   PSWFee.add(bytes, fee, label, opts) -> {bytes, insured, quoteNo, oldTotal, newTotal, msg, warn} or throws Error(message).
+   opts.ask: Claude fallback for new layouts. opts.ocr: {start(), read(canvas) -> tesseract data} for quotes whose text can't be copied. */
 (function(){
 const MONEY=/^\$?\s*[\d,]+\.\d{2}$/;
 const toNum=s=>parseFloat(String(s).replace(/[^\d.\-]/g,""));
@@ -10,17 +11,53 @@ const LOGO_PNG="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDA
 const ag={on:true,name:"Pacific Southwest Insurance Services",addr:"9036 Reseda Blvd Ste 105",city:"Northridge, CA 91324-5889",phone:"(818) 701-1033",web:"pswis.com",extra:"",logo:LOGO_PNG};
 
 /* ---------- read text layout with pdf.js ---------- */
-async function readLines(bytes){
+/* some carriers' PDFs (e.g. Vertafore/ABCpdf) draw text with private fonts whose letters can't be read back as text */
+function garbled(items){
+  const s=items.map(i=>i.str).join("").replace(/\s/g,"");
+  if(s.length<20) return false;
+  const bad=[...s].filter(c=>c<" "||c==="\uFFFD").length;
+  return bad/s.length>0.15;
+}
+/* read such a page with OCR, then line each word up with the PDF's own letter positions so edits land on the real text */
+async function ocrItems(page,items,ocr){
+  const vp=page.getViewport({scale:3});
+  const cv=document.createElement("canvas"); cv.width=Math.ceil(vp.width); cv.height=Math.ceil(vp.height);
+  const cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height);
+  await page.render({canvasContext:cx,viewport:vp}).promise;
+  const data=await ocr(cv);
+  let words=data.words;
+  if(!words) words=(data.blocks||[]).flatMap(b=>b.paragraphs||[]).flatMap(p=>p.lines||[]).flatMap(l=>l.words||[]);
+  const out=[];
+  for(const wd of words){
+    let str=String(wd.text||"").trim(); if(!str) continue;
+    if(/^[S$][\d,.]+\.\d{2}$/.test(str)) str="$"+str.slice(1);
+    if(/^\$?\d{1,3}(\.\d{3})+\.\d{2}$/.test(str)) str=str.replace(/\.(?=\d{3}\b|\d{3}\.)/g,",");
+    const b=wd.bbox, a=vp.convertToPdfPoint(b.x0,b.y1), c=vp.convertToPdfPoint(b.x1,b.y0);
+    const xl=Math.min(a[0],c[0]), xr=Math.max(a[0],c[0]), yb=Math.min(a[1],c[1]), yt=Math.max(a[1],c[1]);
+    const hit=items.filter(i=>i.str.trim() && i.x>=xl-1.5 && i.x<xr-0.5 && i.y>=yb-1.5 && i.y<=yt);
+    let x=xl, y=yb, size=Math.max(4,(yt-yb)*1.25);
+    if(hit.length){
+      const ys=hit.map(i=>i.y).sort((p,q)=>p-q); y=ys[Math.floor(ys.length/2)];
+      x=Math.min(...hit.map(i=>i.x));
+      /* these fonts often report a stretched height, so trust the narrower scale */
+      size=Math.min(hit[0].size,hit[0].sx||hit[0].size);
+    }
+    out.push({str,x,y,w:Math.max(1,xr-x),size,family:""});
+  }
+  return out;
+}
+async function readLines(bytes,ocr){
   const doc=await pdfjsLib.getDocument({data:bytes.slice()}).promise;
-  const pages=[];
+  const pages=[]; let usedOcr=false;
   for(let p=1;p<=doc.numPages;p++){
     const page=await doc.getPage(p);
     const tc=await page.getTextContent();
-    const items=tc.items.filter(i=>i.str!==undefined).map(i=>{
+    let items=tc.items.filter(i=>i.str!==undefined).map(i=>{
       const t=i.transform;
-      return {str:i.str,x:t[4],y:t[5],w:i.width,size:Math.hypot(t[2],t[3])||10,
+      return {str:i.str,x:t[4],y:t[5],w:i.width,size:Math.hypot(t[2],t[3])||10,sx:Math.hypot(t[0],t[1]),
         family:(tc.styles[i.fontName]||{}).fontFamily||""};
     });
+    if(ocr && garbled(items)){ if(typeof ocr.start==="function"&&!usedOcr) ocr.start(); items=await ocrItems(page,items,ocr.read||ocr); usedOcr=true; }
     const lines=[];
     items.sort((a,b)=>b.y-a.y||a.x-b.x).forEach(it=>{
       let L=lines.find(l=>Math.abs(l.y-it.y)<1.5);
@@ -41,7 +78,7 @@ async function readLines(bytes){
     lines.sort((a,b)=>b.y-a.y);
     pages.push({lines,height:page.view[3],width:page.view[2]});
   }
-  return {doc,pages};
+  return {doc,pages,usedOcr};
 }
 
 function findField(pages,re){
@@ -419,10 +456,14 @@ async function addAgencyHeader(pdfDoc,title,fReg,fBold,cleared){
   const textH=lines.reduce((a,l)=>a+l.size+l.gap,0);
   let logoH=0,logoW=0;
   if(img){ logoH=Math.min(84,Math.max(24,avail-textH-12)); logoW=img.width*logoH/img.height; if(logoW>230){ logoW=230; logoH=img.height*logoW/img.width; } }
-  const blockH=textH+(img?logoH+10:0);
+  /* short header space: put the logo beside the agency name instead of above it */
+  const side=!!img && textH+logoH+10>avail;
+  if(side){ logoH=Math.max(24,Math.min(64,avail-4)); logoW=img.width*logoH/img.height; }
+  const blockH=textH+(img&&!side?logoH+10:0);
   page.drawRectangle({x:0,y:yMin+2,width:W,height:top-yMin-2,color:PDFLib.rgb(1,1,1)});
   let y=yMin+10+Math.max(0,(avail-blockH))/2+blockH;
-  if(img){ y-=logoH; page.drawImage(img,{x:W/2-logoW/2,y,width:logoW,height:logoH}); y-=10; }
+  if(side){ const nw=fBold.widthOfTextAtSize(ag.name,18); page.drawImage(img,{x:Math.max(12,W/2-Math.max(nw/2+10,120)-logoW-14),y:y-blockH/2-logoH/2,width:logoW,height:logoH}); }
+  else if(img){ y-=logoH; page.drawImage(img,{x:W/2-logoW/2,y,width:logoW,height:logoH}); y-=10; }
   for(const l of lines){
     y-=l.size;
     const fb=l.bold?fBold:fReg; const w=fb.widthOfTextAtSize(l.t,l.size);
@@ -447,13 +488,14 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     const pick=l=>{ let best=null,bd=25; for(const b of l.amounts){ const d=Math.abs((b.x+b.w/2)-cx); if(d<bd){bd=d;best=b;} } return best; };
     const members=chain.map(pick).filter(Boolean);
     const spread=v=>v.length?Math.max(...v)-Math.min(...v):0;
-    const align=spread(members.map(b=>b.x+b.w))<=spread(members.map(b=>b.x+b.w/2))+0.5?"right":"center";
+    const sR=spread(members.map(b=>b.x+b.w)), sC=spread(members.map(b=>b.x+b.w/2)), sL=spread(members.map(b=>b.x));
+    const align=sL+0.5<Math.min(sR,sC)?"left":sR<=sC+0.5?"right":"center";
     const m=pick(last)||a;
     const old=toNum(a.str);
     const sum=Math.round(members.reduce((s,b)=>s+toNum(b.str),0)*100)/100;
-    return {tot:a,align,feeRight:m.x+m.w,feeCx:m.x+m.w/2,feeSize:m.size,right,cx,old,sum,neu:Math.round((old+fee)*100)/100};
+    return {tot:a,align,feeLeft:m.x,feeRight:m.x+m.w,feeCx:m.x+m.w/2,feeSize:m.size,right,cx,old,sum,neu:Math.round((old+fee)*100)/100};
   });
-  const place=(c,w,forTotal)=>c.align==="center"?(forTotal?c.cx:c.feeCx)-w/2:(forTotal?c.right:c.feeRight)-w;
+  const place=(c,w,forTotal)=>c.align==="left"?(forTotal?c.tot.x:c.feeLeft):c.align==="center"?(forTotal?c.cx:c.feeCx)-w/2:(forTotal?c.right:c.feeRight)-w;
 
   /* label position: follow the column's alignment */
   const lefts=chain.map(l=>l.labelX).filter(v=>v!=null), rights=chain.map(l=>l.labelRight).filter(v=>v!=null);
@@ -472,11 +514,13 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
   /* in the Crum-style tables amounts are bold; elsewhere follow the quote */
   const fbAmt=serif?fBold:fReg;
 
+  /* text drawn inside an old total amount (some PDFs draw each letter on its own) */
+  const inAmt=(a,x)=>x>a.x-2 && x<Math.max(a.x+2,a.x+a.w-0.5);
   let newY, totY=T.y, shift=0, ok=true;
   if(hasBlankRow){
     newY=last.y-pitch;
     /* remove only the old total amounts */
-    const r=walkPage(pdfDoc,pi,{region:(y,x)=>Math.abs(y-T.y)<1.5&&cols.some(c=>Math.abs(x-c.tot.x)<2),shapeRegion:()=>false});
+    const r=walkPage(pdfDoc,pi,{region:(y,x)=>Math.abs(y-T.y)<1.5&&cols.some(c=>inAmt(c.tot,x)),shapeRegion:()=>false});
     ok=r.ok;
   }else{
     /* no room: move the Total line and everything under it (until the next big gap) down one row */
@@ -488,7 +532,7 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     const floor=next?next.y+next.items.reduce((m,i)=>Math.max(m,i.size),0):36;
     if(lowest-pitch*0.6-shift<floor){ return {err:"no room",pi}; }
     const yHi=last.y-2, yLo=lowest-pitch*0.6;
-    const isOldTotal=(x,y)=>Math.abs(y-T.y)<1.5 && cols.some(c=>Math.abs(x-c.tot.x)<2);
+    const isOldTotal=(x,y)=>Math.abs(y-T.y)<1.5 && cols.some(c=>inAmt(c.tot,x));
     const r=walkPage(pdfDoc,pi,{region:y=>y<yHi&&y>yLo,shapeRegion:(lo,hi)=>hi<=yHi+0.01&&lo>=yLo,shift,copy:true,skipCopy:isOldTotal});
     ok=r.ok;
     if(r.copies.length) appendRaw(pdfDoc,pi,r.copies.join("\n"));
@@ -527,7 +571,7 @@ async function aiLocate(pages,ask){
 async function add(srcBytes,fee,label,opts){
   label=label||"PSW Agency Fee";opts=opts||{};
   if(!(fee>0)) throw new Error("Enter a fee amount greater than $0.");
-  const {pages}=await readLines(srcBytes);
+  const {pages,usedOcr}=await readLines(srcBytes,opts.ocr);
   let locs=locateAll(pages), ai=null;
   if(!locs.length && opts.ask){ if(opts.onAi) opts.onAi(); ai=await aiLocate(pages,opts.ask); locs=ai.locs; }
   if(!locs.length) throw new Error("Couldn't find the premium totals in this PDF (a column of fees and taxes followed by a Total line).");
@@ -558,11 +602,12 @@ async function add(srcBytes,fee,label,opts){
   }
   const bytes=await pdfDoc.save();
   const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||(ai&&ai.insured)||"";
-  const quoteNo=findField(pages,/^Quote Number\s+(\S+)/i)||findField(pages,/^QUOTE NO\.?:?\s*(\S+)/i);
+  const quoteNo=findField(pages,/^Quote Number:?\s+(\S+)/i)||findField(pages,/^QUOTE NO\.?:?\s*(\S+)/i);
   const cols=main.cols;
   const bad=done.filter(Boolean).flatMap(r=>r.cols).filter(c=>Math.abs(c.sum-c.old)>0.01);
   if(bad.length) warn=(warn?warn+" ":"")+"The carrier's line items add up to "+fmt(bad[0].sum)+", not the "+fmt(bad[0].old)+" printed total, so check the quote.";
   if(skipped.length) warn=(warn?warn+" ":"")+"No room to add it on page"+(skipped.length>1?"s ":" ")+[...new Set(skipped)].join(", ")+", so check "+(skipped.length>1?"those pages":"that page")+".";
+  if(usedOcr) warn=(warn?warn+" ":"")+"This quote's text had to be read from the page image, so check the fee and totals before sending it.";
   if(ai) warn=(warn?warn+" ":"")+"Claude picked the fee lines on this quote, so check the updated page before sending it.";
   return {bytes,insured,quoteNo,oldTotal:cols.map(c=>fmt(c.old)).join(" | "),newTotal:cols.map(c=>fmt(c.neu)).join(" | "),fee:fmt(fee),warn};
 }
