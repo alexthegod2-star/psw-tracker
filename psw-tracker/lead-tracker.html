@@ -2555,6 +2555,8 @@ function clStaleCheck(){if(!editClient||!$('clientDlg').classList.contains('on')
 $('clientDlg').addEventListener('input',()=>{clDirty=true});$('clientDlg').addEventListener('change',()=>{clDirty=true});
 $('clientDlg').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!/^(clCancel|clCancelTop|clSave|clSaveTop|clAddNote)$/.test(b.id)&&!b.closest('#clNoteLog')&&!b.matches('[data-open],[data-save],[data-dl]'))clDirty=true});
 $('polRows').addEventListener('click',()=>{clDirty=true}); // opening a policy may change it
+// "same" in Location address copies the mailing address, city, state and zip
+$('clLocation').addEventListener('change',()=>{if(/^\s*same(\s+as\s+mailing)?\s*$/i.test($('clLocation').value))[['clAddress','clLocation'],['clCity','clLocCity'],['clState','clLocState'],['clZip','clLocZip']].forEach(([f,t])=>{$(t).value=$(f).value})});
 function openClient(c,preset,quiet){editClient=c||null;const v=c||preset||{};clBaseRev=(c&&c.rev)||0;clDirty=false;
   setTimeout(()=>{if(c&&editClient===c)lockStart('client','clients/'+c.id,{what:'client',ui:(on,t)=>lockUi($('clientDlg'),$('clLockBar'),on,t),freed:()=>{const fr=clients.find(x=>x.id===c.id);if(fr&&$('clientDlg').classList.contains('on'))openClient(fr,null,true);toast('You can edit this client now')}});else if(!c)lockStop('client')},0);
   $('clientTitleH').textContent=c?'Edit client':'New client';
