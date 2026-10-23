@@ -38,6 +38,8 @@ def load_env():
 
 load_env()
 DATA = Path(os.environ.get("PSW_DATA", "/var/lib/psw-tracker"))
+# who gets Payment Yes when that column is first added (by user name or first name); Admin changes it after that
+PAY_PEOPLE = {x.strip().lower() for x in os.environ.get("PSW_PAYMENT_PEOPLE", "alex,anna,patricia").split(",") if x.strip()}
 DB_PATH = DATA / "tracker.db"
 BLOBS = DATA / "blobs"
 MODULES = {m.strip() for m in os.environ.get("PSW_MODULES", "tracker").split(",") if m.strip()}
@@ -88,6 +90,12 @@ def init_db():
         c.execute("CREATE TABLE IF NOT EXISTS locks(path TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL, tab TEXT NOT NULL, expires REAL NOT NULL)")
         if "can_delete" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Delete Yes/No (everyone could delete before this)
             c.execute("ALTER TABLE users ADD COLUMN can_delete INTEGER NOT NULL DEFAULT 1")
+        if "payment" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Payment Yes/No: sees clients' Payment info
+            c.execute("ALTER TABLE users ADD COLUMN payment INTEGER NOT NULL DEFAULT 0")
+            for r in c.execute("SELECT id,username,name FROM users").fetchall():  # starts on for the people first asked for
+                first = (r["name"] or "").split()[:1]
+                if r["username"].lower() in PAY_PEOPLE or (first and first[0].lower() in PAY_PEOPLE):
+                    c.execute("UPDATE users SET payment=1 WHERE id=?", (r["id"],))
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
                   "vals TEXT NOT NULL, answers TEXT, agent TEXT NOT NULL, created REAL NOT NULL, created_by TEXT NOT NULL, expires REAL NOT NULL, submitted REAL)")
 
@@ -322,7 +330,7 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
@@ -399,6 +407,18 @@ async def admin_set_secrets(username: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/api/admin/users/{username}/payment")
+async def admin_set_payment(username: str, request: Request):
+    """Payment Yes or No: whether this person sees and edits clients' Payment info."""
+    need_owner(request)
+    on = bool((await request.json()).get("payment"))
+    with db() as c:
+        n = c.execute("UPDATE users SET payment=? WHERE username=?", (1 if on else 0, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
 @app.post("/api/admin/users/{username}/delete")
 async def admin_set_delete(username: str, request: Request):
     """Delete Yes or No: whether this person can delete leads, clients, tasks, notes and files."""
@@ -425,15 +445,13 @@ def can_secrets(u):
     return u["username"] in PANEL_OWNERS or bool(u["secrets"])
 
 
-# clients' payInfo (Payment info box) is for these people only, matched by user name or first name.
+# clients' payInfo (Payment info box): only owners and people set to Yes in Admin's Payment column see or change it.
 PAY_COL = "clients"
 PAY_KEYS = ("payInfo",)
-PAY_PEOPLE = {x.strip().lower() for x in os.environ.get("PSW_PAYMENT_PEOPLE", "alex,anna,patricia").split(",") if x.strip()}
 
 
 def can_pay(u):
-    first = (u["name"] or "").split()[:1]
-    return u["username"] in PANEL_OWNERS or u["username"] in PAY_PEOPLE or bool(first and first[0].lower() in PAY_PEOPLE)
+    return u["username"] in PANEL_OWNERS or bool(u["payment"])
 
 
 def hidden_keys(u, col):
