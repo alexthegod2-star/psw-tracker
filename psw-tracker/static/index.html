@@ -1557,7 +1557,8 @@ async function addPswFee(f){
   m.className='msg';m.textContent=`Adding the fee to ${f.name}…`;
   try{await Promise.all([loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js'),loadJs(CDN+'pdf.js/3.11.174/pdf.min.js'),loadJs(CDN+'pako/2.1.0/pako.min.js')]);
     pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';await loadJs('psw-fee.js');
-    const r=await PSWFee.add(new Uint8Array(await f.arrayBuffer()),fee,'PSW Agency Fee',{ask:sample?(q=>sample.json(q,{modelTier:'quick'})):null,onAi:()=>{m.textContent=`This quote’s layout is new to the fee tool, so Claude is reading ${f.name}…`}});
+    const r=await PSWFee.add(new Uint8Array(await f.arrayBuffer()),fee,'PSW Agency Fee',{ask:sample?(q=>sample.json(q,{modelTier:'quick'})):null,onAi:()=>{m.textContent=`This quote’s layout is new to the fee tool, so Claude is reading ${f.name}…`},
+      ocr:{start:()=>{m.textContent=`${f.name} has text that can’t be copied, so the fee tool is reading the page images (this takes a little longer)…`},read:async cv=>(await (await tess()).recognize(cv)).data}});
     const base=(r.insured||f.name.replace(/\.pdf$/i,'')).replace(/[\\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(),name=base+' for ins.pdf';
     const ok=await uploadOne(new File([r.bytes],name,{type:'application/pdf'}));
     if(ok!==true)return;
