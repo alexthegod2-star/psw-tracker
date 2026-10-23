@@ -2448,8 +2448,10 @@ const LOB_FIELDS={
   'BOP':[['address','Location address'],['operations','Business / operations'],['building','Building'],['bpp','Business personal property'],['bi','Business income'],['occurrence','Liability each occurrence'],['aggregate','Liability aggregate'],['deductible','Deductible'],['sales','Sales'],['sq_ft','Sq ft']]};
 // '#Home': the home quote sheet's Dwelling and Protection boxes (24a to 36b), same keys as the sheet; its roof year stays under the policy's old 'roof' key
 const HOME_PP=HOME_SECTIONS.filter(s=>s.title==='Dwelling'||s.title==='Protection').flatMap(s=>s.fields).flatMap(f=>[[f.k,f.n+'a '+f.label,f.opts],...(f.pair?[[f.pair,f.n+'b '+f.label2,f.opts2]]:[])]).map(([k,l,o])=>[k==='roof_year'?'roof':k,l,o]);
+// Rental Dwelling (landlord), Secondary Home and DIC use the same boxes as Personal Home; their old boxes still show when a policy has something saved in them
+const LOB_OLD={};['Rental Dwelling','Secondary Home','DIC'].forEach(l=>{LOB_OLD[l]=LOB_FIELDS[l].filter(([k])=>!LOB_FIELDS['Personal Home'].some(([h])=>h===k)&&!HOME_PP.some(([h])=>h===k));LOB_FIELDS[l]=LOB_FIELDS['Personal Home']});
 let ppExtraVals={},ppExtraLine=null;
-function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?LOB_FIELDS[line]:null;
+function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?[...LOB_FIELDS[line],...(LOB_OLD[line]||[]).filter(([k])=>String(ppExtraVals[k]||'').trim())]:null;
   if(!force&&line===ppExtraLine)return;ppExtraLine=line; // only redraw when the line really changes, so typing in a field isn't lost
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{ppExtraVals[el.dataset.x]=el.value}); // keep what was typed when the line changes
   $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';$('polBox').classList.remove('wide');return}
