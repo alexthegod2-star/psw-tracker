@@ -507,11 +507,29 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
 }
 
 
-async function add(srcBytes,fee,label){
-  label=label||"PSW Agency Fee";
+/* ---------- AI fallback: when the layout rules can't find the totals, ask Claude which lines they are ---------- */
+async function aiLocate(pages,ask){
+  const rows=[];
+  pages.forEach((P,i)=>P.lines.forEach((L,j)=>{ if(L.text) rows.push("p"+(i+1)+" L"+j+(L.amounts.length?" $":"")+": "+L.text.slice(0,160)); }));
+  if(!rows.length) return {locs:[]};
+  const o=await ask("This is the text of an insurance carrier's quote PDF, one line per row as \"p<page> L<line>: text\" (rows marked $ have dollar amounts the tool can edit).\n"+
+    "Find the premium summary: the line with the final total the insured pays (total premium including taxes and fees, or amount due), and the lines directly above it that add up to that total (premium, policy fee, inspection fee, surplus lines tax, stamping fee, etc.). All must be $ rows on the same page.\n"+
+    "Also give the named insured's name if shown.\n"+
+    'Return JSON: {"page":<number>,"total":<line number>,"items":[<line numbers>],"insured":"<name or empty>"}. If there is no such total, return {"page":0}.\n\n'+rows.join("\n").slice(0,150000));
+  const pi=(o&&+o.page)-1, P=pages[pi];
+  if(!P) return {locs:[]};
+  const T=P.lines[+o.total];
+  const chain=[...new Set((o.items||[]).map(Number))].map(j=>P.lines[j]).filter(L=>L&&L!==T&&L.amounts.length&&T&&L.y>T.y).sort((a,b)=>a.y-b.y);
+  if(!T||!T.amounts.length||!chain.length) return {locs:[]};
+  return {locs:[{pageIndex:pi,total:T,chain,lines:P.lines}],insured:String(o.insured||"").trim()};
+}
+
+async function add(srcBytes,fee,label,opts){
+  label=label||"PSW Agency Fee";opts=opts||{};
   if(!(fee>0)) throw new Error("Enter a fee amount greater than $0.");
   const {pages}=await readLines(srcBytes);
-  const locs=locateAll(pages);
+  let locs=locateAll(pages), ai=null;
+  if(!locs.length && opts.ask){ if(opts.onAi) opts.onAi(); ai=await aiLocate(pages,opts.ask); locs=ai.locs; }
   if(!locs.length) throw new Error("Couldn't find the premium totals in this PDF (a column of fees and taxes followed by a Total line).");
   if(locs.some(L=>L.chain.some(f=>f.label.toLowerCase()===label.toLowerCase()))) throw new Error("This quote already has a \""+label+"\" line. Start from the original carrier PDF.");
   const T=locs[0].total;
@@ -539,12 +557,13 @@ async function add(srcBytes,fee,label){
     else warn="Couldn't find where the quote starts on the first page, so the agency header wasn't added.";
   }
   const bytes=await pdfDoc.save();
-  const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i);
+  const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||(ai&&ai.insured)||"";
   const quoteNo=findField(pages,/^Quote Number\s+(\S+)/i)||findField(pages,/^QUOTE NO\.?:?\s*(\S+)/i);
   const cols=main.cols;
   const bad=done.filter(Boolean).flatMap(r=>r.cols).filter(c=>Math.abs(c.sum-c.old)>0.01);
   if(bad.length) warn=(warn?warn+" ":"")+"The carrier's line items add up to "+fmt(bad[0].sum)+", not the "+fmt(bad[0].old)+" printed total, so check the quote.";
   if(skipped.length) warn=(warn?warn+" ":"")+"No room to add it on page"+(skipped.length>1?"s ":" ")+[...new Set(skipped)].join(", ")+", so check "+(skipped.length>1?"those pages":"that page")+".";
+  if(ai) warn=(warn?warn+" ":"")+"Claude picked the fee lines on this quote, so check the updated page before sending it.";
   return {bytes,insured,quoteNo,oldTotal:cols.map(c=>fmt(c.old)).join(" | "),newTotal:cols.map(c=>fmt(c.neu)).join(" | "),fee:fmt(fee),warn};
 }
 window.PSWFee={add};

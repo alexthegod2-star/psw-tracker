@@ -35,6 +35,13 @@ PSW_MODULES=tracker
 EOF
 fi
 grep -q '^PSW_PUBLIC_URL=' "$APP/.env" || echo "PSW_PUBLIC_URL=https://$HOST" >> "$APP/.env"
+# Claude reading: the deploy step sends the repo secret ANTHROPIC_API_KEY as .claude-key; it replaces the key in .env
+if [ -s "$SRC/.claude-key" ]; then
+  KEY="$(tr -d '[:space:]' < "$SRC/.claude-key")"; rm -f "$SRC/.claude-key"
+  if [[ "$KEY" =~ ^sk-ant-[A-Za-z0-9_-]+$ ]]; then
+    sed -i '/^ANTHROPIC_API_KEY=/d' "$APP/.env"; echo "ANTHROPIC_API_KEY=$KEY" >> "$APP/.env"; echo "== Claude reading key set"
+  else echo "!! The ANTHROPIC_API_KEY secret doesn't look like an Anthropic key (sk-ant-...), so it was not used"; fi
+fi
 chown -R root:psw "$APP"; chmod 640 "$APP/.env"
 chown -R psw:psw "$DATA"; chmod 750 "$DATA"
 
