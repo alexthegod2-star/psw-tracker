@@ -813,6 +813,7 @@ async function sheetFonts(doc,notesOnly){
 }
 async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURANCE QUOTE SHEET',SUBJ='psw-quote-sheet'){
   await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
+  if(SECS===HOME_SECTIONS){v={...v};for(const k in v)v[k]=homeFix(k,v[k],x=>v[x])}
   // phones always (###) ###-####, birth dates MM/DD/YYYY; client name is one box now, so an old website/note box moves into the description
   v={...v};for(const k in v){if(/phone/i.test(k)&&v[k])v[k]=fmtPhone(v[k]);if(/(^|_)dob$/.test(k)&&v[k])v[k]=fmtDOB(v[k])}
   if(v.owner_name&&!v.owner_first&&!v.owner_last){const p=String(v.owner_name).trim().split(/\s+/);v.owner_first=p.shift()||'';v.owner_last=p.join(' ')}delete v.owner_name;
@@ -946,6 +947,11 @@ const YN=['No','Yes'],HOME_YN=['earthquake','water_backup','brush','lapse','uw_b
 // siding choices are the ACORD 80's siding boxes
 const HOME_SIDING=[['Aluminum','Aluminium'],['Stucco','Stucco'],['Vinyl / plastic','VinylPlastic'],['Cedar / wood / shingle','CedarWoodShingle'],['EIFS on cinder block','ExteriorInsulationCinderBlock'],['EIFS on studs','ExteriorInsulationStuds']];
 const HOME_DEDS=['$500','$1,000','$2,500','$5,000','$10,000','$25,000'],HOME_ALARM=['None','Local','Central'];
+// home sheet: "same" in the property address copies the mailing address; coverages A to F read $#,### with no cents
+const HOME_MONEY=['dwelling','other_structures','personal_property','loss_of_use','liability','med_pay'];
+function homeFix(name,val,get){const k=String(name).replace(/^f_/,''),t=String(val??'').trim();
+  if(k==='property_address'&&/^same$/i.test(t))return String(get('mailing_address')||'').trim()||val;
+  return HOME_MONEY.includes(k)&&/\d/.test(t)?fmtMoney(t):val}
 const HOME_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
  {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},{k:'occupation',n:1,label:'Occupation',label2:'Employer',pair:'employer'},{k:'employer_address',n:1,label:'Employer address'},
@@ -1620,6 +1626,8 @@ const edMsg=(t,c)=>{$('edMsg').textContent=t;$('edMsg').style.color=c==='err'?'v
 const PDF_FONTS={standardFontDataUrl:CDN+'pdf.js/3.11.174/standard_fonts/',useSystemFonts:false};
 async function loadPdfJs(){await loadJs(CDN+'pdf.js/3.11.174/pdf.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js'}
 const LINKS={externalLinkEnabled:true,getDestinationHash:()=>'#',getAnchorUrl:()=>'#',addLinkAttributes(a,url){a.href=url;a.target='_blank';a.rel='noopener noreferrer'},isPageVisible:()=>true,isPageCached:()=>true,goToDestination(){},navigateTo(){},executeNamedAction(){},executeSetOCGState(){},cachePageRef(){},goToPage(){}};
+const edInput=id=>$('edBody').querySelector(`[data-annotation-id="${id}"] input,[data-annotation-id="${id}"] textarea,[data-annotation-id="${id}"] select`);
+const edVal=k=>{const f=ed&&ed.fields.find(x=>x.name==='f_'+k);const el=f&&edInput(f.id);return el?el.value:''};
 function closeEditor(){$('ed').classList.remove('on');$('ed').setAttribute('aria-hidden','true');$('edBody').innerHTML='';if(ed&&ed.pdf)ed.pdf.destroy();ed=null}
 // Save/Close: saves any changes to the lead, then closes (view-only users get the old close-without-saving warning)
 $('edClose').onclick=async()=>{const c=$('edClose');if(c.disabled)return;
@@ -1652,6 +1660,8 @@ async function openEditor(f){
         const layer=new pdfjsLib.AnnotationLayer({div:al,page,viewport:vp.clone({dontFlip:true}),accessibilityManager:null,annotationCanvasMap:null});
         await layer.render({annotations:anns,page,viewport:vp.clone({dontFlip:true}),linkService:LINKS,downloadManager:null,renderForms:true,annotationStorage:ed.pdf.annotationStorage,imageResourcesPath:'',enableScripting:false,hasJSActions:false,fieldObjects:null});
         al.querySelectorAll('select').forEach(codeOnly);
+        if(/ personal home quote sheet\.pdf$/i.test(f.name))anns.forEach(a=>{const el=edInput(a.id);if(!el||el.tagName==='SELECT')return;
+          el.addEventListener('blur',()=>{const x=homeFix(a.fieldName,el.value,edVal);if(x!==el.value){el.value=x;ed.pdf.annotationStorage.setValue(a.id,{value:x})}})});
       }
       ed.pdf.annotationStorage.onSetModified=()=>{ed&&(ed.dirty=true)};
       edMsg(fillable?(isQuoteSheet(f.name)?'Type into the blue boxes to edit, then hit Save to lead.':'Type into the blue boxes to edit. Use “+ Add text” to write anywhere else. Then hit Save to lead.'):'Use “+ Add text”, then click where you want to type. Hit Save to lead when done.');
@@ -1865,13 +1875,14 @@ async function buildEdited(){
   await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
   const doc=await PDFLib.PDFDocument.load(ed.bytes.slice(),{ignoreEncryption:true}),st=ed.pdf.annotationStorage;
   let form=null;try{form=doc.getForm()}catch(_){}
+  const home=doc.getSubject()==='psw-home-quote-sheet';
   if(form)for(const fd of ed.fields){
     const v=st.getRawValue?st.getRawValue(fd.id):st.getValue(fd.id,{});if(!v||!('value' in v))continue;
     try{const fl=form.getField(fd.name);
       if(fd.radio){if(v.value===true||v.value===fd.btn)fl.select(fd.btn)}
       else if(fd.check){(v.value===true||(typeof v.value==='string'&&v.value!=='Off'))?fl.check():fl.uncheck()}
       else if(fd.choice){const x=Array.isArray(v.value)?v.value[0]:v.value;if(x!=null)fl.select(String(x))}
-      else fl.setText(String(v.value??''));
+      else fl.setText(String(home?homeFix(fd.name,v.value??'',edVal):v.value??''));
     }catch(_){}
   }
   let bytes,out=doc;
@@ -2448,8 +2459,10 @@ const LOB_FIELDS={
   'BOP':[['address','Location address'],['operations','Business / operations'],['building','Building'],['bpp','Business personal property'],['bi','Business income'],['occurrence','Liability each occurrence'],['aggregate','Liability aggregate'],['deductible','Deductible'],['sales','Sales'],['sq_ft','Sq ft']]};
 // '#Home': the home quote sheet's Dwelling and Protection boxes (24a to 36b), same keys as the sheet; its roof year stays under the policy's old 'roof' key
 const HOME_PP=HOME_SECTIONS.filter(s=>s.title==='Dwelling'||s.title==='Protection').flatMap(s=>s.fields).flatMap(f=>[[f.k,f.n+'a '+f.label,f.opts],...(f.pair?[[f.pair,f.n+'b '+f.label2,f.opts2]]:[])]).map(([k,l,o])=>[k==='roof_year'?'roof':k,l,o]);
+// Rental Dwelling (landlord), Secondary Home and DIC use the same boxes as Personal Home; their old boxes still show when a policy has something saved in them
+const LOB_OLD={};['Rental Dwelling','Secondary Home','DIC'].forEach(l=>{LOB_OLD[l]=LOB_FIELDS[l].filter(([k])=>!LOB_FIELDS['Personal Home'].some(([h])=>h===k)&&!HOME_PP.some(([h])=>h===k));LOB_FIELDS[l]=LOB_FIELDS['Personal Home']});
 let ppExtraVals={},ppExtraLine=null;
-function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?LOB_FIELDS[line]:null;
+function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?[...LOB_FIELDS[line],...(LOB_OLD[line]||[]).filter(([k])=>String(ppExtraVals[k]||'').trim())]:null;
   if(!force&&line===ppExtraLine)return;ppExtraLine=line; // only redraw when the line really changes, so typing in a field isn't lost
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{ppExtraVals[el.dataset.x]=el.value}); // keep what was typed when the line changes
   $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';$('polBox').classList.remove('wide');return}
