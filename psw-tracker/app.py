@@ -272,7 +272,7 @@ def me(request: Request):
     u = need_user(request)
     return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
             "binder": u["username"] in BINDER_OWNERS and not bearer(request),
-            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u)}
+            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u), "pay": can_pay(u)}
 
 
 @app.get("/api/auth/profiles")
@@ -425,8 +425,28 @@ def can_secrets(u):
     return u["username"] in PANEL_OWNERS or bool(u["secrets"])
 
 
-def hide_secrets(data):
-    return {k: v for k, v in data.items() if k not in SECRET_KEYS}
+# clients' payInfo (Payment info box) is for these people only, matched by user name or first name.
+PAY_COL = "clients"
+PAY_KEYS = ("payInfo",)
+PAY_PEOPLE = {x.strip().lower() for x in os.environ.get("PSW_PAYMENT_PEOPLE", "alex,anna,patricia").split(",") if x.strip()}
+
+
+def can_pay(u):
+    first = (u["name"] or "").split()[:1]
+    return u["username"] in PANEL_OWNERS or u["username"] in PAY_PEOPLE or bool(first and first[0].lower() in PAY_PEOPLE)
+
+
+def hidden_keys(u, col):
+    """Fields of records in collection `col` that this person may not see or change."""
+    if col == SITE_COL and not can_secrets(u):
+        return SECRET_KEYS
+    if col == PAY_COL and not can_pay(u):
+        return PAY_KEYS
+    return ()
+
+
+def hide_keys(data, keys):
+    return {k: v for k, v in data.items() if k not in keys} if keys and isinstance(data, dict) else data
 
 
 # ---------- tracker module: documents ----------
@@ -480,8 +500,8 @@ def col_get(request: Request, path: str):
     guard(request, u, split_path(path, "col"))
     with db() as c:
         rows = c.execute("SELECT id,data FROM tracker_docs WHERE parent=? ORDER BY id", (path,)).fetchall()
-        hide = path == SITE_COL and not can_secrets(u)
-        return {"v": version(c), "docs": [{"id": r["id"], "data": hide_secrets(json.loads(r["data"])) if hide else json.loads(r["data"])} for r in rows]}
+        keys = hidden_keys(u, path)
+        return {"v": version(c), "docs": [{"id": r["id"], "data": hide_keys(json.loads(r["data"]), keys)} for r in rows]}
 
 
 @app.post("/api/tracker/col")
@@ -491,9 +511,7 @@ async def col_add(request: Request):
     path = body.get("path", "")
     guard(request, u, split_path(path, "col"))
     data = body.get("data")
-    if path == SITE_COL and isinstance(data, dict) and not can_secrets(u):
-        data = hide_secrets(data)
-    data = clean_data(data)
+    data = clean_data(hide_keys(data, hidden_keys(u, path)))
     i = new_id()
     with db() as c:
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
@@ -510,8 +528,7 @@ def doc_get(request: Request, path: str):
     with db() as c:
         r = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
     data = json.loads(r["data"]) if r else None
-    if data and "/".join(segs[:-1]) == SITE_COL and not can_secrets(u):
-        data = hide_secrets(data)
+    data = hide_keys(data, hidden_keys(u, "/".join(segs[:-1])))
     return {"exists": bool(r), "data": data}
 
 
@@ -523,11 +540,11 @@ async def doc_set(request: Request):
     segs = split_path(path, "doc")
     guard(request, u, segs)
     data = body.get("data")
-    keep = "/".join(segs[:-1]) == SITE_COL and isinstance(data, dict) and not can_secrets(u)
+    keys = hidden_keys(u, "/".join(segs[:-1])) if isinstance(data, dict) else ()
     with db() as c:
-        if keep:  # someone set to No can't see or change the saved user name and password, so keep what is there
+        if keys:  # someone who can't see these fields can't change them either, so keep what is there
             old = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
-            data = {**hide_secrets(data), **{k: v for k, v in (json.loads(old["data"]) if old else {}).items() if k in SECRET_KEYS}}
+            data = {**hide_keys(data, keys), **{k: v for k, v in (json.loads(old["data"]) if old else {}).items() if k in keys}}
         data = clean_data(data)
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?) "
                   "ON CONFLICT(path) DO UPDATE SET data=excluded.data, updated=excluded.updated, updated_by=excluded.updated_by",
@@ -545,8 +562,7 @@ async def doc_update(request: Request):
     patch = body.get("data")
     if not isinstance(patch, dict):
         err(400, "bad_data")
-    if path.rsplit("/", 1)[0] == SITE_COL and not can_secrets(u):
-        patch = hide_secrets(patch)
+    patch = hide_keys(patch, hidden_keys(u, path.rsplit("/", 1)[0]))
     with db() as c:
         r = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
         if not r:
@@ -688,9 +704,9 @@ def need_data_admin(request: Request):
 @app.get("/api/tracker/export")
 def tracker_export(request: Request):
     """Every record keyed by path (leads/ID, leads/ID/contacts/ID, tasks/ID), plus the list of files. Private records are left out."""
-    need_module("tracker"); need_data_admin(request)
+    need_module("tracker"); u = need_data_admin(request)
     with db() as c:
-        docs = {r["path"]: json.loads(r["data"]) for r in c.execute("SELECT path,data FROM tracker_docs WHERE path NOT LIKE 'private/%' ORDER BY path")}
+        docs = {r["path"]: hide_keys(json.loads(r["data"]), () if can_pay(u) or r["path"].rsplit("/", 1)[0] != PAY_COL else PAY_KEYS) for r in c.execute("SELECT path,data FROM tracker_docs WHERE path NOT LIKE 'private/%' ORDER BY path")}
         blobs = {r["id"]: {"type": r["type"], "size": r["size"]} for r in c.execute("SELECT id,type,size FROM tracker_blobs")}
         return {"v": version(c), "docs": docs, "blobs": blobs}
 
