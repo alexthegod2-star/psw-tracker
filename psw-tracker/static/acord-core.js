@@ -38,7 +38,7 @@
     ['currently_insured', /^currentlyinsured/], ['current_carrier_price', /^currentcomp/],
     ['year_started', /^yearbiz|^yearbusiness/], ['years_experience', /^yearsexp/],
     ['gross_receipts', /^grossrec|^grosssales/], ['payroll', /^payroll/], ['subout', /^subs?out|^subcontract(ed|or)?(cost|pay|paid)/],
-    ['full_time', /fulltime/], ['part_time', /parttime/], ['claims', /^anyclaims|^claims/],
+    ['num_owners', /^#?owners$|^numowners/], ['full_time', /fulltime/], ['part_time', /parttime/], ['claims', /^anyclaims|^claims/],
     ['bldg_address', /^ad+ress$/], ['bldg_year_built', /^yrbuilt|^yearbuilt/], ['bldg_sqft', /^sqft/],
     ['bldg_construction', /^constructiontype/], ['bldg_roof', /^rooftype/],
     ['tax_id', /^taxid|^fein/],
@@ -58,7 +58,7 @@
     ['currently_insured', 'Currently insured?'], ['current_carrier_price', 'Current carrier / price'],
     ['year_started', 'Year business started'], ['years_experience', 'Years experience'],
     ['gross_receipts', 'Gross receipts'], ['gl_gross_receipts', 'Gross receipts (126)'], ['payroll', 'Payroll'], ['subout', 'Subout ($ paid to subs)'],
-    ['full_time', '# Full time employees'], ['part_time', '# Part time employees'], ['claims', 'Any claims'],
+    ['num_owners', '# Owners'], ['full_time', '# Full time employees'], ['part_time', '# Part time employees'], ['claims', 'Any claims'],
     ['bldg1_address', 'Building 1 address'], ['bldg1_year_built', 'Building 1 year built'], ['bldg1_sqft', 'Building 1 sq ft'],
     ['bldg1_construction', 'Building 1 construction'], ['bldg1_roof', 'Building 1 roof'],
     ['bldg2_address', 'Building 2 address'], ['bldg2_sqft', 'Building 2 sq ft'],
@@ -360,6 +360,10 @@
     for (let i = 1; i <= 10; i++) v126['yn_prod' + i] = 'N';
     for (let i = 1; i <= 22; i++) v126['yn_gi' + i] = 'N';
     if (clean(d.subout)) { const so = parseMoney(d.subout); v126.sub_paid = so != null ? '$' + money(so) : clean(d.subout); }
+    // hazard 1 exposure: owners, gross receipts, payroll and subout (fillPdf widens the box when it doesn't fit)
+    const $amt = s => { const n = parseMoney(s); return n != null ? '$' + money(n) : clean(s); };
+    v126.h1_exposure = [clean(d.num_owners) && `${clean(d.num_owners)} owner${clean(d.num_owners) === '1' ? '' : 's'}`, glGross && `${$amt(glGross)} gross rec`,
+      clean(d.payroll) && `${$amt(d.payroll)} payroll`, clean(d.subout) && `${$amt(d.subout)} subout`].filter(Boolean).join(', ');
     if (ais[0]) { v126.ai_name_address = ais[0]; v126.ai_additional_insured = true; }
 
     // ---------------- ACORD 130 ----------------
@@ -442,6 +446,7 @@
   }
 
   // ---------- fill a template with pdf-lib ----------
+  const GROW = /_h\d+_exposure$/;
   async function fillPdf(templateBytes, form, values, PDFLibIn) {
     const L = PDFLibIn || root.PDFLib;
     const doc = await L.PDFDocument.load(templateBytes);
@@ -463,6 +468,16 @@
         const r = w.getRectangle();
         let size = (fld.acroField.getDefaultAppearance() || '').match(/([\d.]+)\s+Tf/); size = size ? parseFloat(size[1]) : 10;
         if (!fld.isMultiline()) {
+          // a box marked to grow takes over the empty boxes to its right on the same line, as far as the text needs
+          if (GROW.test(n) && helv.widthOfTextAtSize(text, Math.min(size, 9)) > r.width - 4) {
+            const row = Object.keys(byName).map(m => ({ m, r: byName[m].acroField.getWidgets()[0].getRectangle() }))
+              .filter(o => o.m !== n && Math.abs(o.r.y - r.y) < 2 && o.r.x > r.x).sort((a, b) => a.r.x - b.r.x);
+            let right = r.x + r.width;
+            for (const o of row) { if (right - r.x - 4 >= helv.widthOfTextAtSize(text, Math.min(size, 9))) break;
+              const k2 = o.m.replace(new RegExp(`^a${form}_`), ''); if (values[k2] !== '' && values[k2] != null && values[k2] !== false) break; right = o.r.x + o.r.width; }
+            if (right > r.x + r.width) { w.setRectangle({ x: r.x, y: r.y, width: right - r.x, height: r.height }); r.width = right - r.x;
+              w.getOrCreateAppearanceCharacteristics().setBackgroundColor([1]); } // white, so the column lines don't run through the text
+          }
           while (size > 6 && helv.widthOfTextAtSize(text, size) > r.width - 4) size -= 0.5;
           // the 140's boxes are short; let its text use the full box height so it reads at the same size as the coverage lines
           size = Math.min(size, Math.max(6, form === '140' ? r.height : r.height - 2));
