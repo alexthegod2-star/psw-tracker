@@ -806,7 +806,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-7',PAUTO_LAYOUT='psw-pauto-layout-4',AUTO_LAYOUT='psw-auto-layout-26',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-7',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-27',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -821,6 +821,7 @@ async function sheetFonts(doc,notesOnly){
 async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURANCE QUOTE SHEET',SUBJ='psw-quote-sheet'){
   await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
   if(SECS===HOME_SECTIONS){v={...v};for(const k in v)v[k]=homeFix(k,v[k],x=>v[x])}
+  {const eff=parseMdy(v.eff_date);if(eff&&!parseMdy(v.exp_date)&&SECS.some(s=>(s.fields||[]).some(f=>f.pair==='exp_date')))v={...v,exp_date:mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()))}} // exp one year after eff
   // phones always (###) ###-####, birth dates MM/DD/YYYY; client name is one box now, so an old website/note box moves into the description
   v={...v};for(const k in v){if(/phone/i.test(k)&&v[k])v[k]=fmtPhone(v[k]);if(/(^|_)dob$/.test(k)&&v[k])v[k]=fmtDOB(v[k])}
   if(v.owner_name&&!v.owner_first&&!v.owner_last){const p=String(v.owner_name).trim().split(/\s+/);v.owner_first=p.shift()||'';v.owner_last=p.join(' ')}delete v.owner_name;
@@ -927,7 +928,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
 const AUTO_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
  {title:'Owner info',fields:[{k:'owner_first',n:1,label:'Name (first / last)',pair:'owner_last'},{k:'owner_address',n:2,label:'Address'},{k:'owner_dob',n:3,label:'Birthdate'},{k:'owner_ssn',n:4,label:'SS#'},{k:'owner_daily_ops',n:5,label:'Involved in daily ops'}]},
- {title:'Company info',fields:[{k:'client_name',n:6,label:'Company Name'},{k:'contact_name',n:7,label:'Contact name'},{k:'dba',n:8,label:'DBA'},{k:'entity_type',n:9,label:'Bus structure'},{k:'phone',n:10,label:'Phone Number'},{k:'email',n:11,label:'Email'},{k:'mailing_address',n:12,label:'Mailing Address'},{k:'garaging_address',n:13,label:'Business Address'},{k:'description',n:14,label:'Business desc'},{k:'filings',n:15,label:'Filings needed',opts:['Yes','No'],def:'No',also:[{k:'federal_filing',label:'Federal filing',opts:['Yes','No'],def:'No'},{k:'state_filing',label:'State filing',opts:['Yes','No'],def:'No'}]},{k:'dot_number',n:15,label:'DOT Number',also:[{k:'ca_number',label:'CA Number'},{k:'cross_state',label:'Cross state lines',opts:['Yes','No']}]},{k:'eff_date',n:16,label:'EFF Date'}]},
+ {title:'Company info',fields:[{k:'client_name',n:6,label:'Company Name'},{k:'contact_name',n:7,label:'Contact name'},{k:'dba',n:8,label:'DBA'},{k:'entity_type',n:9,label:'Bus structure'},{k:'phone',n:10,label:'Phone Number'},{k:'email',n:11,label:'Email'},{k:'mailing_address',n:12,label:'Mailing Address'},{k:'garaging_address',n:13,label:'Business Address'},{k:'description',n:14,label:'Business desc'},{k:'filings',n:15,label:'Filings needed',opts:['Yes','No'],def:'No',also:[{k:'federal_filing',label:'Federal filing',opts:['Yes','No'],def:'No'},{k:'state_filing',label:'State filing',opts:['Yes','No'],def:'No'}]},{k:'dot_number',n:15,label:'DOT Number',also:[{k:'ca_number',label:'CA Number'},{k:'cross_state',label:'Cross state lines',opts:['Yes','No']}]},{k:'eff_date',n:16,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Drivers',table:{prefix:'d',rows:6,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'dl_state',label:'St Lic',w:.5},{k:'dl',label:'DL #',w:1.15},{k:'cdl',label:'CDL',w:.6,opts:['Yes','No']},{k:'cdl_yrs',label:'Yrs CDL',w:.6},{k:'activity',label:'Driving activity',w:1.5}]}},
  {title:'Vehicles',table:{prefix:'v',rows:6,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'body',label:'Body type',w:1},{k:'vin',label:'VIN',w:2.2},{k:'value',label:'Value',w:1.1},{k:'use',label:'Zip code',w:1.25}],
    cols2:[{k:'gvw',label:'GVW',w:1},{k:'radius',label:'Radius',w:1},{k:'usage',label:'Use',w:1,opts:['Biz Only','Both']},{k:'passengers',label:'# Passengers',w:1}]}},
@@ -939,7 +940,7 @@ const AUTO_SECTIONS=[
 // personal auto quote sheet: same look as the commercial sheets, with personal auto questions
 const PAUTO_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate'},{k:'ins_sex',n:3,label:'Sex',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation'},{k:'employer',n:7,label:'Name of employer',label2:'Address of employer',pair:'employer_address'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date'}]},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'Name (first / last)',pair:'ins_last'},{k:'ins_dob',n:2,label:'Birthdate'},{k:'ins_sex',n:3,label:'Sex',label2:'Marital status',pair:'ins_marital'},{k:'phone',n:3,label:'Phone Number',label2:'Email',pair:'email'},{k:'garaging_address',n:4,label:'Address (where cars are kept)'},{k:'mailing_address',n:5,label:'Mailing Address'},{k:'occupation',n:6,label:'Occupation'},{k:'employer',n:7,label:'Name of employer',label2:'Address of employer',pair:'employer_address'},{k:'own_rent',n:7,label:'Own or rent home',label2:'Years at address',pair:'years_at_address'},{k:'eff_date',n:8,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Drivers',table:{prefix:'d',rows:5,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'rel',label:'Relation',w:.8},{k:'dl',label:'DL #',w:1.25},{k:'dl_state',label:'DL st',w:.5},{k:'yrs_lic',label:'Yrs lic',w:.55}],
    cols2:[{k:'activity',label:'Tickets / accidents (3-5 yrs)',w:3},{k:'dui',label:'DUI?',w:.8,opts:['No','Yes']},{k:'filing',label:'SR22 / FR44',w:1,opts:['None','SR22','FR44']}]}},
  {title:'Vehicles',table:{prefix:'v',rows:5,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'vin',label:'VIN',w:2.2},{k:'zip',label:'Garage zip',w:.85}],
@@ -981,7 +982,7 @@ const HOME_SECTIONS=[
 {let c=0;HOME_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>{if(f.n)f.n=++c}))}
 {let c=0;AUTO_SECTIONS.forEach(s=>(s.fields||[]).forEach(f=>{if(f.n)f.n=++c}))} // same on the com auto sheet, so moving a box keeps the numbers in order
 const AUTO_KEYS=[];
-AUTO_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>{(f.also||[]).forEach(a=>AUTO_KEYS.push([a.k,a.label+(a.opts?' ('+a.opts.join(' or ')+')':'')]));f.pair?AUTO_KEYS.push([f.k,'Owner first name'],[f.pair,'Owner last name']):AUTO_KEYS.push([f.k,f.label+(f.k==='entity_type'?' (Individual, Corporation, Partnership or LLC)':/date|dob/.test(f.k)?' (MM/DD/YYYY)':f.k==='client_note'?' (website)':f.k==='client_name'?' (business name)':f.k==='garaging_address'?' (where the vehicles are kept)':'')])});
+AUTO_SECTIONS.forEach(s=>{(s.fields||[]).forEach(f=>{(f.also||[]).forEach(a=>AUTO_KEYS.push([a.k,a.label+(a.opts?' ('+a.opts.join(' or ')+')':'')]));f.pair==='owner_last'?AUTO_KEYS.push([f.k,'Owner first name'],[f.pair,'Owner last name']):f.pair==='exp_date'?AUTO_KEYS.push([f.k,'EFF Date (MM/DD/YYYY)'],[f.pair,'EXP Date (MM/DD/YYYY)']):AUTO_KEYS.push([f.k,f.label+(f.k==='entity_type'?' (Individual, Corporation, Partnership or LLC)':/date|dob/.test(f.k)?' (MM/DD/YYYY)':f.k==='client_note'?' (website)':f.k==='client_name'?' (business name)':f.k==='garaging_address'?' (where the vehicles are kept)':'')])});
   if(s.table){const t=s.table,who=t.prefix==='d'?'Driver':t.prefix==='v'?'Vehicle':'AI/lienholder';
     for(let r=1;r<=t.rows;r++)[...t.cols,...(t.cols2||[])].forEach(c=>AUTO_KEYS.push([`${t.prefix}${r}_${c.k}`,`${who} ${r} ${c.label}`+(c.k==='dob'?' (MM/DD/YYYY)':c.k==='activity'?' (driving record, e.g. "Clean, no tickets or accidents 5 yrs")':c.k==='use'?' (where it is garaged)':c.opts?' ('+c.opts.join(' or ')+')':'')]))}});
 const AUTO_PROMPT=AUTO_SECTIONS.map(s=>s.table?(t=>`${t.prefix}N_<col> for ${t.prefix==='d'?'driver':t.prefix==='v'?'vehicle':'additional insured / lienholder'} N (N = 1 to ${t.rows}), cols: `+[...t.cols,...(t.cols2||[])].map(c=>`${c.k} = ${c.label}`+(c.k==='dob'?' (MM/DD/YYYY)':c.k==='activity'?' (driving record, e.g. "Clean, no tickets or accidents 5 yrs")':c.k==='use'?' (zip code where it is garaged)':c.k==='model'?' (model only; VIN goes in vin)':c.opts?' ('+c.opts.join(' or ')+')':'')).join('; '))(s.table):AUTO_KEYS.filter(([k])=>(s.fields||[]).some(f=>f.k===k||f.pair===k||(f.also||[]).some(a=>a.k===k))).map(([k,l])=>k+' = '+l).join('\n')).join('\n');
@@ -1006,7 +1007,7 @@ async function makeAutoSheet(q,force){
     v.client_name=v.client_name||$('company').value.trim()||person;
     v.contact_name=v.contact_name||person;v.phone=fmtPhone(v.phone||$('phone').value);v.email=v.email||$('email').value.trim();v.lead_source=$('leadSource').value.trim()||v.lead_source;
     const ld=parseMdy(v.lead_date)||parseMdy($('leadDate').value)||new Date();v.lead_date=mdy(ld);
-    const eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);if(eff)v.eff_date=mdy(eff);
+    const eff=/^\s*(asap|now|today)?\s*$/i.test(v.eff_date||'')?new Date():parseMdy(v.eff_date);if(eff){v.eff_date=mdy(eff);if(!parseMdy(v.exp_date))v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()))}
     for(let n=1;n<=6;n++){
       if(v[`v${n}_value`])v[`v${n}_value`]=fmtMoney(v[`v${n}_value`]);
       const d=v[`v${n}_vin`]&&decodeVin(v[`v${n}_vin`]);
@@ -1817,13 +1818,14 @@ $('edLead').onclick=async()=>{
   $('edLead').disabled=true;await $('saveBtn').onclick();$('edLead').disabled=false;
   const ok=$('saveMsg').classList.contains('ok');edMsg(ok?`Filled ${n} lead field${n===1?'':'s'} from this sheet and saved the lead.`:$('saveMsg').textContent,ok?'ok':'err');
 };
-// policy and excess eff/exp dates tidy to MM/DD/YYYY; exp fills in one year after eff (until you type your own)
+// policy and excess eff/exp dates tidy to MM/DD/YYYY; changing an eff date moves its exp to one year later (type over the exp to change it)
 $('edBody').addEventListener('focusout',e=>{const el=e.target,m=el&&/^(?:x_(?:auto|gl|wc)_(eff|exp)|f_(eff|exp)_date)$/.exec(el.name||'');if(!m)return;const which=m[1]||m[2];
   const put=(x,v)=>{if(x.value===v)return;x.value=v;x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}))};
   const iso=typedISO(el.value);if(/^\d{4}-\d\d-\d\d$/.test(iso))put(el,fmtDate(iso));
-  if(which==='exp'){el.dataset.auto='';return}
-  const d=parseMdy(el.value),ex=document.querySelector(`#edBody .annotationLayer [name="${el.name.replace('eff','exp')}"]`);
-  if(d&&ex&&(!ex.value.trim()||ex.dataset.auto==='1')){put(ex,mdy(new Date(d.getFullYear()+1,d.getMonth(),d.getDate())));ex.dataset.auto='1'}});
+  if(which==='exp')return;
+  const d=parseMdy(el.value),ex=document.querySelector(`#edBody .annotationLayer [name="${el.name.replace('eff','exp')}"]`),was=el.dataset.effWas;delete el.dataset.effWas;
+  if(d&&ex&&(!ex.value.trim()||was===undefined||el.value!==was))put(ex,mdy(new Date(d.getFullYear()+1,d.getMonth(),d.getDate())))});
+$('edBody').addEventListener('focusin',e=>{const el=e.target;if(el&&/^(?:x_(?:auto|gl|wc)_eff|f_eff_date)$/.test(el.name||''))el.dataset.effWas=el.value});
 // personal auto sheet: driver 1 follows the named insured's name, birthdate, sex and marital status (until you type over it)
 {const D1={f_ins_first:'d1_first',f_ins_last:'d1_last',f_ins_dob:'d1_dob',f_ins_sex:'d1_sex',f_ins_marital:'d1_mar'};let copying=false,lic=false;
   const box=n=>document.querySelector(`#edBody .annotationLayer [name="${n}"]`);
