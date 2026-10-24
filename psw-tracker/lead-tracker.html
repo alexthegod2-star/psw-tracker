@@ -352,7 +352,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="ed" id="ed" aria-hidden="true">
   <div class="edh"><span class="nm" id="edName"></span>
     <button id="edAdd" title="Click on the page to type text">+ Add text</button>
-    <button class="pri" id="edLead" hidden title="Copy the client name, contact, phone, email, lead date and source from this sheet into the lead">Fill lead info</button><button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button id="edClose">Save/Close</button></div>
+    <button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button id="edClose">Save/Close</button></div>
   <div class="edh" style="padding-top:6px;padding-bottom:6px"><span class="edmsg" id="edMsg"></span></div>
   <div class="edb" id="edBody"></div>
   <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here, either the fillable PDF or a printed copy. Its answers go into this sheet; then hit Save to lead.</p>
@@ -1674,7 +1674,7 @@ const edVal=k=>{const f=ed&&ed.fields.find(x=>x.name==='f_'+k);const el=f&&edInp
 function closeEditor(){$('ed').classList.remove('on');$('ed').setAttribute('aria-hidden','true');$('edBody').innerHTML='';if(ed&&ed.pdf)ed.pdf.destroy();ed=null}
 // Save/Close: saves any changes to the lead, then closes (view-only users get the old close-without-saving warning)
 $('edClose').onclick=async()=>{const c=$('edClose');if(c.disabled)return;
-  if(ed&&ed.dirty&&assets&&cur&&cur.id){c.disabled=true;const ok=await saveEd(false);c.disabled=false;if(ok)closeEditor();return}
+  if(ed&&ed.dirty&&assets&&cur&&cur.id){c.disabled=true;const q=sheetKind(ed.f.name)?sheetVals():null,ok=await saveEd(false);c.disabled=false;if(ok){closeEditor();if(q)await sheetToLead(q)}return}
   if(ed&&ed.dirty&&$('edClose').dataset.armed!=='1'){$('edClose').dataset.armed='1';$('edClose').textContent='Close without saving?';setTimeout(()=>{$('edClose').dataset.armed='';$('edClose').textContent='Close'},4000);return}$('edClose').dataset.armed='';$('edClose').textContent='Close';closeEditor()};
 async function openEditor(f){
   {const home=/ personal home quote sheet\.pdf$/i.test(f.name);if((sheetKind(f.name)||home)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=home?await upgradeHome(f):await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}}
@@ -1682,7 +1682,7 @@ async function openEditor(f){
   ed={f,kind,notes:[],fields:[],dirty:false};
   {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edQs').hidden=!sup;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home||sup);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edQsMsg').textContent='';$('edSupMsg').textContent=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
-  $('edSave').hidden=!assets;$('edClose').textContent=assets?'Save/Close':'Close';$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+  $('edSave').hidden=!assets;$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=sheetKind(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
   try{
     ed.bytes=await fileBytes(f);
@@ -1945,14 +1945,10 @@ async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg 
 {const d=$('edSupDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)supFill(f)});
   $('edSupIn').onchange=()=>{const f=$('edSupIn').files[0];$('edSupIn').value='';if(f)supFill(f)}}
-// "Fill lead info": the quote sheet's client details go into the lead, then the lead is saved
-$('edLead').onclick=async()=>{
-  if(!ed||!cur)return;const q={};
-  document.querySelectorAll('#edBody .annotationLayer [name^="f_"]').forEach(el=>{if(el.value&&el.value.trim())q[el.name]=el.value.trim()});
-  const n=quoteFill(q);if(!n){edMsg('This sheet has no client name, contact, phone or email filled in yet.','err');return}
-  $('edLead').disabled=true;await $('saveBtn').onclick();$('edLead').disabled=false;
-  const ok=$('saveMsg').classList.contains('ok');edMsg(ok?`Filled ${n} lead field${n===1?'':'s'} from this sheet and saved the lead.`:$('saveMsg').textContent,ok?'ok':'err');
-};
+// com and com auto quote sheets: Save to lead also copies the sheet's client details into the lead and saves the lead
+function sheetVals(){const q={};document.querySelectorAll('#edBody .annotationLayer [name^="f_"]').forEach(el=>{if(el.value&&el.value.trim())q[el.name]=el.value.trim()});return q}
+async function sheetToLead(q){const n=quoteFill(q);if(!n)return '';await $('saveBtn').onclick();
+  return $('saveMsg').classList.contains('ok')?` Filled ${n} lead field${n===1?'':'s'} from it and saved the lead.`:' '+$('saveMsg').textContent}
 // policy and excess eff/exp dates tidy to MM/DD/YYYY; changing an eff date moves its exp to one year later (type over the exp to change it)
 $('edBody').addEventListener('focusout',e=>{const el=e.target,m=el&&/^(?:x_(?:auto|gl|wc)_(eff|exp)|f_(eff|exp)_date)$/.exec(el.name||'');if(!m)return;const which=m[1]||m[2];
   const put=(x,v)=>{if(x.value===v)return;x.value=v;x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}))};
@@ -2062,7 +2058,8 @@ async function saveEd(reopen){
     return true;
   }catch(e){edMsg(e&&e.code?errText(e):'Couldn’t save'+(e&&e.message?` (${e.message})`:'')+'.','err');return false}
 }
-$('edSave').onclick=async()=>{const b=$('edSave');b.disabled=true;await saveEd(true);b.disabled=false};
+$('edSave').onclick=async()=>{const b=$('edSave');b.disabled=true;const q=ed&&sheetKind(ed.f.name)?sheetVals():null;
+  if(await saveEd(true)&&q){const t=await sheetToLead(q);if(t)edMsg('Saved to the lead.'+t+' You can keep editing.',/saved the lead/.test(t)?'ok':'err')}b.disabled=false};
 $('edDl').onclick=async()=>{if(!ed||!ed.bytes)return;try{const blob=await buildEdited();await dl.save({filename:ed.f.name,data:new Uint8Array(await blob.arrayBuffer())})}catch(e){if(e&&e.code!=='declined')edMsg(e.code?errText(e):'Couldn’t download.','err')}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed').classList.contains('on')&&!(e.target.classList&&e.target.classList.contains('tsIn'))){e.stopImmediatePropagation();$('edClose').click()}},true);
 
