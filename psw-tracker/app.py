@@ -777,7 +777,9 @@ async def sample(request: Request):
         with urllib.request.urlopen(req, timeout=120) as r:
             out = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        err(429 if e.code == 429 else 502, "rate_limited" if e.code == 429 else "unavailable")
+        # say which: a bad key, a model the key can't use, or a request Anthropic turned down
+        code = {429: "rate_limited", 401: "bad_key", 403: "bad_key", 404: "bad_model", 400: "rejected", 413: "too_large"}.get(e.code, "unavailable")
+        err(429 if e.code == 429 else 502, code)
     except Exception:
         err(502, "unavailable")
     text = "".join(b.get("text", "") for b in out.get("content", []) if b.get("type") == "text")
