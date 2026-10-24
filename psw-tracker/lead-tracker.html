@@ -357,6 +357,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="edb" id="edBody"></div>
   <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here, either the fillable PDF or a printed copy. Its answers go into this sheet; then hit Save to lead.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edDropIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edDropMsg" style="margin-top:8px"></div></div></div>
+  <div class="edSide" id="edQs" hidden><div class="drop" id="edQsDrop"><b>Fill this sheet from a file</b><p class="small" style="margin:6px 0 8px">Drop an application, email, ACORD, spreadsheet or picture here. What it says goes into this sheet's empty boxes; then hit Save to lead.</p>
+    <label class="btn" style="margin:0">Choose file<input type="file" id="edQsIn" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><div class="msg small" id="edQsMsg" style="margin-top:8px"></div></div></div>
   <div class="edSide right" id="edSup" hidden><div class="drop" id="edSupDrop"><b>Fill a carrier form</b><p class="small" style="margin:6px 0 8px">Drop a fillable supplemental or application here. It's filled from this quote sheet and saved to the lead's Files as “com sup”.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edSupIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edSupMsg" style="margin-top:8px"></div></div></div>
 </div>
@@ -1678,7 +1680,7 @@ async function openEditor(f){
   {const home=/ personal home quote sheet\.pdf$/i.test(f.name);if((sheetKind(f.name)||home)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=home?await upgradeHome(f):await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
   ed={f,kind,notes:[],fields:[],dirty:false};
-  {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edSupMsg').textContent=''}
+  {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edQs').hidden=!sup;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home||sup);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edQsMsg').textContent='';$('edSupMsg').textContent=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
   $('edSave').hidden=!assets;$('edClose').textContent=assets?'Save/Close':'Close';$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
@@ -1845,6 +1847,36 @@ async function edDropTake(f){const m=$('edDropMsg');m.className='msg small';m.te
 {const d=$('edDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)edDropTake(f)});
   $('edDropIn').onchange=()=>{const f=$('edDropIn').files[0];$('edDropIn').value='';if(f)edDropTake(f)}}
+// the com quote sheet's drop boxes sit right beside the sheet (not out at the window edges)
+function placeSides(){const pg=$('edBody').querySelector('.annotationLayer')?.parentElement||$('edBody').firstElementChild,E=$('ed').getBoundingClientRect();
+  ['edQs','edSup'].forEach(id=>{const b=$(id);if(b.hidden||!pg)return;const r=pg.getBoundingClientRect(),w=b.offsetWidth||220;
+    b.style.right='auto';b.style.left=Math.round(id==='edSup'?Math.min(r.right-E.left+16,E.width-w-16):Math.max(r.left-E.left-16-w,16))+'px'})}
+addEventListener('resize',placeSides);new ResizeObserver(placeSides).observe($('edBody'));new MutationObserver(placeSides).observe($('edBody'),{childList:true});
+// com quote sheet: drop any file on the left; what it says goes into the sheet's empty boxes (Claude reads it when it's set up,
+// otherwise the same basic read Quick fill uses). Boxes already filled in are left alone.
+async function qsTake(f){const m=$('edQsMsg'),say=(t,c='')=>{m.className='msg small'+(c?' '+c:'');m.textContent=t};say(`Reading ${f.name}…`);
+  try{const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let t='',v={};
+    if(isImg){if(!sample||!sLimits||!sLimits.images)return say('Reading pictures needs Claude, which isn’t set up yet. Drop a PDF or text file instead.','err')}
+    else{t=(await fileText(f)).trim();if(!t)return say(`${f.name} has no readable text (it may be a scan). Try a picture of it instead.`,'err')}
+    if(Object.keys(lastFields).some(k=>/^f_/.test(k))){for(const [k,x] of Object.entries(lastFields))if(/^f_/.test(k))v[k.slice(2)]=x}  // another PSW quote sheet: copy it straight over
+    else if(sample){say('Claude is reading it…');
+      const o=await sample.json(`You are filling in an insurance agency's commercial quote sheet from ${isImg?'the attached picture':`the content of a file named "${f.name}" below`}. Reply with only a JSON object using these keys, each a string, and leave out anything not stated (never guess):
+${QS_KEYS.map(([k,l])=>k+' = '+l).join('\n')}
+The customer is the business wanting insurance, not the agent, carrier or sender's signature. Dates as MM/DD/YYYY.${t?'\nContent:\n"""\n'+t.slice(0,40000)+'\n"""':''}`,{modelTier:'quick',...(isImg?{images:f}:{})});
+      if(o&&typeof o==='object')v=o}
+    else{const b=basicRead(t),q=(b.f&&b.f.quote)||{},l=b.lead;Object.assign(v,q);
+      const put=(k,x)=>{if(x&&!v[k])v[k]=x};
+      // "Label: answer" lines (and a fillable PDF's own boxes) matched by label, like the carrier-form box does
+      t.split('\n').forEach(ln=>{const mm=/^\s*([^:\n]{2,60}?)\s*[:\-]\s+(\S.*)$/.exec(ln);if(!mm)return;const hit=SUP_GUESS.find(([re])=>re.test(mm[1].replace(/[_.\[\]\d]+/g,' ').trim()));if(!hit)return;
+        const x=mm[2].trim();if(hit[1]==='contact'){const p=x.split(/\s+/);put('contact_first',p[0]);put('contact_last',p.slice(1).join(' '))}else put(hit[1],x)});put('client_name',l.company);put('contact_first',l.firstName);put('contact_last',l.lastName);put('phone',l.phone&&fmtPhone(l.phone));put('email',l.email)}
+    lastFields={};const L=document.querySelector('#edBody .annotationLayer'),keep={};
+    for(const [k,x] of Object.entries(v)){const s=x==null?'':String(x).trim();if(!s||!QS_KEYS.some(([q])=>q===k))continue;
+      const el=L&&L.querySelector(`[name="f_${k}"]`);if(el&&el.type!=='radio'&&el.type!=='checkbox'&&String(el.value||'').trim())continue;keep[k]=s}
+    const n=edPut(keep);n?say(`Filled ${n} box${n===1?'':'es'} from ${f.name}. Check them, then hit Save to lead.`,'ok'):say(`Nothing new in ${f.name} for this sheet.`,'err')}
+  catch(e){say(`${f.name}: ${sampleErr&&e.code?sampleErr(e.code):'couldn’t be read ('+(e.message||'error')+')'}`,'err')}}
+{const d=$('edQsDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)qsTake(f)});
+  $('edQsIn').onchange=()=>{const f=$('edQsIn').files[0];$('edQsIn').value='';if(f)qsTake(f)}}
 // com quote sheet: drop any fillable carrier form on the right; its boxes are filled from this sheet (Claude matches them when it's set up,
 // otherwise common boxes like name, address, phone, dates, payroll and sales are matched by their labels) and it's saved to Files as "<client> com sup.pdf"
 async function supFields(bytes){await loadPdfJs();const doc=await pdfjsLib.getDocument({data:bytes.slice(),...PDF_FONTS}).promise,out=new Map();
