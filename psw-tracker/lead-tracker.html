@@ -2044,7 +2044,7 @@ function build80(C,h){
   if(yes('deadbolts'))set('ResidentialStructure_Security_DoorLockDeadboltIndicator_A',true);
   {const sp=g('sprinklers').toLowerCase();if(sp==='partial')set('BuildingFireProtection_Sprinkler_PartialIndicator_A',true);else if(sp==='full')set('BuildingFireProtection_Sprinkler_FullIndicator_A',true)}
   set('ResidentialStructure_HeatingUnit_PrimaryHeatSource_A',g('heating_type'));
-  set('Construction_BuiltYear_A',g('year_built'));set('ResidentialStructure_TotalLivingArea_A',g('sq_ft'));set('ResidenceOccupancy_FamilyCount_A',g('families'));
+  set('Construction_BuiltYear_A',g('year_built'));set('ResidentialStructure_TotalLivingArea_A',g('sq_ft'));{const c=/([123])\s*car/i.exec(g('garage')||'');if(c)set('ResidentialStructure_GarageArea_A',{1:'300',2:'500',3:'800'}[c[1]])} // garage sq ft from its sizeset('ResidenceOccupancy_FamilyCount_A',g('families'));
   {const f=g('foundation').toLowerCase();if(f==='raised')set('Construction_Foundation_OpenIndicator_A',true);else set('Construction_Foundation_ClosedIndicator_A',true)}
   // PSW defaults: excellent condition, extinguisher, copper wiring on breakers, 120 amps, in city limits
   ['Housekeeping','PlumbingCondition','RoofCondition'].forEach(t=>set(`ResidentialStructure_${t}_ExcellentIndicator_A`,true));
