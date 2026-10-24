@@ -1870,27 +1870,38 @@ function qsBasic(t){const v={},b=basicRead(t),l=b.lead;Object.assign(v,(b.f&&b.f
   put('client_name',l.company);put('contact_first',l.firstName);put('contact_last',l.lastName);put('phone',l.phone&&fmtPhone(l.phone));put('email',l.email);return v}
 // why a Claude call failed, in plain words, for the drop boxes
 const aiWhy=c=>({bad_key:'the server’s key was turned down',bad_model:'the server’s key can’t use the model',unavailable:'Claude didn’t answer',rate_limited:'too many requests just now',too_large:'the file is too big',not_granted:'no key on the server',bad_output:'Claude’s answer was garbled'})[c]||c;
+// Claude's answer as {sheet key: value}: unwraps {"quote":{...}} and the like, and takes a box's label in place of its key
+const qsLabel=k=>{const l=(QS_KEYS.find(([q])=>q===k)||[])[1]||k;return l.replace(/\s*\(.*$/,'')};
+function qsAnswers(o){if(!o||typeof o!=='object'||Array.isArray(o))return {};
+  const inner=Object.values(o).filter(x=>x&&typeof x==='object'&&!Array.isArray(x));if(inner.length&&inner.length===Object.keys(o).length)o=Object.assign({},...inner);
+  const norm=x=>String(x).toLowerCase().replace(/\(.*$/,'').replace(/[^a-z0-9]+/g,''),byKey={};QS_KEYS.forEach(([k,l])=>{byKey[norm(k)]=k;byKey[norm(l)]=k});
+  const v={};for(const [k,x] of Object.entries(o)){const q=byKey[norm(k)];if(q&&x!=null&&typeof x!=='object'&&!v[q])v[q]=String(x)}return v}
 async function qsTake(f){const m=$('edQsMsg'),say=(t,c='')=>{m.className='msg small'+(c?' '+c:'');m.textContent=t};say(`Reading ${f.name}…`);
   try{const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name),isPdf=/\.pdf$/i.test(f.name)||f.type==='application/pdf',ai=!!(sample&&sLimits&&sLimits.images);
-    let t='',v={},pics=[],imgs=[],scan=false,how=sample?'':' Claude isn’t turned on, so only labeled lines were read.';
+    let t='',v={},raw='',pics=[],imgs=[],scan=false,how=sample?'':' Claude isn’t turned on, so only labeled lines were read.';
     if(isImg){if(ai)imgs=[f];else{const im=await createImageBitmap(f),cv=document.createElement('canvas');cv.width=im.width;cv.height=im.height;cv.getContext('2d').drawImage(im,0,0);pics=[cv]}}
     else{t=(await fileText(f)).trim();
-      if(!t&&isPdf){scan=true;say(`${f.name} has no typed text (it may be a scan), so reading the page pictures instead…`);pics=await pdfPics(new Uint8Array(await f.arrayBuffer()));
+      if(isPdf&&t.replace(/\s+/g,'').length<200){scan=true;  // no text, or only a stamp or e-signature: it's a scan
+        say(`${f.name} has no typed text (it may be a scan), so reading the page pictures instead…`);pics=await pdfPics(new Uint8Array(await f.arrayBuffer()));
         if(ai)imgs=await Promise.all(pics.map(canvasPng))}
       else if(!t)return say(`${f.name} has no readable text.`,'err')}
-    if(pics.length&&!imgs.length){scan=true;t=(await ocrText(pics,say)).trim();if(!t)return say(`No words could be read in ${f.name}.`,'err')}
+    if(pics.length&&!imgs.length){scan=true;t=(t+'\n'+await ocrText(pics,say)).trim();if(!t)return say(`No words could be read in ${f.name}.`,'err')}
     if(Object.keys(lastFields).some(k=>/^f_/.test(k))){for(const [k,x] of Object.entries(lastFields))if(/^f_/.test(k))v[k.slice(2)]=x}  // another PSW quote sheet: copy it straight over
     else if(sample){say('Claude is reading it…');
       try{const o=await sample.json(`You are filling in an insurance agency's commercial quote sheet from ${imgs.length?`the attached picture${imgs.length>1?'s':''} of a file named "${f.name}"`:`the content of a file named "${f.name}" below`}. Reply with only a JSON object using these keys, each a string, and leave out anything not stated (never guess):
 ${QS_KEYS.map(([k,l])=>k+' = '+l).join('\n')}
 The customer is the business wanting insurance, not the agent, carrier or sender's signature. Dates as MM/DD/YYYY.${t?'\nContent:\n"""\n'+t.slice(0,40000)+'\n"""':''}`,{modelTier:'quick',...(imgs.length?{images:imgs}:{})});
-        if(o&&typeof o==='object')v=o;how=' Claude read it.'}
+        v=qsAnswers(o);raw=JSON.stringify(o||{});how=' Claude read it.'}
       catch(e){how=` Claude couldn’t read it (${aiWhy(e.code||e.message||'error')}), so only labeled lines were read.`;if(!t&&!pics.length)throw e;if(!t)t=(await ocrText(pics,say)).trim();v=qsBasic(t)}}
     else v=qsBasic(t);
-    lastFields={};const L=document.querySelector('#edBody .annotationLayer'),keep={};
+    lastFields={};const L=document.querySelector('#edBody .annotationLayer'),keep={},had=[],today=mdy(new Date()),yr=mdy(new Date(new Date().getFullYear()+1,new Date().getMonth(),new Date().getDate()));
     for(const [k,x] of Object.entries(v)){const s=x==null?'':String(x).trim();if(!s||!QS_KEYS.some(([q])=>q===k))continue;
-      const el=L&&L.querySelector(`[name="f_${k}"]`);if(el&&el.type!=='radio'&&el.type!=='checkbox'&&String(el.value||'').trim())continue;keep[k]=k==='phone'?fmtPhone(s):s}
-    const n=edPut(keep);n?say(`Filled ${n} box${n===1?'':'es'} from ${f.name}. ${scan&&!imgs.length?'It was read from a scan, so check every box closely':'Check them'}, then hit Save to lead.${how}`,'ok'):say(`Nothing new in ${f.name} for this sheet.${how}`,'err')}
+      const el=L&&L.querySelector(`[name="f_${k}"]`),cur0=el&&el.type!=='radio'&&el.type!=='checkbox'?String(el.value||'').trim():'';
+      // a new sheet starts with today's EFF/EXP, so the file's dates replace those
+      if(cur0&&!(k==='eff_date'&&cur0===today)&&!(k==='exp_date'&&cur0===yr)){if(cur0!==s)had.push(qsLabel(k));continue}keep[k]=k==='phone'?fmtPhone(s):s}
+    const n=edPut(keep),kept=had.length?` Already filled, so left alone: ${had.slice(0,8).join(', ')}${had.length>8?'…':''}.`:'';
+    n?say(`Filled ${n} box${n===1?'':'es'} from ${f.name}. ${scan&&!imgs.length?'It was read from a scan, so check every box closely':'Check them'}, then hit Save to lead.${kept}${how}`,'ok')
+     :say(`Nothing new in ${f.name} for this sheet.${kept}${how}${raw&&!had.length?` Claude answered: ${raw.slice(0,300)}`:''}`,'err')}
   catch(e){say(`${f.name}: ${e.code?sampleErr(e.code):'couldn’t be read ('+(e.message||'error')+')'}`,'err')}}
 {const d=$('edQsDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)qsTake(f)});
