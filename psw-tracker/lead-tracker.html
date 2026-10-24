@@ -311,7 +311,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="acordSec">
       <h3>ACORD forms</h3>
       <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
-      <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="140">Create 140</button><button class="pri" data-acord="131">Create 131</button><button class="pri" data-acord="80">Create 80</button></div>
+      <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="125,126,140">Create 125-126-140</button><button class="pri" data-acord="126">Create 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="131">Create 131</button><button class="pri" data-acord="140">Create 140</button></div>
+      <div class="row" style="margin-top:8px"><button class="pri" data-acord="80" title="Personal home application">Create 80</button></div>
       <div class="msg" id="acordMsg"></div>
     </div>
 
@@ -1534,7 +1535,7 @@ $('log').addEventListener('click',async e=>{
 
 /* ---------- email ---------- */
 // Add more people here: {label, to}
-const MAIL_TO=[{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Jennifer/RENAISSANCE',to:'Jennifer.Magee@renaissanceins.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'}];
+const MAIL_TO=[{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Jennifer/RENAISSANCE',to:'Jennifer.Magee@renaissanceins.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'},{label:'Melody/AMWINS Placement',to:'melody.ho@amwins.com'}];
 let mailSel=new Set(),mailLead=null;
 function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
@@ -1643,7 +1644,7 @@ async function uploadOne(f){
   if(type==='application/pdf'&&!head.startsWith('%PDF')){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF (it starts with “${head}”), so it can’t be stored.`;return false}
   try{const r=await storeBytes(buf,type);
     const fresh=leads.find(l=>l.id===cur.id)||cur,entry={id:r.id,name:f.name,type,size:r.sizeBytes,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{})};
-    const old=/ (com quote sheet|com auto quote sheet|personal auto quote sheet|personal home quote sheet|125|126|125 126|130|140|80)\.pdf$/i.test(f.name)?(fresh.files||[]).find(x=>x.name===f.name):null; // a new quote sheet replaces the old one
+    const old=/ (com quote sheet|com auto quote sheet|personal auto quote sheet|personal home quote sheet|125|126|125 126|125 126 140|130|140|80)\.pdf$/i.test(f.name)?(fresh.files||[]).find(x=>x.name===f.name):null; // a new quote sheet replaces the old one
     const files=old?(fresh.files||[]).map(x=>x===old?entry:x):[...(fresh.files||[]),entry];
     await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();m.className='msg ok';m.textContent=old?`${f.name} updated.`:`${f.name} attached.`;
     if(old){try{await assets.delete(old.id)}catch(_){}}
@@ -2244,7 +2245,7 @@ $('acordSec').addEventListener('click',async e=>{
     const client=(data.client_name||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client';
     const name=`${client} ${list.join(' ')}.pdf`;
     const ok=await uploadOne(new File([bytes],name,{type:'application/pdf'}));
-    if(ok){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(v.notes&&v.notes.length?`<div class="small" style="margin-top:4px">Heads up: ${v.notes.map(esc).join(' · ')}</div>`:'')}
+    if(ok){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+((n=>n.length?`<div class="small" style="margin-top:4px">Heads up: ${n.map(esc).join(' · ')}</div>`:'')((v.notes||[]).filter(t=>!/\b1[2-4]\d\b/.test(t)||list.some(f=>t.includes(f)))))}
     else{m.className='msg err';m.textContent=$('fileMsg').textContent}
   }catch(err){m.className='msg err';m.textContent='Couldn’t make the ACORD: '+(err.message||err.code||'error')}
   document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=false);btn.textContent=label;
