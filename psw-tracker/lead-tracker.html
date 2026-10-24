@@ -807,7 +807,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-7',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-27',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-8',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-27',QS_LAYOUT='psw-qs-layout-21',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -971,7 +971,7 @@ const HOME_SECTIONS=[
    {k:'personal_property',n:1,label:'Personal property (C)',label2:'Earthquake?',pair:'earthquake',opts2:YN},{k:'loss_of_use',n:1,label:'Loss of use (D)',label2:'Water backup?',pair:'water_backup',opts2:YN},
    {k:'liability',n:1,label:'Liability (E)',label2:'Repl cost contents?',pair:'rc_contents',opts:['$100,000','$300,000','$500,000','$1,000,000'],opts2:YN},{k:'med_pay',n:1,label:'Med pay (F)',label2:'Scheduled items',pair:'scheduled',opts:['$1,000','$5,000']}]},
  {title:'Dwelling',fields:[{k:'year_built',n:1,label:'Year built',label2:'Square feet',pair:'sq_ft'},{k:'stories',n:1,label:'Stories',label2:'Construction',pair:'construction',opts:['1','2','3','4+'],opts2:['Frame','Masonry','Masonry veneer','Fire resistive']},{k:'roof_type',n:1,label:'Roof type',label2:'Foundation',pair:'foundation',opts:['Composition shingle','Tile','Metal','Wood shake','Flat / tar'],opts2:['Slab','Raised','Basement']},
-   {k:'families',n:1,label:'Number of families',label2:'Garage',pair:'garage',opts:['1','2','3','4'],opts2:['Attached','Detached','Carport','None']},{k:'bathrooms',n:1,label:'Bathrooms',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
+   {k:'families',n:1,label:'Number of families',label2:'Garage',pair:'garage',opts:['1','2','3','4'],opts2:['Attached 1 car','Attached 2 car','Attached 3 car','Detached 1 car','Detached 2 car','Attached','Detached','Carport','None']},{k:'bathrooms',n:1,label:'Bathrooms',label2:'Heating type',pair:'heating_type',opts2:['Central gas','Electric','Heat pump','Wall / floor','Other']},
    {k:'wiring_year',n:1,label:'Wiring updated (yr)',pc:'wiring',label2:'Purchase date',pair:'purchase_date'},{k:'plumbing_year',n:1,label:'Plumbing updated (yr)',pc:'plumbing',label2:'Purchase price',pair:'purchase_price'},{k:'heating_year',n:1,label:'Heating updated (yr)',pc:'heating',label2:'Feet to hydrant',pair:'hydrant_ft'},{k:'roof_year',n:1,label:'Roof updated (yr)',pc:'roof',label2:'Miles to fire stn',pair:'station_mi'},
    {k:'siding',n:1,label:'Siding',label2:'Pool?',pair:'uw_pool',opts:HOME_SIDING.map(x=>x[0]),opts2:YN}]},
  {title:'Protection',fields:[{k:'smoke',n:1,label:'Smoke detectors?',label2:'Burglar alarm',pair:'burglar_alarm',opts:YN,opts2:HOME_ALARM},{k:'fire_alarm',n:1,label:'Fire alarm',label2:'Sprinklers',pair:'sprinklers',opts:HOME_ALARM,opts2:['None','Partial','Full']},{k:'deadbolts',n:1,label:'Deadbolts?',label2:'Gated community?',pair:'gated',opts:YN,opts2:YN}]},
@@ -1030,10 +1030,7 @@ async function newSheet(kind){
   const auto=kind==='auto',suffix=auto?' com auto quote sheet.pdf':kind==='pauto'?' personal auto quote sheet.pdf':kind==='home'?' personal home quote sheet.pdf':' com quote sheet.pdf';
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const have=[...(fresh.files||[])].reverse().find(x=>x.name.toLowerCase().endsWith(suffix));
-  if(have&&kind==='home'){try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const d=await PDFLib.PDFDocument.load(await fileBytes(have));
-    if(d.getSubject()==='psw-home-quote-sheet'&&!(d.getKeywords()||'').includes(HOME_LAYOUT)){const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;if(!hv.heating_type)hv.heating_type='Central gas';if(!hv.siding)hv.siding='Stucco';['smoke','deadbolts'].forEach(k=>{if(!hv[k])hv[k]='Yes'});
-      if(await uploadOne(new File([await buildQuotePdf(hv,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet')],have.name,{type:'application/pdf'}))){
-        m.className='msg ok';m.textContent=`${have.name} was updated to the new layout with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}}catch(_){}}
+  if(have&&kind==='home'&&await upgradeHome(have)){m.className='msg ok';m.textContent=`${have.name} was updated to the new layout with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}
   if(have&&(kind==='qs'||auto)){const up=await upgradeAuto(have);if(up===true){m.className='msg ok';m.textContent=`${have.name} was updated with everything already filled in. Opening it.`;const f=(cur.files||[]).find(x=>x.name===have.name);if(f)openEditor(f);return}}
   if(have){m.textContent=`This lead already has ${have.name}. Opening it.`;openEditor(have);return}
   const person=[$('firstName').value,$('lastName').value].filter(Boolean).join(' ').trim();
@@ -1042,7 +1039,7 @@ async function newSheet(kind){
   v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
   if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
-  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',siding:'Stucco',smoke:'Yes',deadbolts:'Yes'});HOME_YN.forEach(k=>v[k]='No');v.rc_contents='Yes'}
+  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',siding:'Stucco',smoke:'Yes',deadbolts:'Yes',hydrant_ft:'100',station_mi:'1.5'});HOME_YN.forEach(k=>v[k]='No');v.rc_contents='Yes'}
   const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
   const b=$(auto?'newAuto':kind==='pauto'?'newPauto':kind==='home'?'newHome':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
@@ -1065,7 +1062,7 @@ function typeSearch(sel){const sec=sel.parentElement;if(!sec||sel.dataset.ts)ret
   os().forEach(o=>{const x=document.createElement('option');x.value=lab(o);dl.appendChild(x)});
   inp.className='tsIn';inp.setAttribute('list',dl.id);inp.autocomplete='off';inp.title=sel.title||'';
   const shown=()=>{const o=sel.selectedOptions[0];return o&&o.value?lab(o):''},sync=()=>{if(document.activeElement!==inp)inp.value=shown()};
-  const pick=()=>{const t=inp.value.trim().toLowerCase();inp.placeholder='';if(t){const L=os(),o=L.find(o=>lab(o).toLowerCase()===t||o.value.toLowerCase()===t)||L.find(o=>lab(o).toLowerCase().startsWith(t))||L.find(o=>lab(o).toLowerCase().includes(t));
+  const pick=()=>{const t=inp.value.trim().toLowerCase();inp.placeholder='';if(t){const L=os(),o=L.find(o=>lab(o).toLowerCase()===t||o.value.toLowerCase()===t)||L.find(o=>lab(o).toLowerCase().startsWith(t))||L.find(o=>lab(o).toLowerCase().includes(t))||L.find(o=>t.split(/\s+/).every(w=>lab(o).toLowerCase().includes(w)));
       if(o&&sel.value!==o.value){sel.value=o.value;sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}))}}inp.value=shown()};
   inp.addEventListener('focus',()=>{inp.placeholder=inp.value;inp.value='';try{inp.showPicker()}catch(_){}});
   inp.addEventListener('input',()=>{const t=inp.value.toLowerCase();if(os().some(o=>lab(o).toLowerCase()===t))pick()}); // picked from the list
@@ -1089,6 +1086,12 @@ function codeOnly(sel){const o=[...sel.options].filter(x=>x.value);if(!o.length|
 function sheetValues(doc){const v={};for(const fl of doc.getForm().getFields())if(fl instanceof PDFLib.PDFTextField){const t=fl.getText();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFDropdown){const t=fl.getSelected()[0];if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFRadioGroup){const t=fl.getSelected();if(t)v[fl.getName().replace(/^f_/,'')]=t}else if(fl instanceof PDFLib.PDFCheckBox){if(fl.isChecked())v[fl.getName()]='Yes'}return v}
 const isQuoteSheet=n=>/ (com auto|com|personal auto|personal home) quote sheet\.pdf$/i.test(n); // no free-text notes on PSW quote sheets
 const sheetKind=n=>/ com auto quote sheet\.pdf$/i.test(n)?'auto':/ com quote sheet\.pdf$/i.test(n)?'qs':'';
+// an older personal home sheet is rebuilt on the current layout, keeping everything filled in (true when it was)
+async function upgradeHome(have){try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const d=await PDFLib.PDFDocument.load(await fileBytes(have));
+    if(d.getSubject()!=='psw-home-quote-sheet'||(d.getKeywords()||'').includes(HOME_LAYOUT))return false;
+    const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;if(!hv.heating_type)hv.heating_type='Central gas';if(!hv.siding)hv.siding='Stucco';['smoke','deadbolts'].forEach(k=>{if(!hv[k])hv[k]='Yes'});
+    if(!hv.hydrant_ft)hv.hydrant_ft='100';if(!hv.station_mi)hv.station_mi='1.5';
+    return !!await uploadOne(new File([await buildQuotePdf(hv,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet')],have.name,{type:'application/pdf'}))}catch(_){return false}}
 async function upgradeAuto(f){
   try{
     const auto=sheetKind(f.name)==='auto';
@@ -1667,7 +1670,7 @@ $('edClose').onclick=async()=>{const c=$('edClose');if(c.disabled)return;
   if(ed&&ed.dirty&&assets&&cur&&cur.id){c.disabled=true;const ok=await saveEd(false);c.disabled=false;if(ok)closeEditor();return}
   if(ed&&ed.dirty&&$('edClose').dataset.armed!=='1'){$('edClose').dataset.armed='1';$('edClose').textContent='Close without saving?';setTimeout(()=>{$('edClose').dataset.armed='';$('edClose').textContent='Close'},4000);return}$('edClose').dataset.armed='';$('edClose').textContent='Close';closeEditor()};
 async function openEditor(f){
-  if(sheetKind(f.name)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}
+  {const home=/ personal home quote sheet\.pdf$/i.test(f.name);if((sheetKind(f.name)||home)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=home?await upgradeHome(f):await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
   ed={f,kind,notes:[],fields:[],dirty:false};
   {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('ed').classList.toggle('side',home);$('edDropMsg').textContent=''}
