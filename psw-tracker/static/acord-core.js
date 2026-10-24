@@ -454,6 +454,10 @@
     const helv = await doc.embedFont(L.StandardFonts.Helvetica);
     const byName = {};
     for (const fld of f.getFields()) byName[fld.getName()] = fld;
+    // which page a box sits on (its widget is listed in that page's annotations)
+    const onPage = new Map();
+    doc.getPages().forEach((pg, i) => { const an = pg.node.Annots(); if (an) for (let j = 0; j < an.size(); j++) onPage.set(String(an.get(j)), i); });
+    const pageOf = x => onPage.get(String(doc.context.getObjectRef(x.dict)));
     for (const [k, val] of Object.entries(values)) {
       if (val === '' || val == null || val === false) continue;
       const re = new RegExp(`^a${form}_p\\d+_${k}$`);
@@ -470,13 +474,14 @@
         if (!fld.isMultiline()) {
           // a box marked to grow takes over the empty boxes to its right on the same line, as far as the text needs
           if (GROW.test(n) && helv.widthOfTextAtSize(text, Math.min(size, 9)) > r.width - 4) {
-            const row = Object.keys(byName).map(m => ({ m, r: byName[m].acroField.getWidgets()[0].getRectangle() }))
-              .filter(o => o.m !== n && Math.abs(o.r.y - r.y) < 2 && o.r.x > r.x).sort((a, b) => a.r.x - b.r.x);
+            const pg = pageOf(w), row = Object.keys(byName).map(m => { const x = byName[m].acroField.getWidgets()[0]; return { m, p: pageOf(x), r: x.getRectangle() }; })
+              .filter(o => o.m !== n && o.p === pg && Math.abs(o.r.y - r.y) < 2 && o.r.x > r.x).sort((a, b) => a.r.x - b.r.x);
             let right = r.x + r.width;
             for (const o of row) { if (right - r.x - 4 >= helv.widthOfTextAtSize(text, Math.min(size, 9))) break;
-              const k2 = o.m.replace(new RegExp(`^a${form}_`), ''); if (values[k2] !== '' && values[k2] != null && values[k2] !== false) break; right = o.r.x + o.r.width; }
+              const k2 = o.m.replace(new RegExp(`^a${form}_`), ''); if (values[k2] !== '' && values[k2] != null && values[k2] !== false) break; right = o.r.x + o.r.width;
+              byName[o.m].acroField.getWidgets().forEach(x => x.setFlagTo(L.AnnotationFlags.Hidden, true)); } // the empty boxes it covers are hidden so their edges don't cut through the text
             if (right > r.x + r.width) { w.setRectangle({ x: r.x, y: r.y, width: right - r.x, height: r.height }); r.width = right - r.x;
-              w.getOrCreateAppearanceCharacteristics().setBackgroundColor([1]); } // white, so the column lines don't run through the text
+              doc.getPage(pg).drawRectangle({ x: r.x + 3, y: r.y, width: r.width - 3, height: r.height, color: L.rgb(1, 1, 1) }); } // paint out the column lines it crosses
           }
           while (size > 6 && helv.widthOfTextAtSize(text, size) > r.width - 4) size -= 0.5;
           // the 140's boxes are short; let its text use the full box height so it reads at the same size as the coverage lines
@@ -488,6 +493,7 @@
         }
         fld.setText(text);
         fld.setFontSize(size);
+        if (GROW.test(n)) fld.setAlignment(L.TextAlignment.Left); // exposure reads from the left edge
       }
     }
     f.updateFieldAppearances(helv);

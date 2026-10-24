@@ -2033,7 +2033,7 @@ async function buildEdited(){
   if(form)for(const fd of ed.fields){
     const v=st.getRawValue?st.getRawValue(fd.id):st.getValue(fd.id,{});if(!v||!('value' in v))continue;
     try{const fl=form.getField(fd.name);
-      if(fd.radio){if(v.value===true||v.value===fd.btn)fl.select(fd.btn)}
+      if(fd.radio){if(v.value===true||v.value===fd.btn){const o=fl.getOptions();fl.select(o.includes(fd.btn)?fd.btn:o[+fd.btn]??fd.btn)}}  // our sheets name each button 0, 1, 2… but select() wants its label
       else if(fd.check){(v.value===true||(typeof v.value==='string'&&v.value!=='Off'))?fl.check():fl.uncheck()}
       else if(fd.choice){const x=Array.isArray(v.value)?v.value[0]:v.value;if(x!=null)fl.select(String(x))}
       else fl.setText(String(home?homeFix(fd.name,v.value??'',edVal):v.value??''));
