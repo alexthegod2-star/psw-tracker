@@ -154,7 +154,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .pg{position:relative;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);flex:none}
 .pg canvas,.pg img{display:block}
 .adding .pg{cursor:crosshair}
-.edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}
+.edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide.right{left:auto;right:16px}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}.ed.sideR .edb{padding-right:256px}
 .tn{position:absolute;z-index:5;min-width:40px;padding:0 2px;color:#000;background:rgba(255,235,59,.35);border:1px dashed #b58900;font-family:Helvetica,Arial,sans-serif;line-height:1.15;white-space:pre;outline:none}
 .tn:focus{background:rgba(255,235,59,.6)}
 .edtxt{width:min(900px,100%);flex:1;min-height:60vh;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
@@ -357,6 +357,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="edb" id="edBody"></div>
   <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here, either the fillable PDF or a printed copy. Its answers go into this sheet; then hit Save to lead.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edDropIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edDropMsg" style="margin-top:8px"></div></div></div>
+  <div class="edSide right" id="edSup" hidden><div class="drop" id="edSupDrop"><b>Fill a carrier form</b><p class="small" style="margin:6px 0 8px">Drop a fillable supplemental or application here. It's filled from this quote sheet and saved to the lead's Files as “com sup”.</p>
+    <label class="btn" style="margin:0">Choose file<input type="file" id="edSupIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edSupMsg" style="margin-top:8px"></div></div></div>
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
@@ -1676,7 +1678,7 @@ async function openEditor(f){
   {const home=/ personal home quote sheet\.pdf$/i.test(f.name);if((sheetKind(f.name)||home)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=home?await upgradeHome(f):await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
   ed={f,kind,notes:[],fields:[],dirty:false};
-  {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('ed').classList.toggle('side',home);$('edDropMsg').textContent=''}
+  {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edSupMsg').textContent=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
   $('edSave').hidden=!assets;$('edClose').textContent=assets?'Save/Close':'Close';$('edLead').hidden=!sheetKind(f.name);$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
@@ -1843,6 +1845,58 @@ async function edDropTake(f){const m=$('edDropMsg');m.className='msg small';m.te
 {const d=$('edDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)edDropTake(f)});
   $('edDropIn').onchange=()=>{const f=$('edDropIn').files[0];$('edDropIn').value='';if(f)edDropTake(f)}}
+// com quote sheet: drop any fillable carrier form on the right; its boxes are filled from this sheet (Claude matches them when it's set up,
+// otherwise common boxes like name, address, phone, dates, payroll and sales are matched by their labels) and it's saved to Files as "<client> com sup.pdf"
+async function supFields(bytes){await loadPdfJs();const doc=await pdfjsLib.getDocument({data:bytes.slice(),...PDF_FONTS}).promise,out=new Map();
+  try{for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i),anns=(await pg.getAnnotations()).filter(a=>a.fieldName&&a.rect),tc=await pg.getTextContent();
+      const items=tc.items.filter(t=>t.str&&t.str.trim()).map(t=>({s:t.str.trim(),x0:t.transform[4],x1:t.transform[4]+t.width,y:t.transform[5],h:Math.abs(t.transform[3])||8}));
+      for(const a of anns){const [x0,y0,x1,y1]=a.rect,kind=a.checkBox?'check':a.radioButton?'radio':a.fieldType==='Ch'?'list':a.fieldType==='Tx'?'text':'';if(!kind)continue;
+        let lab=String(a.alternativeText||'').trim();
+        if(!lab){const left=items.filter(t=>t.x1<=x0+2&&x0-t.x1<260&&t.y>=y0-4&&t.y<=y1+2).sort((p,q)=>q.x1-p.x1)[0],
+            above=items.filter(t=>t.y>y1&&t.y-y1<22&&t.x0<x1&&t.x1>x0-10).sort((p,q)=>p.y-q.y)[0];
+          lab=(left&&(!above||kind!=='text'||x0-left.x1<120)?left:above||left||{s:''}).s;
+          if(kind==='check'||kind==='radio'){const right=items.filter(t=>t.x0>=x1-2&&t.x0-x1<80&&t.y>=y0-4&&t.y<=y1+2).sort((p,q)=>p.x0-q.x0)[0];if(right)lab=(lab?lab+' / ':'')+right.s}}
+        const o=out.get(a.fieldName)||{name:a.fieldName,kind,label:lab,choices:[]};
+        if(kind==='radio'&&a.buttonValue)o.choices.push(a.buttonValue+(lab?` (${lab})`:''));
+        if(kind==='list')o.choices=(a.options||[]).map(x=>x.displayValue||x.exportValue);
+        if(!out.has(a.fieldName))out.set(a.fieldName,o)}}}
+  finally{doc.destroy()}return [...out.values()]}
+const SUP_GUESS=[[/\b(applicant|named insured|insured'?s? name|name of (applicant|insured|business|company)|business name|company name|legal name)\b/i,'client_name'],[/\bd\.?b\.?a\b/i,'dba'],
+  [/mailing/i,'mailing_address'],[/(location|premises|property|physical|risk) address/i,'property_address'],[/^(street )?address\b/i,'mailing_address'],[/\b(phone|telephone)\b/i,'phone'],[/e-?mail/i,'email'],
+  [/\b(effective|eff\.?|proposed eff\w*)\b.*date|^effective/i,'eff_date'],[/expir/i,'exp_date'],[/payroll/i,'payroll'],[/(gross|annual|total).*(sales|receipts|revenue)|^(sales|receipts|revenue)/i,'gross_receipts'],
+  [/full[ -]?time/i,'full_time'],[/part[ -]?time/i,'part_time'],[/(year|date).*(started|established|founded|began)|year.*business/i,'year_started'],[/years?.*experience/i,'years_experience'],
+  [/(description|nature) of (business|operations)|describe.*operations|^operations\b|business description/i,'description'],[/\b(fein|ein|tax id|federal id)\b/i,'tax_id'],[/contact/i,'contact']];
+async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg small'+(c?' '+c:'');m.textContent=t};
+  if(!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf'){say(`${f.name} isn’t a PDF.`,'err');return}
+  if(!cur||!cur.id){say('Open this sheet from a lead first.','err');return}
+  try{say(`Reading ${f.name}…`);const bytes=new Uint8Array(await f.arrayBuffer()),boxes=await supFields(bytes);
+    if(!boxes.length){say(`${f.name} has no fill-in boxes, so it can’t be filled. Ask the carrier for the fillable PDF.`,'err');return}
+    const lab=Object.fromEntries(QS_KEYS),sheet={};document.querySelectorAll('#edBody .annotationLayer [name]').forEach(el=>{if(el.classList.contains('tsIn'))return;
+      const k=el.name.replace(/^f_/,''),v=el.type==='checkbox'?(el.checked?'Yes':''):String(el.value||'').trim();if(v&&!(k in sheet))sheet[k]=v});
+    if(!Object.keys(sheet).length){say('This quote sheet is empty, so there’s nothing to fill the form with.','err');return}
+    const g=k=>sheet[k]||'',today=new Date();let vals={},ai=false;
+    if(sample){say(`Claude is matching ${boxes.length} box${boxes.length===1?'':'es'} on ${f.name} to this sheet…`);
+      const lines=Object.entries(sheet).map(([k,v])=>`${lab[k]||k}: ${v}`).join('\n'),list=boxes.map((b,i)=>`${i+1} | ${b.kind} | ${b.label||'-'} | ${b.name}${b.choices.length?' | choices: '+b.choices.join('; '):''}`).join('\n');
+      const prompt=`You fill out insurance carrier forms for an agency. This is the client's commercial quote sheet:\n${lines}\n\nThese are the fill-in boxes on the carrier form "${f.name}" (number | kind | printed label next to it | box name | choices):\n${list}\n\nReturn a JSON object that maps box number to what goes in it, only for boxes this quote sheet clearly answers. text: the text (dates MM/DD/YYYY, money as numbers with commas). check: true to tick it. radio and list: copy one choice exactly (for radio, only the part before any parentheses). Leave out signatures, anything the sheet doesn't answer, and anything you're unsure of. Today is ${mdy(today)}.`;
+      try{const o=await sample.json(prompt,{modelTier:'quick'});if(o&&typeof o==='object')for(const [n,v] of Object.entries(o)){const b=boxes[+n-1];if(b&&v!==''&&v!=null&&v!==false)vals[b.name]=v}ai=true}catch(_){vals={}}}
+    if(!ai)boxes.forEach(b=>{if(b.kind!=='text')return;const t=(b.label||'')+' '+b.name.replace(/[_.\[\]\d]+/g,' ');const hit=SUP_GUESS.find(([re])=>re.test(b.label||'')||re.test(t));if(!hit)return;
+      const v=hit[1]==='contact'?[g('contact_first'),g('contact_last')].filter(Boolean).join(' '):hit[1]==='property_address'?(/^same/i.test(g('property_address'))||!g('property_address')?g('mailing_address'):g('property_address')):g(hit[1]);if(v)vals[b.name]=v});
+    const n=Object.keys(vals).length;if(!n){say(`Nothing on ${f.name} matched this quote sheet.`,'err');return}
+    say('Filling the form…');await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const doc=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true}),form=doc.getForm();let done=0;
+    for(const [k,v] of Object.entries(vals)){try{const fl=form.getField(k),s=String(v).replace(/\s*\(.*\)$/,'');
+      if(fl instanceof PDFLib.PDFCheckBox){if(v===true||/^(true|yes|y|x|on)$/i.test(s)){fl.check();done++}}
+      else if(fl instanceof PDFLib.PDFRadioGroup){const o=fl.getOptions().find(x=>x.toLowerCase()===s.toLowerCase());if(o){fl.select(o);done++}}
+      else if(fl instanceof PDFLib.PDFDropdown||fl instanceof PDFLib.PDFOptionList){const o=fl.getOptions().find(x=>x.toLowerCase()===s.toLowerCase());if(o){fl.select(o);done++}}
+      else if(fl instanceof PDFLib.PDFTextField){fl.setText(String(v));done++}}catch(_){}}
+    try{form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica))}catch(_){}
+    const client=(g('client_name')||cur.company||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',have=new Set((cur.files||[]).map(x=>x.name.toLowerCase()));
+    let name=`${client} com sup.pdf`;for(let i=2;have.has(name.toLowerCase());i++)name=`${client} com sup ${i}.pdf`;
+    const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
+    if(ok)say(`Filled ${done} box${done===1?'':'es'}${ai?' (Claude matched them)':''} and saved ${name} under Files. Open it to check and finish the rest.`,'ok');else say($('fileMsg').textContent||'Couldn’t save it.','err')}
+  catch(e){say(`${f.name}: couldn’t be filled (${e.message||'error'}).`,'err')}}
+{const d=$('edSupDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)supFill(f)});
+  $('edSupIn').onchange=()=>{const f=$('edSupIn').files[0];$('edSupIn').value='';if(f)supFill(f)}}
 // "Fill lead info": the quote sheet's client details go into the lead, then the lead is saved
 $('edLead').onclick=async()=>{
   if(!ed||!cur)return;const q={};
