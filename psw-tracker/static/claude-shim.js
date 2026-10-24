@@ -72,7 +72,7 @@
     const run = async (input, opts = {}) => {
       const text = Array.isArray(input) ? input.map(t => t.content).join('\n\n') : String(input);
       const images = [];
-      for (const im of (opts.images || [])) images.push({ type: im.type || 'image/png', b64: await toB64(im) });
+      for (const im of [].concat(opts.images || [])) images.push({ type: im.type || 'image/png', b64: await toB64(im) });
       const r = await api('/api/tracker/sample', { method: 'POST', json: { input: text, images, tier: opts.modelTier || 'default' }, signal: opts.signal });
       if (opts.onText) try { opts.onText({ text: r.text, delta: r.text }) } catch (_) {}
       return r;
