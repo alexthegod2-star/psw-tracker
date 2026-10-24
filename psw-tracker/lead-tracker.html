@@ -165,6 +165,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .annotationLayer .textWidgetAnnotation :is(input,textarea),.annotationLayer .choiceWidgetAnnotation select{background:rgba(0,54,255,.10)!important;border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px;vertical-align:top}
 .annotationLayer .textWidgetAnnotation textarea{resize:none}
 .annotationLayer .textWidgetAnnotation :is(input,textarea):focus,.annotationLayer .choiceWidgetAnnotation select:focus{background:rgba(0,54,255,.04)!important;border-color:#1f5fbf;outline:none}
+.annotationLayer .choiceWidgetAnnotation select.tsSel{visibility:hidden}.annotationLayer .choiceWidgetAnnotation .tsIn{position:absolute;inset:0;background:rgba(0,54,255,.10);border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px}.annotationLayer .choiceWidgetAnnotation .tsIn:focus{background:rgba(0,54,255,.04);border-color:#1f5fbf;outline:none}.annotationLayer .calcBtn{position:absolute;right:2px;top:50%;transform:translateY(-50%);padding:1px 8px;font-size:11px;line-height:1.3;border-radius:999px;background:var(--acc);color:var(--acc-ink);border:0;font-weight:600;cursor:pointer;z-index:2}
 .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{width:100%;height:100%;margin:0;accent-color:#1f5fbf}
 .annotationLayer .popupAnnotation,.annotationLayer .popupTriggerArea{display:none}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
@@ -1041,7 +1042,7 @@ async function newSheet(kind){
   v.lead_date=mdy(ld);v.eff_date=mdy(eff);v.exp_date=mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()));
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
   if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
-  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',siding:'Stucco',smoke:'Yes',deadbolts:'Yes'});HOME_YN.forEach(k=>v[k]='No')}
+  if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',siding:'Stucco',smoke:'Yes',deadbolts:'Yes'});HOME_YN.forEach(k=>v[k]='No');v.rc_contents='Yes'}
   const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
   const b=$(auto?'newAuto':kind==='pauto'?'newPauto':kind==='home'?'newHome':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
@@ -1057,6 +1058,30 @@ async function newSheet(kind){
 // (also rebuilds any quote sheet made before the font was embedded)
 const sheetChecked=new Set();
 // a dropdown whose choices read "code description" (SL2 line 2C): the list shows both, the box shows only the picked code
+// quote sheet drop-downs: type to search; the list narrows to what you type, Enter or leaving the box picks the best match
+let tsN=0;
+function typeSearch(sel){const sec=sel.parentElement;if(!sec||sel.dataset.ts)return;sel.dataset.ts='1';
+  const os=()=>[...sel.options].filter(o=>o.value),lab=o=>o.dataset.full||o.text,dl=document.createElement('datalist'),inp=document.createElement('input');dl.id='tsl'+(++tsN);
+  os().forEach(o=>{const x=document.createElement('option');x.value=lab(o);dl.appendChild(x)});
+  inp.className='tsIn';inp.setAttribute('list',dl.id);inp.autocomplete='off';inp.title=sel.title||'';
+  const shown=()=>{const o=sel.selectedOptions[0];return o&&o.value?lab(o):''},sync=()=>{if(document.activeElement!==inp)inp.value=shown()};
+  const pick=()=>{const t=inp.value.trim().toLowerCase();inp.placeholder='';if(t){const L=os(),o=L.find(o=>lab(o).toLowerCase()===t||o.value.toLowerCase()===t)||L.find(o=>lab(o).toLowerCase().startsWith(t))||L.find(o=>lab(o).toLowerCase().includes(t));
+      if(o&&sel.value!==o.value){sel.value=o.value;sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}))}}inp.value=shown()};
+  inp.addEventListener('focus',()=>{inp.placeholder=inp.value;inp.value='';try{inp.showPicker()}catch(_){}});
+  inp.addEventListener('input',()=>{const t=inp.value.toLowerCase();if(os().some(o=>lab(o).toLowerCase()===t))pick()}); // picked from the list
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();pick();inp.blur()}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();inp.value='';inp.blur()}});inp.addEventListener('blur',pick);
+  sel.addEventListener('change',sync);sel.addEventListener('input',sync);sel.classList.add('tsSel');sel.tabIndex=-1;sec.append(dl,inp);sync()}
+// personal home sheet: Calc next to Dwelling (A) fills B 20%, C 50%, D 20%, Liability $500,000 and Med pay $5,000
+function homeCalc(al){const dw=al.querySelector('[name="f_dwelling"]');if(!dw)return;const b=document.createElement('button');b.type='button';b.className='calcBtn';b.textContent='Calc';
+  b.title='Fill B, C, D, Liability and Med pay from the dwelling amount';dw.style.paddingRight='46px';dw.parentElement.appendChild(b);
+  b.onclick=()=>{const m=String(dw.value).replace(/[$,\s]/g,'').match(/^(\d*\.?\d+)([km])?$/i),n=m?parseFloat(m[1])*(/k/i.test(m[2]||'')?1e3:/m/i.test(m[2]||'')?1e6:1):0;
+    if(!n){edMsg('Type the dwelling amount first, then click Calc.','err');dw.focus();return}const f=x=>'$'+Math.round(x).toLocaleString('en-US');
+    edPut({dwelling:f(n),other_structures:f(n*.2),personal_property:f(n*.5),loss_of_use:f(n*.2),liability:'$500,000',med_pay:'$5,000'});edMsg(`Filled B, C, D, Liability and Med pay from a ${f(n)} dwelling.`,'ok')}}
+// personal home sheet: "Same" next to Wiring updated copies its year and Part / Comp boxes to Plumbing, Heating and Roof
+function homeSame(al){const w=al.querySelector('[name="f_wiring_year"]');if(!w)return;const b=document.createElement('button');b.type='button';b.className='calcBtn';b.textContent='Same';
+  b.title='Copy the wiring year and Part / Comp to plumbing, heating and roof';w.style.paddingRight='50px';w.parentElement.appendChild(b);
+  b.onclick=()=>{const box=n=>$('edBody').querySelector(`.annotationLayer input[type=checkbox][name="${n}"]`),yn=n=>box(n)&&box(n).checked?'Yes':'No',v={};
+    ['plumbing','heating','roof'].forEach(k=>{v[k+'_year']=w.value;v[k+'_part']=yn('wiring_part');v[k+'_comp']=yn('wiring_comp')});edPut(v);edMsg('Copied the wiring year and Part / Comp to plumbing, heating and roof.','ok')}}
 function codeOnly(sel){const o=[...sel.options].filter(x=>x.value);if(!o.length||!o.every(x=>x.text.startsWith(x.value+' ')))return;
   o.forEach(x=>x.dataset.full=x.text);const short=()=>o.forEach(x=>{x.text=x.selected?x.value:x.dataset.full});
   const full=()=>o.forEach(x=>{x.text=x.dataset.full});short();
@@ -1668,6 +1693,8 @@ async function openEditor(f){
         const layer=new pdfjsLib.AnnotationLayer({div:al,page,viewport:vp.clone({dontFlip:true}),accessibilityManager:null,annotationCanvasMap:null});
         await layer.render({annotations:anns,page,viewport:vp.clone({dontFlip:true}),linkService:LINKS,downloadManager:null,renderForms:true,annotationStorage:ed.pdf.annotationStorage,imageResourcesPath:'',enableScripting:false,hasJSActions:false,fieldObjects:null});
         al.querySelectorAll('select').forEach(codeOnly);
+        if(isQuoteSheet(f.name))al.querySelectorAll('select').forEach(typeSearch);
+        if(/ personal home quote sheet\.pdf$/i.test(f.name)){homeCalc(al);homeSame(al)}
         if(/ personal home quote sheet\.pdf$/i.test(f.name))anns.forEach(a=>{const el=edInput(a.id);if(!el||el.tagName==='SELECT')return;
           el.addEventListener('blur',()=>{const x=homeFix(a.fieldName,el.value,edVal);if(x!==el.value){el.value=x;ed.pdf.annotationStorage.setValue(a.id,{value:x})}})});
       }
@@ -1929,7 +1956,7 @@ async function saveEd(reopen){
 }
 $('edSave').onclick=async()=>{const b=$('edSave');b.disabled=true;await saveEd(true);b.disabled=false};
 $('edDl').onclick=async()=>{if(!ed||!ed.bytes)return;try{const blob=await buildEdited();await dl.save({filename:ed.f.name,data:new Uint8Array(await blob.arrayBuffer())})}catch(e){if(e&&e.code!=='declined')edMsg(e.code?errText(e):'Couldn’t download.','err')}};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed').classList.contains('on')){e.stopImmediatePropagation();$('edClose').click()}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed').classList.contains('on')&&!(e.target.classList&&e.target.classList.contains('tsIn'))){e.stopImmediatePropagation();$('edClose').click()}},true);
 
 
 /* ---------- ACORD forms from the lead's quote sheet (same engine as the ACORD Filler) ---------- */
