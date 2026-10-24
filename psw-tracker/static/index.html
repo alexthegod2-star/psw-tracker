@@ -737,7 +737,8 @@ $('soldTgl').onclick=async()=>{if(!(await ensureSaved()))return;const nx=SALE_NE
   try{await leadsCol.doc(cur.id).update(up);Object.assign(cur,up);showMade();toast('Marked '+SALE_TXT[nx].toLowerCase())}catch(e){toast(errText(e))}};
 $('madeTgl').onclick=async()=>{if(!(await ensureSaved()))return;const on=!made(cur);try{await leadsCol.doc(cur.id).update({contactMade:on});cur.contactMade=on;showMade()}catch(e){toast(errText(e))}};
 function fillMeta(){showMade();renderBind();renderLeadTasks();$('lastShow').value=fmtDT(cur&&cur.lastContacted)}
-function openLead(l){
+function openLead(l,keep){
+  const sc=keep?$('dr').scrollTop:0;
   if(curUnsub){curUnsub();curUnsub=null}
   cur=l?{...l}:null;contacts=[];
   FIELDS.forEach(k=>$(k).value=l?(l[k]||''):'');if(!$('txTerm').value)$('txTerm').value='the year'; // Term starts as "the year"
@@ -755,8 +756,8 @@ function openLead(l){
   if(has){
     curUnsub=leadsCol.doc(l.id).collection('contacts').onSnapshot(s=>{contacts=s.docs.map(d=>({id:d.id,...d.data()}));renderLog()},e=>{$('logMsg').className='msg err';$('logMsg').textContent=errText(e)});
   }
-  show(true);setTimeout(()=>$(has?'cNote':'firstName').focus(),220);
-  if(l&&l.id)lockStart('lead','leads/'+l.id,{what:'lead',ui:(on,t)=>lockUi($('dr'),$('ldLockBar'),on,t),freed:()=>{toast('You can edit this lead now');const fr=leads.find(x=>x.id===l.id);if(fr&&$('dr').classList.contains('on'))openLead(fr)}});else lockStop('lead');
+  show(true);$('dr').scrollTop=sc;setTimeout(()=>{$(has?'cNote':'firstName').focus({preventScroll:true});$('dr').scrollTop=sc},220);
+  if(l&&l.id)lockStart('lead','leads/'+l.id,{what:'lead',ui:(on,t)=>lockUi($('dr'),$('ldLockBar'),on,t),freed:()=>{toast('You can edit this lead now');const fr=leads.find(x=>x.id===l.id);if(fr&&$('dr').classList.contains('on'))openLead(fr,true)}});else lockStop('lead');
 }
 ['phone','homePhone','workPhone'].forEach(k=>$(k).addEventListener('blur',()=>$(k).value=fmtPhone($(k).value)));
 $('xDate').addEventListener('blur',()=>$('xDate').value=fmtDate(typedISO($('xDate').value)));
@@ -778,7 +779,7 @@ $('saveBtn').onclick=async()=>{
     if(cur&&cur.id){await leadsCol.doc(cur.id).update(data);Object.assign(cur,data);
       if(pending.length&&assets&&$('keepFile').checked){const pf=pending;pending=[];showKeep();for(const f of pf)await uploadOne(f)}}
     else{data.createdAt=new Date().toISOString();data.files=[];data.lastContacted='';data.howContacted='';if(me)data.createdBy=me;
-      const ref=await leadsCol.add(data);const pf=$('keepFile').checked?pending:[];openLead({id:ref.id,...data});if(assets)for(const f of pf)await uploadOne(f)}
+      const ref=await leadsCol.add(data);const pf=$('keepFile').checked?pending:[];openLead({id:ref.id,...data},true);if(assets)for(const f of pf)await uploadOne(f)}
     $('dTitle').textContent=[data.firstName,data.lastName].filter(Boolean).join(' ')||data.company||'Lead';
     m.className='msg ok';m.textContent='Saved.';toast('Lead saved');
   }catch(e){m.className='msg err';m.textContent=errText(e)}
