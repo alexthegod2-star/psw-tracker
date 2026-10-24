@@ -1854,26 +1854,42 @@ function placeSides(){const pg=$('edBody').querySelector('.annotationLayer')?.pa
 addEventListener('resize',placeSides);new ResizeObserver(placeSides).observe($('edBody'));new MutationObserver(placeSides).observe($('edBody'),{childList:true});
 // com quote sheet: drop any file on the left; what it says goes into the sheet's empty boxes (Claude reads it when it's set up,
 // otherwise the same basic read Quick fill uses). Boxes already filled in are left alone.
+// a scan, or a PDF printed as pictures: its pages as PNG pictures (for Claude), or read with text recognition (no Claude)
+async function pdfPics(bytes,max=5){await loadPdfJs();const doc=await pdfjsLib.getDocument({data:bytes}).promise,out=[];
+  try{for(let i=1;i<=Math.min(doc.numPages,max);i++){const pg=await doc.getPage(i),vp=pg.getViewport({scale:1600/pg.getViewport({scale:1}).width}),cv=document.createElement('canvas');
+    cv.width=vp.width;cv.height=vp.height;const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);await pg.render({canvasContext:cx,viewport:vp}).promise;out.push(cv)}}
+  finally{doc.destroy()}return out}
+async function ocrText(pics,say){const tw=await tess(),out=[];await tw.setParameters({tessedit_pageseg_mode:'3'});
+  try{for(let i=0;i<pics.length;i++){say(`Reading the printing on page ${i+1} of ${pics.length}…`);out.push((await tw.recognize(pics[i])).data.text)}}
+  finally{await tw.setParameters({tessedit_pageseg_mode:'11'})}return out.join('\n')}
+const canvasPng=cv=>new Promise(r=>cv.toBlob(b=>r(b),'image/png'));
+// no Claude: Quick fill's basic read, plus "Label: answer" lines (and a fillable PDF's own boxes) matched by label like the carrier-form box does
+function qsBasic(t){const v={},b=basicRead(t),l=b.lead;Object.assign(v,(b.f&&b.f.quote)||{});const put=(k,x)=>{if(x&&!v[k])v[k]=x};
+  t.split('\n').forEach(ln=>{const mm=/^\s*([^:\n]{2,60}?)\s*[:\-]\s+(\S.*)$/.exec(ln);if(!mm)return;const hit=SUP_GUESS.find(([re])=>re.test(mm[1].replace(/[_.\[\]\d]+/g,' ').trim()));if(!hit)return;
+    const x=mm[2].trim();if(hit[1]==='contact'){const p=x.split(/\s+/);put('contact_first',p[0]);put('contact_last',p.slice(1).join(' '))}else put(hit[1],x)});
+  put('client_name',l.company);put('contact_first',l.firstName);put('contact_last',l.lastName);put('phone',l.phone&&fmtPhone(l.phone));put('email',l.email);return v}
 async function qsTake(f){const m=$('edQsMsg'),say=(t,c='')=>{m.className='msg small'+(c?' '+c:'');m.textContent=t};say(`Reading ${f.name}…`);
-  try{const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let t='',v={};
-    if(isImg){if(!sample||!sLimits||!sLimits.images)return say('Reading pictures needs Claude, which isn’t set up yet. Drop a PDF or text file instead.','err')}
-    else{t=(await fileText(f)).trim();if(!t)return say(`${f.name} has no readable text (it may be a scan). Try a picture of it instead.`,'err')}
+  try{const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name),isPdf=/\.pdf$/i.test(f.name)||f.type==='application/pdf',ai=!!(sample&&sLimits&&sLimits.images);
+    let t='',v={},pics=[],imgs=[],scan=false;
+    if(isImg){if(ai)imgs=[f];else{const im=await createImageBitmap(f),cv=document.createElement('canvas');cv.width=im.width;cv.height=im.height;cv.getContext('2d').drawImage(im,0,0);pics=[cv]}}
+    else{t=(await fileText(f)).trim();
+      if(!t&&isPdf){scan=true;say(`${f.name} has no typed text (it may be a scan), so reading the page pictures instead…`);pics=await pdfPics(new Uint8Array(await f.arrayBuffer()));
+        if(ai)imgs=await Promise.all(pics.map(canvasPng))}
+      else if(!t)return say(`${f.name} has no readable text.`,'err')}
+    if(pics.length&&!imgs.length){scan=true;t=(await ocrText(pics,say)).trim();if(!t)return say(`No words could be read in ${f.name}.`,'err')}
     if(Object.keys(lastFields).some(k=>/^f_/.test(k))){for(const [k,x] of Object.entries(lastFields))if(/^f_/.test(k))v[k.slice(2)]=x}  // another PSW quote sheet: copy it straight over
     else if(sample){say('Claude is reading it…');
-      const o=await sample.json(`You are filling in an insurance agency's commercial quote sheet from ${isImg?'the attached picture':`the content of a file named "${f.name}" below`}. Reply with only a JSON object using these keys, each a string, and leave out anything not stated (never guess):
+      try{const o=await sample.json(`You are filling in an insurance agency's commercial quote sheet from ${imgs.length?`the attached picture${imgs.length>1?'s':''} of a file named "${f.name}"`:`the content of a file named "${f.name}" below`}. Reply with only a JSON object using these keys, each a string, and leave out anything not stated (never guess):
 ${QS_KEYS.map(([k,l])=>k+' = '+l).join('\n')}
-The customer is the business wanting insurance, not the agent, carrier or sender's signature. Dates as MM/DD/YYYY.${t?'\nContent:\n"""\n'+t.slice(0,40000)+'\n"""':''}`,{modelTier:'quick',...(isImg?{images:f}:{})});
-      if(o&&typeof o==='object')v=o}
-    else{const b=basicRead(t),q=(b.f&&b.f.quote)||{},l=b.lead;Object.assign(v,q);
-      const put=(k,x)=>{if(x&&!v[k])v[k]=x};
-      // "Label: answer" lines (and a fillable PDF's own boxes) matched by label, like the carrier-form box does
-      t.split('\n').forEach(ln=>{const mm=/^\s*([^:\n]{2,60}?)\s*[:\-]\s+(\S.*)$/.exec(ln);if(!mm)return;const hit=SUP_GUESS.find(([re])=>re.test(mm[1].replace(/[_.\[\]\d]+/g,' ').trim()));if(!hit)return;
-        const x=mm[2].trim();if(hit[1]==='contact'){const p=x.split(/\s+/);put('contact_first',p[0]);put('contact_last',p.slice(1).join(' '))}else put(hit[1],x)});put('client_name',l.company);put('contact_first',l.firstName);put('contact_last',l.lastName);put('phone',l.phone&&fmtPhone(l.phone));put('email',l.email)}
+The customer is the business wanting insurance, not the agent, carrier or sender's signature. Dates as MM/DD/YYYY.${t?'\nContent:\n"""\n'+t.slice(0,40000)+'\n"""':''}`,{modelTier:'quick',...(imgs.length?{images:imgs}:{})});
+        if(o&&typeof o==='object')v=o}
+      catch(e){if(!t&&!pics.length)throw e;if(!t)t=(await ocrText(pics,say)).trim();v=qsBasic(t)}}
+    else v=qsBasic(t);
     lastFields={};const L=document.querySelector('#edBody .annotationLayer'),keep={};
     for(const [k,x] of Object.entries(v)){const s=x==null?'':String(x).trim();if(!s||!QS_KEYS.some(([q])=>q===k))continue;
-      const el=L&&L.querySelector(`[name="f_${k}"]`);if(el&&el.type!=='radio'&&el.type!=='checkbox'&&String(el.value||'').trim())continue;keep[k]=s}
-    const n=edPut(keep);n?say(`Filled ${n} box${n===1?'':'es'} from ${f.name}. Check them, then hit Save to lead.`,'ok'):say(`Nothing new in ${f.name} for this sheet.`,'err')}
-  catch(e){say(`${f.name}: ${sampleErr&&e.code?sampleErr(e.code):'couldn’t be read ('+(e.message||'error')+')'}`,'err')}}
+      const el=L&&L.querySelector(`[name="f_${k}"]`);if(el&&el.type!=='radio'&&el.type!=='checkbox'&&String(el.value||'').trim())continue;keep[k]=k==='phone'?fmtPhone(s):s}
+    const n=edPut(keep);n?say(`Filled ${n} box${n===1?'':'es'} from ${f.name}. ${scan&&!imgs.length?'It was read from a scan, so check every box closely':'Check them'}, then hit Save to lead.`,'ok'):say(`Nothing new in ${f.name} for this sheet.`,'err')}
+  catch(e){say(`${f.name}: ${e.code?sampleErr(e.code):'couldn’t be read ('+(e.message||'error')+')'}`,'err')}}
 {const d=$('edQsDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)qsTake(f)});
   $('edQsIn').onchange=()=>{const f=$('edQsIn').files[0];$('edQsIn').value='';if(f)qsTake(f)}}
