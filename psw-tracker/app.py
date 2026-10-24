@@ -436,7 +436,7 @@ def may_delete(u):
 
 
 # ---------- company/GA logins ----------
-# siteLinks records hold each company's and GA's portal user name and password; only owners and people set to Yes see them.
+# siteLinks records hold each company's and GA's portal user name and password; everyone sees them, only owners and people set to Yes change them.
 SITE_COL = "siteLinks"
 SECRET_KEYS = ("user", "pass")
 
@@ -455,12 +455,17 @@ def can_pay(u):
 
 
 def hidden_keys(u, col):
-    """Fields of records in collection `col` that this person may not see or change."""
-    if col == SITE_COL and not can_secrets(u):
-        return SECRET_KEYS
+    """Fields of records in collection `col` that this person may not see (or change)."""
     if col == PAY_COL and not can_pay(u):
         return PAY_KEYS
     return ()
+
+
+def locked_keys(u, col):
+    """Fields of records in collection `col` that this person may not change."""
+    if col == SITE_COL and not can_secrets(u):
+        return SECRET_KEYS
+    return hidden_keys(u, col)
 
 
 def hide_keys(data, keys):
@@ -529,7 +534,7 @@ async def col_add(request: Request):
     path = body.get("path", "")
     guard(request, u, split_path(path, "col"))
     data = body.get("data")
-    data = clean_data(hide_keys(data, hidden_keys(u, path)))
+    data = clean_data(hide_keys(data, locked_keys(u, path)))
     i = new_id()
     with db() as c:
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
@@ -558,9 +563,9 @@ async def doc_set(request: Request):
     segs = split_path(path, "doc")
     guard(request, u, segs)
     data = body.get("data")
-    keys = hidden_keys(u, "/".join(segs[:-1])) if isinstance(data, dict) else ()
+    keys = locked_keys(u, "/".join(segs[:-1])) if isinstance(data, dict) else ()
     with db() as c:
-        if keys:  # someone who can't see these fields can't change them either, so keep what is there
+        if keys:  # fields this person can't change keep what is there
             old = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
             data = {**hide_keys(data, keys), **{k: v for k, v in (json.loads(old["data"]) if old else {}).items() if k in keys}}
         data = clean_data(data)
@@ -580,7 +585,7 @@ async def doc_update(request: Request):
     patch = body.get("data")
     if not isinstance(patch, dict):
         err(400, "bad_data")
-    patch = hide_keys(patch, hidden_keys(u, path.rsplit("/", 1)[0]))
+    patch = hide_keys(patch, locked_keys(u, path.rsplit("/", 1)[0]))
     with db() as c:
         r = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
         if not r:
