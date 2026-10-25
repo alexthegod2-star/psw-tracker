@@ -52,6 +52,10 @@ tbody tr:last-child td{border-bottom:none}
 .mbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(380px,100%);box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .mbox h3{margin:0 0 6px;font-size:18px}.mbox p{margin:0 0 16px;color:var(--mute)}
 .mbox .row{justify-content:flex-end}
+.finT{border-collapse:collapse;font-size:13px;min-width:1150px;width:100%}.finT td,.finT th{border:1px solid var(--line);padding:0;text-align:right;white-space:nowrap}.finT th{padding:4px 6px;background:var(--drbg);text-align:left}.finT th.mo{text-align:center}
+.finT input{border:0;border-radius:0;background:transparent;width:100%;min-width:62px;padding:4px 6px;font:inherit;text-align:right;box-sizing:border-box}.finT input.nm{text-align:left;min-width:120px}.finT input.du{min-width:84px}
+.finT .tot td{font-weight:700;padding:4px 6px;border-top:2px solid var(--ink,#222)}.finT .tot td:first-child{text-align:left}.finT .yr{padding:4px 6px;font-weight:600}.finT .add td{border:0;text-align:left;padding:4px 0 10px}
+.finT .x{border:0;background:none;color:var(--mute);padding:0 6px;min-width:0;cursor:pointer}.finT .x:hover{color:#c0392b}.finT .neg{color:#c0392b}
 button.delrow{padding:3px 8px;font-size:12px}
 #contactSec .grid3{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:560px){#contactSec .grid3{grid-template-columns:1fr 1fr}}
 #contactSec button[data-q].done{background:var(--ok);border-color:var(--ok)}
@@ -177,7 +181,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="brand banner"><div><h1 class="sr-only">Pacific Southwest Insurance Services Database</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <div class="hdrbtns"><button class="pri" id="newBtn">+ New lead</button></div>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button></div></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button><button type="button" id="finBtn" hidden>Alex Finance Personal</button></div></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -464,6 +468,12 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="cosCols"><div id="cosColCo"><div class="row" style="justify-content:space-between;align-items:center"><h4>Companies</h4><button type="button" class="pri" id="cosAddCo">+ Add company</button></div><div class="cosList" id="cosCo"></div></div>
   <div id="cosColGa"><div class="row" style="justify-content:space-between;align-items:center"><h4>General agents</h4><button type="button" class="pri" id="cosAddGa">+ Add GA</button></div><div class="cosList" id="cosGa"></div></div></div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="cosClose" type="button">Close</button></div>
+</div></div>
+<div class="mbg" id="finDlg" role="dialog" aria-modal="true" aria-labelledby="finTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="finTitleH" style="margin:0">Alex Finance Personal</h3><div class="row" style="align-items:center"><button type="button" id="finPrev" title="Previous year">&lsaquo;</button><b id="finYr" style="min-width:48px;text-align:center"></b><button type="button" id="finNext" title="Next year">&rsaquo;</button></div></div>
+  <div class="small" style="margin:6px 0 10px">Only you can see this. Type amounts in the month boxes; the totals add up by month and for the year.</div>
+  <div style="overflow-x:auto"><table class="finT" id="finT"></table></div>
+  <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px"><span class="msg" id="finMsg"></span><div class="row"><button class="pri" id="finSave" type="button">Save</button><button id="finClose" type="button">Close</button></div></div>
 </div></div>
 <div class="mbg" id="admDlg" role="dialog" aria-modal="true" aria-labelledby="admTitleH"><div class="mbox adm" style="width:96vw;max-height:90vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="admTitleH" style="margin:0">Admin</h3><div class="row"><button class="pri" id="admCos" type="button">Companies &amp; GAs</button><button class="pri" id="admAdd" type="button">+ Add user</button></div></div>
@@ -2564,6 +2574,41 @@ const coWebBtn=()=>{$('coWeb').disabled=!$('co_url').value.trim()};
 $('co_url').addEventListener('input',coWebBtn);
 $('coWeb').onclick=()=>{const u=siteFix($('co_url').value);if(u)window.open(u,'_blank','noopener')};
 // My login: each person's own user name and password for a company or GA, kept under private/<username>/ so nobody else can read it
+// Alex Finance Personal: yearly income/expense sheet saved in private/<username>/finance/<year>, so only that person can read it.
+const FIN_MO=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],FIN_SEC=[['income','INCOME','Due'],['expenses','EXPENSES','Next Due Date'],['annual','ANNUAL EXPENSES','Next Due Date']];
+let finCol=null,finYear=new Date().getFullYear(),fin=null,finDirty=false;
+const finRow=([name,due])=>({name,due,m:Array(12).fill('')});
+const finTpl=()=>({income:[['Justin Rent','$1,000'],['John Rent','$1,000'],['Adam','$950'],['Jerry','$850'],['Alex PSW',''],['ALEX BF',''],['OTHER','']].map(finRow),
+  expenses:[['MORTGAGE','11/1/2026'],['DWP',''],['SO CAL GAS','11/1/2026'],['US Bank CC','11/1/2026'],['Visa CC','11/1/2026']].map(finRow),annual:[['MARC 450',''],['VEH REG','12/1/2026']].map(finRow)});
+const finNum=v=>{const n=parseFloat(String(v||'').replace(/[^\d.-]/g,''));return isFinite(n)?n:0};
+const finFmt=n=>(n<0?'-$':'$')+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:Math.round(n*100)%100?2:0,maximumFractionDigits:2});
+function finCalc(){const sum=(rows,i)=>rows.reduce((a,r)=>a+finNum(r.m[i]),0),inc=FIN_MO.map((_,i)=>sum(fin.income,i)),exp=FIN_MO.map((_,i)=>sum(fin.expenses,i)+sum(fin.annual,i));
+  const put=(id,arr)=>{const tds=$('finT').querySelectorAll('#'+id+' td');arr.concat(arr.reduce((a,b)=>a+b,0)).forEach((n,i)=>{const td=tds[i+2];td.textContent=finFmt(n);td.classList.toggle('neg',n<0)})};
+  put('finTI',inc);put('finTE',exp);put('finTN',inc.map((n,i)=>n-exp[i]));
+  $('finT').querySelectorAll('tr[data-s]').forEach(tr=>{const r=fin[tr.dataset.s][+tr.dataset.i];tr.querySelector('.yr').textContent=finFmt(r.m.reduce((a,v)=>a+finNum(v),0))})}
+function finRender(){$('finYr').textContent=finYear;const tot=(id,label)=>`<tr class="tot" id="${id}"><td colspan="2">${label}</td><td></td>${FIN_MO.map(()=>'<td></td>').join('')}<td></td></tr>`;let h='';
+  FIN_SEC.forEach(([k,label,due])=>{h+=`<tr><th colspan="2">${label}</th><th>${due}</th>${FIN_MO.map(m=>`<th class="mo">${m}</th>`).join('')}<th style="text-align:right">${finYear}</th></tr>`;
+    fin[k].forEach((r,i)=>{h+=`<tr data-s="${k}" data-i="${i}"><td style="width:1px"><button type="button" class="x" data-fdel title="Delete this row">&times;</button></td><td><input class="nm" data-f="name" value="${esc(r.name||'')}"></td><td><input class="du" data-f="due" value="${esc(r.due||'')}"></td>${r.m.map((v,j)=>`<td><input data-m="${j}" value="${esc(v||'')}" inputmode="decimal"></td>`).join('')}<td class="yr"></td></tr>`});
+    h+=`<tr class="add"><td colspan="16"><button type="button" data-fadd="${k}">+ Add row</button></td></tr>`;if(k==='income')h+=tot('finTI','TOTAL INCOME')+'<tr class="add"><td colspan="16">&nbsp;</td></tr>'});
+  h+=tot('finTE','TOTAL EXPENSES')+tot('finTN','INCOME MINUS EXPENSES');$('finT').innerHTML=h;finCalc()}
+async function finLoad(y){finYear=y;$('finMsg').textContent='';fin=null;finDirty=false;
+  try{const d=await finCol.doc(String(y)).get();if(d.exists)fin=d.data();else{const p=await finCol.doc(String(y-1)).get();
+    if(p.exists){const o=p.data();fin={};FIN_SEC.forEach(([k])=>fin[k]=(o[k]||[]).map(r=>finRow([r.name,r.due])))}}}catch(e){$('finMsg').className='msg err';$('finMsg').textContent=errText(e)}
+  if(!fin)fin=finTpl();FIN_SEC.forEach(([k])=>{fin[k]=(fin[k]||[]).map(r=>({name:r.name||'',due:r.due||'',m:FIN_MO.map((_,i)=>(r.m||[])[i]||'')}))});finRender()}
+async function finSave(quiet){if(!fin||!finDirty)return true;try{await finCol.doc(String(finYear)).set(fin);finDirty=false;if(!quiet){$('finMsg').className='msg ok';$('finMsg').textContent='Saved'}return true}
+  catch(e){$('finMsg').className='msg err';$('finMsg').textContent=errText(e);return false}}
+$('finBtn').onclick=async()=>{if(!finCol)return;$('finDlg').classList.add('on');await finLoad(new Date().getFullYear())};
+const finClose=async()=>{if(await finSave(true))$('finDlg').classList.remove('on')};
+$('finClose').onclick=finClose;$('finSave').onclick=()=>finSave(false);
+$('finPrev').onclick=async()=>{if(await finSave(true))finLoad(finYear-1)};$('finNext').onclick=async()=>{if(await finSave(true))finLoad(finYear+1)};
+$('finT').addEventListener('input',e=>{const tr=e.target.closest('tr[data-s]');if(!tr)return;const r=fin[tr.dataset.s][+tr.dataset.i];
+  if(e.target.dataset.m!=null)r.m[+e.target.dataset.m]=e.target.value;else r[e.target.dataset.f]=e.target.value;finDirty=true;$('finMsg').textContent='';finCalc()});
+$('finT').addEventListener('focusout',e=>{const t=e.target;if(t.dataset.m==null||!t.value.trim()||!/\d/.test(t.value))return;t.value=finFmt(finNum(t.value));const tr=t.closest('tr[data-s]');fin[tr.dataset.s][+tr.dataset.i].m[+t.dataset.m]=t.value});
+$('finT').addEventListener('click',async e=>{const a=e.target.closest('[data-fadd]');if(a){fin[a.dataset.fadd].push(finRow(['','']));finDirty=true;finRender();const rs=$('finT').querySelectorAll(`tr[data-s="${a.dataset.fadd}"] input.nm`);rs[rs.length-1].focus();return}
+  const d=e.target.closest('[data-fdel]');if(!d)return;const tr=d.closest('tr[data-s]'),rows=fin[tr.dataset.s],i=+tr.dataset.i;
+  if(!await sure(`Delete the ${rows[i].name?'"'+rows[i].name+'"':'blank'} row and its amounts for ${finYear}?`))return;rows.splice(i,1);finDirty=true;finRender()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('finDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();finClose()}},true);
+fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u||!u.owner||!u.username||!db)return;finCol=db.collection('private').doc(u.username).collection('finance');$('finBtn').hidden=false}).catch(()=>{});
 let myLogins=new Map(),myLoginCol=null;
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u||!u.username)return;myLoginCol=db.collection('private').doc(u.username).collection('siteLogins');
   myLoginCol.onSnapshot(s=>{myLogins=new Map(s.docs.map(d=>{const x={id:d.id,...d.data()};return [x.key,x]}))},()=>{})}).catch(()=>{});
