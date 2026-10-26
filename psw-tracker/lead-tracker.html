@@ -371,12 +371,11 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
 <div class="mbg" id="mcDlg" role="dialog" aria-modal="true" aria-labelledby="mcTitleH"><div class="mbox" id="mcBox">
-  <div class="row" style="align-items:center"><h3 id="mcTitleH" style="margin:0 auto 0 0">Edit contacts</h3><button class="pri" id="mcSaveTop">Save</button></div>
+  <div class="row" style="align-items:center"><h3 id="mcTitleH" style="margin:0 auto 0 0">Edit contacts</h3><button type="button" id="mcAdd">+ Add contact</button><button class="pri" id="mcSaveTop">Save</button></div>
   <div class="small" style="margin:4px 0 10px">The email is where each button sends to. Hover over a button to see these.</div>
   <div class="mcRow mcHd"><span>Button</span><span>Email</span><span>Office phone + ext</span><span>Cell phone</span><span></span></div>
   <div id="mcList"></div>
-  <div class="row" style="justify-content:flex-end;margin-top:4px"><button type="button" id="mcAdd">+ Add contact</button></div>
-  <div class="row" style="justify-content:flex-end;margin-top:10px"><button id="mcCancel">Cancel</button><button class="pri" id="mcSave">Save</button></div>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button id="mcCancel">Cancel</button><button class="pri" id="mcSave">Save</button></div>
 </div></div>
 <div class="mbg" id="taskDlg" role="dialog" aria-modal="true" aria-labelledby="taskTitleH"><div class="mbox" id="taskBox">
   <div class="row" style="align-items:center"><h3 id="taskTitleH" style="margin:0 auto 0 0">New task</h3><button class="pri" id="tSaveTop">Save task</button></div>
@@ -1577,8 +1576,8 @@ function mcRowHtml(r){const c=mcData[mcId(r)]||{},add=!!(r.id&&c.added);
   return `<div class="mcRow" data-id="${esc(mcId(r))}"${add?' data-added="1"':''}>${add?mcInput('label',r.label,'Name/COMPANY','text'):`<b title="${esc(r.label)}">${esc(r.label)}</b>`}${mcInput('email',mailTo(r),'Email','text',r.label)}${mcInput('office',c.office&&fmtPhone(c.office),'Office phone + ext','tel',r.label)}${mcInput('cell',c.cell&&fmtPhone(c.cell),'Cell phone','tel',r.label)}${add?'<button type="button" class="mcDel" title="Remove this contact">✕</button>':'<span></span>'}</div>`}
 function openContacts(){$('mcList').innerHTML=mailList.map(mcRowHtml).join('');$('mcDlg').classList.add('on')}
 function closeContacts(){$('mcDlg').classList.remove('on')}
-$('mcAdd').onclick=()=>{$('mcList').insertAdjacentHTML('beforeend',`<div class="mcRow" data-id="" data-added="1" data-new="1">${mcInput('label','','Name/COMPANY','text')}${mcInput('email','','Email','text')}${mcInput('office','','Office phone + ext','tel')}${mcInput('cell','','Cell phone','tel')}<button type="button" class="mcDel" title="Remove this contact">✕</button></div>`);
-  const row=$('mcList').lastElementChild;row.scrollIntoView({block:'nearest'});row.querySelector('input').focus()};
+$('mcAdd').onclick=()=>{$('mcList').insertAdjacentHTML('afterbegin',`<div class="mcRow" data-id="" data-added="1" data-new="1">${mcInput('label','','Name/COMPANY','text')}${mcInput('email','','Email','text')}${mcInput('office','','Office phone + ext','tel')}${mcInput('cell','','Cell phone','tel')}<button type="button" class="mcDel" title="Remove this contact">✕</button></div>`);
+  const row=$('mcList').firstElementChild;row.scrollIntoView({block:'nearest'});row.querySelector('input').focus()};
 $('mcList').addEventListener('click',e=>{const d=e.target.closest('.mcDel');if(!d)return;const row=d.closest('.mcRow');if(row.dataset.new)return row.remove();
   if(confirm(`Remove ${row.querySelector('[data-k=label]').value||'this contact'}?`)){row.dataset.del='1';row.style.display='none'}});
 async function saveContacts(){
