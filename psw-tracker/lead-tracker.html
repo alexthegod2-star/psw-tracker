@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#mailBtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}#mailBtns>*{width:100%;margin:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns>[data-mail=cust]{grid-column-start:1}
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#mailBtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}#mailBtns>*{width:100%;margin:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns>[data-mail=cust]{grid-column-start:1}#mailBtns>.mailItem{display:flex;align-items:center;gap:6px;overflow:visible;padding:0}#mailBtns .mailItem .btn{flex:1;min-width:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns .mailSent{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:#1f8a4c;cursor:pointer}#mailBtns .btn.sent{background:#1f8a4c;border-color:#1f8a4c}
 </style></head><body>
 <title>Pacific Southwest Insurance Services Database</title>
 <style>
@@ -121,7 +121,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .bmon{margin:0 0 18px}.bmh{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;margin:0 0 6px}.bmh h3{margin:0;font-size:16px}.bmh .sp{flex:1}.bmh button{padding:4px 12px}
 .bwrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
 .btab{border-collapse:collapse;width:100%;min-width:1100px;font-size:13px;font-variant-numeric:tabular-nums}.btab th{position:static;cursor:default;white-space:nowrap;padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}.btab td{padding:7px 5px;white-space:nowrap}
-.btab .n{text-align:right}.btab .c{text-align:center}.btab .nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns>[data-mail=cust]{grid-column-start:1}.btab th.nm{font-weight:inherit}.btab .num{color:var(--mute);width:28px}
+.btab .n{text-align:right}.btab .c{text-align:center}.btab .nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}.btab th.nm{font-weight:inherit}.btab .num{color:var(--mute);width:28px}
 .btab .calc{color:var(--mute)}.btab .tm{font-weight:700}.btab .neg{color:var(--bad)}.btab td.up{text-transform:uppercase;font-size:12px}
 .btab tfoot td{border-top:2px solid var(--line);border-bottom:none;font-weight:700;background:var(--soft)}.btab tfoot tr{cursor:default}
 .btab th:nth-child(2),.btab td:nth-child(2){position:sticky;left:0;background:var(--card);z-index:1}.btab tbody tr:hover td:nth-child(2){background:var(--soft)}.btab tfoot td:nth-child(2){background:var(--soft)}
@@ -1555,8 +1555,17 @@ function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
   const fs=(cur&&cur.files)||[];
   $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
-  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
+  const sent=(cur&&cur.mailSent)||{};
+  // each carrier button has a check box: ticked means the email went out, and the button turns green
+  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>{const d=sent[r.to];return `<div class="mailItem"><input type="checkbox" class="mailSent" data-sent="${esc(r.to)}"${d?' checked':''} aria-label="Sent to ${esc(r.label)}" title="${d?'Sent '+esc(fmtDate(String(d).slice(0,10))):'Tick when you have sent this email'}"><a class="btn pri${d?' sent':''}" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">${esc(r.label)}</a></div>`}).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
 }
+// marks (or unmarks) an address as emailed on this lead; clicking a carrier button marks it too
+async function setMailSent(to,on){
+  if(isLocked('lead')){renderMail();return toast('This lead is view-only right now.')}
+  if(!(await ensureSaved())){renderMail();return}
+  const next={...(cur.mailSent||{})};if(!!next[to]===on)return renderMail();if(on)next[to]=new Date().toISOString();else delete next[to];
+  try{await leadsCol.doc(cur.id).update({mailSent:next});cur.mailSent=next}catch(err){toast(errText(err))}renderMail()}
+$('mailBtns').addEventListener('change',e=>{const box=e.target.closest('.mailSent');if(box)setMailSent(box.dataset.sent,box.checked)});
 $('mailPick').addEventListener('change',e=>{const id=e.target.dataset.mf;if(!id)return;e.target.checked?mailSel.add(id):mailSel.delete(id)});
 function mailClient(){const v=k=>$(k).value.trim(),nm=[v('firstName'),v('lastName')].filter(Boolean).join(' ');return {nm,co:v('company')}}
 function copyText(t){
@@ -1568,6 +1577,7 @@ $('mailBtns').addEventListener('click',async e=>{
   const cust=a.dataset.mail==='cust',{nm,co}=mailClient(),who=co||nm||'New client';
   if(cust&&!$('email').value.trim()){e.preventDefault();const m=$('mailMsg');m.className='msg err';m.textContent='Add the customer’s email in Lead info first.';return}
   const r=cust?{label:$('firstName').value.trim(),to:$('email').value.trim()}:MAIL_TO[+a.dataset.mail];
+  if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.to]))setTimeout(()=>setMailSent(r.to,true),0); // after the email opens
   const files=((cur&&cur.files)||[]).filter(f=>mailSel.has(f.id));
   const first=r.label.split('/')[0];
   const subject=cust?`Quote information - ${who}`:`QUOTE ${co||nm}`.trim();
