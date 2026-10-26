@@ -370,7 +370,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
 <div class="mbg" id="taskDlg" role="dialog" aria-modal="true" aria-labelledby="taskTitleH"><div class="mbox" id="taskBox">
-  <h3 id="taskTitleH">New task</h3>
+  <div class="row" style="align-items:center"><h3 id="taskTitleH" style="margin:0 auto 0 0">New task</h3><button class="pri" id="tSaveTop">Save task</button></div>
   <div class="grid">
     <div class="full"><label for="tTitle">Task</label><input id="tTitle" placeholder="e.g. Send GL quote to carrier"></div>
     <div><label for="tFirst">First name</label><input id="tFirst"></div>
@@ -2507,6 +2507,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('taskDlg').classL
 // due date types as MM/DD/YYYY: slashes go in as you type the digits
 $('tDue').addEventListener('input',e=>{const el=e.target;if(e.inputType&&e.inputType.startsWith('delete'))return;const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d});
 $('tDue').addEventListener('blur',()=>{const iso=typedISO($('tDue').value);if(/^\d{4}-\d\d-\d\d$/.test(iso))$('tDue').value=fmtDate(iso)});
+$('tSaveTop').onclick=()=>$('tSave').click(); // top copy of the bottom Save task button
 $('tTitle').addEventListener('keydown',e=>{if(e.key==='Enter')$('tSave').click()});
 $('tSave').onclick=async()=>{const m=$('taskMsg'),title=$('tTitle').value.trim();if(!title){m.className='msg err';m.textContent='Give the task a name.';$('tTitle').focus();return}
   const raw=$('tDue').value.trim(),iso=raw?typedISO(raw):'';if(raw&&!/^\d{4}-\d\d-\d\d$/.test(iso)){m.className='msg err';m.textContent='Type the due date as MM/DD/YYYY.';$('tDue').focus();return}
