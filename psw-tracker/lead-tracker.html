@@ -209,7 +209,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th style="width:44px">Done</th><th>Task</th><th>First</th><th>Last</th><th>Company</th><th>Lead</th><th>Assigned to</th><th>Due</th><th>Priority</th><th>Notes</th></tr></thead>
+        <thead><tr><th style="width:44px">Done</th><th>Task</th><th data-tk="firstName" class="tsort">First</th><th data-tk="lastName" class="tsort">Last</th><th>Company</th><th>Lead</th><th>Assigned to</th><th data-tk="due" class="tsort">Due</th><th data-tk="priority" class="tsort">Priority</th><th>Notes</th></tr></thead>
         <tbody id="ttb"></tbody>
       </table>
       <div class="empty" id="tempty" hidden></div>
@@ -688,7 +688,7 @@ function render(){
   else $('empty').innerHTML='<b>No leads yet</b>Click “+ New lead” to add your first one.';
   $('tb').innerHTML=rows.map(l=>`<tr data-id="${esc(l.id)}"><td>${esc(fmtDate(l.leadDate))}</td><td style="white-space:nowrap">${dot(l)}${l.sold===true||l.dead===true?'':`<span class="small">${made(l)?'Contacted':'No contact'}</span>`}</td><td>${esc(l.assignedTo)}</td><td>${esc(l.firstName)}</td><td>${esc(l.lastName)}</td><td>${esc(l.company)}</td><td>${esc(fmtPhone(l.phone))}</td><td>${esc(l.email)}</td><td>${l.leadType?`<span class="chip">${esc(l.leadType)}</span>`:''}</td><td>${esc(fmtDT(l.lastContacted))}</td><td>${esc(fmtDate(l.xDate))}</td><td>${esc(l.howContacted)}</td><td>${(l.files||[]).length||''}</td><td style="text-align:right"><button class="danger delrow" data-del-lead="${esc(l.id)}">Delete</button></td></tr>`).join('');
   $('cards').innerHTML=rows.map(l=>`<div class="lc" data-id="${esc(l.id)}"><button class="danger delrow" style="float:right" data-del-lead="${esc(l.id)}">Delete</button><div class="t">${dot(l)}${esc([l.firstName,l.lastName].filter(Boolean).join(' ')||'(no name)')}${l.company?' · '+esc(l.company):''}</div><div class="m">${esc(fmtDate(l.leadDate))}${l.assignedTo?' · '+esc(l.assignedTo):''}${l.leadType?' · '+esc(l.leadType):''}</div><div class="m">${l.lastContacted?'Last contact '+esc(fmtDT(l.lastContacted))+' ('+esc(l.howContacted)+')':'Not contacted yet'}${l.xDate?' · X date '+esc(fmtDate(l.xDate)):''}</div></div>`).join('');
-  document.querySelectorAll('th').forEach(th=>th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.k===sortK?(sortDir>0?' ▲':' ▼'):''));
+  document.querySelector('thead').querySelectorAll('th').forEach(th=>th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.k===sortK?(sortDir>0?' ▲':' ▼'):''));
 }
 ['q','fType','fAssign'].forEach(id=>$(id).addEventListener('input',render));
 document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=/Date|Contacted|nfiles|status/.test(k)?-1:1}render()});
@@ -2438,13 +2438,18 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
  $('admRows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('.admEm'))e.target.blur()});
  $('admCopy').onclick=()=>{$('admLink').select();(navigator.clipboard?navigator.clipboard.writeText($('admLink').value):Promise.reject()).then(()=>toast('Link copied'),()=>document.execCommand('copy'))};
 }
+// click First, Last, Due or Priority in the Tasks header to sort by it (click again to flip); open tasks stay above done ones, blanks go last
+let tSortK='',tSortDir=1;
+function tCmp(a,b){const k=tSortK,v=t=>k==='priority'?(PRI_ORDER[t.priority]??1):String(t[k]||'').trim().toLowerCase(),va=v(a),vb=v(b);
+  if(k!=='priority'&&!va!==!vb)return va?-1:1;return va<vb?-tSortDir:va>vb?tSortDir:0}
 function renderTasks(){
   const open=tasks.filter(t=>!t.done).length;$('taskCount').textContent=open;renderMyTasks();renderPpTasks();renderClTasks();
   if(view==='tasks')$('count').textContent=tasks.length?`${open} open task${open===1?'':'s'}, ${tasks.length-open} done`:'No tasks yet';
   const agents=[...new Set([...TASK_AGENTS,...tasks.map(t=>(t.assignedTo||'').trim()).filter(Boolean)])];opts($('tfAssign'),agents,'Everyone');
   const q=$('tq').value.trim().toLowerCase(),fa=$('tfAssign').value,st=$('tfStatus').value;
   const rows=tasks.filter(t=>{if(st==='open'&&t.done)return false;if(st==='done'&&!t.done)return false;if(fa&&t.assignedTo!==fa)return false;
-    if(!q)return true;const l=leads.find(x=>x.id===t.leadId);return [t.title,t.notes,t.assignedTo,t.firstName,t.lastName,t.company,leadName(l)].join(' ').toLowerCase().includes(q)}).sort(taskSort);
+    if(!q)return true;const l=leads.find(x=>x.id===t.leadId);return [t.title,t.notes,t.assignedTo,t.firstName,t.lastName,t.company,leadName(l)].join(' ').toLowerCase().includes(q)}).sort((a,b)=>tSortK&&((!!a.done-!!b.done)||tCmp(a,b))||taskSort(a,b));
+  document.querySelectorAll('th[data-tk]').forEach(th=>{th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.tk===tSortK?(tSortDir>0?' ▲':' ▼'):'')});
   const lk=t=>{const l=t.leadId&&leads.find(x=>x.id===t.leadId);return l?`<a class="ln" data-open-lead="${esc(l.id)}">${esc(leadName(l))}</a>`:''};
   const pri=t=>t.priority&&t.priority!=='Normal'?`<span class="chip pri-${esc(t.priority)}">${esc(t.priority)}</span>`:'<span class="small">Normal</span>';
   $('ttb').innerHTML=rows.map(t=>`<tr data-task="${esc(t.id)}" class="${t.done?'isdone':''}"><td><input type="checkbox" class="tdone" data-done="${esc(t.id)}"${t.done?' checked':''} aria-label="Done"></td><td class="tt">${esc(t.title||'(untitled)')}</td><td>${esc(t.firstName)}</td><td>${esc(t.lastName)}</td><td>${esc(t.company)}</td><td>${lk(t)}</td><td>${esc(t.assignedTo)}</td><td class="${dueCls(t)}">${esc(dueTxt(t))}</td><td>${pri(t)}</td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.notes)}</td></tr>`).join('');
@@ -2452,6 +2457,7 @@ function renderTasks(){
   const te=$('tempty');te.hidden=rows.length>0;te.innerHTML=tasks.length?'<b>No matching tasks</b>Try a different filter.':'<b>No tasks yet</b>Click “+ New task” to add one, or add one from a lead.';
 }
 ['tq','tfAssign','tfStatus'].forEach(id=>$(id).addEventListener('input',renderTasks));
+$('ttb').closest('table').querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.tk;if(!k)return;if(k===tSortK)tSortDir*=-1;else{tSortK=k;tSortDir=1}renderTasks()});
 async function setDone(id,on){const t=tasks.find(x=>x.id===id);if(!t)return;try{await tasksCol.doc(id).update({done:on,doneAt:on?new Date().toISOString():''});if(on)toast('Task done')}catch(e){toast(errText(e));renderTasks();renderLeadTasks()}}
 const onTaskClick=e=>{const ol=e.target.closest('[data-open-lead]');if(ol){e.stopPropagation();const l=leads.find(x=>x.id===ol.dataset.openLead);if(l)openLead(l);return}
   if(e.target.closest('[data-done]'))return;const r=e.target.closest('[data-task]');if(r)openTask(tasks.find(t=>t.id===r.dataset.task))};
