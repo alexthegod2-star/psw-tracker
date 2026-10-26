@@ -167,7 +167,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .annotationLayer section{position:absolute;text-align:initial;pointer-events:auto;box-sizing:border-box;transform-origin:0 0}
 .annotationLayer .linkAnnotation>a{position:absolute;inset:0}
 .annotationLayer .textWidgetAnnotation :is(input,textarea),.annotationLayer .choiceWidgetAnnotation select{background:rgba(0,54,255,.10)!important;border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px;vertical-align:top}
-.annotationLayer .textWidgetAnnotation textarea{resize:none}
+.annotationLayer .textWidgetAnnotation textarea{resize:none;min-height:0}
 .annotationLayer .textWidgetAnnotation :is(input,textarea):focus,.annotationLayer .choiceWidgetAnnotation select:focus{background:rgba(0,54,255,.04)!important;border-color:#1f5fbf;outline:none}
 .annotationLayer .choiceWidgetAnnotation select.tsSel{visibility:hidden}.annotationLayer .choiceWidgetAnnotation .tsIn{position:absolute;inset:0;background:rgba(0,54,255,.10);border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px}.annotationLayer .choiceWidgetAnnotation .tsIn:focus{background:rgba(0,54,255,.04);border-color:#1f5fbf;outline:none}.annotationLayer .calcBtn{position:absolute;right:2px;top:50%;transform:translateY(-50%);padding:1px 8px;font-size:11px;line-height:1.3;border-radius:999px;background:var(--acc);color:var(--acc-ink);border:0;font-weight:600;cursor:pointer;z-index:2}
 .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{width:100%;height:100%;margin:0;accent-color:#1f5fbf}
@@ -826,7 +826,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-8',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-27',QS_LAYOUT='psw-qs-layout-22',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-8',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-28',QS_LAYOUT='psw-qs-layout-22',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -845,6 +845,8 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
   // phones always (###) ###-####, birth dates MM/DD/YYYY; client name is one box now, so an old website/note box moves into the description
   v={...v};for(const k in v){if(/phone/i.test(k)&&v[k])v[k]=fmtPhone(v[k]);if(/(^|_)dob$/.test(k)&&v[k])v[k]=fmtDOB(v[k])}
   if(v.owner_name&&!v.owner_first&&!v.owner_last){const p=String(v.owner_name).trim().split(/\s+/);v.owner_first=p.shift()||'';v.owner_last=p.join(' ')}delete v.owner_name;
+  // com auto: driver 1 is the owner unless someone else was entered
+  if(SECS===AUTO_SECTIONS&&!['first','last','dob'].some(k=>String(v['d1_'+k]||'').trim()))[['first','owner_first'],['last','owner_last'],['dob','owner_dob']].forEach(([d,o])=>{if(String(v[o]||'').trim())v['d1_'+d]=v[o]});
   if(String(v.client_note||'').trim()){const k=SECS===AUTO_SECTIONS?'description':'detailed_description',note=String(v.client_note).trim();if(!String(v[k]||'').includes(note))v[k]=[String(v[k]||'').trim(),note].filter(Boolean).join(' - ')}delete v.client_note;
   // the old Contractor section (items 38-41) became Umbrella / Excess: keep any old answers in the detailed description
   {const old=[38,39,40,41].map(n=>[v[`c${n}_l`],v[`c${n}_v`]].map(x=>String(x||'').trim()).filter(Boolean).join(': ')).filter(Boolean);[38,39,40,41].forEach(n=>{delete v[`c${n}_l`];delete v[`c${n}_v`]});
@@ -948,7 +950,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
 
 const AUTO_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Owner info',fields:[{k:'owner_first',n:1,label:'Name (first / last)',pair:'owner_last'},{k:'owner_address',n:2,label:'Address'},{k:'owner_dob',n:3,label:'Birthdate'},{k:'owner_ssn',n:4,label:'SS#'},{k:'owner_daily_ops',n:5,label:'Involved in daily ops'}]},
+ {title:'Owner info',fields:[{k:'owner_first',n:1,label:'Name (first / last)',pair:'owner_last'},{k:'owner_address',n:2,label:'Address'},{k:'owner_dob',n:3,label:'Birthdate'},{k:'owner_ssn',n:4,label:'SS#'},{k:'owner_daily_ops',n:5,label:'Involved in daily ops'},{k:'owner_notes',label:'Notes',area:1}]},
  {title:'Company info',fields:[{k:'client_name',n:6,label:'Company Name'},{k:'contact_name',n:7,label:'Contact name'},{k:'dba',n:8,label:'DBA'},{k:'entity_type',n:9,label:'Bus structure'},{k:'phone',n:10,label:'Phone Number'},{k:'email',n:11,label:'Email'},{k:'mailing_address',n:12,label:'Mailing Address'},{k:'garaging_address',n:13,label:'Business Address'},{k:'description',n:14,label:'Business desc'},{k:'filings',n:15,label:'Filings needed',opts:['Yes','No'],def:'No',also:[{k:'federal_filing',label:'Federal filing',opts:['Yes','No'],def:'No'},{k:'state_filing',label:'State filing',opts:['Yes','No'],def:'No'}]},{k:'dot_number',n:15,label:'DOT Number',also:[{k:'ca_number',label:'CA Number'},{k:'cross_state',label:'Cross state lines',opts:['Yes','No']}]},{k:'eff_date',n:16,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Drivers',table:{prefix:'d',rows:6,cols:[{k:'first',label:'First name',w:1.15},{k:'last',label:'Last name',w:1.15},{k:'dob',label:'Birth date',w:.95},{k:'sex',label:'Sex',w:.45},{k:'mar',label:'Mar st',w:.55},{k:'dl_state',label:'St Lic',w:.5},{k:'dl',label:'DL #',w:1.15},{k:'cdl',label:'CDL',w:.6,opts:['Yes','No']},{k:'cdl_yrs',label:'Yrs CDL',w:.6},{k:'activity',label:'Driving activity',w:1.5}]}},
  {title:'Vehicles',table:{prefix:'v',rows:6,cols:[{k:'year',label:'Year',w:.6},{k:'make',label:'Make',w:1.05},{k:'model',label:'Model',w:1.05},{k:'body',label:'Body type',w:1},{k:'vin',label:'VIN',w:2.2},{k:'value',label:'Value',w:1.1},{k:'use',label:'Zip code',w:1.25}],
@@ -1716,6 +1718,9 @@ async function openEditor(f){
         const layer=new pdfjsLib.AnnotationLayer({div:al,page,viewport:vp.clone({dontFlip:true}),accessibilityManager:null,annotationCanvasMap:null});
         await layer.render({annotations:anns,page,viewport:vp.clone({dontFlip:true}),linkService:LINKS,downloadManager:null,renderForms:true,annotationStorage:ed.pdf.annotationStorage,imageResourcesPath:'',enableScripting:false,hasJSActions:false,fieldObjects:null});
         al.querySelectorAll('select').forEach(codeOnly);
+        // com auto: typing the owner's name or birth date fills driver 1 while its box is empty or still matches the owner
+        if(sheetKind(f.name)==='auto')anns.forEach(a=>{const m=/^f_owner_(first|last|dob)$/.exec(a.fieldName||''),el=m&&edInput(a.id);if(!el)return;let was=el.value;
+          el.addEventListener('blur',()=>{const d=ed.fields.find(x=>x.name==='d1_'+m[1]),de=d&&edInput(d.id);if(de&&(!de.value.trim()||de.value===was)&&de.value!==el.value){de.value=el.value;ed.pdf.annotationStorage.setValue(d.id,{value:el.value})}was=el.value})});
         if(isQuoteSheet(f.name))al.querySelectorAll('select').forEach(typeSearch);
         if(/ personal home quote sheet\.pdf$/i.test(f.name)){homeCalc(al);homeSame(al)}
         if(/ personal home quote sheet\.pdf$/i.test(f.name))anns.forEach(a=>{const el=edInput(a.id);if(!el||el.tagName==='SELECT')return;
