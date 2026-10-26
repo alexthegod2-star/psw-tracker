@@ -44,7 +44,7 @@ tbody tr:last-child td{border-bottom:none}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
-.mbg.on{display:flex}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(760px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
+.mbg.on{display:flex}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
 .adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}
 .admYN{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
 .admYN button{border:0;border-radius:0;padding:4px 12px;font-size:12px;background:transparent}
@@ -267,10 +267,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
         <div><label for="firstName">First name</label><input id="firstName"></div>
         <div><label for="lastName">Last name</label><input id="lastName"></div>
         <div class="full"><label for="company">Company name</label><input id="company"></div>
-        <div><label for="phone">Cell phone number</label><input id="phone" inputmode="tel" placeholder="(###) ###-####"></div>
+        <div><label for="phone">Cell phone number</label><input id="phone" inputmode="tel" placeholder="(###)###-####"></div>
         <div><label for="email">Email</label><input id="email" type="email"></div>
-        <div><label for="homePhone">Home number</label><input id="homePhone" inputmode="tel" placeholder="(###) ###-####"></div>
-        <div><label for="workPhone">Work number</label><input id="workPhone" inputmode="tel" placeholder="(###) ###-####"></div>
+        <div><label for="homePhone">Home number</label><input id="homePhone" inputmode="tel" placeholder="(###)###-####"></div>
+        <div><label for="workPhone">Work number</label><input id="workPhone" inputmode="tel" placeholder="(###)###-####"></div>
         <div><label for="leadType">Lead type</label><input id="leadType" list="typeList" placeholder="Pick or type a lead type"></div>
         <div><label>Last contacted</label><input id="lastShow" disabled placeholder="Set by contact log"></div>
         <div><label for="xDate">X date</label><input id="xDate" inputmode="numeric" placeholder="MM/DD/YYYY" title="When their current policy expires"></div>
@@ -373,7 +373,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="mcDlg" role="dialog" aria-modal="true" aria-labelledby="mcTitleH"><div class="mbox" id="mcBox">
   <div class="row" style="align-items:center"><h3 id="mcTitleH" style="margin:0 auto 0 0">Edit contacts</h3><button class="pri" id="mcSaveTop">Save</button></div>
   <div class="small" style="margin:4px 0 10px">The email is where each button sends to. Hover over a button to see these.</div>
-  <div class="mcRow mcHd"><span>Button</span><span>Email</span><span>Office phone</span><span>Cell phone</span><span></span></div>
+  <div class="mcRow mcHd"><span>Button</span><span>Email</span><span>Office phone + ext</span><span>Cell phone</span><span></span></div>
   <div id="mcList"></div>
   <div class="row" style="justify-content:flex-end;margin-top:4px"><button type="button" id="mcAdd">+ Add contact</button></div>
   <div class="row" style="justify-content:flex-end;margin-top:10px"><button id="mcCancel">Cancel</button><button class="pri" id="mcSave">Save</button></div>
@@ -407,9 +407,9 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="clPerson" data-person="0">
         <div class="clg c2"><div><label for="clFirst" class="clFirstL"><button type="button" class="pri" id="clAddPerson">+ Add person</button>First name</label><input id="clFirst"></div><div><label for="clLast">Last name</label><input id="clLast"></div></div>
         <div class="clg c2"><div><label for="clPref">Preferred name</label><input id="clPref"></div><div><label for="clDob">Date of birth</label><input id="clDob" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div></div>
-        <div class="clg c2"><div><label for="clPhone">Cell phone</label><input id="clPhone" inputmode="tel" placeholder="(###) ###-####"></div><div><label for="clEmail">Primary email</label><input id="clEmail" type="email"></div></div>
-        <div class="clg c2"><div><label for="clPhone2">Home phone</label><input id="clPhone2" inputmode="tel" placeholder="(###) ###-####"></div><div><label for="clEmail2">Secondary email</label><input id="clEmail2" type="email"></div></div>
-        <div class="clg c2"><div><label for="clWork">Work phone</label><input id="clWork" inputmode="tel" placeholder="(###) ###-####"></div><div><label for="clRel">Relationship</label><input id="clRel" list="relList" placeholder="Insured"></div></div>
+        <div class="clg c2"><div><label for="clPhone">Cell phone</label><input id="clPhone" inputmode="tel" placeholder="(###)###-####"></div><div><label for="clEmail">Primary email</label><input id="clEmail" type="email"></div></div>
+        <div class="clg c2"><div><label for="clPhone2">Home phone</label><input id="clPhone2" inputmode="tel" placeholder="(###)###-####"></div><div><label for="clEmail2">Secondary email</label><input id="clEmail2" type="email"></div></div>
+        <div class="clg c2"><div><label for="clWork">Work phone</label><input id="clWork" inputmode="tel" placeholder="(###)###-####"></div><div><label for="clRel">Relationship</label><input id="clRel" list="relList" placeholder="Insured"></div></div>
       </div>
       <div id="clPeople"></div>
       <datalist id="relList"><option value="Insured"><option value="Spouse"><option value="Child"><option value="Parent"><option value="Partner"><option value="Employee"><option value="Other"></datalist>
@@ -642,7 +642,8 @@ const fmtDT=s=>{if(!s)return '';const d=new Date(s);if(isNaN(d))return s;return 
 // typed date (010126, 01012026, 1/1/26) -> 2026-01-01; anything else is kept as typed
 const typedISO=v=>{v=String(v||'').trim();if(/^\d{4}-\d\d-\d\d$/.test(v))return v;let m=/^(\d\d)(\d\d)(\d\d(?:\d\d)?)$/.exec(v)||/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d\d(?:\d\d)?)$/.exec(v);if(!m)return v;const mo=+m[1],d=+m[2],y=m[3].length===2?2000+ +m[3]:+m[3];const t=new Date(y,mo-1,d);if(t.getMonth()!==mo-1||t.getDate()!==d)return v;return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`};
 // every phone number reads (818) 701-1033
-const fmtPhone=v=>{const d=String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:v},fmtClPhone=v=>String(fmtPhone(v)||'');
+// every phone box reads (###)###-####; an extension typed after it (x12, ext 12, #12) is kept as " x12"
+const fmtPhone=v=>{const t=String(v||''),m=t.match(/^(.*?)\s*(?:x|ext\.?|extension|#)\s*(\d+)\s*$/i),d=(m?m[1]:t).replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6)}${m?' x'+m[2]:''}`:v},fmtClPhone=v=>String(fmtPhone(v)||'');
 // every birth date reads 01/01/2026 (1/5/80, 01051980 and 1980-01-05 all become 01/05/1980)
 const fmtDOB=v=>{const raw=String(v||'').trim();if(!raw)return '';let iso=typedISO(raw);if(!/^\d{4}-\d\d-\d\d$/.test(iso)){const d=raw.replace(/\D/g,'');if(d.length===8||d.length===6)iso=typedISO(d)}
   if(!/^\d{4}-\d\d-\d\d$/.test(iso))return raw;if(+iso.slice(0,4)>new Date().getFullYear())iso=(+iso.slice(0,4)-100)+iso.slice(4);return fmtDate(iso)};
@@ -779,6 +780,8 @@ function openLead(l,keep){
   if(l&&l.id)lockStart('lead','leads/'+l.id,{what:'lead',ui:(on,t)=>lockUi($('dr'),$('ldLockBar'),on,t),freed:()=>{toast('You can edit this lead now');const fr=leads.find(x=>x.id===l.id);if(fr&&$('dr').classList.contains('on'))openLead(fr,true)}});else lockStop('lead');
 }
 ['phone','homePhone','workPhone'].forEach(k=>$(k).addEventListener('blur',()=>$(k).value=fmtPhone($(k).value)));
+// any other phone box on the page tidies the same way when you leave it
+document.addEventListener('focusout',e=>{const el=e.target;if(!el.matches||!el.matches('input[type=tel],input[inputmode=tel]'))return;const v=fmtPhone(el.value.trim());if(v!==el.value){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))}});
 $('xDate').addEventListener('blur',()=>$('xDate').value=fmtDate(typedISO($('xDate').value)));
 
 async function ensureSaved(){
@@ -851,7 +854,7 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
   await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');
   if(SECS===HOME_SECTIONS){v={...v};for(const k in v)v[k]=homeFix(k,v[k],x=>v[x])}
   {const eff=parseMdy(v.eff_date);if(eff&&!parseMdy(v.exp_date)&&SECS.some(s=>(s.fields||[]).some(f=>f.pair==='exp_date')))v={...v,exp_date:mdy(new Date(eff.getFullYear()+1,eff.getMonth(),eff.getDate()))}} // exp one year after eff
-  // phones always (###) ###-####, birth dates MM/DD/YYYY; client name is one box now, so an old website/note box moves into the description
+  // phones always (###)###-####, birth dates MM/DD/YYYY; client name is one box now, so an old website/note box moves into the description
   v={...v};for(const k in v){if(/phone/i.test(k)&&v[k])v[k]=fmtPhone(v[k]);if(/(^|_)dob$/.test(k)&&v[k])v[k]=fmtDOB(v[k])}
   if(v.owner_name&&!v.owner_first&&!v.owner_last){const p=String(v.owner_name).trim().split(/\s+/);v.owner_first=p.shift()||'';v.owner_last=p.join(' ')}delete v.owner_name;
   // com auto: driver 1 is the owner unless someone else was entered
@@ -1569,12 +1572,12 @@ function buildMailList(){mailList=[...MAIL_TO.map(r=>({...r,key:r.to})),...Objec
   .sort((a,b)=>mailCo(a).localeCompare(mailCo(b))||a.label.localeCompare(b.label))}
 buildMailList();
 mcCol.onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());mcData=m;buildMailList();renderMail()},()=>{});
-const mcInput=(k,v,ph,t,lbl)=>`<input data-k="${k}" type="${t}" value="${esc(v||'')}" placeholder="${ph}" aria-label="${ph}${lbl?' for '+esc(lbl):''}">`;
+const mcInput=(k,v,ph,t,lbl)=>`<input data-k="${k}" type="${t}"${t==='tel'?` title="Add an extension after the number, like x123"`:''} value="${esc(v||'')}" placeholder="${ph}" aria-label="${ph}${lbl?' for '+esc(lbl):''}">`;
 function mcRowHtml(r){const c=mcData[mcId(r)]||{},add=!!(r.id&&c.added);
-  return `<div class="mcRow" data-id="${esc(mcId(r))}"${add?' data-added="1"':''}>${add?mcInput('label',r.label,'Name/COMPANY','text'):`<b title="${esc(r.label)}">${esc(r.label)}</b>`}${mcInput('email',mailTo(r),'Email','text',r.label)}${mcInput('office',c.office,'Office phone','tel',r.label)}${mcInput('cell',c.cell,'Cell phone','tel',r.label)}${add?'<button type="button" class="mcDel" title="Remove this contact">✕</button>':'<span></span>'}</div>`}
+  return `<div class="mcRow" data-id="${esc(mcId(r))}"${add?' data-added="1"':''}>${add?mcInput('label',r.label,'Name/COMPANY','text'):`<b title="${esc(r.label)}">${esc(r.label)}</b>`}${mcInput('email',mailTo(r),'Email','text',r.label)}${mcInput('office',c.office&&fmtPhone(c.office),'Office phone + ext','tel',r.label)}${mcInput('cell',c.cell&&fmtPhone(c.cell),'Cell phone','tel',r.label)}${add?'<button type="button" class="mcDel" title="Remove this contact">✕</button>':'<span></span>'}</div>`}
 function openContacts(){$('mcList').innerHTML=mailList.map(mcRowHtml).join('');$('mcDlg').classList.add('on')}
 function closeContacts(){$('mcDlg').classList.remove('on')}
-$('mcAdd').onclick=()=>{$('mcList').insertAdjacentHTML('beforeend',`<div class="mcRow" data-id="" data-added="1" data-new="1">${mcInput('label','','Name/COMPANY','text')}${mcInput('email','','Email','text')}${mcInput('office','','Office phone','tel')}${mcInput('cell','','Cell phone','tel')}<button type="button" class="mcDel" title="Remove this contact">✕</button></div>`);
+$('mcAdd').onclick=()=>{$('mcList').insertAdjacentHTML('beforeend',`<div class="mcRow" data-id="" data-added="1" data-new="1">${mcInput('label','','Name/COMPANY','text')}${mcInput('email','','Email','text')}${mcInput('office','','Office phone + ext','tel')}${mcInput('cell','','Cell phone','tel')}<button type="button" class="mcDel" title="Remove this contact">✕</button></div>`);
   const row=$('mcList').lastElementChild;row.scrollIntoView({block:'nearest'});row.querySelector('input').focus()};
 $('mcList').addEventListener('click',e=>{const d=e.target.closest('.mcDel');if(!d)return;const row=d.closest('.mcRow');if(row.dataset.new)return row.remove();
   if(confirm(`Remove ${row.querySelector('[data-k=label]').value||'this contact'}?`)){row.dataset.del='1';row.style.display='none'}});
@@ -2074,7 +2077,7 @@ $('edBody').addEventListener('input',e=>{const el=e.target;if(!el||!/_dob$/.test
   if(!/^[\d\/]+\d$/.test(v)||[...v].some((c,i)=>c==='/'&&i!==2&&i!==5))return; // leave 1/5/80 style typing alone
   const d=v.replace(/\D/g,'').slice(0,8),f=d.length>4?`${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`:d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d;
   if(f!==v){el.value=f;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
-// phone boxes on a quote sheet tidy to (###) ###-#### when you leave them
+// phone boxes on a quote sheet tidy to (###)###-#### when you leave them
 $('edBody').addEventListener('focusout',e=>{const el=e.target;if(!el||!/phone/i.test(el.name||''))return;const v=fmtPhone(el.value.trim());if(v!==el.value){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}});
 $('edAdd').onclick=()=>{const on=!$('edAdd').classList.contains('on');$('edAdd').classList.toggle('on',on);$('ed').classList.toggle('adding',on)};
 $('edBody').addEventListener('click',e=>{
@@ -2910,7 +2913,7 @@ function openClient(c,preset,quiet){editClient=c||null;const v=c||preset||{};clB
 // more people on the client: same boxes as the first person, saved as people:[{firstName,...}]
 const PERSON_FIELDS=[['firstName','First name'],['lastName','Last name'],['preferredName','Preferred name'],['dob','Date of birth'],['phone','Cell phone',1],['email','Primary email'],['phone2','Home phone',1],['email2','Secondary email'],['workPhone','Work phone',1],['relationship','Relationship']];
 function addPerson(p){p=p||{};const box=document.createElement('div');box.className='clPerson';
-  const cells=PERSON_FIELDS.map(([k,l,ph])=>k?`<div><label>${esc(l)}</label><input data-k="${k}"${ph?' data-pf="1" inputmode="tel" placeholder="(###) ###-####"':k==='dob'?' inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"':k==='relationship'?' list="relList"':k.startsWith('email')?' type="email"':''}></div>`:'<div></div>');
+  const cells=PERSON_FIELDS.map(([k,l,ph])=>k?`<div><label>${esc(l)}</label><input data-k="${k}"${ph?' data-pf="1" inputmode="tel" placeholder="(###)###-####"':k==='dob'?' inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"':k==='relationship'?' list="relList"':k.startsWith('email')?' type="email"':''}></div>`:'<div></div>');
   box.innerHTML=`<div class="clPersonH">Person ${$('clPeople').children.length+2}<button type="button" class="danger" data-rmperson>Remove</button></div>`+[0,2,4,6,8].map(i=>`<div class="clg c2">${cells[i]}${cells[i+1]}</div>`).join('');
   box.querySelectorAll('[data-k]').forEach(el=>{el.value=el.dataset.pf?fmtClPhone(p[el.dataset.k]||''):(p[el.dataset.k]||'')});$('clPeople').appendChild(box);return box}
 const readPeople=()=>[...$('clPeople').children].map(b=>Object.fromEntries([...b.querySelectorAll('[data-k]')].map(el=>[el.dataset.k,el.dataset.pf?fmtClPhone(el.value):el.value.trim()]))).filter(p=>Object.values(p).some(Boolean));
