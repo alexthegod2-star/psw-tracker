@@ -1548,7 +1548,7 @@ $('log').addEventListener('click',async e=>{
 
 /* ---------- email ---------- */
 // Add more people here: {label, to}
-const MAIL_TO=[{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Jennifer/RENAISSANCE',to:'Jennifer.Magee@renaissanceins.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'},{label:'Melody/AMWINS Placement',to:'melody.ho@amwins.com'},{label:'Owen/GWG',to:'owen.boxwell@gwgeneral.com'},{label:'Frances/USG',to:'fmeek@usgins.com'},{label:'Chip/GORST',to:'cpolhill@gorstcompass.com'},{label:'Christian/Burns PL',to:'ChristianHamlin@burns-wilcox.com'},{label:'Submit/RENAISSANCE',to:'west.submissions@renaissanceins.com'}];
+const MAIL_TO=[{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Jennifer/RENAISSANCE',to:'Jennifer.Magee@renaissanceins.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'},{label:'Melody/AMWINS BOP',to:'melody.ho@amwins.com'},{label:'Owen/GWG',to:'owen.boxwell@gwgeneral.com'},{label:'Frances/USG',to:'fmeek@usgins.com'},{label:'Chip/GORST',to:'cpolhill@gorstcompass.com'},{label:'Christian/Burns PL',to:'ChristianHamlin@burns-wilcox.com'},{label:'Submit/RENAISSANCE',to:'west.submissions@renaissanceins.com'}];
 let mailSel=new Set(),mailLead=null;
 function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
