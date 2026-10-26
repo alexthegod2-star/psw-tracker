@@ -1554,7 +1554,7 @@ function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
   const fs=(cur&&cur.files)||[];
   $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
-  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">Email ${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
+  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>`<a class="btn pri" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">${esc(r.label)}</a>`).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
 }
 $('mailPick').addEventListener('change',e=>{const id=e.target.dataset.mf;if(!id)return;e.target.checked?mailSel.add(id):mailSel.delete(id)});
 function mailClient(){const v=k=>$(k).value.trim(),nm=[v('firstName'),v('lastName')].filter(Boolean).join(' ');return {nm,co:v('company')}}
