@@ -44,7 +44,7 @@ tbody tr:last-child td{border-bottom:none}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
-.mbg.on{display:flex}
+.mbg.on{display:flex}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(760px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
 .adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}
 .admYN{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
 .admYN button{border:0;border-radius:0;padding:4px 12px;font-size:12px;background:transparent}
@@ -331,7 +331,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="sec" id="mailSec">
       <h3>Email</h3>
       <div class="small" style="margin-bottom:8px">Tick the files to send, then pick who it goes to. Email customer sends a quote sheet for them to finish; drop it in Quick fill when it comes back. A new Outlook email opens to them, and the ticked files are saved to your computer so you can drag them into it.</div>
-      <div class="mpick" id="mailPick"></div>
+      <div class="mailTop"><div class="mpick" id="mailPick"></div><button type="button" id="mcEdit">Edit contacts</button></div>
       <div id="mailBtns"></div>
       <div class="msg" id="mailMsg"></div>
     </div>
@@ -370,6 +370,14 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
+<div class="mbg" id="mcDlg" role="dialog" aria-modal="true" aria-labelledby="mcTitleH"><div class="mbox" id="mcBox">
+  <div class="row" style="align-items:center"><h3 id="mcTitleH" style="margin:0 auto 0 0">Edit contacts</h3><button class="pri" id="mcSaveTop">Save</button></div>
+  <div class="small" style="margin:4px 0 10px">The email is where each button sends to. Hover over a button to see these.</div>
+  <div class="mcRow mcHd"><span>Button</span><span>Email</span><span>Office phone</span><span>Cell phone</span><span></span></div>
+  <div id="mcList"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:4px"><button type="button" id="mcAdd">+ Add contact</button></div>
+  <div class="row" style="justify-content:flex-end;margin-top:10px"><button id="mcCancel">Cancel</button><button class="pri" id="mcSave">Save</button></div>
+</div></div>
 <div class="mbg" id="taskDlg" role="dialog" aria-modal="true" aria-labelledby="taskTitleH"><div class="mbox" id="taskBox">
   <div class="row" style="align-items:center"><h3 id="taskTitleH" style="margin:0 auto 0 0">New task</h3><button class="pri" id="tSaveTop">Save task</button></div>
   <div class="grid">
@@ -1551,13 +1559,49 @@ $('log').addEventListener('click',async e=>{
 // Add more people here: {label, to}
 const MAIL_TO=[{label:'Melody/AMWINS BOP',to:'melody.ho@amwins.com'},{label:'Jennifer/AMWINS E&S',to:'jennifer.gruber@amwins.com'},{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Christian/Burns PL',to:'ChristianHamlin@burns-wilcox.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'},{label:'Chip/GORST',to:'cpolhill@gorstcompass.com'},{label:'Owen/GWG',to:'owen.boxwell@gwgeneral.com'},{label:'Jennifer/REN',to:'Jennifer.Magee@renaissanceins.com'},{label:'Submission/RENAISSANCE',to:'west.submissions@renaissanceins.com'},{label:'Frances/USG',to:'fmeek@usgins.com'},{label:'Steven/USG WC',to:'slodovico@usgins.com'}];
 let mailSel=new Set(),mailLead=null;
+// contact details you can change in Edit contacts, saved for everyone, one record per button; added contacts become new buttons
+const mcCol=db.collection('mailContacts'),mcId=r=>r.id||r.label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');let mcData={};
+const mailTo=r=>(mcData[mcId(r)]&&mcData[mcId(r)].email)||r.to,mailTip=r=>{const c=mcData[mcId(r)]||{};return [mailTo(r),c.office&&'Office: '+fmtPhone(c.office),c.cell&&'Cell: '+fmtPhone(c.cell)].filter(Boolean).join('\n')};
+// the built-in buttons keep their first address as the sent-box key, so editing an email keeps the green marks
+const mailCo=r=>(r.label.split('/')[1]||r.label).toLowerCase();
+let mailList=[...MAIL_TO];
+function buildMailList(){mailList=[...MAIL_TO.map(r=>({...r,key:r.to})),...Object.entries(mcData).filter(([,c])=>c.added&&c.label&&c.email).map(([id,c])=>({id,label:c.label,to:c.email,key:id}))]
+  .sort((a,b)=>mailCo(a).localeCompare(mailCo(b))||a.label.localeCompare(b.label))}
+buildMailList();
+mcCol.onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());mcData=m;buildMailList();renderMail()},()=>{});
+const mcInput=(k,v,ph,t,lbl)=>`<input data-k="${k}" type="${t}" value="${esc(v||'')}" placeholder="${ph}" aria-label="${ph}${lbl?' for '+esc(lbl):''}">`;
+function mcRowHtml(r){const c=mcData[mcId(r)]||{},add=!!(r.id&&c.added);
+  return `<div class="mcRow" data-id="${esc(mcId(r))}"${add?' data-added="1"':''}>${add?mcInput('label',r.label,'Name/COMPANY','text'):`<b title="${esc(r.label)}">${esc(r.label)}</b>`}${mcInput('email',mailTo(r),'Email','text',r.label)}${mcInput('office',c.office,'Office phone','tel',r.label)}${mcInput('cell',c.cell,'Cell phone','tel',r.label)}${add?'<button type="button" class="mcDel" title="Remove this contact">✕</button>':'<span></span>'}</div>`}
+function openContacts(){$('mcList').innerHTML=mailList.map(mcRowHtml).join('');$('mcDlg').classList.add('on')}
+function closeContacts(){$('mcDlg').classList.remove('on')}
+$('mcAdd').onclick=()=>{$('mcList').insertAdjacentHTML('beforeend',`<div class="mcRow" data-id="" data-added="1" data-new="1">${mcInput('label','','Name/COMPANY','text')}${mcInput('email','','Email','text')}${mcInput('office','','Office phone','tel')}${mcInput('cell','','Cell phone','tel')}<button type="button" class="mcDel" title="Remove this contact">✕</button></div>`);
+  const row=$('mcList').lastElementChild;row.scrollIntoView({block:'nearest'});row.querySelector('input').focus()};
+$('mcList').addEventListener('click',e=>{const d=e.target.closest('.mcDel');if(!d)return;const row=d.closest('.mcRow');if(row.dataset.new)return row.remove();
+  if(confirm(`Remove ${row.querySelector('[data-k=label]').value||'this contact'}?`)){row.dataset.del='1';row.style.display='none'}});
+async function saveContacts(){
+  const jobs=[],now=new Date().toISOString(),by=me?{updatedBy:me}:{},next={...mcData},put=(id,d)=>{next[id]=d;jobs.push(mcCol.doc(id).set(d))};
+  for(const row of $('mcList').querySelectorAll('.mcRow')){const v=k=>{const x=row.querySelector(`[data-k=${k}]`);return x?x.value.trim():''},added=!!row.dataset.added;
+    let id=row.dataset.id;const o=mcData[id]||{},c={email:v('email'),office:v('office')?fmtPhone(v('office')):'',cell:v('cell')?fmtPhone(v('cell')):''};
+    if(row.dataset.del){put(id,{...o,added:false,removed:true,...by,updatedAt:now});continue}
+    if(added){const label=v('label');if(!label&&!c.email&&row.dataset.new)continue;
+      if(!label||!c.email){row.querySelector(`[data-k=${label?'email':'label'}]`).focus();return toast('Each added contact needs a name and an email.')}
+      if(row.dataset.new)id='x-'+label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Date.now().toString(36);
+      if(!row.dataset.new&&label===o.label&&c.email===o.email&&c.office===(o.office||'')&&c.cell===(o.cell||''))continue;
+      put(id,{label,...c,added:true,...by,updatedAt:now});continue}
+    const r=MAIL_TO.find(x=>mcId(x)===id);c.email=c.email||r.to;
+    if(c.email===mailTo(r)&&c.office===(o.office||'')&&c.cell===(o.cell||''))continue;
+    put(id,{...c,...by,updatedAt:now})}
+  try{await Promise.all(jobs);mcData=next;buildMailList();renderMail();closeContacts();toast(jobs.length?'Contacts saved':'No changes')}catch(err){toast(errText(err))}}
+$('mcEdit').onclick=openContacts;$('mcCancel').onclick=closeContacts;$('mcSave').onclick=saveContacts;$('mcSaveTop').onclick=saveContacts;
+$('mcDlg').addEventListener('click',e=>{if(e.target===$('mcDlg'))closeContacts()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mcDlg').classList.contains('on')){e.stopImmediatePropagation();closeContacts()}},true);
 function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
   const fs=(cur&&cur.files)||[];
   $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
   const sent=(cur&&cur.mailSent)||{};
   // each carrier button has a check box: ticked means the email went out, and the button turns green
-  $('mailBtns').innerHTML=MAIL_TO.map((r,i)=>{const d=sent[r.to];return `<div class="mailItem"><input type="checkbox" class="mailSent" data-sent="${esc(r.to)}"${d?' checked':''} aria-label="Sent to ${esc(r.label)}" title="${d?'Sent '+esc(fmtDate(String(d).slice(0,10))):'Tick when you have sent this email'}"><a class="btn pri${d?' sent':''}" data-mail="${i}" href="mailto:${esc(r.to)}" target="_blank" rel="noopener" title="${esc(r.to)}">${esc(r.label)}</a></div>`}).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
+  $('mailBtns').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<div class="mailItem"><input type="checkbox" class="mailSent" data-sent="${esc(r.key)}"${d?' checked':''} aria-label="Sent to ${esc(r.label)}" title="${d?'Sent '+esc(fmtDate(String(d).slice(0,10))):'Tick when you have sent this email'}"><a class="btn pri${d?' sent':''}" data-mail="${i}" href="mailto:${esc(mailTo(r))}" target="_blank" rel="noopener" title="${esc(mailTip(r))}">${esc(r.label)}</a></div>`}).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
 }
 // marks (or unmarks) an address as emailed on this lead; clicking a carrier button marks it too
 async function setMailSent(to,on){
@@ -1576,8 +1620,8 @@ $('mailBtns').addEventListener('click',async e=>{
   const a=e.target.closest('[data-mail]');if(!a)return;
   const cust=a.dataset.mail==='cust',{nm,co}=mailClient(),who=co||nm||'New client';
   if(cust&&!$('email').value.trim()){e.preventDefault();const m=$('mailMsg');m.className='msg err';m.textContent='Add the customer’s email in Lead info first.';return}
-  const r=cust?{label:$('firstName').value.trim(),to:$('email').value.trim()}:MAIL_TO[+a.dataset.mail];
-  if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.to]))setTimeout(()=>setMailSent(r.to,true),0); // after the email opens
+  const r=cust?{label:$('firstName').value.trim(),to:$('email').value.trim()}:{...mailList[+a.dataset.mail],to:mailTo(mailList[+a.dataset.mail])};
+  if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.key]))setTimeout(()=>setMailSent(r.key,true),0); // after the email opens
   const files=((cur&&cur.files)||[]).filter(f=>mailSel.has(f.id));
   const first=r.label.split('/')[0];
   const subject=cust?`Quote information - ${who}`:`QUOTE ${co||nm}`.trim();
