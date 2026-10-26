@@ -1,4 +1,5 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#mailBtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}#mailBtns>*{width:100%;margin:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns>[data-mail=cust]{grid-column-start:1}
+</style></head><body>
 <title>Pacific Southwest Insurance Services Database</title>
 <style>
 :root{--panel:#eef5ff;--drbg:#d5e5f9;--clcard:#c4d8f2;--cllabel:#0f2a4a;--clline:#adc6e8;--polbg:#dcf2e2;--taskbg:#efe7fb;--polcard:#c8e8d1;--polline:#a9d6b6;--pollabel:#0f2e1c;--bg:#e3eefb;--card:#fff;--ink:#16202c;--mute:#5b6878;--line:#dde2e8;--acc:#1f5fbf;--acc-ink:#fff;--soft:#eaf1fb;--bad:#b42318;--ok:#137a3f;--chip:#eef1f5}
@@ -120,7 +121,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .bmon{margin:0 0 18px}.bmh{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;margin:0 0 6px}.bmh h3{margin:0;font-size:16px}.bmh .sp{flex:1}.bmh button{padding:4px 12px}
 .bwrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
 .btab{border-collapse:collapse;width:100%;min-width:1100px;font-size:13px;font-variant-numeric:tabular-nums}.btab th{position:static;cursor:default;white-space:nowrap;padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}.btab td{padding:7px 5px;white-space:nowrap}
-.btab .n{text-align:right}.btab .c{text-align:center}.btab .nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}.btab th.nm{font-weight:inherit}.btab .num{color:var(--mute);width:28px}
+.btab .n{text-align:right}.btab .c{text-align:center}.btab .nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns>[data-mail=cust]{grid-column-start:1}.btab th.nm{font-weight:inherit}.btab .num{color:var(--mute);width:28px}
 .btab .calc{color:var(--mute)}.btab .tm{font-weight:700}.btab .neg{color:var(--bad)}.btab td.up{text-transform:uppercase;font-size:12px}
 .btab tfoot td{border-top:2px solid var(--line);border-bottom:none;font-weight:700;background:var(--soft)}.btab tfoot tr{cursor:default}
 .btab th:nth-child(2),.btab td:nth-child(2){position:sticky;left:0;background:var(--card);z-index:1}.btab tbody tr:hover td:nth-child(2){background:var(--soft)}.btab tfoot td:nth-child(2){background:var(--soft)}
@@ -331,7 +332,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <h3>Email</h3>
       <div class="small" style="margin-bottom:8px">Tick the files to send, then pick who it goes to. Email customer sends a quote sheet for them to finish; drop it in Quick fill when it comes back. A new Outlook email opens to them, and the ticked files are saved to your computer so you can drag them into it.</div>
       <div class="mpick" id="mailPick"></div>
-      <div class="row" id="mailBtns"></div>
+      <div id="mailBtns"></div>
       <div class="msg" id="mailMsg"></div>
     </div>
 
@@ -1548,7 +1549,7 @@ $('log').addEventListener('click',async e=>{
 
 /* ---------- email ---------- */
 // Add more people here: {label, to}
-const MAIL_TO=[{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Jennifer/RENAISSANCE',to:'Jennifer.Magee@renaissanceins.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'},{label:'Melody/AMWINS BOP',to:'melody.ho@amwins.com'},{label:'Owen/GWG',to:'owen.boxwell@gwgeneral.com'},{label:'Frances/USG',to:'fmeek@usgins.com'},{label:'Chip/GORST',to:'cpolhill@gorstcompass.com'},{label:'Christian/Burns PL',to:'ChristianHamlin@burns-wilcox.com'},{label:'Submit/RENAISSANCE',to:'west.submissions@renaissanceins.com'}];
+const MAIL_TO=[{label:'Dave/BAKER',to:'help@yesbaker.com'},{label:'Andy/BURNS',to:'AJMills@Burns-Wilcox.Com'},{label:'Jennifer/REN',to:'Jennifer.Magee@renaissanceins.com'},{label:'Yana/CK',to:'yana@ckspecialty.com,teamyana@ckspecialty.com'},{label:'Melody/AMWINS BOP',to:'melody.ho@amwins.com'},{label:'Owen/GWG',to:'owen.boxwell@gwgeneral.com'},{label:'Frances/USG',to:'fmeek@usgins.com'},{label:'Chip/GORST',to:'cpolhill@gorstcompass.com'},{label:'Christian/Burns PL',to:'ChristianHamlin@burns-wilcox.com'},{label:'Submit/REN',to:'west.submissions@renaissanceins.com'}];
 let mailSel=new Set(),mailLead=null;
 function renderMail(){
   if(!cur||mailLead!==cur.id){mailSel=new Set();mailLead=cur&&cur.id}
