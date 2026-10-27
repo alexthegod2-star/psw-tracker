@@ -506,6 +506,12 @@ for x in os.environ.get("PSW_BINDER_PRODUCERS", "alex:Alex K").split(","):
         BINDER_PRODUCERS[x.split(":", 1)[1].strip().lower()] = x.split(":", 1)[0].strip()
 
 
+def com_pct(p):
+    """The policy's Commission % (extra.comPct, like "15%") as a number, or None."""
+    x = re.sub(r"[^\d.]", "", str(((p.get("extra") or {}) if isinstance(p.get("extra"), dict) else {}).get("comPct") or ""))
+    return float(x) if re.fullmatch(r"\d+(\.\d+)?", x) else None
+
+
 def binder_sync(c, path, old, new):
     """New policies on a client (a pid the client didn't have) whose producer has a binder log get a binder entry, dated this month."""
     segs = path.split("/")
@@ -533,7 +539,7 @@ def binder_sync(c, path, old, new):
         prem = re.sub(r"[^\d.]", "", str(p.get("premium") or ""))
         note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
         d = {"name": name or "Client", "month": time.strftime("%Y-%m"), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
-             "ga": p.get("carrier") or "", "term": term, "premium": float(prem) if re.fullmatch(r"\d+(\.\d+)?", prem) else None, "comPct": None, "commAmt": None, "yrAmt": None,
+             "ga": p.get("carrier") or "", "term": term, "premium": float(prem) if re.fullmatch(r"\d+(\.\d+)?", prem) else None, "comPct": com_pct(p), "commAmt": None, "yrAmt": None,
              "bf": None, "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
              "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())}
         i = new_id()

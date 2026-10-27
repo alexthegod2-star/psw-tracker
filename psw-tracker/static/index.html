@@ -560,6 +560,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <input id="ppOther1L" class="ppOtherL" placeholder="Other (type a name)" aria-label="Other fee name"><input id="ppOther1" data-f="other1" placeholder="$" inputmode="decimal">
       <input id="ppOther2L" class="ppOtherL" placeholder="Other (type a name)" aria-label="Other fee name"><input id="ppOther2" data-f="other2" placeholder="$" inputmode="decimal">
       <label class="tot" for="ppTotal">Total</label><input class="tot" id="ppTotal" readonly tabindex="-1">
+      <label for="ppCom">Commission %</label><input id="ppCom" placeholder="%" inputmode="decimal">
     </div></section>
   </div>
   <aside class="ppSide">
@@ -2963,7 +2964,7 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)})}
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
-  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppTerm').value=ppExtraVals.term||'12';$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   siteBtns();$('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
@@ -2983,13 +2984,14 @@ function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll(
 $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#polBox [data-pp=${k}]`).value.trim();
   for(const k of PP){let v=g(k);if(k==='state'&&/^[a-z]{2}$/i.test(v))v=v.toUpperCase();if((k==='eff'||k==='exp'||k==='cdate')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
   const ex={};$('ppExtra').querySelectorAll('[data-x]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.x]=v});
-  $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee||ex.other1||ex.other2)ex.total=$('ppTotal').value;{const t=$('ppTerm').value,u=$('ppUser').value.trim(),o1=$('ppOther1L').value.trim(),o2=$('ppOther2L').value.trim();if(t&&t!=='12')ex.term=t;if(u)ex.enteredBy=u;if(o1)ex.other1Label=o1;if(o2)ex.other2Label=o2}
+  $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee||ex.other1||ex.other2)ex.total=$('ppTotal').value;{const t=$('ppTerm').value,u=$('ppUser').value.trim(),o1=$('ppOther1L').value.trim(),o2=$('ppOther2L').value.trim();if(t&&t!=='12')ex.term=t;if(u)ex.enteredBy=u;if(o1)ex.other1Label=o1;if(o2)ex.other2Label=o2;{const c=bPct($('ppCom').value.trim());if(c!=null)ex.comPct=c+'%'}}
   $('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.inv]=v});
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';showStatus(polTr.querySelector('[data-pstat]'),g('status'));
   closePolicy(true);renderClInv();reClFiles();savePolicies()};
 // Total = premium + every fee box, kept up to date as you type
 function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):'';$('ppInvAmt').placeholder=$('ppTotal').value?`${$('ppTotal').value} (Total)`:'Same as Total'}
-$('ppFees').addEventListener('input',ppTotal);
+$('ppFees').addEventListener('input',e=>{if(e.target.id!=='ppCom')ppTotal()});
+$('ppCom').addEventListener('blur',()=>{const n=bPct($('ppCom').value.trim());if(n!=null)$('ppCom').value=n+'%'});
 // Exp date fills in from Eff date + Term (months); you can still type over it
 const addMonthsISO=(iso,t)=>{const [y,m,d]=iso.split('-').map(Number),last=new Date(y,m-1+t+1,0).getDate(),x=new Date(y,m-1+t,Math.min(d,last));return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
 function ppAutoExp(){const iso=typedISO($('ppEff').value);if(!/^\d{4}-\d\d-\d\d$/.test(iso))return;$('ppExp').value=fmtDate(addMonthsISO(iso,+$('ppTerm').value||12))}
