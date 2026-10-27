@@ -442,6 +442,11 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <section class="ppCard"><div class="ppCardH"><h4>Files</h4><button type="button" class="pri" id="clFileAdd">+ Add file</button></div>
         <div class="drop" id="clUpRow"><span style="font-weight:600">Drop files here, or</span><input type="file" id="clFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*"></div>
         <ul class="files" id="clFiles"></ul></section>
+      <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
+        <div class="drop" id="clReadRow"><span style="font-weight:600">Drop an application, quote or dec page here to fill this client, or</span><input type="file" id="clReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*" style="flex:1"></div>
+        <textarea id="clPaste" rows="3" style="margin-top:8px;width:100%" placeholder="Or paste the client’s details here (an email, a signature, an application…)"></textarea>
+        <div class="row" style="justify-content:flex-end;margin-top:6px"><button type="button" class="pri" id="clPasteGo">Fill from text</button></div>
+        <div class="msg" id="clReadMsg"></div></section>
       <section class="ppCard"><div class="ppCardH"><h4>Certificates</h4><button type="button" class="pri" id="clCerts" data-open>Certificates</button></div>
         <div class="small" id="clCertNote"></div></section>
       <section class="ppCard"><div class="ppCardH"><h4>Invoice</h4></div>
@@ -588,6 +593,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="msg" id="ppMsg"></div></section>
     <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
       <div class="drop" id="ppReadRow"><span style="font-weight:600">Drop a quote sheet, dec page or binder here to fill this policy, or</span><input type="file" id="ppReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*" style="flex:1"></div>
+      <textarea id="ppPaste" rows="3" style="margin-top:8px" placeholder="Or paste text from a quote, dec page or binder here"></textarea>
+      <div class="row" style="justify-content:flex-end;margin-top:6px"><button type="button" class="pri" id="ppPasteGo">Fill from text</button></div>
       <div class="msg" id="ppReadMsg"></div></section>
     <section class="ppCard"><div class="ppCardH"><h4>Tasks</h4><button type="button" class="pri" id="ppTaskAdd">+ Add task</button></div>
       <ul class="tasks" id="ppTasks"></ul><div class="small" id="ppTasksNone">No tasks for this policy yet.</div></section>
@@ -2989,7 +2996,7 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   // coverages A to F read $#,### (no cents), on open and when you leave the box
   if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)})}
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
-function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
+function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
   try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
@@ -3098,7 +3105,7 @@ $('clientDlg').addEventListener('click',e=>{const b=e.target.closest('button');i
 $('polRows').addEventListener('click',()=>{clDirty=true}); // opening a policy may change it
 // "same" in Location address copies the mailing address, city, state and zip
 $('clLocation').addEventListener('change',()=>{if(/^\s*same(\s+as\s+mailing)?\s*$/i.test($('clLocation').value))[['clAddress','clLocation'],['clCity','clLocCity'],['clState','clLocState'],['clZip','clLocZip']].forEach(([f,t])=>{$(t).value=$(f).value})});
-function openClient(c,preset,quiet){editClient=c||null;const v=c||preset||{};clBaseRev=(c&&c.rev)||0;clDirty=false;
+function openClient(c,preset,quiet){editClient=c||null;$('clPaste').value='';$('clReadMsg').textContent='';const v=c||preset||{};clBaseRev=(c&&c.rev)||0;clDirty=false;
   setTimeout(()=>{if(c&&editClient===c)lockStart('client','clients/'+c.id,{what:'client',ui:(on,t)=>lockUi($('clientDlg'),$('clLockBar'),on,t),freed:()=>{const fr=clients.find(x=>x.id===c.id);if(fr&&$('clientDlg').classList.contains('on'))openClient(fr,null,true);toast('You can edit this client now')}});else if(!c)lockStop('client')},0);
   $('clientTitleH').textContent=c?'Edit client':'New client';
   [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPref','preferredName'],['clDob','dob'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clLocation','location'],['clBusType','busType'],['clWork','workPhone'],['clRel','relationship'],['clCity','city'],['clState','state'],['clZip','zip'],['clLocCity','locCity'],['clLocState','locState'],['clLocZip','locZip'],['clSource','leadSource']].forEach(([id,k])=>$(id).value=v[k]||'');$('clStatus').value=v.status||'Active';$('clWork').value=fmtClPhone($('clWork').value);
@@ -3189,6 +3196,43 @@ async function addClientFiles(list,pid){if(!assets)return;const m=pid?$('ppMsg')
       if(pid)renderPpFiles();
       m.className='msg ok';m.textContent=pid?`Added ${f.name} to this policy and the client's files.`:`Added ${f.name}.`}
     catch(e){m.className='msg err';m.textContent=`${f.name}: ${errText(e)}`}}}
+// Fill from a document: a dropped file or pasted text fills the client's empty boxes (Claude reads it; without Claude only email and phone are found)
+const CL_FILL={company:['clCompany','Business name'],busType:['clBusType','Business type: Individual, LLC, Corporation or Partnership'],dba:['clDba','DBA'],
+  firstName:['clFirst','Contact first name'],lastName:['clLast','Contact last name'],dob:['clDob','Contact date of birth'],phone:['clPhone','Cell phone'],email:['clEmail','Primary email'],
+  phone2:['clPhone2','Home phone'],email2:['clEmail2','Secondary email'],workPhone:['clWork','Work / office phone'],
+  address:['clAddress','Mailing street address'],city:['clCity','Mailing city'],state:['clState','Mailing state (2 letters)'],zip:['clZip','Mailing ZIP'],
+  location:['clLocation','Business location street address, if different'],locCity:['clLocCity','Location city'],locState:['clLocState','Location state (2 letters)'],locZip:['clLocZip','Location ZIP']};
+function clApply(o){let n=0;
+  for(const [k,[id]] of Object.entries(CL_FILL)){const el=$(id);let v=String((o&&o[k])??'').trim();if(!el||!v||el.value.trim())continue;
+    if(/phone|^workPhone$/i.test(k))v=fmtPhone(v);if(k==='dob')v=fmtDOB(v);if(/state$/i.test(k))v=v.toUpperCase().slice(0,2);
+    if(el.tagName==='SELECT'){const hit=[...el.options].find(op=>op.value&&op.value.toLowerCase()===v.toLowerCase());if(!hit)continue;v=hit.value}
+    el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));n++}
+  return n}
+function clBasic(t){const em=t.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g)||[],ph=t.match(/(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g)||[];return {email:em[0],email2:em[1],phone:ph[0]}}
+async function clFillFrom(t,name,img){const m=$('clReadMsg'),from=name?`from ${name}`:'from the pasted text',done=n=>n?`Filled ${n} empty box${n===1?'':'es'} ${from}. Check them, then Save client.`:'Couldn’t find anything new to fill in that.';
+  if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now.';return}
+  if(!sample){const n=clApply(clBasic(t));m.className=n?'msg ok':'msg err';m.textContent=done(n)+' (Basic mode: Claude isn’t turned on, so only email and phone are found.)';return}
+  const prompt=`You are filling in an insurance agency's client record from ${img?'the attached picture':'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be an application, quote, dec page, email or signature).
+Reply with only a JSON object with these keys: ${Object.entries(CL_FILL).map(([k,[,l]])=>k+' = '+l).join('; ')}.
+Use "" for anything not stated; never guess. Phone numbers and dates as written.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
+  $('clReadIn').disabled=$('clPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
+  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const n=o&&typeof o==='object'?clApply(o):0;m.className=n?'msg ok':'msg err';m.textContent=done(n)}
+  catch(e){const n=t?clApply(clBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
+  $('clReadIn').disabled=$('clPasteGo').disabled=false}
+async function clRead(f){const m=$('clReadMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
+  if(assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f]); // keep the document with the client too
+  const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let t='';
+  if(!isImg){try{t=(await fileText(f)).trim()}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}lastFields={};
+    if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}}
+  else if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t turned on for this database. Drop the PDF instead.';return}
+  await clFillFrom(t,f.name,isImg?f:null)}
+$('clReadIn').onchange=()=>{const f=$('clReadIn').files[0];$('clReadIn').value='';if(f)clRead(f)};
+{const fz=$('clReadRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fz.classList.add('over')}));
+ ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+ fz.addEventListener('drop',e=>{const f=(e.dataTransfer.files||[])[0];if(f)clRead(f)})}
+$('clPasteGo').onclick=()=>{const t=$('clPaste').value.trim(),m=$('clReadMsg');
+  if(!t){m.className='msg err';m.textContent='Paste the client’s details first.';$('clPaste').focus();return}
+  clFillFrom(t,'',null)};
 $('clFileAdd').onclick=()=>$('clFileIn').click();$('clFileIn').onchange=()=>{const list=[...$('clFileIn').files];$('clFileIn').value='';addClientFiles(list)};
 {const fz=$('clUpRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
@@ -3256,20 +3300,26 @@ async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=
     const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}
     lastFields={};if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}}
   else if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t turned on for this database. Drop the PDF instead.';return}
+  await ppFillFrom(t,f.name,isImg?f:null)}
+// fills the policy from document text (or a picture) with Claude, or the basic label finder when Claude is off; used by a dropped file and by pasted text
+async function ppFillFrom(t,name,img){const m=$('ppReadMsg'),from=name?`from ${name}`:'from the pasted text';
   if(!sample){const n=ppApply(ppBasic(t));m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} (basic mode, Claude isn’t turned on for this database). Check them, then Done.`:'Couldn’t find policy details in that (basic mode, Claude isn’t turned on for this database).';return}
   const cur=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase());
-  const prompt=`You are filling in one insurance policy record for an insurance agency from ${isImg?'the attached picture':'the document below'} (file "${f.name}"; it may be a quote, a declarations page or a binder).
+  const prompt=`You are filling in one insurance policy record for an insurance agency from ${img?'the attached picture':'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be a quote, a declarations page or a binder).
 Reply with only a JSON object {"line":"","carrier":"","company":"","number":"","eff":"","exp":"","premium":"","state":"","nb":"",${Object.keys(PP_FEES).map(k=>`"${k}":""`).join(',')},"extra":{}}.
 Keys: ${Object.entries(PP_MAIN).map(([k,l])=>k+' = '+l).join('; ')}.
 Money as written (e.g. "$1,234.00"). Leave out or use "" for anything not stated; never guess.
 "extra" holds details for the line of business, using only that line's keys:
 ${(cur?[cur]:LOBS).map(l=>`${l}: `+ppDetailKeys(l).map(([k,lb])=>k+' = '+lb).join('; ')).join('\n')}
 Limits as written (e.g. "100/300", "$1,000,000"). For keys with listed choices use one of them.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
-  $('ppReadIn').disabled=true;m.textContent='Claude is reading it…';
-  try{const o=await sample.json(prompt,{modelTier:'quick',...(isImg?{images:f}:{})});const n=o&&typeof o==='object'?ppApply(o):0;
-    m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} from ${f.name}. Check them, then Done.`:'Couldn’t find policy details in that.'}
+  $('ppReadIn').disabled=$('ppPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
+  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const n=o&&typeof o==='object'?ppApply(o):0;
+    m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} ${from}. Check them, then Done.`:'Couldn’t find policy details in that.'}
   catch(e){const n=t?ppApply(ppBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
-  $('ppReadIn').disabled=false}
+  $('ppReadIn').disabled=$('ppPasteGo').disabled=false}
+$('ppPasteGo').onclick=async()=>{const t=$('ppPaste').value.trim(),m=$('ppReadMsg');
+  if(!t){m.className='msg err';m.textContent='Paste the text from the quote, dec page or binder first.';$('ppPaste').focus();return}
+  await ppFillFrom(t,'',null)};
 $('ppReadIn').onchange=()=>{const f=$('ppReadIn').files[0];$('ppReadIn').value='';if(f)ppRead(f)};
 {const fz=$('ppReadRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
