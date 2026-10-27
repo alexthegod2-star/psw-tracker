@@ -386,12 +386,12 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="taskDlg" role="dialog" aria-modal="true" aria-labelledby="taskTitleH"><div class="mbox" id="taskBox">
   <div class="row" style="align-items:center"><h3 id="taskTitleH" style="margin:0 auto 0 0">New task</h3><button class="pri" id="tSaveTop">Save task</button></div>
   <div class="grid">
+    <div><label for="tAssign">Assigned to</label><select id="tAssign"></select></div>
+    <div><label for="tDue">Due date</label><input id="tDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div class="full"><label for="tTitle">Task</label><input id="tTitle" placeholder="e.g. Send GL quote to carrier"></div>
     <div><label for="tFirst">First name</label><input id="tFirst"></div>
     <div><label for="tLast">Last name</label><input id="tLast"></div>
     <div class="full"><label for="tCompany">Company name</label><input id="tCompany"></div>
-    <div><label for="tAssign">Assigned to</label><select id="tAssign"></select></div>
-    <div><label for="tDue">Due date</label><input id="tDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"></div>
     <div><label for="tPri">Priority</label><select id="tPri"><option>Normal</option><option>High</option><option>Low</option></select></div>
     <div><label for="tLead">Lead</label><select id="tLead"></select></div>
     <div class="full"><label for="tNotes">Notes</label><textarea id="tNotes"></textarea></div>
