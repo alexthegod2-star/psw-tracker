@@ -43,6 +43,8 @@ tbody tr:last-child td{border-bottom:none}
 .sold{display:inline-block;background:#1f9d55;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}.dead{display:inline-block;background:#111;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
+@media print{body.repPrint>*:not(#repDlg){display:none!important}body.repPrint #repDlg{position:static;background:none;padding:0}body.repPrint #repDlg .mbox{width:auto;max-height:none;border:0;box-shadow:none}body.repPrint .repF,body.repPrint #repDlg .row:last-child{display:none}}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
 .adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.admSig{display:flex;gap:6px;align-items:center}.admSig img{height:30px;max-width:110px;background:#fff;border:1px solid var(--line);border-radius:4px}.admSig button{padding:4px 10px;font-size:12px}
@@ -184,7 +186,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="brand banner"><div><h1 class="sr-only">Pacific Southwest Insurance Services Database</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <div class="hdrbtns"><button class="pri" id="newBtn">+ New lead</button></div>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button><button type="button" id="finBtn" hidden>Alex Finance Personal</button></div></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button type="button" class="tab" id="repBtn" title="Make a report of client policies">Report</button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button><button type="button" id="finBtn" hidden>Alex Finance Personal</button></div></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -500,6 +502,20 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </form>
   <ul class="files" id="certList" style="margin:0"></ul>
   <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px"><span class="msg" id="certMsg"></span><button id="certClose" type="button">Close</button></div>
+</div></div>
+<div class="mbg" id="repDlg" role="dialog" aria-modal="true" aria-labelledby="repTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="repTitleH" style="margin:0">Policy report</h3><span class="small" id="repCount"></span></div>
+  <div class="repF" id="repF">
+    <label>Exp date from<input id="rExpFrom" placeholder="MM/DD/YYYY"></label><label>Exp date to<input id="rExpTo" placeholder="MM/DD/YYYY"></label>
+    <label>Eff date from<input id="rEffFrom" placeholder="MM/DD/YYYY"></label><label>Eff date to<input id="rEffTo" placeholder="MM/DD/YYYY"></label>
+    <label>Company<select id="rCo"></select></label><label>GA<select id="rGa"></select></label><label>Line of business<select id="rLine"></select></label>
+    <label>Producer<select id="rProd"></select></label><label>Status<select id="rStat"><option value="">Any</option><option>Active</option><option>Expired</option><option>Cancelled</option></select></label>
+    <label>New / Renewal<select id="rNb"><option value="">Any</option><option>New</option><option>Renewal</option></select></label><label>State<select id="rSt"></select></label>
+    <div class="repQ"><button type="button" id="rNext30">Expiring next 30 days</button><button type="button" id="rNext60">Next 60 days</button><button type="button" id="rClear">Clear</button></div>
+  </div>
+  <div style="overflow-x:auto"><table class="btab repT" id="repT"></table></div>
+  <div class="empty" id="repEmpty" hidden><b>No policies match</b>Change or clear the boxes above.</div>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="pri" id="repCsv" type="button">Download for Excel</button><button id="repPrint" type="button">Print</button><button id="repClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="finDlg" role="dialog" aria-modal="true" aria-labelledby="finTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="finTitleH" style="margin:0">Alex Finance Personal</h3><div class="row" style="align-items:center"><button type="button" id="finPrev" title="Previous year">&lsaquo;</button><b id="finYr" style="min-width:48px;text-align:center"></b><button type="button" id="finNext" title="Next year">&rsaquo;</button></div></div>
@@ -3552,6 +3568,34 @@ $('bpGo').onclick=async()=>{const rows=parseBinder($('bpText').value,$('bpMo').v
   try{for(const r of rows){r.createdAt=new Date(t0+n).toISOString();await binCol.add(r);n++;$('bpMsg').textContent=`Adding… ${n} of ${rows.length}`}
     closeBp();const y=rows[0].month.slice(0,4);if(y)$('bYear').value=y;renderBinder();toast(`Added ${n} row${n===1?'':'s'} to your binder`)}
   catch(e){$('bpMsg').className='msg err';$('bpMsg').textContent=`Added ${n}, then stopped: ${errText(e)}`;$('bpGo').disabled=false}};
+/* ---------- Policy report: every client policy, filtered by exp/eff dates, company, GA, line, producer, status, new/renewal, state ---------- */
+let repSort={k:'exp',d:1};
+const REP_COLS=[['client','Client'],['line','Line'],['company','Company'],['carrier','GA'],['number','Policy #'],['eff','Eff date'],['exp','Exp date'],['premium','Premium'],['producer','Producer'],['status','Status'],['nb','New/Ren'],['state','State'],['phone','Phone'],['email','Email']];
+function repAll(){const out=[];clients.forEach(c=>(c.policies||[]).forEach(p=>{if(!p||!(p.line||p.number||p.company))return;out.push({c,client:clientName(c),line:p.line||'',company:p.company||'',carrier:p.carrier||'',number:p.number||'',eff:typedISO(p.eff||''),exp:typedISO(p.exp||''),premium:p.premium||'',producer:p.producer||'',status:p.status||'Active',nb:p.nb||'',state:p.state||'',phone:c.phone||c.cell||'',email:c.email||''})}));return out}
+function repOpts(rows){[['rCo','company','All companies'],['rGa','carrier','All GAs'],['rLine','line','All lines'],['rProd','producer','Everyone'],['rSt','state','All states']].forEach(([id,k,all])=>{const el=$(id),keep=el.value,vs=[...new Set(rows.map(r=>r[k].trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  el.innerHTML=`<option value="">${all}</option>`+vs.map(v=>`<option>${esc(v)}</option>`).join('');el.value=vs.includes(keep)?keep:''})}
+function repRows(){const all=repAll(),d=id=>{const v=$(id).value.trim();return v?typedISO(v):''},ef=d('rEffFrom'),et=d('rEffTo'),xf=d('rExpFrom'),xt=d('rExpTo'),eq=(id,v)=>!$(id).value||v.trim().toLowerCase()===$(id).value.toLowerCase();
+  const rows=all.filter(r=>(!xf||(r.exp&&r.exp>=xf))&&(!xt||(r.exp&&r.exp<=xt))&&(!ef||(r.eff&&r.eff>=ef))&&(!et||(r.eff&&r.eff<=et))&&eq('rCo',r.company)&&eq('rGa',r.carrier)&&eq('rLine',r.line)&&eq('rProd',r.producer)&&eq('rStat',r.status)&&eq('rNb',r.nb)&&eq('rSt',r.state));
+  const {k,d:dir}=repSort,num=k==='premium';rows.sort((a,b)=>{const x=num?bNum(a[k])||0:a[k].toLowerCase(),y=num?bNum(b[k])||0:b[k].toLowerCase();return (x<y?-1:x>y?1:0)*dir||a.client.localeCompare(b.client)});return {all,rows}}
+function renderRep(){const {all,rows}=repRows();repOpts(all);const prem=rows.reduce((a,r)=>a+(bNum(r.premium)||0),0);
+  $('repCount').textContent=`${rows.length} polic${rows.length===1?'y':'ies'}${prem?` · Premium ${bMoney(Math.round(prem*100)/100)}`:''}`;
+  $('repT').innerHTML='<thead><tr>'+REP_COLS.map(([k,l])=>`<th data-rk="${k}"${k==='premium'?' class="n"':''}>${esc(l)}${repSort.k===k?(repSort.d>0?' ▲':' ▼'):''}</th>`).join('')+'</tr></thead><tbody>'+rows.map((r,i)=>`<tr data-ri="${i}">`+REP_COLS.map(([k])=>`<td${k==='premium'?' class="n"':''}>${esc(k==='eff'||k==='exp'?fmtDate(r[k]):r[k])}</td>`).join('')+'</tr>').join('')+'</tbody>';
+  $('repT').hidden=!rows.length;$('repEmpty').hidden=!!rows.length;repRows.last=rows}
+$('repBtn').onclick=()=>{$('repDlg').classList.add('on');renderRep()};
+$('repClose').onclick=()=>$('repDlg').classList.remove('on');
+$('repF').addEventListener('input',renderRep);$('repF').addEventListener('change',renderRep);
+['rExpFrom','rExpTo','rEffFrom','rEffTo'].forEach(id=>$(id).addEventListener('blur',()=>{const x=typedISO($(id).value.trim());if(/^\d{4}-\d\d-\d\d$/.test(x))$(id).value=fmtDate(x)}));
+const repNext=n=>{const t=new Date(),e=new Date(t.getFullYear(),t.getMonth(),t.getDate()+n),f=x=>`${String(x.getMonth()+1).padStart(2,'0')}/${String(x.getDate()).padStart(2,'0')}/${x.getFullYear()}`;$('rExpFrom').value=f(t);$('rExpTo').value=f(e);renderRep()};
+$('rNext30').onclick=()=>repNext(30);$('rNext60').onclick=()=>repNext(60);
+$('rClear').onclick=()=>{$('repF').querySelectorAll('input,select').forEach(el=>el.value='');renderRep()};
+$('repT').addEventListener('click',e=>{const th=e.target.closest('th[data-rk]');if(th){repSort=repSort.k===th.dataset.rk?{k:th.dataset.rk,d:-repSort.d}:{k:th.dataset.rk,d:1};renderRep();return}
+  const tr=e.target.closest('tr[data-ri]');if(tr){const r=repRows.last[+tr.dataset.ri];$('repDlg').classList.remove('on');openClient(r.c)}});
+$('repCsv').onclick=async()=>{const q=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
+  const lines=[REP_COLS.map(c=>c[1]),...repRows.last.map(r=>REP_COLS.map(([k])=>k==='eff'||k==='exp'?fmtDate(r[k]):r[k]))];
+  const blob=new Blob(['\ufeff'+lines.map(l=>l.map(q).join(',')).join('\r\n')],{type:'text/csv'}),name=`Policy report ${fmtDate(new Date().toISOString().slice(0,10)).replace(/\//g,'-')}.csv`;
+  try{if(dl)await dl.save({filename:name,data:blob,mimeType:'text/csv'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()}}catch(e){toast(errText(e))}};
+$('repPrint').onclick=()=>{document.body.classList.add('repPrint');window.print();document.body.classList.remove('repPrint')};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('repDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();$('repDlg').classList.remove('on')}},true);
 $('bCsv').onclick=async()=>{const year=$('bYear').value,list=binder.filter(b=>(b.month||'').startsWith(year)).sort((a,b)=>(a.month+(a.createdAt||'')).localeCompare(b.month+(b.createdAt||'')));
   const q=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
   const lines=[['Month','#','Name','Eff date','Exp date','Type','GA','Com','Term','Premium','Com %','Comm','Yr comm','BF','Finance','Split %','Com split','BF split','Total made','Com paid','BF paid','Notes']];
