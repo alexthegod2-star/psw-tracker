@@ -3457,7 +3457,7 @@ function renderBinder(){if(!binderOn)return;
   const ys=$('bYear'),keep=ys.value||cy;ys.innerHTML=years.map(y=>`<option>${y}</option>`).join('');ys.value=years.includes(keep)?keep:cy;const year=ys.value;
   // month picker: every month from September 2026 on (and any later month with sales), within the year shown
   {const ms=$('bMon'),keepM=ms.value,now=monKey(new Date()),ks=new Set(binder.map(b=>b.month).filter(k=>k&&k>='2026-09'));for(let d=new Date(2026,8,1);monKey(d)<=now;d.setMonth(d.getMonth()+1))ks.add(monKey(d));
-    const list=[...ks].filter(k=>k.startsWith(year)).sort().reverse();ms.innerHTML='<option value="">All months</option>'+list.map(k=>`<option value="${k}">${esc(MON[+k.slice(5)-1])}</option>`).join('');ms.value=list.includes(keepM)?keepM:''}
+    const list=[...ks].filter(k=>k.startsWith(year)).sort().reverse();ms.innerHTML='<option value="">Whole year</option>'+list.map(k=>`<option value="${k}">${esc(MON[+k.slice(5)-1])}</option>`).join('');ms.value=list.includes(keepM)?keepM:''}
   const mon=$('bMon').value,q=$('bq').value.trim().toLowerCase();
   const inYear=binder.filter(b=>(b.month||'').startsWith(year)&&(!mon||b.month===mon));
   const rows=inYear.filter(b=>!q||[b.name,b.type,b.ga,b.carrier,b.finance,b.notes].join(' ').toLowerCase().includes(q));
