@@ -96,6 +96,8 @@ def init_db():
                 first = (r["name"] or "").split()[:1]
                 if r["username"].lower() in PAY_PEOPLE or (first and first[0].lower() in PAY_PEOPLE):
                     c.execute("UPDATE users SET payment=1 WHERE id=?", (r["id"],))
+        if "sig" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Signature: picture stamped on ACORDs this person makes
+            c.execute("ALTER TABLE users ADD COLUMN sig TEXT NOT NULL DEFAULT ''")
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
                   "vals TEXT NOT NULL, answers TEXT, agent TEXT NOT NULL, created REAL NOT NULL, created_by TEXT NOT NULL, expires REAL NOT NULL, submitted REAL)")
 
@@ -330,7 +332,7 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
@@ -417,6 +419,26 @@ async def admin_set_payment(username: str, request: Request):
     if not n:
         err(404, "no_such_user")
     return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/signature")
+async def admin_set_signature(username: str, request: Request):
+    """Signature: a PNG picture (data URL) put on the ACORDs this person makes; empty removes it."""
+    need_owner(request)
+    sig = str((await request.json()).get("sig") or "")
+    if sig and (not re.fullmatch(r"data:image/png;base64,[A-Za-z0-9+/=]+", sig) or len(sig) > 400_000):
+        err(400, "bad_signature")
+    with db() as c:
+        n = c.execute("UPDATE users SET sig=? WHERE username=?", (sig, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.get("/api/auth/signature")
+def my_signature(request: Request):
+    u = need_user(request)
+    return {"sig": u["sig"] if "sig" in u.keys() else ""}
 
 
 @app.post("/api/admin/users/{username}/delete")
