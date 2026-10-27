@@ -320,6 +320,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="small" style="margin-bottom:8px">Made from this lead’s quote sheet and attached here. Open them from Files to fill in anything else.</div>
       <div class="row"><button class="pri" data-acord="125">Create 125</button><button class="pri" data-acord="125,126">Create 125 + 126</button><button class="pri" data-acord="125,126,140">Create 125-126-140</button><button class="pri" data-acord="126">Create 126</button><button class="pri" data-acord="130">Create 130</button><button class="pri" data-acord="131">Create 131</button><button class="pri" data-acord="140">Create 140</button></div>
       <div class="row" style="margin-top:8px"><button class="pri" data-acord="80" title="Personal home application">Create 80</button></div>
+      <div class="row" style="margin-top:8px;align-items:center"><button class="pri" data-acord="auto" title="Commercial auto application from the com auto quote sheet">Create 125-127-129-137-163</button><button type="button" id="add137Btn" title="Add another state's fillable ACORD 137">Add state 137</button><span class="small" id="st137List"></span></div>
+      <div class="row" id="add137Box" hidden style="margin-top:6px;align-items:center"><input id="add137St" maxlength="2" placeholder="State" style="width:64px;text-transform:uppercase"><input type="file" id="add137File" accept="application/pdf,.pdf"><button class="pri" type="button" id="add137Save">Save 137</button><button type="button" id="add137Cancel">Cancel</button></div>
       <div class="msg" id="acordMsg"></div>
     </div>
 
@@ -2301,17 +2303,21 @@ async function sigSwap(bytes){const s=await mySig();if(!s)return bytes;const L=P
 async function sigDraw(doc,field){const s=await mySig();if(!s)return;const fl=doc.getForm().getFields().find(f=>f.getName().replace(/\[0\]$/,'').endsWith(field));if(!fl)return;
   const w=fl.acroField.getWidgets()[0],r=w.getRectangle(),ref=doc.context.getObjectRef(w.dict),pg=doc.getPages().find(p=>{const a=p.node.Annots();return a&&a.asArray().some(x=>x===ref)})||doc.getPages()[0];
   const img=await doc.embedPng(sigBytes(s)),h=Math.max(r.height,16),wd=h*img.width/img.height;pg.drawImage(img,{x:r.x+4,y:r.y+(r.height-h)/2,width:Math.min(wd,r.width-8),height:Math.min(wd,r.width-8)*img.height/img.width})}
-async function fill80(v){const L=PDFLib,doc=await L.PDFDocument.load(await acord80Tpl()),f=doc.getForm(),helv=await doc.embedFont(L.StandardFonts.Helvetica);
-  // applicant / co-applicant name: one full-name box across the first, middle and last boxes
-  for(const s of ['A','B']){const fs=f.getFields(),get=n=>fs.find(x=>x.getName().endsWith(`.NamedInsured_${n}_${s}[0]`)),gn=get('GivenName'),sn=get('Surname'),mi=get('OtherGivenNameInitial');
-    if(gn&&sn){const w=gn.acroField.getWidgets()[0],r=w.getRectangle(),e=sn.acroField.getWidgets()[0].getRectangle();w.setRectangle({x:r.x,y:r.y,width:e.x+e.width-r.x,height:r.height});for(const x of [sn,mi].filter(Boolean)){x.enableReadOnly();for(const k of x.acroField.getWidgets()){k.setRectangle({x:0,y:0,width:0,height:0});k.setFlagTo(L.AnnotationFlags.Hidden,true)}}}}
+// fill an ACORD's boxes by their names (the F[0].Pn[0]. wrapper and [0] left off); true checks a box; text shrinks to fit
+function fillBoxes(doc,v,helv){const L=PDFLib,f=doc.getForm();
   const by={};for(const fl of f.getFields()){const k=fl.getName().replace(/^F\[0\]\.P\d+\[0\]\./,'').replace(/\[0\]$/,'');(by[k]=by[k]||[]).push(fl)}
   for(const [k,val] of Object.entries(v))for(const fl of by[k]||[]){
     if(fl instanceof L.PDFCheckBox){if(val)fl.check();continue}if(!(fl instanceof L.PDFTextField))continue;
     const text=String(val).replace(/[^\x0A\x20-\x7E\xA0-\xFF]/g,''),r=fl.acroField.getWidgets()[0].getRectangle();let size=10;
     if(!fl.isMultiline()){while(size>6&&helv.widthOfTextAtSize(text,size)>r.width-4)size-=0.5;size=Math.min(size,Math.max(6,r.height-2))}
     else{const est=()=>text.split('\n').reduce((a,ln)=>a+Math.max(1,Math.ceil(helv.widthOfTextAtSize(ln,size)/(r.width-6))),0)*size*1.17;while(size>6&&est()>r.height-2)size-=0.5}
-    try{fl.setText(text)}catch(_){fl.setMaxLength(undefined);fl.setText(text)}{const da=fl.acroField.getDefaultAppearance()||'';if(/\\057|^$/.test(da))fl.acroField.setDefaultAppearance(da.replace(/\\057/g,'/')||'/Helv 10 Tf 0 g')}fl.setFontSize(size)}
+    try{fl.setText(text)}catch(_){fl.setMaxLength(undefined);fl.setText(text)}{const da=fl.acroField.getDefaultAppearance()||'';if(/\\\d{3}|^$/.test(da))fl.acroField.setDefaultAppearance(da.replace(/\\(\d{3})/g,(_,o)=>String.fromCharCode(parseInt(o,8)))||'/Helv 10 Tf 0 g')}fl.setFontSize(size)}
+}
+async function fill80(v){const L=PDFLib,doc=await L.PDFDocument.load(await acord80Tpl()),f=doc.getForm(),helv=await doc.embedFont(L.StandardFonts.Helvetica);
+  // applicant / co-applicant name: one full-name box across the first, middle and last boxes
+  for(const s of ['A','B']){const fs=f.getFields(),get=n=>fs.find(x=>x.getName().endsWith(`.NamedInsured_${n}_${s}[0]`)),gn=get('GivenName'),sn=get('Surname'),mi=get('OtherGivenNameInitial');
+    if(gn&&sn){const w=gn.acroField.getWidgets()[0],r=w.getRectangle(),e=sn.acroField.getWidgets()[0].getRectangle();w.setRectangle({x:r.x,y:r.y,width:e.x+e.width-r.x,height:r.height});for(const x of [sn,mi].filter(Boolean)){x.enableReadOnly();for(const k of x.acroField.getWidgets()){k.setRectangle({x:0,y:0,width:0,height:0});k.setFlagTo(L.AnnotationFlags.Hidden,true)}}}}
+  fillBoxes(doc,v,helv);
   f.updateFieldAppearances(helv);await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A');return await doc.save()}
 async function make80(m){const fresh=leads.find(l=>l.id===cur.id)||cur,hs=[...(fresh.files||[])].reverse().find(x=>/ personal home quote sheet\.pdf$/i.test(x.name));
   if(!hs){m.className='msg err';m.textContent='This lead has no personal home quote sheet yet. Click Personal home quote at the top first.';return}
@@ -2321,11 +2327,93 @@ async function make80(m){const fresh=leads.find(l=>l.id===cur.id)||cur,hs=[...(f
   const client=([h.ins_first,h.ins_last].filter(Boolean).join(' ')||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim(),name=`${client} 80.pdf`;
   if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(notes.length?`<div class="small" style="margin-top:4px">Heads up: ${notes.map(esc).join(' · ')}</div>`:'')}
   else{m.className='msg err';m.textContent=$('fileMsg').textContent}}
+/* ---------- Commercial auto set: ACORD 125, 127, 129, 137 (garaging state's, else CA) and 163, from the com auto quote sheet ---------- */
+const tplCache={};
+async function tplBytes(name){if(!tplCache[name]){const r=await fetch(name);if(!r.ok)throw new Error(name+' is missing');tplCache[name]=new Uint8Array(await r.arrayBuffer())}return tplCache[name]}
+async function tpl137(st){const r=await fetch('/api/acord137/'+encodeURIComponent(st||'CA'),{credentials:'same-origin'});if(!r.ok)throw new Error('the ACORD 137 template is missing');return {st:r.headers.get('X-State')||'CA',bytes:new Uint8Array(await r.arrayBuffer())}}
+const ABC=i=>String.fromCharCode(65+i);
+function buildAutoSet(C,h,today){
+  const g=k=>String(h[k]??'').trim(),has=k=>!!g(k)&&!/^(no|none|n\/?a|0|reject(ed)?|declined?|-)$/i.test(g(k)),S=C.DEFAULT_SETTINGS,notes=[];
+  const amt=k=>{const t=g(k),m=t.match(/^\$?\s*[\d,.]+\s*(k|m|mil|million|thousand)?\b/i),n=m?C.parseMoney(m[0]):null;return n!=null?n.toLocaleString('en-US'):t.replace(/^\$\s*/,'')};
+  const name=g('client_name')+(g('dba')?' DBA '+g('dba'):''),gar=C.parseAddress(g('garaging_address')||g('mailing_address')),st=gar.state||C.parseAddress(g('mailing_address')).state||'CA';
+  const eff=C.resolveDates({eff_date:g('eff_date')},today).eff;
+  const head={Form_CompletionDate_A:C.fmtDate(today),Producer_FullName_A:S.agency_name,Policy_EffectiveDate_A:eff,NamedInsured_FullName_A:name};
+  // drivers: 127 page 1 (13 rows) and the 163 (24 rows)
+  const drivers=[];for(let n=1;n<=6;n++)if(['first','last','dl','dob'].some(k=>g(`d${n}_${k}`)))drivers.push(n);
+  const drv=(n,sfx)=>{const d=k=>g(`d${n}_${k}`),o={};const set=(k,x)=>{if(x)o[`Driver_${k}_${sfx}`]=x};
+    set('ProducerIdentifier',String(drivers.indexOf(n)+1));set('GivenName',d('first'));set('Surname',d('last'));set('BirthDate',d('dob'));set('GenderCode',d('sex').charAt(0).toUpperCase());set('MaritalStatusCode',d('mar').charAt(0).toUpperCase());
+    set('LicenseNumberIdentifier',d('dl'));set('LicensedStateOrProvinceCode',d('dl_state').toUpperCase());set('ExperienceYearCount',d('cdl_yrs'));return o};
+  // vehicles: 127 page 3 (4) and the 129 (5 a page)
+  const vehicles=[];for(let n=1;n<=6;n++)if(VEH_KEYS.some(k=>g(`v${n}_${k}`)))vehicles.push(n);
+  const veh=(n,sfx)=>{const x=k=>g(`v${n}_${k}`),o={},set=(k,y)=>{if(y)o[`Vehicle_${k}_${sfx}`]=y};
+    set('ProducerIdentifier',String(vehicles.indexOf(n)+1));set('ModelYear',x('year'));set('ManufacturersName',x('make'));set('ModelName',x('model'));set('BodyCode',x('body'));set('VINIdentifier',x('vin'));set('VehicleType_CommercialIndicator',true);
+    set('PhysicalAddress_LineOne',gar.street||gar.raw);set('PhysicalAddress_CityName',gar.city);set('PhysicalAddress_StateOrProvinceCode',gar.state);set('PhysicalAddress_PostalCode',x('use')||gar.zip);set('Registration_StateOrProvinceCode',st);
+    set('GrossVehicleWeight',x('gvw'));set('SeatingCapacityCount',x('passengers'));set('RadiusOfUse',x('radius'));set('CostNewAmount',x('value').replace(/^\$\s*/,''));set('Use_CommercialIndicator',true);
+    set('Coverage_LiabilityIndicator',true);if(has('med_pay'))set('Coverage_MedicalPaymentsIndicator',true);if(has('um_uim'))set('Coverage_UninsuredMotoristsIndicator',true);
+    if(has('comp_ded')){set('Coverage_ComprehensiveIndicator',true);set('Coverage_ComprehensiveDeductibleIndicator',true);set('Coverage_ComprehensiveOrSpecifiedCauseOfLossDeductibleAmount',amt('comp_ded'))}
+    if(has('coll_ded')){set('Coverage_CollisionIndicator',true);set('Collision_DeductibleAmount',amt('coll_ded'))}
+    if(has('rental_towing')){set('Coverage_TowingAndLabourIndicator',true);set('Coverage_RentalReimbursementIndicator',true)}return o};
+  // 127: header, drivers, AI / lienholders, vehicles, producer
+  const v127={...head,CommercialVehicleLineOfBusiness_Attachment_CommercialAutoDriverInformationScheduleIndicator_A:true,Producer_AuthorizedRepresentative_FullName_A:S.producer_name,Producer_StateLicenseIdentifier_A:'0F41718'};
+  drivers.slice(0,13).forEach((n,i)=>Object.assign(v127,drv(n,ABC(i))));if(vehicles.length)v127.CommercialVehicleLineOfBusiness_Attachment_VehicleScheduleIndicator_A=true;vehicles.slice(0,4).forEach((n,i)=>Object.assign(v127,veh(n,ABC(i))));
+  [1,2].forEach((n,i)=>{const a=k=>g(`ai${n}_${k}`);if(!a('name'))return;const s=ABC(i);Object.assign(v127,{['AdditionalInterest_InterestRank_'+s]:String(n),['AdditionalInterest_FullName_'+s]:a('name'),['AdditionalInterest_MailingAddress_LineOne_'+s]:a('address'),['AdditionalInterest_MailingAddress_CityName_'+s]:a('city'),['AdditionalInterest_MailingAddress_StateOrProvinceCode_'+s]:a('state').toUpperCase()})});
+  if(g('ai3_name'))notes.push('the 127 has room for 2 additional interests; add the rest on an ACORD 45');
+  // 129: every vehicle, 5 to a page
+  const v129=[];for(let i=0;i<Math.max(1,Math.ceil(vehicles.length/5));i++){const o={...head};vehicles.slice(i*5,i*5+5).forEach((n,j)=>Object.assign(o,veh(n,ABC(j))));v129.push(o)}
+  // 163: every driver
+  const v163={...head};drivers.slice(0,24).forEach((n,i)=>Object.assign(v163,drv(n,ABC(i))));
+  // 137 business auto section: symbol 7 (scheduled autos) on each coverage the sheet has
+  const v137={...head},rem=[];
+  if(has('liability_limit'))Object.assign(v137,{Vehicle_BusinessAutoSymbol_SevenIndicator_A:true,Vehicle_CombinedSingleLimit_LimitIndicator_A:true,Vehicle_BodilyInjury_PerPersonLimitAmount_A:amt('liability_limit')});
+  if(has('med_pay'))Object.assign(v137,{Vehicle_BusinessAutoSymbol_SevenIndicator_B:true,Vehicle_MedicalPayments_PerPersonLimitAmount_A:amt('med_pay')});
+  if(has('um_uim'))Object.assign(v137,{Vehicle_BusinessAutoSymbol_SevenIndicator_C:true,Vehicle_CombinedSingleLimit_LimitIndicator_B:true,Vehicle_UninsuredMotorists_BodilyInjuryPerPersonLimitAmount_A:amt('um_uim')});
+  if(has('rental_towing')){v137.Vehicle_BusinessAutoSymbol_SevenIndicator_E=true;if(/\d/.test(g('rental_towing')))v137.Vehicle_TowingAndLabour_LimitAmount_A=amt('rental_towing')}
+  if(has('comp_ded')){v137.Vehicle_BusinessAutoSymbol_SevenIndicator_F=true;rem.push('Comp deductible: $'+amt('comp_ded'))}
+  if(has('coll_ded')){v137.Vehicle_BusinessAutoSymbol_SevenIndicator_H=true;rem.push('Collision deductible: $'+amt('coll_ded'))}
+  if(g('hired_nonowned')){if(has('hired_nonowned'))Object.assign(v137,{Vehicle_HiredBorrowed_YesIndicator_A:true,Vehicle_HiredBorrowed_IfAnyBasisIndicator_A:true,Vehicle_HiredBorrowed_StateOrProvinceCode_A:st,Vehicle_NonOwned_YesIndicator_A:true,Vehicle_NonOwned_StateOrProvinceCode_A:st});
+    else Object.assign(v137,{Vehicle_HiredBorrowed_NoIndicator_A:true,Vehicle_NonOwned_NoIndicator_A:true})}
+  if(has('cargo_limit'))rem.push('Cargo: $'+amt('cargo_limit')+(g('cargo')?' ('+g('cargo')+')':''));
+  if(rem.length)v137.CommercialVehicleLineOfBusiness_RemarkText_A=rem.join('\n');
+  if(!drivers.length)notes.push('the sheet has no drivers');if(!vehicles.length)notes.push('the sheet has no vehicles');
+  if(drivers.length>13)notes.push('drivers past 13 are on the 163 only');
+  // 125: the same engine as the other 125s, as a commercial auto application at the garaging address
+  const qf={};for(const [k,x] of Object.entries(h))qf['f_'+k]=x;
+  for(let i=1;i<=4;i++){const t=[g(`ai${i}_name`),g(`ai${i}_address`),[g(`ai${i}_city`),g(`ai${i}_state`)].filter(Boolean).join(' ')].filter(Boolean).join(', ');if(t)qf['f_ai'+i]=t}
+  qf.f_owner1=[g('owner_first'),g('owner_last'),g('owner_dob')].filter(Boolean).join(' ');qf.f_property_address=g('garaging_address');qf.f_line_of_business='Commercial Auto';
+  const data=C.parseQuotePdfFields(qf),rd=C.resolveDates(data,today);data.eff_date_original=data.eff_date;data.eff_date=rd.eff;data.exp_date=rd.exp;
+  const all=C.buildValues(data,Object.assign({},C.DEFAULT_SETTINGS),{today,customer_id:''});notes.push(...all.notes.filter(t=>!/class code|WC/.test(t)));
+  return {st,v125:all['125'],v127,v129,v137,v163,notes}}
+async function fillNamed(bytes,v,sigField){const L=PDFLib,doc=await L.PDFDocument.load(bytes),helv=await doc.embedFont(L.StandardFonts.Helvetica);fillBoxes(doc,v,helv);doc.getForm().updateFieldAppearances(helv);if(sigField)await sigDraw(doc,sigField);return doc.save()}
+async function makeAutoSet(m){const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(x=>/ com auto quote sheet\.pdf$/i.test(x.name));
+  if(!qs){m.className='msg err';m.textContent='This lead has no com auto quote sheet yet. Make one from Quick fill first.';return}
+  m.className='msg';m.textContent=`Reading ${qs.name}…`;await acordReady();const C=window.AcordCore;
+  let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the com auto quote sheet file is missing')}
+  const h=sheetValues(await PDFLib.PDFDocument.load(raw)),a=buildAutoSet(C,h,new Date()),t137=await tpl137(a.st);
+  if(t137.st!==a.st)a.notes.push(`no ${a.st} 137 on file, so the CA 137 was used (Add state 137 adds one)`);
+  const parts=[await sigSwap(await C.fillPdf(b64bytes(acordTpl['125']),'125',a.v125,PDFLib)),await fillNamed(await tplBytes('tpl127.pdf'),a.v127,'Producer_AuthorizedRepresentative_Signature_A')];
+  for(const v of a.v129)parts.push(await fillNamed(await tplBytes('tpl129.pdf'),v));
+  parts.push(await fillNamed(t137.bytes,a.v137,'Producer_AuthorizedRepresentative_Signature_B'),await fillNamed(await tplBytes('tpl163.pdf'),a.v163));
+  const bytes=await C.mergePdfs(parts,PDFLib),client=fnClean(h.client_name||'Client')||'Client',name=`${client} 125 127 129 137 163.pdf`;
+  if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(a.notes.length?`<div class="small" style="margin-top:4px">Heads up: ${a.notes.map(esc).join(' · ')}</div>`:'')}
+  else{m.className='msg err';m.textContent=$('fileMsg').textContent}}
+// Add state 137: the state's fillable 137, kept on the server; Create 125-127-129-137-163 picks it by the garaging state
+async function list137(){try{const r=await fetch('/api/acord137',{credentials:'same-origin'});if(r.ok){const d=await r.json();$('st137List').textContent='137s on file: '+d.states.join(', ')}}catch(_){}}
+$('add137Btn').onclick=()=>{$('add137Box').hidden=false;$('add137St').value='';$('add137File').value='';list137();$('add137St').focus()};
+$('add137Cancel').onclick=()=>{$('add137Box').hidden=true};
+$('add137Save').onclick=async()=>{const m=$('acordMsg'),st=$('add137St').value.trim().toUpperCase(),file=$('add137File').files[0];
+  if(!/^[A-Z]{2}$/.test(st)){m.className='msg err';m.textContent='Type the 2-letter state, like MN.';return}
+  if(!file){m.className='msg err';m.textContent='Choose the state’s fillable 137 PDF.';return}
+  const have=($('st137List').textContent.split(':')[1]||'').split(',').map(x=>x.trim());
+  if(have.includes(st)&&!(await sure(`Replace the ${st} 137 on file with ${file.name}?`)))return;
+  m.className='msg';m.textContent=`Saving the ${st} 137…`;
+  const r=await fetch('/api/acord137/'+st,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/pdf'},body:file});
+  if(r.ok){m.className='msg ok';m.textContent=`${st} 137 saved. Leads garaged in ${st} use it now.`;$('add137Box').hidden=true;list137()}
+  else{m.className='msg err';m.textContent='Couldn’t save the 137: '+((await r.json().catch(()=>({}))).detail||r.status)}};
 $('acordSec').addEventListener('click',async e=>{
   const forms=e.target.dataset.acord;if(!forms||!(await ensureSaved()))return;
   const m=$('acordMsg'),btn=e.target,label=btn.textContent;
-  if(forms==='80'){document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=true);btn.textContent='Working…';
-    try{await make80(m)}catch(err){m.className='msg err';m.textContent='Couldn’t make the ACORD: '+(err.message||err.code||'error')}
+  if(forms==='80'||forms==='auto'){document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=true);btn.textContent='Working…';
+    try{await (forms==='auto'?makeAutoSet(m):make80(m))}catch(err){m.className='msg err';m.textContent='Couldn’t make the ACORD: '+(err.message||err.code||'error')}
     document.querySelectorAll('#acordSec button').forEach(b=>b.disabled=false);btn.textContent=label;return}
   const fresh=leads.find(l=>l.id===cur.id)||cur;
   const qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));

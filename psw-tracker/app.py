@@ -737,6 +737,64 @@ def blob_get(request: Request, bid: str):
     return FileResponse(f, media_type=r["type"], headers={"Cache-Control": "private, max-age=31536000, immutable"})
 
 
+# ---------- tracker module: state ACORD 137s (CA ships with the app; others are added from the lead's ACORD box) ----------
+A137 = DATA / "acord137"
+ST2 = re.compile(r"^[A-Z]{2}$")
+
+
+def plain_pdf(body: bytes) -> bytes:
+    """Unlock a fillable PDF that is locked against editing (most ACORD downloads) and drop its XFA so the boxes fill; as-is if that can't be done."""
+    try:
+        import io
+        import pypdf
+        r = pypdf.PdfReader(io.BytesIO(body))
+        if r.is_encrypted:
+            r.decrypt("")
+        w = pypdf.PdfWriter(clone_from=r)
+        af = w._root_object.get("/AcroForm")
+        if af is not None and "/XFA" in af:
+            del af["/XFA"]
+        out = io.BytesIO()
+        w.write(out)
+        return out.getvalue()
+    except Exception:
+        return body
+
+
+@app.get("/api/acord137")
+def acord137_list(request: Request):
+    need_module("tracker"); need_user(request)
+    have = sorted(f.stem for f in A137.glob("*.pdf")) if A137.is_dir() else []
+    return {"states": sorted(set(have) | {"CA"})}
+
+
+@app.get("/api/acord137/{st}")
+def acord137_get(request: Request, st: str):
+    """That state's 137, or the CA 137 when the state has none (X-State says which)."""
+    need_module("tracker"); need_user(request)
+    st = st.upper()
+    f = A137 / f"{st}.pdf" if ST2.match(st) else None
+    if not f or not f.is_file():
+        st, f = "CA", (A137 / "CA.pdf" if (A137 / "CA.pdf").is_file() else STATIC / "tpl137-CA.pdf")
+    return FileResponse(f, media_type="application/pdf", headers={"X-State": st, "Cache-Control": "no-cache"})
+
+
+@app.post("/api/acord137/{st}")
+async def acord137_put(request: Request, st: str):
+    need_module("tracker"); need_user(request)
+    st = st.upper()
+    if not ST2.match(st):
+        err(400, "bad_state")
+    body = await request.body()
+    if len(body) > 8_000_000:
+        err(413, "too_large")
+    if not body.startswith(b"%PDF"):
+        err(415, "not_a_pdf")
+    A137.mkdir(parents=True, exist_ok=True)
+    (A137 / f"{st}.pdf").write_bytes(plain_pdf(body))
+    return {"ok": True, "state": st}
+
+
 # ---------- tracker module: Quick fill reading (optional, needs ANTHROPIC_API_KEY in .env) ----------
 # ---------- tracker module: whole-database read and backup (for Claude's data key, or an admin) ----------
 def need_data_admin(request: Request):
