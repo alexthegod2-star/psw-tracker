@@ -679,6 +679,15 @@ function removeInitDate(pdfDoc,pages){
   });
 }
 
+/* ---------- drop the carrier's agency commission and net due lines (and a "please retain upon binding" note beside them) ---------- */
+const COMM=/^(agency\s+)?commission\b/i, NETDUE=/^net\s+(premium\s+)?(due|payable|amount)\b/i, RETAIN=/^(please\s+retain|upon\s+binding)\b/i;
+function removeCommission(pdfDoc,pages){
+  pages.forEach((P,pi)=>{
+    const ys=P.lines.filter(L=>L.text.length<120 && ((COMM.test(L.text)&&/%|\$/.test(L.text)) || (NETDUE.test(L.text)&&L.amounts.length) || (RETAIN.test(L.text)&&L.text.length<40))).map(L=>L.y);
+    if(ys.length) walkPage(pdfDoc,pi,{region:y=>ys.some(v=>Math.abs(y-v)<1.5),shapeRegion:()=>false});
+  });
+}
+
 /* ---------- AI fallback: when the layout rules can't find the totals, ask Claude which lines they are ---------- */
 async function aiLocate(pages,ask){
   const rows=[];
@@ -711,6 +720,7 @@ async function add(srcBytes,fee,label,opts){
   const F=PDFLib.StandardFonts;
   const fReg=await pdfDoc.embedFont(serif?F.TimesRoman:F.Helvetica);
   const fBold=await pdfDoc.embedFont(serif?F.TimesRomanBold:F.HelveticaBold);
+  removeCommission(pdfDoc,pages);
   const order=locs.map((L,k)=>({L,k})).sort((a,b)=>a.L.pageIndex-b.L.pageIndex||a.L.total.y-b.L.total.y);
   const done=[], skipped=[];
   for(const {L,k} of order){
