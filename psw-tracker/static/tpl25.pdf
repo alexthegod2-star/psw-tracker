@@ -1,0 +1,1160 @@
+%PDF-1.4
+%ÿğ°
+1 0 obj 
+<< /AcroForm << /DR << /Font << /F2 2 0 R >> >> /Fields [ 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R 28 0 R 29 0 R 30 0 R 31 0 R 32 0 R 33 0 R 34 0 R 35 0 R 36 0 R 37 0 R 38 0 R 39 0 R 40 0 R 41 0 R 42 0 R 43 0 R 44 0 R 45 0 R 46 0 R 47 0 R 48 0 R 49 0 R 50 0 R 51 0 R 52 0 R 53 0 R 54 0 R 55 0 R 56 0 R 57 0 R 58 0 R 59 0 R 60 0 R 61 0 R 62 0 R 63 0 R 64 0 R 65 0 R 66 0 R 67 0 R 68 0 R 69 0 R 70 0 R 71 0 R 72 0 R 73 0 R 74 0 R 75 0 R 76 0 R 77 0 R 78 0 R 79 0 R 80 0 R 81 0 R 82 0 R 83 0 R 84 0 R 85 0 R 86 0 R 87 0 R 88 0 R 89 0 R 90 0 R 91 0 R 92 0 R 93 0 R 94 0 R 95 0 R 96 0 R 97 0 R 98 0 R 99 0 R 100 0 R 101 0 R 102 0 R 103 0 R 104 0 R 105 0 R 106 0 R 107 0 R 108 0 R 109 0 R 110 0 R 111 0 R 112 0 R 113 0 R 114 0 R 115 0 R 116 0 R 117 0 R 118 0 R 119 0 R 120 0 R 121 0 R 122 0 R 123 0 R 124 0 R 125 0 R 126 0 R 127 0 R 128 0 R 129 0 R 130 0 R 131 0 R ] >> /OpenAction << /JS (function DateV\(event\) {  var regEx = /^\\d{1,2}\\/\\d{1,2}\\/\\d{4}$/; if \(!regEx.test\(event.value\)\) { event.rc = false; app.alert\("The date must be of the format MM/DD/YYYY."\); } };function YesNoK\(event\) { if \(event.change.length>0\) { event.change = event.change.toUpperCase\(\); if \(event.change!="Y" && event.change!="N"\) event.change = ""; } };\nfunction YesNoV\(event\) { if \(event.value!=null\) event.value = event.value.toUpperCase\(\); if \(event.value!="Y" && event.value!="N" && event.value!=""\) event.rc = false; };\n) /S /JavaScript /Type /Action >> /Pages 132 0 R /Type /Catalog >>
+endobj
+133 0 obj 
+<< /Author (ACORD Corporation) /CreationDate (D:20150924122617-04'00') /Creator (Silverlake Software LLC - Forms Dev Environment) /ModDate (D:20150924122617-04'00') /Producer (Silverlake Software LLC - Form Designer - v1.4.15348) /Title (ACORD 0025 2016-03 Acroform) >>
+endobj
+2 0 obj 
+<< /BaseFont /Arial /Encoding /WinAnsiEncoding /FirstChar 0 /FontDescriptor << /Ascent 905.27 /CapHeight 716.31 /Descent -211.91 /Flags 32 /FontBBox [ -45.90 -168.46 1000.00 938.48 ] /FontName /Arial /ItalicAngle 0.00 /StemV 0.00 /Type /FontDescriptor >> /LastChar 255 /Subtype /Type1 /Type /Font /Widths [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 277.83 277.83 354.98 556.15 556.15 889.16 666.99 190.92 333.01 333.01 389.16 583.98 277.83 333.01 277.83 277.83 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 277.83 277.83 583.98 583.98 583.98 556.15 1015.14 666.99 666.99 722.17 722.17 666.99 610.84 777.83 722.17 277.83 500.00 666.99 556.15 833.01 722.17 777.83 666.99 777.83 722.17 666.99 610.84 722.17 666.99 943.85 666.99 666.99 610.84 277.83 277.83 277.83 469.24 556.15 333.01 556.15 556.15 500.00 556.15 556.15 277.83 556.15 556.15 222.17 222.17 500.00 222.17 833.01 556.15 556.15 556.15 556.15 333.01 500.00 277.83 556.15 500.00 722.17 500.00 500.00 500.00 333.98 259.77 333.98 583.98 0 556.15 0 222.17 556.15 333.01 1000.00 556.15 556.15 333.01 1000.00 666.99 333.01 1000.00 0 610.84 0 0 222.17 222.17 333.01 333.01 350.10 556.15 1000.00 333.01 1000.00 500.00 333.01 943.85 0 500.00 666.99 277.83 333.01 556.15 556.15 556.15 556.15 259.77 556.15 333.01 736.82 370.12 556.15 583.98 333.01 736.82 552.25 399.90 548.83 333.01 333.01 333.01 576.17 537.11 333.01 333.01 333.01 365.23 556.15 833.98 833.98 833.98 610.84 666.99 666.99 666.99 666.99 666.99 666.99 1000.00 722.17 666.99 666.99 666.99 666.99 277.83 277.83 277.83 277.83 722.17 722.17 777.83 777.83 777.83 777.83 777.83 583.98 777.83 722.17 722.17 722.17 722.17 666.99 666.99 610.84 556.15 556.15 556.15 556.15 556.15 556.15 889.16 500.00 556.15 556.15 556.15 556.15 277.83 277.83 277.83 277.83 556.15 556.15 556.15 556.15 556.15 556.15 556.15 548.83 610.84 556.15 556.15 556.15 556.15 500.00 556.15 500.00 ] >>
+endobj
+3 0 obj 
+<< /DV (ACORD 0025 2016-03 Acroform) /F 2 /Ff 1 /FT /Tx /P 134 0 R /Rect [ 0 1 0 1 ] /Subtype /Widget /T (Form_EditionIdentifier_A) /TU (The edition identifier of the form including the form number and edition \(the date is typically formatted YYYY/MM\).) /Type /Annot /V (ACORD 0025 2016-03 Acroform) >>
+endobj
+4 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 511 744 590 756 ] /Subtype /Widget /T (Form_CompletionDate_A) /TU (Enter date: The date on which the form is completed.  \(MM/DD/YYYY\) ) /Type /Annot >>
+endobj
+5 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 22 648 302 660 ] /Subtype /Widget /T (Producer_FullName_A) /TU (Enter text: The full name of the producer / agency. ) /Type /Annot >>
+endobj
+6 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 22 636 302 648 ] /Subtype /Widget /T (Producer_MailingAddress_LineOne_A) /TU (Enter text: The mailing address line one of the producer / agency. ) /Type /Annot >>
+endobj
+7 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 22 624 302 636 ] /Subtype /Widget /T (Producer_MailingAddress_LineTwo_A) /TU (Enter text: The mailing address line two of the producer / agency. ) /Type /Annot >>
+endobj
+8 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 22 612 238 624 ] /Subtype /Widget /T (Producer_MailingAddress_CityName_A) /TU (Enter text: The mailing address city name of the producer / agency. ) /Type /Annot >>
+endobj
+9 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 238 612 256 624 ] /Subtype /Widget /T (Producer_MailingAddress_StateOrProvinceCode_A) /TU (Enter code: The mailing address state or province code of the producer / agency. ) /Type /Annot >>
+endobj
+10 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 256 612 302 624 ] /Subtype /Widget /T (Producer_MailingAddress_PostalCode_A) /TU (Enter code: The mailing address postal code of the producer / agency. ) /Type /Annot >>
+endobj
+11 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 346 660 590 672 ] /Subtype /Widget /T (Producer_ContactPerson_FullName_A) /TU (Enter text: The name of the individual at the producer's establishment that is the primary contact. ) /Type /Annot >>
+endobj
+12 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 353 648 479 660 ] /Subtype /Widget /T (Producer_ContactPerson_PhoneNumber_A) /TU (Enter number: The producer's contact person's phone number.  If applicable, include the area code and extension. ) /Type /Annot >>
+endobj
+13 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 518 648 590 660 ] /Subtype /Widget /T (Producer_FaxNumber_A) /TU (Enter number: The fax number of the producer / agency. ) /Type /Annot >>
+endobj
+14 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 346 636 590 648 ] /Subtype /Widget /T (Producer_ContactPerson_EmailAddress_A) /TU (Enter text: The producer's contact person's e-mail address. ) /Type /Annot >>
+endobj
+15 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 588 302 600 ] /Subtype /Widget /T (NamedInsured_FullName_A) /TU (Enter text: The named insured\(s\) as it / they will appear on the policy declarations page. ) /Type /Annot >>
+endobj
+16 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 576 302 588 ] /Subtype /Widget /T (NamedInsured_MailingAddress_LineOne_A) /TU (Enter text: The named insured's mailing address line one. ) /Type /Annot >>
+endobj
+17 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 564 302 576 ] /Subtype /Widget /T (NamedInsured_MailingAddress_LineTwo_A) /TU (Enter text: The named insured's mailing address line two. ) /Type /Annot >>
+endobj
+18 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 552 238 564 ] /Subtype /Widget /T (NamedInsured_MailingAddress_CityName_A) /TU (Enter text: The named insured's mailing address city name. ) /Type /Annot >>
+endobj
+19 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 238 552 256 564 ] /Subtype /Widget /T (NamedInsured_MailingAddress_StateOrProvinceCode_A) /TU (Enter code: The named insured's mailing address state or province code. ) /Type /Annot >>
+endobj
+20 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 256 552 302 564 ] /Subtype /Widget /T (NamedInsured_MailingAddress_PostalCode_A) /TU (Enter code: The named insured's mailing address postal code. ) /Type /Annot >>
+endobj
+21 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 349 612 536 624 ] /Subtype /Widget /T (Insurer_FullName_A) /TU (Enter text: The insurer's full legal company name\(s\) as found in the file copy of the policy.  Use the actual name of the company within the group to which the policy has been issued.  This is not the insurer's group name or trade name. As used here, this is Insurer A.) /Type /Annot >>
+endobj
+22 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 544 612 590 624 ] /Subtype /Widget /T (Insurer_NAICCode_A) /TU (Enter code: The identification code assigned to the insurer by the National Association of Insurance Commissioners \(NAIC\). As used here, this is Insurer A.) /Type /Annot >>
+endobj
+23 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 349 600 536 612 ] /Subtype /Widget /T (Insurer_FullName_B) /TU (Enter text: The insurer's full legal company name\(s\) as found in the file copy of the policy.  Use the actual name of the company within the group to which the policy has been issued.  This is not the insurer's group name or trade name. As used here, this is Insurer B.) /Type /Annot >>
+endobj
+24 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 544 600 590 612 ] /Subtype /Widget /T (Insurer_NAICCode_B) /TU (Enter code: The identification code assigned to the insurer by the National Association of Insurance Commissioners \(NAIC\). As used here, this is Insurer B.) /Type /Annot >>
+endobj
+25 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 349 588 536 600 ] /Subtype /Widget /T (Insurer_FullName_C) /TU (Enter text: The insurer's full legal company name\(s\) as found in the file copy of the policy.  Use the actual name of the company within the group to which the policy has been issued.  This is not the insurer's group name or trade name. As used here, this is Insurer C.) /Type /Annot >>
+endobj
+26 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 544 588 590 600 ] /Subtype /Widget /T (Insurer_NAICCode_C) /TU (Enter code: The identification code assigned to the insurer by the National Association of Insurance Commissioners \(NAIC\). As used here, this is Insurer C.) /Type /Annot >>
+endobj
+27 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 349 576 536 588 ] /Subtype /Widget /T (Insurer_FullName_D) /TU (Enter text: The insurer's full legal company name\(s\) as found in the file copy of the policy.  Use the actual name of the company within the group to which the policy has been issued.  This is not the insurer's group name or trade name. As used here, this is Insurer D.) /Type /Annot >>
+endobj
+28 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 544 576 590 588 ] /Subtype /Widget /T (Insurer_NAICCode_D) /TU (Enter code: The identification code assigned to the insurer by the National Association of Insurance Commissioners \(NAIC\). As used here, this is Insurer D.) /Type /Annot >>
+endobj
+29 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 349 564 536 576 ] /Subtype /Widget /T (Insurer_FullName_E) /TU (Enter text: The insurer's full legal company name\(s\) as found in the file copy of the policy.  Use the actual name of the company within the group to which the policy has been issued.  This is not the insurer's group name or trade name. As used here, this is Insurer E.) /Type /Annot >>
+endobj
+30 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 544 564 590 576 ] /Subtype /Widget /T (Insurer_NAICCode_E) /TU (Enter code: The identification code assigned to the insurer by the National Association of Insurance Commissioners \(NAIC\). As used here, this is Insurer E.) /Type /Annot >>
+endobj
+31 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 349 552 536 564 ] /Subtype /Widget /T (Insurer_FullName_F) /TU (Enter text: The insurer's full legal company name\(s\) as found in the file copy of the policy.  Use the actual name of the company within the group to which the policy has been issued.  This is not the insurer's group name or trade name. As used here, this is Insurer F.) /Type /Annot >>
+endobj
+32 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 544 552 590 564 ] /Subtype /Widget /T (Insurer_NAICCode_F) /TU (Enter code: The identification code assigned to the insurer by the National Association of Insurance Commissioners \(NAIC\). As used here, this is Insurer F.) /Type /Annot >>
+endobj
+33 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 259 540 349 552 ] /Subtype /Widget /T (CertificateOfInsurance_CertificateNumberIdentifier_A) /TU (Enter identifier: The producer assigned number for the certificate. ) /Type /Annot >>
+endobj
+34 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 508 540 590 552 ] /Subtype /Widget /T (CertificateOfInsurance_RevisionNumberIdentifier_A) /TU (Enter number: The producer assigned revision number for the certificate. ) /Type /Annot >>
+endobj
+35 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 18 444 36 456 ] /Subtype /Widget /T (GeneralLiability_InsurerLetterCode_A) /TU (Enter code: The Company Letter of the insurer, as identified in the "Insurer\(s\) Affording Coverage" form section, associated with the general liability policy. ) /Type /Annot >>
+endobj
+36 0 obj 
+<< /AP << /D << /1 135 0 R /Off 136 0 R >> /N << /1 137 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 480 50 492 ] /Subtype /Widget /T (GeneralLiability_CoverageIndicator_A) /TU (Check the box \(if applicable\): Indicates the claims made or occurrence option applies for the general liability policy. ) /Type /Annot >>
+endobj
+37 0 obj 
+<< /AP << /D << /1 138 0 R /Off 139 0 R >> /N << /1 140 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 50 468 65 480 ] /Subtype /Widget /T (GeneralLiability_ClaimsMadeIndicator_A) /TU (Check the box \(if applicable\): Indicates the "claims made" option applies on the general liability policy. ) /Type /Annot >>
+endobj
+38 0 obj 
+<< /AP << /D << /1 141 0 R /Off 142 0 R >> /N << /1 143 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 115 468 130 480 ] /Subtype /Widget /T (GeneralLiability_OccurrenceIndicator_A) /TU (Check the box \(if applicable\): Indicates the general liability policy, occurrence basis applies. ) /Type /Annot >>
+endobj
+39 0 obj 
+<< /AP << /D << /1 144 0 R /Off 145 0 R >> /N << /1 146 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 456 50 468 ] /Subtype /Widget /T (GeneralLiability_OtherCoverageIndicator_A) /TU (Check the box \(if applicable\): Indicates other coverage not found on the form exists for the general liability policy. ) /Type /Annot >>
+endobj
+40 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 54 456 173 468 ] /Subtype /Widget /T (GeneralLiability_OtherCoverageDescription_A) /TU (Enter text: The description of other coverage \(not the limit\) on the general liability policy.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+41 0 obj 
+<< /AP << /D << /1 147 0 R /Off 148 0 R >> /N << /1 149 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 444 50 456 ] /Subtype /Widget /T (GeneralLiability_OtherCoverageIndicator_B) /TU (Check the box \(if applicable\): Indicates other coverage not found on the form exists for the general liability policy. ) /Type /Annot >>
+endobj
+42 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 54 444 173 456 ] /Subtype /Widget /T (GeneralLiability_OtherCoverageDescription_B) /TU (Enter text: The description of other coverage \(not the limit\) on the general liability policy.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+43 0 obj 
+<< /AP << /D << /1 150 0 R /Off 151 0 R >> /N << /1 152 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 420 50 432 ] /Subtype /Widget /T (GeneralLiability_GeneralAggregate_LimitAppliesPerPolicyIndicator_A) /TU (Check the box \(if applicable\): Indicates the general liability policy, general aggregate limit applies per policy. ) /Type /Annot >>
+endobj
+44 0 obj 
+<< /AP << /D << /1 153 0 R /Off 154 0 R >> /N << /1 155 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 79 420 94 432 ] /Subtype /Widget /T (GeneralLiability_GeneralAggregate_LimitAppliesPerProjectIndicator_A) /TU (Check the box \(if applicable\): Indicates the general liability policy, general aggregate limit applies per project. ) /Type /Annot >>
+endobj
+45 0 obj 
+<< /AP << /D << /1 156 0 R /Off 157 0 R >> /N << /1 158 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 122 420 137 432 ] /Subtype /Widget /T (GeneralLiability_GeneralAggregate_LimitAppliesPerLocationIndicator_A) /TU (Check the box \(if applicable\): Indicates the general liability policy, general aggregate limit applies per location. ) /Type /Annot >>
+endobj
+46 0 obj 
+<< /AP << /D << /1 159 0 R /Off 160 0 R >> /N << /1 161 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 408 50 420 ] /Subtype /Widget /T (GeneralLiability_GeneralAggregate_LimitAppliesToOtherIndicator_A) /TU (Check the box \(if applicable\): Indicates the general liability policy, general aggregate limit applies to option is other than those listed on the form. ) /Type /Annot >>
+endobj
+47 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 79 408 173 420 ] /Subtype /Widget /T (GeneralLiability_GeneralAggregate_LimitAppliesToCode_A) /TU (Enter text: The description of the other option to which the general liability policy, general aggregate limit applies. ) /Type /Annot >>
+endobj
+48 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 176 444 194 456 ] /Subtype /Widget /T (CertificateOfInsurance_GeneralLiability_AdditionalInsuredCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if the certificate holder has been named as an additional insured on the general liability policy. ) /Type /Annot >>
+endobj
+49 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 194 444 212 456 ] /Subtype /Widget /T (Policy_GeneralLiability_SubrogationWaivedCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if subrogation has been waived on the general liability policy. ) /Type /Annot >>
+endobj
+50 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 216 444 328 456 ] /Subtype /Widget /T (Policy_GeneralLiability_PolicyNumberIdentifier_A) /TU (Enter identifier: The identifier assigned by the insurer to the general liability policy, or submission, being referenced exactly as it appears on the policy, including prefix and suffix symbols. If required for self-insurance, the self-insured license or contract number. ) /Type /Annot >>
+endobj
+51 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 331 444 378 456 ] /Subtype /Widget /T (Policy_GeneralLiability_EffectiveDate_A) /TU (Enter date: The effective date of the general liability policy.  The date that the terms and conditions of the policy commence. ) /Type /Annot >>
+endobj
+52 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 378 444 425 456 ] /Subtype /Widget /T (Policy_GeneralLiability_ExpirationDate_A) /TU (Enter date: The date on which the terms and conditions of the general liability policy will expire. ) /Type /Annot >>
+endobj
+53 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 480 590 492 ] /Subtype /Widget /T (GeneralLiability_EachOccurrence_LimitAmount_A) /TU (Enter limit: The general liability, each occurrence limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+54 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 468 590 480 ] /Subtype /Widget /T (GeneralLiability_FireDamageRentedPremises_EachOccurrenceLimitAmount_A) /TU (Enter limit: The general liability, damage to rented premises each occurrence limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+55 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 456 590 468 ] /Subtype /Widget /T (GeneralLiability_MedicalExpense_EachPersonLimitAmount_A) /TU (Enter limit: The general liability, medical expense each person limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+56 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 444 590 456 ] /Subtype /Widget /T (GeneralLiability_PersonalAndAdvertisingInjury_LimitAmount_A) /TU (Enter limit: The general liability, personal and advertising injury limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+57 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 432 590 444 ] /Subtype /Widget /T (GeneralLiability_GeneralAggregate_LimitAmount_A) /TU (Enter limit: The general liability, general aggregate limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+58 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 420 590 432 ] /Subtype /Widget /T (GeneralLiability_ProductsAndCompletedOperations_AggregateLimitAmount_A) /TU (Enter limit: The general liability, products and completed operations aggregate limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+59 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 428 408 511 420 ] /Subtype /Widget /T (GeneralLiability_OtherCoverageLimitDescription_A) /TU (Enter text: The description of other coverage \(not the limit\) on the general liability policy.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+60 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 408 590 420 ] /Subtype /Widget /T (GeneralLiability_OtherCoverageLimitAmount_A) /TU (Enter limit: The general liability, other coverage limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+61 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 18 372 36 384 ] /Subtype /Widget /T (Vehicle_InsurerLetterCode_A) /TU (Enter code: The Company Letter of the insurer, as identified in the "Insurer\(s\) Affording Coverage" form section, associated with the policy. ) /Type /Annot >>
+endobj
+62 0 obj 
+<< /AP << /D << /1 162 0 R /Off 163 0 R >> /N << /1 164 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 384 50 396 ] /Subtype /Widget /T (Vehicle_AnyAutoIndicator_A) /TU (Check the box \(if applicable\): Indicates the commercial vehicle policy covers any auto. As used here, complete this section only if you are certifying automobile liability.  Check all appropriate boxes to correspond with the covered auto symbols found on the policy declarations page.  If the certificate is being issued to the owner of a leased vehicle, DO NOT USE THIS FORM.  Use  ACORD 23, Vehicle or Equipment Certificate of Insurance.) /Type /Annot >>
+endobj
+63 0 obj 
+<< /AP << /D << /1 165 0 R /Off 166 0 R >> /N << /1 167 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 372 50 384 ] /Subtype /Widget /T (Vehicle_AllOwnedAutosIndicator_A) /TU (Check the box \(if applicable\): Indicates the commercial vehicle policy covers owned autos only. ) /Type /Annot >>
+endobj
+64 0 obj 
+<< /AP << /D << /1 168 0 R /Off 169 0 R >> /N << /1 170 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 360 50 372 ] /Subtype /Widget /T (Vehicle_HiredAutosIndicator_A) /TU (Check the box \(if applicable\): Indicates the vehicle policy covers hired autos only. ) /Type /Annot >>
+endobj
+65 0 obj 
+<< /AP << /D << /1 171 0 R /Off 172 0 R >> /N << /1 173 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 348 50 360 ] /Subtype /Widget /T (Vehicle_OtherCoveredAutoIndicator_A) /TU (Check the box \(if applicable\): Indicates the vehicle policy covers autos other than those listed. ) /Type /Annot >>
+endobj
+66 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 54 348 101 360 ] /Subtype /Widget /T (Vehicle_OtherCoveredAutoDescription_A) /TU (Enter text: The description of the other covered autos. ) /Type /Annot >>
+endobj
+67 0 obj 
+<< /AP << /D << /1 174 0 R /Off 175 0 R >> /N << /1 176 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 104 372 119 384 ] /Subtype /Widget /T (Vehicle_ScheduledAutosIndicator_A) /TU (Check the box \(if applicable\): Indicates the vehicle policy covers scheduled autos. ) /Type /Annot >>
+endobj
+68 0 obj 
+<< /AP << /D << /1 177 0 R /Off 178 0 R >> /N << /1 179 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 104 360 119 372 ] /Subtype /Widget /T (Vehicle_NonOwnedAutosIndicator_A) /TU (Check the box \(if applicable\): Indicates the vehicle policy covers non-owned autos only. ) /Type /Annot >>
+endobj
+69 0 obj 
+<< /AP << /D << /1 180 0 R /Off 181 0 R >> /N << /1 182 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 104 348 119 360 ] /Subtype /Widget /T (Vehicle_OtherCoveredAutoIndicator_B) /TU (Check the box \(if applicable\): Indicates the vehicle policy covers autos other than those listed. ) /Type /Annot >>
+endobj
+70 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 122 348 173 360 ] /Subtype /Widget /T (Vehicle_OtherCoveredAutoDescription_B) /TU (Enter text: The description of the other covered autos. ) /Type /Annot >>
+endobj
+71 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 176 372 194 384 ] /Subtype /Widget /T (CertificateOfInsurance_AutomobileLiability_AdditionalInsuredCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if the certificate holder has been named as an additional insured on the automobile liability policy. ) /Type /Annot >>
+endobj
+72 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 194 372 212 384 ] /Subtype /Widget /T (Policy_AutomobileLiability_SubrogationWaivedCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if subrogation has been waived on the automobile policy. ) /Type /Annot >>
+endobj
+73 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 216 372 328 384 ] /Subtype /Widget /T (Policy_AutomobileLiability_PolicyNumberIdentifier_A) /TU (Enter identifier: The identifier assigned by the insurer to the automobile liability policy, or submission, being referenced exactly as it appears on the policy, including prefix and suffix symbols. If required for self-insurance, the self-insured license or contract number. ) /Type /Annot >>
+endobj
+74 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 331 372 378 384 ] /Subtype /Widget /T (Policy_AutomobileLiability_EffectiveDate_A) /TU (Enter date: The effective date of the automobile liability policy.  The date that the terms and conditions of the policy commence. ) /Type /Annot >>
+endobj
+75 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 378 372 425 384 ] /Subtype /Widget /T (Policy_AutomobileLiability_ExpirationDate_A) /TU (Enter date: The date on which the terms and conditions of the automobile liability policy will expire. ) /Type /Annot >>
+endobj
+76 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 396 590 408 ] /Subtype /Widget /T (Vehicle_CombinedSingleLimit_EachAccidentAmount_A) /TU (Enter limit: The vehicle combined single limit liability each accident amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+77 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 384 590 396 ] /Subtype /Widget /T (Vehicle_BodilyInjury_PerPersonLimitAmount_A) /TU (Enter limit: The vehicle policy, bodily injury per person limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+78 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 372 590 384 ] /Subtype /Widget /T (Vehicle_BodilyInjury_PerAccidentLimitAmount_A) /TU (Enter limit: The vehicle policy, bodily injury per accident limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+79 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 360 590 372 ] /Subtype /Widget /T (Vehicle_PropertyDamage_PerAccidentLimitAmount_A) /TU (Enter limit: The vehicle policy, property damage per accident limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+80 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 428 348 511 360 ] /Subtype /Widget /T (Vehicle_OtherCoverage_CoverageDescription_A) /TU (Enter text: The description of the coverage. ) /Type /Annot >>
+endobj
+81 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 348 590 360 ] /Subtype /Widget /T (Vehicle_OtherCoverage_LimitAmount_A) /TU (Enter limit: The limit amount of the other coverage. ) /Type /Annot >>
+endobj
+82 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 18 324 36 336 ] /Subtype /Widget /T (ExcessUmbrella_InsurerLetterCode_A) /TU (Enter code: The Company Letter of the insurer, as identified in the "Insurer\(s\) Affording Coverage" form section, associated with the commercial excess or umbrella liability policy. ) /Type /Annot >>
+endobj
+83 0 obj 
+<< /AP << /D << /1 183 0 R /Off 184 0 R >> /N << /1 185 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 336 50 348 ] /Subtype /Widget /T (Policy_PolicyType_UmbrellaIndicator_A) /TU (Check the box \(if applicable\): Indicates the type of policy is umbrella.  As used here, if evidencing an umbrella coverage, underlying policy number\(s\), term\(s\) and line\(s\) of business may be listed on an ACORD 101.) /Type /Annot >>
+endobj
+84 0 obj 
+<< /AP << /D << /1 186 0 R /Off 187 0 R >> /N << /1 188 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 324 50 336 ] /Subtype /Widget /T (Policy_PolicyType_ExcessIndicator_A) /TU (Check the box \(if applicable\): Indicates the type of policy is excess.  As used here, if evidencing an excess coverage, underlying policy number\(s\), term\(s\) and line\(s\) of business may be listed on an ACORD 101.) /Type /Annot >>
+endobj
+85 0 obj 
+<< /AP << /D << /1 189 0 R /Off 190 0 R >> /N << /1 191 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 115 336 130 348 ] /Subtype /Widget /T (ExcessUmbrella_OccurrenceIndicator_A) /TU (Check the box \(if applicable\): Indicates "coverage trigger" is on an occurrence basis on an excess or umbrella liability policy. ) /Type /Annot >>
+endobj
+86 0 obj 
+<< /AP << /D << /1 192 0 R /Off 193 0 R >> /N << /1 194 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 115 324 130 336 ] /Subtype /Widget /T (ExcessUmbrella_ClaimsMadeIndicator_A) /TU (Check the box \(if applicable\): Indicates the "coverage trigger" is on a claims-made basis on an excess or umbrella liability policy. ) /Type /Annot >>
+endobj
+87 0 obj 
+<< /AP << /D << /1 195 0 R /Off 196 0 R >> /N << /1 197 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 36 312 50 324 ] /Subtype /Widget /T (ExcessUmbrella_DeductibleIndicator_A) /TU (Check the box \(if applicable\): Indicates a deductible amount applies to the excess or umbrella liability policy. ) /Type /Annot >>
+endobj
+88 0 obj 
+<< /AP << /D << /1 198 0 R /Off 199 0 R >> /N << /1 200 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 72 312 86 324 ] /Subtype /Widget /T (ExcessUmbrella_RetentionIndicator_A) /TU (Check the box \(if applicable\): Indicates a retention amount applies to the excess or umbrella liability policy. ) /Type /Annot >>
+endobj
+89 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 133 312 173 324 ] /Subtype /Widget /T (ExcessUmbrella_Umbrella_DeductibleOrRetentionAmount_A) /TU (Enter deductible: The excess or umbrella liability deductible or retention amount. ) /Type /Annot >>
+endobj
+90 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 176 324 194 336 ] /Subtype /Widget /T (CertificateOfInsurance_ExcessLiability_AdditionalInsuredCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if the certificate holder has been named as an additional insured on the umbrella/excess liability policy.  Place a "Y" next to each coverage where an additional insured endorsement has been issued or for umbrella / excess where there is an additional insured on the underlying primary policy and this umbrella / excess is follow form. ) /Type /Annot >>
+endobj
+91 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 194 324 212 336 ] /Subtype /Widget /T (Policy_ExcessLiability_SubrogationWaivedCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if subrogation has been waived on the excess policy.  For umbrella / excess, place a "Y" next to each coverage where subrogation has been waived on the underlying primary policy and this umbrella / excess is follow form. ) /Type /Annot >>
+endobj
+92 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 216 324 328 336 ] /Subtype /Widget /T (Policy_ExcessLiability_PolicyNumberIdentifier_A) /TU (Enter identifier: The identifier assigned by the insurer to the excess liability policy, or submission, being referenced exactly as it appears on the policy, including prefix and suffix symbols. If required for self-insurance, the self-insured license or contract number. ) /Type /Annot >>
+endobj
+93 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 331 324 378 336 ] /Subtype /Widget /T (Policy_ExcessLiability_EffectiveDate_A) /TU (Enter date: The effective date of the excess liability policy.  The date that the terms and conditions of the policy commence. ) /Type /Annot >>
+endobj
+94 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 378 324 425 336 ] /Subtype /Widget /T (Policy_ExcessLiability_ExpirationDate_A) /TU (Enter date: The date on which the terms and conditions of the excess liability policy will expire. ) /Type /Annot >>
+endobj
+95 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 336 590 348 ] /Subtype /Widget /T (ExcessUmbrella_Umbrella_EachOccurrenceAmount_A) /TU (Enter limit: The excess or umbrella liability each occurrence limit. As used here, the limit should be listed as a whole dollar amount, as governed by the policy.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\).) /Type /Annot >>
+endobj
+96 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 324 590 336 ] /Subtype /Widget /T (ExcessUmbrella_Umbrella_AggregateAmount_A) /TU (Enter limit: The excess or umbrella liability aggregate limit should be listed as whole dollar amount, as governed by the policy.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+97 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 428 312 511 324 ] /Subtype /Widget /T (ExcessUmbrella_OtherCoverageDescription_A) /TU (Enter text: The description of other coverage \(not the limit\) on the excess or umbrella liability policy.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+98 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 312 590 324 ] /Subtype /Widget /T (ExcessUmbrella_OtherCoverageLimitAmount_A) /TU (Enter limit: The excess or umbrella liability other coverage limit should be listed as a whole dollar amount, as governed by the policy.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+99 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 18 282 36 294 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_InsurerLetterCode_A) /TU (Enter code: The Company Letter of the insurer, as identified in the "Insurer\(s\) Affording Coverage" form section, associated with the commercial workers compensation and employers liability policy. ) /Type /Annot >>
+endobj
+100 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 158 282 173 294 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_AnyPersonsExcludedIndicator_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates whether the workers compensation and employers liability policy excludes any proprietor, partner, executive officer, or member. As used here, the DESCRIPTION OF OPERATIONS section is available, if needed, to provide details of any "Yes" response.  In NH, if "Yes" response is indicated, it is mandatory to provide corresponding details in the DESCRIPTION OF OPERATIONS section.) /Type /Annot >>
+endobj
+101 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 194 282 212 294 ] /Subtype /Widget /T (Policy_WorkersCompensation_SubrogationWaivedCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if subrogation has been waived on the workers compensation policy. ) /Type /Annot >>
+endobj
+102 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 216 282 328 294 ] /Subtype /Widget /T (Policy_WorkersCompensationAndEmployersLiability_PolicyNumberIdentifier_A) /TU (Enter identifier: The identifier assigned by the insurer to the workers' compensation and employers liability policy, or submission, being referenced exactly as it appears on the policy, including prefix and suffix symbols.  If required for self-insurance, the self-insured license or contract number. ) /Type /Annot >>
+endobj
+103 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 331 282 378 294 ] /Subtype /Widget /T (Policy_WorkersCompensationAndEmployersLiability_EffectiveDate_A) /TU (Enter date: The effective date of the workers' compensation and employers liability policy.  The date that the terms and conditions of the policy commence. .) /Type /Annot >>
+endobj
+104 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 378 282 425 294 ] /Subtype /Widget /T (Policy_WorkersCompensationAndEmployersLiability_ExpirationDate_A) /TU (Enter date: The date on which the terms and conditions of the workers' compensation and employers liability policy will expire. ) /Type /Annot >>
+endobj
+105 0 obj 
+<< /AP << /D << /1 201 0 R /Off 202 0 R >> /N << /1 203 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 425 300 439 312 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_WorkersCompensationStatutoryLimitIndicator_A) /TU (Check the box \(if applicable\): Indicates that workers compensation coverage is per statute. ) /Type /Annot >>
+endobj
+106 0 obj 
+<< /AP << /D << /1 204 0 R /Off 205 0 R >> /N << /1 206 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 134 0 R /Rect [ 475 300 490 312 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_OtherCoverageIndicator_A) /TU (Check the box \(if applicable\): Indicates that additional coverage above the workers compensation statutory limits applies \(permitted in some states\). ) /Type /Annot >>
+endobj
+107 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 518 300 590 312 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_OtherCoverageDescription_A) /TU (Enter text: The description of other coverage \(not the limit\) on the workers compensation and employers liability policy. Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the DESCRIPTION OF OPERATIONS section is available if more space is required.) /Type /Annot >>
+endobj
+108 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 288 590 300 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_EmployersLiability_EachAccidentLimitAmount_A) /TU (Enter limit: The workers compensation and employers liability policy, employers liability each accident limit amount. Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+109 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 276 590 288 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_EmployersLiability_DiseaseEachEmployeeLimitAmount_A) /TU (Enter limit: The workers compensation and employers liability policy, employers liability disease each employee limit amount. Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\).  As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+110 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 526 264 590 276 ] /Subtype /Widget /T (WorkersCompensationEmployersLiability_EmployersLiability_DiseasePolicyLimitAmount_A) /TU (Enter limit: The workers compensation and employers liability policy, employers liability disease policy limit amount.  Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). ) /Type /Annot >>
+endobj
+111 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 18 240 36 252 ] /Subtype /Widget /T (OtherPolicy_InsurerLetterCode_A) /TU (Enter code: The Company Letter of the insurer, as identified in the "Insurer\(s\) Affording Coverage" form section, associated with the other policy. ) /Type /Annot >>
+endobj
+112 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 40 234 173 258 ] /Subtype /Widget /T (OtherPolicy_OtherPolicyDescription_A) /TU (Enter text: The description of the other policy not listed on the form. ) /Type /Annot >>
+endobj
+113 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 176 240 194 252 ] /Subtype /Widget /T (CertificateOfInsurance_OtherPolicy_AdditionalInsuredCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates if the certificate holder has been named as an additional insured on the other policy. ) /Type /Annot >>
+endobj
+114 0 obj 
+<< /AA << /K << /JS (YesNoK\(event\);) /S /JavaScript /Type /Action >> /V << /JS (YesNoV\(event\);) /S /Javascript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 1 /P 134 0 R /Q 1 /Rect [ 194 240 212 252 ] /Subtype /Widget /T (OtherPolicy_SubrogationWaivedCode_A) /TU (Enter Y for a Yes response. Input N for No response. Indicates subrogation has been waived on the other policy. ) /Type /Annot >>
+endobj
+115 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 216 240 328 252 ] /Subtype /Widget /T (OtherPolicy_PolicyNumberIdentifier_A) /TU (Enter identifier: The other policy number exactly as it appears on the policy, including prefix and suffix symbols. ) /Type /Annot >>
+endobj
+116 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 331 240 378 252 ] /Subtype /Widget /T (OtherPolicy_PolicyEffectiveDate_A) /TU (Enter date: The date on which the terms and conditions of the other policy commence. ) /Type /Annot >>
+endobj
+117 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 134 0 R /Q 1 /Rect [ 378 240 425 252 ] /Subtype /Widget /T (OtherPolicy_PolicyExpirationDate_A) /TU (Enter date: The date on which the terms and conditions of the other policy expires. ) /Type /Annot >>
+endobj
+118 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 432 252 511 264 ] /Subtype /Widget /T (OtherPolicy_CoverageCode_A) /TU (Enter code: The coverage code for the other policy. ) /Type /Annot >>
+endobj
+119 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 526 252 590 264 ] /Subtype /Widget /T (OtherPolicy_CoverageLimitAmount_A) /TU (Enter limit: The other policy, coverage limit amount. Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+120 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 432 240 511 252 ] /Subtype /Widget /T (OtherPolicy_CoverageCode_B) /TU (Enter code: The coverage code for the other policy. ) /Type /Annot >>
+endobj
+121 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 526 240 590 252 ] /Subtype /Widget /T (OtherPolicy_CoverageLimitAmount_B) /TU (Enter limit: The other policy, coverage limit amount. Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+122 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 432 228 511 240 ] /Subtype /Widget /T (OtherPolicy_CoverageCode_C) /TU (Enter code: The coverage code for the other policy. ) /Type /Annot >>
+endobj
+123 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 526 228 590 240 ] /Subtype /Widget /T (OtherPolicy_CoverageLimitAmount_C) /TU (Enter limit: The other policy, coverage limit amount. Any questions about appropriate limits or applicable policy coverage\(s\) should be answered by the issuing insurer\(s\). As used here, the limit should be listed as a whole dollar amount, as governed by the policy.) /Type /Annot >>
+endobj
+124 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 22 150 590 216 ] /Subtype /Widget /T (CertificateOfLiabilityInsurance_ACORDForm_RemarkText_A) /TU (Enter text: The Certificate Of Liability Insurance general remarks.  The additional comments or special conditions that may exist upon the policy.  ACORD 101, Additional Remarks Schedule, may be attached if more space is required. As used here, records information necessary to identify the operations, locations and vehicles for which the certificate was issued.) /Type /Annot >>
+endobj
+125 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 90 302 102 ] /Subtype /Widget /T (CertificateHolder_FullName_A) /TU (Enter text: The certificate holder's full name. ) /Type /Annot >>
+endobj
+126 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 78 302 90 ] /Subtype /Widget /T (CertificateHolder_MailingAddress_LineOne_A) /TU (Enter text: The certificate holder's mailing address line one. ) /Type /Annot >>
+endobj
+127 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 66 302 78 ] /Subtype /Widget /T (CertificateHolder_MailingAddress_LineTwo_A) /TU (Enter text: The certificate holder's mailing address line two. ) /Type /Annot >>
+endobj
+128 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 72 54 238 66 ] /Subtype /Widget /T (CertificateHolder_MailingAddress_CityName_A) /TU (Enter text: The certificate holder's mailing address city name. ) /Type /Annot >>
+endobj
+129 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Q 1 /Rect [ 238 54 256 66 ] /Subtype /Widget /T (CertificateHolder_MailingAddress_StateOrProvinceCode_A) /TU (Enter code: The certificate holder's mailing address state or province code. ) /Type /Annot >>
+endobj
+130 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 134 0 R /Rect [ 256 54 302 66 ] /Subtype /Widget /T (CertificateHolder_MailingAddress_PostalCode_A) /TU (Enter code: The certificate holder's mailing address postal code. ) /Type /Annot >>
+endobj
+131 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 134 0 R /Rect [ 310 48 590 72 ] /Subtype /Widget /T (Producer_AuthorizedRepresentative_Signature_A) /TU (Sign here: Accommodates the signature of the authorized representative \(e.g., producer, agent, broker, etc.\) of the company\(ies\) listed on the document.  This is required in most states. ) /Type /Annot >>
+endobj
+132 0 obj 
+<< /Count 1 /Kids [ 134 0 R ] /Type /Pages >>
+endobj
+134 0 obj 
+<< /Annots 207 0 R /Contents 208 0 R /CropBox [ 0 0 612 792 ] /MediaBox [ 0 0 612 792 ] /Parent 132 0 R /Resources << /Font << /F1 209 0 R /F2 2 0 R >> /ProcSet [ /PDF /Text /ImageB ] /XObject << /Img1 210 0 R >> >> /Type /Page >>
+endobj
+135 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+136 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+137 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+138 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+139 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+140 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+141 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+142 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+143 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+144 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+145 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+146 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+147 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+148 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+149 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+150 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+151 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+152 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+153 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+154 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+155 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+156 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+157 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+158 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+159 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+160 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+161 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+162 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+163 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+164 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+165 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+166 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+167 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+168 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+169 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+170 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+171 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+172 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+173 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+174 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+175 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+176 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+177 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+178 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+179 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+180 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+181 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+182 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+183 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+184 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+185 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+186 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+187 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+188 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+189 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+190 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+191 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+192 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+193 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+194 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+195 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+196 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+197 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+198 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+199 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+200 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+201 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+202 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+203 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+204 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+205 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+206 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+207 0 obj 
+[ 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R 28 0 R 29 0 R 30 0 R 31 0 R 32 0 R 33 0 R 34 0 R 35 0 R 36 0 R 37 0 R 38 0 R 39 0 R 40 0 R 41 0 R 42 0 R 43 0 R 44 0 R 45 0 R 46 0 R 47 0 R 48 0 R 49 0 R 50 0 R 51 0 R 52 0 R 53 0 R 54 0 R 55 0 R 56 0 R 57 0 R 58 0 R 59 0 R 60 0 R 61 0 R 62 0 R 63 0 R 64 0 R 65 0 R 66 0 R 67 0 R 68 0 R 69 0 R 70 0 R 71 0 R 72 0 R 73 0 R 74 0 R 75 0 R 76 0 R 77 0 R 78 0 R 79 0 R 80 0 R 81 0 R 82 0 R 83 0 R 84 0 R 85 0 R 86 0 R 87 0 R 88 0 R 89 0 R 90 0 R 91 0 R 92 0 R 93 0 R 94 0 R 95 0 R 96 0 R 97 0 R 98 0 R 99 0 R 100 0 R 101 0 R 102 0 R 103 0 R 104 0 R 105 0 R 106 0 R 107 0 R 108 0 R 109 0 R 110 0 R 111 0 R 112 0 R 113 0 R 114 0 R 115 0 R 116 0 R 117 0 R 118 0 R 119 0 R 120 0 R 121 0 R 122 0 R 123 0 R 124 0 R 125 0 R 126 0 R 127 0 R 128 0 R 129 0 R 130 0 R 131 0 R ]
+endobj
+208 0 obj 
+<< /Filter [ /FlateDecode ] /Length 3925 >>
+stream
+xœ­koã6ò{€üw¸î‰#QO÷ËA±™X=Ûr%y³9ä‹×Q÷{k;ííOºyC‰Ô‹CY›¶(’MèÎç=dŒI‰10ù¥ñãúõüì:=?»º1‰ã,‹¤OçgÔµóÕ¡cƒ¤çg—ğ¤œŸ}H&Ñr:&ÁüD7$0\GŸ³d‡×lLÑ4…,!×ŒŒ‚ùˆM§ğÛkvÅì#I=?ci×¾¾oÊ}á¾_ìËwbŸa¤a4'ã e|÷˜E7d¥áˆ‘»p:å»Ù4üKcÎ{íhÒ’S:°œbÇ`4Šâ1g §“œ×œ·{²ˆ£Oat$ƒ
+?%?ÁÇÉQ:ÔÈ¿ƒ„)ÿíaséåü,©Q•ÿSe[|Î´óß	²„ Ây²ŒYüğ!yøH‚ê8œß’BÜ"¶‡Ó+øuü|Û5­sqÈ5Ìä†üØ‹×ÀbÓ&Ö‹ßÀâ9M,ãX†XFı°8F'–ëXÌN,†¥:}ÛµmåôÍÁPHw„#ò·–ÒÙN¡Q¥*X²İºÒåP¦PGS¯©¦d´XrT(¹d«P¡¤ l%!°$£‚ò[v°¥rT ’
+O+¹„Aùz(_5ÔCµP˜à‡Í¥¦cAÔ1†Rµ
+½+4kÆúé7ü§‚¢yŒR;4ôTz^ûª¦J¬m8RK^k®îáCp5‚¸±{øØÉs…ãù&ø\ã·¥ĞÒ¨ø~)(Şg§Çrlu/v9Âi¯ó±_…Æã˜%Éï&Xc\‹©5È¿
+„[¤Êš)5ÏB$Áx¼±¸—là@kê`z-u¸ ì¿Ç:QárL„šI4g:+°§Ù\êgñm„§äf`r+ÒXGkuZn§«–Şµ¥Òñq-ÂôŞ«ò§ÈÂl§ˆœJ«´Ô˜™™/g×,FN¦ÂdZTÁä”‡*’†7áˆg}ù
+®º·+²­DÅàºW(JÁ—ãùVÅ×ĞÒŸ-¢8æé„„Oäøœ‘u¶?n6ëÕ1#Ï»—ÇlO6²Ú°İg½Á”ˆC»È¾î^6ëo6ÙrÁ×·Ã‘<¯~ÏÏ“¯ûİï›Ãf·=İ|ÉH¶}ÜíÙã †UÉ³äà‰$Ëë8º-2ò0!w¤İ@ÛáíË¯ÙúH»œÌc¶å|<’õnû¸9T<ÕX¸Èy_m¶ÅÏÀy]}•ùím³Ï¸¹¯Ùö8 C %şÙmûpàÒ’0Z‘’ŸA¾u©?î`çíîÈ	}ñï7¿<’ì|¶äe“½qnoëç:™àPÚå4ßÑ&'b©iÒ
+C®Y14¸CY$Á)Ôõ~“d	
+$ µY¦‚BáÎ¡p˜'Í§÷PĞ¡†˜ß°8rŠÄáí$MÈrë¼ğ©#DÓ1‹„ïÖCö®aW²w«šã8b|×”×3aNÖ'4E1™³[ùä'sP.ö9…ï|-˜rfrê„9Šzˆ—›÷U½ö3Ó¡['“—ˆœÌk6î@åÑæBãÊÄ’a’†é>ğÒ’"¨IÓ;Æ
+Iòóà[½» Á2Dqøïº?Ö“êûúÍ–®r!AÆ%Æ%$CãE~¼šs¬6l¹r—¶\¹‹xrZ¯]ŠZvU U.3âÕ:’~¤T¤×&Õ&2PXj•Kt¨Ä:…–S8x(”|YòCíïË4`6½Z¯7Ü€?¶ÅdÕ1QGbb«ˆl´,Û²$¢JjïJ‡'@›âÓçâ–åÕ†¦íçÌRË·j½![˜ôœ\‘ ½«LÕ†ˆ\2ÕjÇt©J.™ÈQCîS6wàs.§Ñ6_\H’Wƒ¶|nu¶i ‰ÿİ'ÄLkÀ¶çñŠß¢3–Ç× }+¾5¸vÊfzVXb	Ï,V8Û®E Á«Eø?„ûà¾5H¶é§a’æ=?ğd€3ºæîO„"À“;B‘šğÂs,ºˆà½}6‡‘"jŒpË-e5,{•á|œ{º1øopÎ¼‹—@Ê•÷Ëx3f?/Ã˜A\I/Ä’÷™à´‹ì‰³Ä?UzqXÌxûÑ’}Ağ¹ËÀÖİ$MĞ¸ˆÑL‡nph•ZÖ<ô,¸çıL!7ØŸÿ„’áü¢b.s]è«ufy»4Ì35PÿŸÍÁtšóŸ\ô¢›zµècËõóhºÌ{¢2—(Ä˜«F²¹HŠ ³²‹dİÍs*€ˆ•s±BÀ3Â™ÒfÕ;•²…‚tYQ·k½ÛíZôı æûAï­¢Sï(Ë°Y×©{2fHÅÔ ß5E®CHÔÂùOËø¼+š6Djõx¿fûÃnÛ7F×ø6ŞPq³ëpº–€C˜²B+5A“ê›uT_ÊBÚ¸2@[z(½-XT¥o±YH÷¨Öd`r©‹/}ŞÖAaŠU¿LñºJI€ÑãÃªf™†4F£®Y²h€l>JòºJÍw%yæ÷×ëÃ3}'/¦t‰rV:ı’£@÷”„d®“Şö‡­Óe‚¡Õ6Q›®ÃuÕÓÎ£ù%„-µPÃeŠõr“Ñ¢Ü´E)WÃI$4µê±Zz|Öğ“éjs‚¤E|¬ÎÕ.çPz]‡¹Ûà{˜Şã1ºf¿²‘Øá!uÖ\¢j‹ùô‘£æÚyYÔÎÛ­k±!äu…2I®	ËÌÓOêØ¸U‚ßEñ¿x_Î‚Í“¼ëÒ›í—	â¥Y;¼1a³Å4ºœ?`â—êPÕ£å•-ëK¿4ÒèòM_ÍïŠ’<“ƒLòŸF9­“V*ô«ËÇ4fÚrjÖÄ+GÆf«íãê¸ÛãµùäDXÈhcÎjŠ.H‘î.dÏS› ÈC¿d/»?z!®u‚æ°lw~Ëä1;¬÷›/yÛ>fû>B·kLÃ¯d€!O½â¥Q|µât‡À>³Ñ’7pÚæÔRÌ2(jè€äŠ
+S†rd`#–’½Œ×ÈVr©gN'[z­Êçõk…Xïµ¿T&˜u‚kÁ¦2$Œ\Ê¢¶•fv`µXeß½…•ÒôÊÜë\Ö"B”P¥£Q8†â¶Sd¦Y s¤Á¡âš° a„:h`K'—l¸Ã¡ºç­×~°íuÚQŒê£XGîªÖSG…d×J–Púª"Uƒëj­U.!õPC-”møZ"—T(éÔ°®–\R+”r˜ˆ´åeh¹'`ºvÑl¤¦ª–E»£;â{´èCâãìj<¾º‡ÿÔĞØÄ3ôDÓ³>ç–!Gx öyÑ9àöü¿„ê›BLÙvÄÜÜt"1\qµhOËñ°@RÌs»ğ¸Ô/ĞT9‹ô~Ñœèt6h=Ÿ§v¸x¦é‰¾²èíb÷I`wû±M­û9¥šbmúV£âÊ–®È4•ÿşÄ&áhÊB>ü^$1ó‚Å<wõBâìuµÿÏ$ëçìñí%»ÈG¸'­ÇÿÙ<‘×İ>#‡¯«uÆGÛb¾ûØ­F"Õ¤U¿W›Ï#–$yÜI]
+U‚Ú³é4h¡‘N@º¶áÉÚÓ©„z¬ÌÑš×Èšn¦Ç¬İgÁZ0ê³fJ¹ä«z„¦IşûÓ¤híNcvD£Ñ2YÃôš¤ë/Ùu1¬¿ĞGÕ}{µbù2B¡\òz
+×{¿pQĞàö6æ#t­Tõ—²°:[/Õ6BL>ÈY´J“òqOÈ§Qô Ênh“ªƒiÙ4R\a|‚ÁtE§Ì¦Ó>+%=!?S&ì>:šç¶×ÙÎ’à¨#šËY0îÌ¼¥v1Æİí,¯6f)Ô+HO¥Ù‘ëBÑÖ Ò[«êP.5uH¬ÊPá÷vä–¾Ê¶ô5U.!×€ÑA’ón_S­õqŠë&iU)ou]EşGwA_!|—"ÑûKï¯¨¶ OJë”çé–Û{2ÿ½esH¶¦ä”‹ÆD
+Jïl-}0²ôjËğ¤ ŞÂê  V¾[åI~™ñ$c@°ôña»”ˆ>™²ô¹&b¹W”>³z¦`ÖûS°¨0¿€E!Ïí·ßÈn›!ãÕ†Àldl(—ÔûüíÊ+Ê‘›Gë¶ñnÖë ß}ÚúKS#>®=Å´ñŒ­Ák¿éj©PúéªÕ÷.İ°ºåT{ïT\&à7L@®é‰i•Tìa¯ôN&m¶éb'Ùr§96êå=
+6¨‘óÛ»õúm¿Ï¶ëL±¢VSIÍO‘3E§!_.!L‹t+Œ^ºzáš¦6V•KH‹ONI(¹¤By¾H®¨0¢¥‰ÀÈmE€ægzÖ»G]j³ÚOv-º{IAjæ_ŞsF&–BwëôêôòF²fho¤éXÚÒØH[¶a™B3®c!!ßĞÉT˜–]ö3s¹‘
+¤7Y½kh»¤Q®õ0Z›@òf3p!¯…>}RªM»v[îÒ*'sPÌX<
+!©”ixÇ½ÂZ€?QËbGr²—÷2ÜæÏ.‹Šj%E1l$Áb1åWAÈ›'ìÖZ­ö.p_0&Ş‰)Ïô:'{%0vë™_Ví–©Z˜VĞÓhôD`ê	‹Q§Dr	»ÉŞšU!,Ú7oÆ#úß±ÕOÌºæöú‰ehæ·Òtª/´¸+#æ.5rùß¤¸
+_1Éxw~öseÚ¦Y>ƒ1-Ç*`ÜêfØÈC¿è¦2ìÎéN5)°ì|”çZ‰+&«nV>æ¢…‘ºâd=Ñ¢jH>ª¬‚QûERw×ß)Êç¨àV0ŸTüÖ•£æ;tUÇÜÆÊ©÷änã†˜]İ/šHóa’*.I‰)l¤|ì5ä¥}£I‹—­ÉP1¦¢œ5L÷Ê°°9Síª!<PØşíûp‚¦C
+ÌğeÓ2ş$ñåE>Üg‡lÿ{ãie‘XOà´M¦,P;ÚTÏÙ*'»ê».í³®ï—²ã*b6Ê¿G’>gB ÛÕk–?ó|Ùı²#«}(ÙÙ>{$Åpp÷T|¶O2°“0îwñ±ÿÅÜ–xÊ¿˜!_½É+§B>ÿ *™
+endstream
+endobj
+209 0 obj 
+<< /BaseFont /Arial,Bold /Encoding /WinAnsiEncoding /FirstChar 0 /FontDescriptor << /Ascent 905.27 /CapHeight 715.82 /Descent -211.91 /Flags 32 /FontBBox [ -45.90 -175.78 1000.00 938.48 ] /FontName /Arial,Bold /ItalicAngle 0.00 /StemV 0.00 /Type /FontDescriptor >> /LastChar 255 /Subtype /Type1 /Type /Font /Widths [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 277.83 333.01 474.12 556.15 556.15 889.16 722.17 237.79 333.01 333.01 389.16 583.98 277.83 333.01 277.83 277.83 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 333.01 333.01 583.98 583.98 583.98 610.84 975.10 722.17 722.17 722.17 722.17 666.99 610.84 777.83 722.17 277.83 556.15 722.17 610.84 833.01 722.17 777.83 666.99 777.83 722.17 666.99 610.84 722.17 666.99 943.85 666.99 666.99 610.84 333.01 277.83 333.01 583.98 556.15 333.01 556.15 610.84 556.15 610.84 556.15 333.01 610.84 610.84 277.83 277.83 556.15 277.83 889.16 610.84 610.84 610.84 610.84 389.16 556.15 333.01 610.84 556.15 777.83 556.15 556.15 500.00 389.16 279.79 389.16 583.98 0 556.15 0 277.83 556.15 500.00 1000.00 556.15 556.15 333.01 1000.00 666.99 333.01 1000.00 0 610.84 0 0 277.83 277.83 500.00 500.00 350.10 556.15 1000.00 333.01 1000.00 556.15 333.01 943.85 0 500.00 666.99 277.83 333.01 556.15 556.15 556.15 556.15 279.79 556.15 333.01 736.82 370.12 556.15 583.98 333.01 736.82 552.25 399.90 548.83 333.01 333.01 333.01 576.17 556.15 333.01 333.01 333.01 365.23 556.15 833.98 833.98 833.98 610.84 722.17 722.17 722.17 722.17 722.17 722.17 1000.00 722.17 666.99 666.99 666.99 666.99 277.83 277.83 277.83 277.83 722.17 722.17 777.83 777.83 777.83 777.83 777.83 583.98 777.83 722.17 722.17 722.17 722.17 666.99 666.99 610.84 556.15 556.15 556.15 556.15 556.15 556.15 889.16 556.15 556.15 556.15 556.15 556.15 277.83 277.83 277.83 277.83 610.84 610.84 610.84 610.84 610.84 610.84 610.84 548.83 610.84 610.84 610.84 610.84 610.84 556.15 610.84 556.15 ] >>
+endobj
+210 0 obj 
+<< /BitsPerComponent 8 /ColorSpace /DeviceGray /Filter [ /FlateDecode ] /Height 122 /Length 4626 /Subtype /Image /Type /XObject /Width 285 >>
+stream
+xœí]{\Lé?]U£+åRH*]F+—BÉ-Š²Y»‰Q¬²?¬{Xë²vå³î,-k±.‰!aÑÙhY¶T’İè2İk~gÎ™™÷™™sfN™f
+ß?Vûç½=ó¾ÏûÜŞs¸ÜøˆµUœŠÅåœª:e§5 ®$ëŞ¥#;¾û:Èw¬ûp‡>}ú¸ç¼lëÑëéo•=>%¡áÕİÃçw¶é¬ƒÑ@ßjPÀº³9Ê©BÑ˜›úû²ÉıMh™"u£«K”=f… âŸÓ“í™±AÕuÓ#e¼eÑX’´'x`WÍ&2†Ó deO ÅŸ¸# ·ZóøÂ‡Vpª²gÑÈü9¸¿î;1†„ÙÎ÷ì„/LüŞÍXŒ!ñùKeÏG~H?2§ÜCÀá_eÏI.hÌÚãg¡*c®*êj$ÔUr‡ı²'öîÈ8üÍfRa™ôrpñ˜·zcÔşè„x—Eí\³0Ğs]ç|ß|eÏíİwd’¹ä¬T­GO]¸5æÊ½gô:]Ãë	GW:KS~Õ
+œŠœñæBH/±3[ÛØÁwéîËéùÌÚh(É<»Â³³:5w¢Zv-‡Äˆ~"igë>w[\VysÚÊ9âHÅ«<yZx½Û]L¢£ËWŸ¿Ó&xõG¾$w¶ÈkÀ
+CÙÍğÂá·ïå“Q)‡fÓÖXˆ3§oV òöÖŒİÂwÃ¥l9¶¹ÊT”9j7äØzK£>e¾%Ü†£Ö'¼`(v™#c–¨lŞ$ïZeqşÚÄ5ÙAûä¹b Nõ„Ì	j¡^äÂ½Ãˆı¤ã¶êâóìç±`{›:éæ¼Ávöú)•ÓÂ]UMCÌü¦…;“’æá#í0a—B¬AÎd!sú¼PD‡ï‚Û³qåwø–TE9YŞ¸	˜Óïµ‚ºlª/OÅ0×ué~ÊèÆgÎĞ
+öÚdœaÖá—=ÆÃ|æ|*weAn¨‰wÁ4<N¾R|ÏuãHæÌQ|×ëÙ-}¢œ¾Ï‘±‹]Êé]&.Òó<¦4³¸| 77¥ÑD²Y,–wDŠ¢%ÀÍ±Ö·”ˆà1ÇºŒ †ÇŞYŠ—{o¦cDº";”D9ÁôÏ#q¦°Ãb®Fâ˜Æ(l\™ë'nUºòõ‚§v¥}ÌãM$©>gñØsU1£Ê?¹öX©bº’†·66€Ö}_-)‘$¢ŞDáÿ§ˆÕp?úF³\òF%®%¯£}êÍbÅp"Ç4_Ga
+SM¨HT»c]Ó=La±¹8sØøÂaóãÊb)T(+œ¡XíC|¥¤ğ˜ãÿı†÷O.76¥ãm/Mú§7‹Í0'ŠøG1ûªµ W~áàÌá±E¨çDJ>œ1–+ai~¤»~PÌùz±”‡,S.¹­Iaó†X>
+JçJyÉ;É	æd±ˆs
+<m6vÜtäHµ&q–¸òrï¿oLY¦mÀÛ,/4JÆ;æà|aE¹¶ìIŞPVX\\T\Û„o‹Š‹‹92¦Ñ2ÈÂY29æ*oy¥\2%#äoŠ<ppëF±¥úÒÌóûÖÍñ3¢¿½ƒC×‘Ÿ…m8x£€>) ¡ìÙ¥ıkç~î>Â‘íààÀ4Âkê’]g2ië†‡§>ÇıœââRªøzİƒ¿%ˆÈ+yË©R¦àaGñ¶RJ$77U.ßu¿AaCÆ¹môÄƒ÷8T»Œ\›E±Š²ã7ûÛPÔÀôÙsüGÑÉ-#um>´ptìjÖÛuÆ–Dq‡QŒ†65´´MºZò8œ\Äç+ïwõ&¼:yór¸£¥¦>4ÜßìÓLNÓ°SOS#¨¶üK¬Jæn_{”x­®oÜ£GÇöA½‚â%úYOÅI!G?=/J&š„‰óü+¤×=Ràíòfê¯(.h…%%Ó9{È¯Ñ³™ºùÔ_Ÿå=¾¶?ÌQ›_ì^k¼>îÛAP¡Å§k\˜YXû“¯¹¶˜_³nzØmÅŠeËfù»vSm7ş„ENèIWïÑ$<†Ø™Šdé¸EWô)Q¸áy•ñ1•;
+µA›¡pä×`¿½.r‡D,shåf¯e£QÏ‹-iîÙÖ^`àëDÄÕ£ÎèÑR²¨>s3(ÄÂÁîM )”Ûğ‹ ·¶<ÿnôªÑ"éãhvz uƒc05Í‹°.ˆÆí„dH±ñJüÉATP´ÁRX¡Ój
+É’5	t\ìEå*hQÕBÅZwõjTl$~?¤<)¦óZ\‘ÍQ”ùBîjß£ ©)V{¨î¼ñØda4­1¥_«L¢–WNıÎFb¶È¹ëòŸ…ÅUƒPé˜*®¢ajS&^)‡? µ’$ÀóI´ş¡¢£ÂàÜ`´ßõvÑ ß|Úİ+,ÎéˆJ¿FÔÕ@a¿
+‹SÀÎ¡<kïÀı8´IÙU¢¼Á†Kè×mÑSµL"/)}Q®çèé‘i!”I¿¢BU (ÃĞ}(,ş•ê‰•$¶Áô÷£†/@±´Õ: ÚwÄHbAF´æN&&tG5¯I!Ì³ÃşEP
+Ö©-ˆ^œôîŸê‘¨t Å®Âñ
+póa2~ÓADïöƒê?ˆ’\ 
+Ÿ*#[ä
+ØØi”ŸÊi|“âE7T6#%ü®ßP÷ef_Äd
+<pˆ
+Ë¹™ Wy{*Ë™4šsïI§]HİøªÇ!°À®ŠCª£ú>T¼«%Ñô²ôÒ…i˜C®›Ü
+ éh> $…0IÜ…IŒ¡ æ¨;K'^hmI»®¬3¤=Bš¹öVÔ@%ÈdSï*.7ôb|›ÁpÔMğFTa‡Ş±ÿr=Fí~j¨Ÿ‘A<ÛÌÉrÈ_Hx¥b;@ë!ÍQ¯ é¤nŞiL&Á-'S§©—ÉâŒ~0{QÚË] ªacex&jİñP2R‹ä®Ú	>Ùİ,A™ıj¡±Õ×ú“¦—‚ —~ŒÎòÚäCjYœ¨¾î5MİdĞ¬>£İ
+’:1•8ÄiÀ"ÁüHu¬UÓû¯rŸŞŠ^ç%bÆ¾â™Ì`Qô- è‡dxE+ˆÉ$ªCÈ	¢¸Ph-=Ô¥ŒÁ(¿È’QPöbë‰¢r°«4Ì»›™´'ïèÚ?-®då õw]/ßƒNé9ä/ì/ÔÎ¯€
+Bñ«`³¿Ò4E?]ú¨5‰Z/@¬KÚ-"[HZÕƒ(Íè¨;:ùVï‘ödp’×}Iú¡”ÆrpùD#?øá Y#F©7sA}©V85 µé°[ŠJÌ»Q`Û÷ <œ€¿ğÙSàòFå°lh‚oÑ@uÀ$7´r,¨ñ‰Ÿ‰ ¿‘€&i0—Ù7»	t y/¬Ñó º!¹FØÒB7$øz±Ús§	Œ[ÌdD2ômzÒiå£A	2ˆÀm3Ÿ,»NÍ-Ü
+@1Bòœ9ŒÎ4½ìËS3ZæjšEMR=¿r/&wêD˜3I:í3hXæË‚5¨Hõ	¾ñàA#)Â ‡Æ4k"Ş§‘½©82yƒ+†e6t…gr±®ÊÔğ—JÊÒØ’ï¥ªŠÊ†ñÌ ‚0ƒKbM” ‹Ò¿^¼•PœNMÀ_7¾±'‹à"ôS$œ up»vbô¨Q{J#l„¢ÛJàƒºVÊF^A)Ù‰9 /g»){©ÿ
+Ì–)5«¦„^’	|P×&Õ·- il¬¦‰ñ‚W¼ô”rõ¬ZÎBïÌT¨GuÑĞ<Cô§Ÿ‡˜Rº‡«B…ê™ƒçë~ı(vh-Ô²Éó*ß92qØWƒ@ŞùS·ö(	Õ•ò›ÚÏ ¥ÚØH)P`(¯;d'ggÙií3	Ê¾”Ö4^­È•â\)W¬¨$PÃš.õ6É—ô#T¾„_vÏAÚ¾Wş¾]²“ÊıH«~*ûÎW%¹Ñ{P[IÑ`Ø²l?”Í£K¦M›/<ËöµCÆP&ú?_ƒ6°î0Øªª_‚­†aıôw=‰Ë…ÇÁÁétH¦(æ6†¤†’!Fi0È+0ÁOBcÉãEµüÃSL°ÍhYïÍ–´”ó~D2VÍ[ä–3tÙÙµš2¸İ±/…Ôeà¸S©Ş&,‘>‡…ÒùÂC5É›vÇi—ÅÙ~¢Ç`õjùüşÈüªÜÛ;&™âöM(lçÆ0Paê•<ô«Udš…ÔÓé‰yƒâ+T'ò/¡ì¸]9Ù2Ó“ãö¯ñ1G«·ËÇ™dHD7­¸º42yv"Ø)XÏ9ë‰‹;{pãWã{“Ş›~¢Iã•¿ #@•q &îÂÙC›æz  p{m[á0¨Æ52ÇHXûöèB¢“Èû­zúo{(Ş	%JI16‡~ûAS›Š6JÍí%¶¢oaÓÔÑAc¹ÜoéuŒ¯1´Ï5tXÀ	¦n:~wŠ¤ÒÑ0‘XÂ×àü#O˜#©íTÃ —Tµ-=ÖœÏ-jÔ¯íŞÏeH_ËÉR|,q»ÛÙ:uêdkgÖ_äıWµ‰[üœº‰¿ØGÇÌqì’ßQúûr£¹ÛŠ½[Iİ°·ÛÔŸâ©e@¡¹…]Ÿ!..ìlLD	;;w³³í;ÔÅÅÅÁÖV5ñ³åsr¡ÀÁc}¾\¾ûó¥0'-­¸¼,?]Ú¬H~˜“]R^V^’óà„¡Y’â§•á!¡8BB­Şy*şÔ{¸uÏnşñË†Å¡d°å»™Io…TŞ}’ó²¬¬¬èyÖÑvkï¥ædç—ãÏ^fgßJ%˜SSò¶Œ¥¥­÷‚ç{šÜ¬§ÅéJIfl(uY6Ñ‡ŠhÛ6ùÊ+… ÑÉ­M¼_E)ˆWùì£È¡ÃtlRë`NMA«;4ÿë„Mlƒª¸÷LÙcÀ.sSşèŠ3?Rä«*>fN•o¯Häí
+ùş©’Ç@…§qƒ[VjDËâß¥.ó™¹“<Ë™.H¸ñ¥Õ”Öú
+DÂ+Û[Y/u*8Ü¿›ÏßJê\6ÆN—¦¤êÊwVX¶ó¿®”®¡Ú™`N?Å€£ø §ÊºlĞV—üØó2Ù¤òDÑÅy0ƒYJ~õ,¼à§³êÒ¿Fî¨¿½b†uZ|_q]6/I!]ôñNÊZ³^ß^F’#L„¶WÀ‡mÊÿüÖ•’¶[ù:9€+>Ö½›‹Š„•.¼“¦ÏéVñV" 7PLµX/µÏO…Ûa,³éwšp']ÉXCL¡-"^Æ¯ŸÀOÙM(Zœùj‰å^9_‚ópG€5?^k×Æ¾ˆWd% yJn(L>0·¿ }TÅqEübÎ2±x/6dÇ³wo5÷Ò–€(m·ã´?ä„´>¤›ˆsë>ãæ5ª,÷ÆŞğæ ‰Å`øö§­Á×ØDH0‡EğÁûMş‚EÑ£óÛç4ıè@¿oşb˜øĞQîNÅëìyıy%ç{]É³¤Ãß†Œa›iˆ6¡j¹àrës~6	é]©¹ƒCÃĞÉoñö˜[ÿdæ•TÔÖÕXSË)}“–štş·ïLÕ[—â‹ŠšvÁ1ïÁ×6/IŠQ°:Z:ºùÌgJèlB§øLğéÌîÑ¡=íçyO¾vwÓ’nÍ‚Áà•·d\ƒmKx<^^ŒQ±ğùñ^[=›hP¶¶ƒì‰Ë„ş°E1OŞ3Îøwåk¤£ÛEÑOÛğÇídàÚLŠo1‚¹ÇÂCJz{¿âğpİ@-Ù¬€Ğ4øcBV«ş^‡ÜP{û»q–íd3Ã´ÌØcÃ·_NÏ>Ş+ui6ÍlLóUH\14èå´r×ÅÏ?Ôœ§ÒÜä[–‡úqv²¶Âaé0ÄÙËoö7>•”]PŞ:zZ*9<´aãñ#š„ÿÓ…M
+endstream
+endobj
+xref
+0 211
+0000000000 65535 f
+0000000017 00000 n
+0000001949 00000 n
+0000003889 00000 n
+0000004213 00000 n
+0000004538 00000 n
+0000004757 00000 n
+0000005005 00000 n
+0000005253 00000 n
+0000005503 00000 n
+0000005783 00000 n
+0000006039 00000 n
+0000006322 00000 n
+0000006621 00000 n
+0000006846 00000 n
+0000007093 00000 n
+0000007358 00000 n
+0000007602 00000 n
+0000007846 00000 n
+0000008092 00000 n
+0000008368 00000 n
+0000008619 00000 n
+0000009058 00000 n
+0000009388 00000 n
+0000009827 00000 n
+0000010157 00000 n
+0000010596 00000 n
+0000010926 00000 n
+0000011365 00000 n
+0000011695 00000 n
+0000012134 00000 n
+0000012464 00000 n
+0000012903 00000 n
+0000013233 00000 n
+0000013503 00000 n
+0000013775 00000 n
+0000014126 00000 n
+0000014504 00000 n
+0000014871 00000 n
+0000015230 00000 n
+0000015612 00000 n
+0000016024 00000 n
+0000016406 00000 n
+0000016818 00000 n
+0000017221 00000 n
+0000017626 00000 n
+0000018035 00000 n
+0000018474 00000 n
+0000018797 00000 n
+0000019323 00000 n
+0000019798 00000 n
+0000020269 00000 n
+0000020672 00000 n
+0000021048 00000 n
+0000021525 00000 n
+0000022052 00000 n
+0000022551 00000 n
+0000023058 00000 n
+0000023539 00000 n
+0000024069 00000 n
+0000024487 00000 n
+0000024868 00000 n
+0000025192 00000 n
+0000025879 00000 n
+0000026229 00000 n
+0000026565 00000 n
+0000026920 00000 n
+0000027162 00000 n
+0000027503 00000 n
+0000027848 00000 n
+0000028205 00000 n
+0000028448 00000 n
+0000028980 00000 n
+0000029451 00000 n
+0000029928 00000 n
+0000030337 00000 n
+0000030719 00000 n
+0000031212 00000 n
+0000031693 00000 n
+0000032085 00000 n
+0000032574 00000 n
+0000032812 00000 n
+0000033050 00000 n
+0000033421 00000 n
+0000033901 00000 n
+0000034375 00000 n
+0000034764 00000 n
+0000035157 00000 n
+0000035528 00000 n
+0000035897 00000 n
+0000036183 00000 n
+0000036945 00000 n
+0000037576 00000 n
+0000038045 00000 n
+0000038446 00000 n
+0000038820 00000 n
+0000039301 00000 n
+0000039745 00000 n
+0000040167 00000 n
+0000040618 00000 n
+0000041028 00000 n
+0000041837 00000 n
+0000042319 00000 n
+0000042844 00000 n
+0000043301 00000 n
+0000043730 00000 n
+0000044129 00000 n
+0000044568 00000 n
+0000045120 00000 n
+0000045593 00000 n
+0000046175 00000 n
+0000046651 00000 n
+0000046986 00000 n
+0000047244 00000 n
+0000047754 00000 n
+0000048203 00000 n
+0000048506 00000 n
+0000048861 00000 n
+0000049216 00000 n
+0000049445 00000 n
+0000049898 00000 n
+0000050127 00000 n
+0000050580 00000 n
+0000050809 00000 n
+0000051262 00000 n
+0000051829 00000 n
+0000052054 00000 n
+0000052307 00000 n
+0000052560 00000 n
+0000052815 00000 n
+0000053100 00000 n
+0000053360 00000 n
+0000053745 00000 n
+0000001658 00000 n
+0000053812 00000 n
+0000054064 00000 n
+0000054289 00000 n
+0000054488 00000 n
+0000054691 00000 n
+0000054916 00000 n
+0000055115 00000 n
+0000055318 00000 n
+0000055543 00000 n
+0000055742 00000 n
+0000055945 00000 n
+0000056170 00000 n
+0000056369 00000 n
+0000056572 00000 n
+0000056797 00000 n
+0000056996 00000 n
+0000057199 00000 n
+0000057424 00000 n
+0000057623 00000 n
+0000057826 00000 n
+0000058051 00000 n
+0000058250 00000 n
+0000058453 00000 n
+0000058678 00000 n
+0000058877 00000 n
+0000059080 00000 n
+0000059305 00000 n
+0000059504 00000 n
+0000059707 00000 n
+0000059932 00000 n
+0000060131 00000 n
+0000060334 00000 n
+0000060559 00000 n
+0000060758 00000 n
+0000060961 00000 n
+0000061186 00000 n
+0000061385 00000 n
+0000061588 00000 n
+0000061813 00000 n
+0000062012 00000 n
+0000062215 00000 n
+0000062440 00000 n
+0000062639 00000 n
+0000062842 00000 n
+0000063067 00000 n
+0000063266 00000 n
+0000063469 00000 n
+0000063694 00000 n
+0000063893 00000 n
+0000064096 00000 n
+0000064321 00000 n
+0000064520 00000 n
+0000064723 00000 n
+0000064948 00000 n
+0000065147 00000 n
+0000065350 00000 n
+0000065575 00000 n
+0000065774 00000 n
+0000065977 00000 n
+0000066202 00000 n
+0000066401 00000 n
+0000066604 00000 n
+0000066829 00000 n
+0000067028 00000 n
+0000067231 00000 n
+0000067456 00000 n
+0000067655 00000 n
+0000067858 00000 n
+0000068083 00000 n
+0000068282 00000 n
+0000068485 00000 n
+0000068710 00000 n
+0000068909 00000 n
+0000069112 00000 n
+0000070065 00000 n
+0000074076 00000 n
+0000076027 00000 n
+trailer
+<< /Info 133 0 R /Root 1 0 R /Size 211 >>
+startxref
+80837
+%%EOF
