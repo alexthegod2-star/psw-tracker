@@ -45,7 +45,8 @@ tbody tr:last-child td{border-bottom:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
-.adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}
+.adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.admSig{display:flex;gap:6px;align-items:center}.admSig img{height:30px;max-width:110px;background:#fff;border:1px solid var(--line);border-radius:4px}.admSig button{padding:4px 10px;font-size:12px}
+.adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}
 .admYN{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
 .admYN button{border:0;border-radius:0;padding:4px 12px;font-size:12px;background:transparent}
 .admYN button[data-yn="1"].on{background:#1f9d55;color:#fff}
@@ -516,7 +517,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </form>
   <div class="msg" id="admMsg"></div>
   <div class="admlink" id="admLinkRow" hidden><input id="admLink" readonly><button type="button" class="pri" id="admCopy">Copy link</button></div>
-  <table style="margin-top:12px;width:100%"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Added</th><th></th><th title="Can they change company and GA user names and passwords? Everyone can see them.">User/Pass</th><th title="Can they delete leads, clients, policies, tasks, notes and files?">Delete</th><th title="Can they see and edit clients' Payment info?">Payment</th></tr></thead><tbody id="admRows"><tr><td colspan="9">Loading…</td></tr></tbody></table>
+  <table style="margin-top:12px;width:100%"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Added</th><th></th><th title="Can they change company and GA user names and passwords? Everyone can see them.">User/Pass</th><th title="Can they delete leads, clients, policies, tasks, notes and files?">Delete</th><th title="Can they see and edit clients' Payment info?">Payment</th><th title="Their signature, put on the ACORDs and certificates they make">Signature</th></tr></thead><tbody id="admRows"><tr><td colspan="9">Loading…</td></tr></tbody></table><input type="file" id="admSigIn" accept="image/*" hidden>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
@@ -1068,7 +1069,7 @@ async function makeAutoSheet(q,force){
     }
     fillVehicleZips(v);
     const bytes=await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet');
-    const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com auto quote sheet.pdf`;
+    const name=`${(v.client_name||'New client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()} com auto quote sheet.pdf`;
     const file=new File([bytes],name,{type:'application/pdf'});
     if(cur&&cur.id){return (await uploadOne(file))?`, and the com auto quote sheet is filled and attached`:`, but the com auto quote sheet couldn’t be attached (see Files below)`}
     addPending(file);return `, and a com auto quote sheet is ready to attach when you save`;
@@ -1092,7 +1093,7 @@ async function newSheet(kind){
   if(auto){v.owner_first=$('firstName').value.trim();v.owner_last=$('lastName').value.trim()}
   if(kind==='pauto'){const f=$('firstName').value.trim(),l=$('lastName').value.trim();Object.assign(v,{ins_first:f,ins_last:l,d1_first:f,d1_last:l,d1_rel:'Self'})}
   if(kind==='home'){v.client_name=person||v.client_name;Object.assign(v,{ins_first:$('firstName').value.trim(),ins_last:$('lastName').value.trim(),form_type:'HO-3',occupancy:'Owner',heating_type:'Central gas',siding:'Stucco',smoke:'Yes',deadbolts:'Yes',hydrant_ft:'100',station_mi:'1.5'});HOME_YN.forEach(k=>v[k]='No');v.rc_contents='Yes'}
-  const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()}${suffix}`;
+  const name=`${(v.client_name||'New client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()}${suffix}`;
   const b=$(auto?'newAuto':kind==='pauto'?'newPauto':kind==='home'?'newHome':'newQs');b.disabled=true;m.textContent=`Making ${name}…`;
   try{
     const bytes=auto?await buildQuotePdf(v,AUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE COMMERCIAL AUTO QUOTE SHEET','psw-auto-quote-sheet'):kind==='pauto'?await buildQuotePdf(v,PAUTO_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL AUTO QUOTE SHEET','psw-pauto-quote-sheet'):kind==='home'?await buildQuotePdf(v,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet'):await buildQuotePdf(v);
@@ -1186,7 +1187,7 @@ async function makeQuoteSheet(q){
     ['gross_receipts','payroll'].forEach(k=>{if(v[k])v[k]=fmtMoney(v[k])});
     QS_SECTIONS.forEach(s=>(s.bldg||[]).forEach(f=>f.money&&[1,2,3].forEach(b=>{const k=`b${b}_${f.k}`;if(v[k])v[k]=fmtMoney(v[k])})));
     const bytes=await buildQuotePdf(v);
-    const name=`${(v.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com quote sheet.pdf`;
+    const name=`${(v.client_name||'New client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()} com quote sheet.pdf`;
     const file=new File([bytes],name,{type:'application/pdf'});
     if(cur&&cur.id){return (await uploadOne(file))?`, and the quote sheet is filled and attached`:`, but the quote sheet couldn’t be attached (see Files below)`}
     addPending(file);return `, and a quote sheet is ready to attach when you save`;
@@ -1269,7 +1270,7 @@ $('qlApply').onclick=async()=>{if(isLocked('lead'))return toast('This lead is vi
     const g=k=>$(k).value.trim(),person=[g('firstName'),g('lastName')].filter(Boolean).join(' ');
     merged.client_name=merged.client_name||g('company')||person;
     ['gross_receipts','payroll'].forEach(k=>{if(ans[k])merged[k]=fmtMoney(ans[k])});QS_SECTIONS.forEach(s=>(s.bldg||[]).forEach(f=>{const k='b1_'+f.k;if(f.money&&ans[k])merged[k]=fmtMoney(ans[k])}));
-    const bytes=await buildQuotePdf(merged),name=qs?qs.name:`${String(merged.client_name||'New client').replace(/[\\/:*?"<>|]+/g,'').trim()} com quote sheet.pdf`;
+    const bytes=await buildQuotePdf(merged),name=qs?qs.name:`${String(merged.client_name||'New client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()} com quote sheet.pdf`;
     if((await uploadOne(new File([bytes],name,{type:'application/pdf'})))!==true)throw new Error('The new quote sheet couldn’t be attached (see Files below).');
     // empty lead boxes take the client's answers too
     const up={qlink:{...cur.qlink,applied:true}},put=(k,x)=>{if(x&&!String(cur[k]||'').trim()){up[k]=x;$(k).value=x}};
@@ -2044,7 +2045,7 @@ async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg 
       else if(fl instanceof PDFLib.PDFDropdown||fl instanceof PDFLib.PDFOptionList){const o=fl.getOptions().find(x=>x.toLowerCase()===s.toLowerCase());if(o){fl.select(o);done++}}
       else if(fl instanceof PDFLib.PDFTextField){fl.setText(String(v));done++}}catch(_){}}
     try{form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica))}catch(_){}
-    const client=(g('client_name')||cur.company||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',have=new Set((cur.files||[]).map(x=>x.name.toLowerCase()));
+    const client=(g('client_name')||cur.company||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',have=new Set((cur.files||[]).map(x=>x.name.toLowerCase()));
     let name=`${client} com sup.pdf`;for(let i=2;have.has(name.toLowerCase());i++)name=`${client} com sup ${i}.pdf`;
     const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
     if(ok)say(`Filled ${done} box${done===1?'':'es'}${ai?' (Claude matched them)':sample?` (Claude couldn’t: ${aiErr}, so matched by label)`:' (Claude isn’t turned on, so matched by label)'} and saved ${name} under Files. Open it to check and finish the rest.`,'ok');else say($('fileMsg').textContent||'Couldn’t save it.','err')}
@@ -2288,6 +2289,18 @@ function build80(C,h){
   set('Residential_RemarkText_A',rem.join('\n'));
   if(!g('property_address'))notes.push('the home sheet has no property address');
   return {v,notes}}
+// the signed-in person's signature (Admin > Signature), a PNG data URL or ''
+let mySigP=null;const mySig=()=>mySigP||(mySigP=fetch('/api/auth/signature',{credentials:'same-origin'}).then(r=>r.ok?r.json():{}).then(d=>d.sig||'').catch(()=>''));
+const sigBytes=s=>Uint8Array.from(atob(s.split(',')[1]),c=>c.charCodeAt(0));
+// ACORD 125 / 126 / 130 / 140 templates carry a 388 x 108 signature picture on the producer's signature line: swap it for this person's
+async function sigSwap(bytes){const s=await mySig();if(!s)return bytes;const L=PDFLib,doc=await L.PDFDocument.load(bytes),img=await doc.embedPng(sigBytes(s)),num=(d,k)=>{const v=d.get(L.PDFName.of(k));return v&&v.asNumber?v.asNumber():0};let n=0;
+  for(const pg of doc.getPages()){const res=pg.node.Resources(),xo=res&&res.lookup(L.PDFName.of('XObject'));if(!(xo instanceof L.PDFDict))continue;
+    for(const [k,ref] of xo.entries()){const o=doc.context.lookup(ref),d=o&&o.dict;if(d&&String(d.get(L.PDFName.of('Subtype')))==='/Image'&&num(d,'Width')===388&&num(d,'Height')===108){xo.set(k,img.ref);n++}}}
+  return n?doc.save():bytes}
+// ACORD 25 / 80: put the signature on the producer's signature line (the box named field)
+async function sigDraw(doc,field){const s=await mySig();if(!s)return;const fl=doc.getForm().getFields().find(f=>f.getName().replace(/\[0\]$/,'').endsWith(field));if(!fl)return;
+  const w=fl.acroField.getWidgets()[0],r=w.getRectangle(),ref=doc.context.getObjectRef(w.dict),pg=doc.getPages().find(p=>{const a=p.node.Annots();return a&&a.asArray().some(x=>x===ref)})||doc.getPages()[0];
+  const img=await doc.embedPng(sigBytes(s)),h=Math.max(r.height,16),wd=h*img.width/img.height;pg.drawImage(img,{x:r.x+4,y:r.y+(r.height-h)/2,width:Math.min(wd,r.width-8),height:Math.min(wd,r.width-8)*img.height/img.width})}
 async function fill80(v){const L=PDFLib,doc=await L.PDFDocument.load(await acord80Tpl()),f=doc.getForm(),helv=await doc.embedFont(L.StandardFonts.Helvetica);
   // applicant / co-applicant name: one full-name box across the first, middle and last boxes
   for(const s of ['A','B']){const fs=f.getFields(),get=n=>fs.find(x=>x.getName().endsWith(`.NamedInsured_${n}_${s}[0]`)),gn=get('GivenName'),sn=get('Surname'),mi=get('OtherGivenNameInitial');
@@ -2299,13 +2312,13 @@ async function fill80(v){const L=PDFLib,doc=await L.PDFDocument.load(await acord
     if(!fl.isMultiline()){while(size>6&&helv.widthOfTextAtSize(text,size)>r.width-4)size-=0.5;size=Math.min(size,Math.max(6,r.height-2))}
     else{const est=()=>text.split('\n').reduce((a,ln)=>a+Math.max(1,Math.ceil(helv.widthOfTextAtSize(ln,size)/(r.width-6))),0)*size*1.17;while(size>6&&est()>r.height-2)size-=0.5}
     try{fl.setText(text)}catch(_){fl.setMaxLength(undefined);fl.setText(text)}{const da=fl.acroField.getDefaultAppearance()||'';if(/\\057|^$/.test(da))fl.acroField.setDefaultAppearance(da.replace(/\\057/g,'/')||'/Helv 10 Tf 0 g')}fl.setFontSize(size)}
-  f.updateFieldAppearances(helv);return await doc.save()}
+  f.updateFieldAppearances(helv);await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A');return await doc.save()}
 async function make80(m){const fresh=leads.find(l=>l.id===cur.id)||cur,hs=[...(fresh.files||[])].reverse().find(x=>/ personal home quote sheet\.pdf$/i.test(x.name));
   if(!hs){m.className='msg err';m.textContent='This lead has no personal home quote sheet yet. Click Personal home quote at the top first.';return}
   m.className='msg';m.textContent=`Reading ${hs.name}…`;await acordReady();
   let raw;try{raw=await fileBytes(hs)}catch(_){throw new Error('the home quote sheet file is missing')}
   const h=sheetValues(await PDFLib.PDFDocument.load(raw)),{v,notes}=build80(window.AcordCore,h),bytes=await fill80(v);
-  const client=([h.ins_first,h.ins_last].filter(Boolean).join(' ')||'Client').replace(/[\\/:*?"<>|]+/g,'').trim(),name=`${client} 80.pdf`;
+  const client=([h.ins_first,h.ins_last].filter(Boolean).join(' ')||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim(),name=`${client} 80.pdf`;
   if(await uploadOne(new File([bytes],name,{type:'application/pdf'}))){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+(notes.length?`<div class="small" style="margin-top:4px">Heads up: ${notes.map(esc).join(' · ')}</div>`:'')}
   else{m.className='msg err';m.textContent=$('fileMsg').textContent}}
 $('acordSec').addEventListener('click',async e=>{
@@ -2334,9 +2347,9 @@ $('acordSec').addEventListener('click',async e=>{
     if(forms==='131'){v=build131(C,data,fields,checks,today);filled.push(await C.fillPdf(await acord131Tpl(),'131',v,PDFLib))}
     else{v=C.buildValues(data,Object.assign({},C.DEFAULT_SETTINGS),{today,customer_id:''});if(v['130'])titles.forEach((t,i)=>{if(t)v['130'][`ind${i+1}_title`]=t});
       if(v['130'])cls.forEach((r,i)=>{const a=v['130'],k=`r${i+1}_`,pm=r.payroll.match(/^\$?\s*[\d,.]+\s*(k|m|mil|million|thousand)?\b/i),pn=pm?C.parseMoney(pm[0]):null;
-        a[k+'loc']='1';a[k+'class']=r.code;if(r.desc)a[k+'desc']=r.desc;if(r.ft)a[k+'ft']=r.ft;if(r.pt)a[k+'pt']=r.pt;if(r.payroll)a[k+'payroll']=pn!=null?pn.toLocaleString('en-US'):r.payroll});for(const f of list)filled.push(await C.fillPdf(b64bytes(acordTpl[f]),f,v[f],PDFLib))}
+        a[k+'loc']='1';a[k+'class']=r.code;if(r.desc)a[k+'desc']=r.desc;if(r.ft)a[k+'ft']=r.ft;if(r.pt)a[k+'pt']=r.pt;if(r.payroll)a[k+'payroll']=pn!=null?pn.toLocaleString('en-US'):r.payroll});for(const f of list)filled.push(await sigSwap(await C.fillPdf(b64bytes(acordTpl[f]),f,v[f],PDFLib)))}
     const bytes=filled.length>1?await C.mergePdfs(filled,PDFLib):filled[0];
-    const client=(data.client_name||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client';
+    const client=(data.client_name||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client';
     const name=`${client} ${list.join(' ')}.pdf`;
     const ok=await uploadOne(new File([bytes],name,{type:'application/pdf'}));
     if(ok){m.className='msg ok';m.innerHTML=`${esc(name)} is attached under Files.`+((n=>n.length?`<div class="small" style="margin-top:4px">Heads up: ${n.map(esc).join(' · ')}</div>`:'')((v.notes||[]).filter(t=>!/\b1[2-4]\d\b/.test(t)||list.some(f=>t.includes(f)))))}
@@ -2485,8 +2498,8 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
  const msg=(t,ok)=>{$('admMsg').className='msg '+(ok?'ok':'err');$('admMsg').textContent=t};
  async function admLoad(){try{const r=await fetch('/api/admin/users',{credentials:'same-origin'});if(!r.ok)throw 0;const d=await r.json();
    const em=u=>`<input type="email" class="admEm" data-u="${esc(u.username)}" value="${esc(u.email)}" data-was="${esc(u.email)}" placeholder="Add email" aria-label="Email for ${esc(u.name)}">`;
-   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Removed'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td><td>${u.username===d.me?'':u.active?`<button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button>`:`<button type="button" class="admRs" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Restore</button>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.secrets?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.secrets?'':'on'}">No</button></div>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-what="delete" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.can_delete?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.can_delete?'':'on'}">No</button></div>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-what="payment" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.payment?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.payment?'':'on'}">No</button></div>`}</td></tr>`)
-     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td><td><button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button></td><td class="small">No (set after sign-up)</td><td class="small">Yes (set after sign-up)</td><td class="small">No (set after sign-up)</td></tr>`));
+   const rows=d.users.map(u=>`<tr class="${u.active?'':'off'}"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>${u.active?'Active':'Removed'}</td><td>${u.created?fmtDate(new Date(u.created*1000).toISOString().slice(0,10)):''}</td><td>${u.username===d.me?'':u.active?`<button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button>`:`<button type="button" class="admRs" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Restore</button>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.secrets?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.secrets?'':'on'}">No</button></div>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-what="delete" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.can_delete?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.can_delete?'':'on'}">No</button></div>`}</td><td>${(d.owners||[]).includes(u.username)?'<span class="small">Yes (owner)</span>':`<div class="admYN" data-what="payment" data-u="${esc(u.username)}" data-n="${esc(u.name)}"><button type="button" data-yn="1" class="${u.payment?'on':''}">Yes</button><button type="button" data-yn="0" class="${u.payment?'':'on'}">No</button></div>`}</td><td><div class="admSig" data-u="${esc(u.username)}" data-n="${esc(u.name)}">${u.sig?`<img src="${esc(u.sig)}" alt="Signature for ${esc(u.name)}">`:''}<button type="button" class="admSigUp">${u.sig?'Change':'Add'}</button>${u.sig?'<button type="button" class="admSigRm">Remove</button>':''}</div></td></tr>`)
+     .concat(d.invites.map(u=>`<tr class="off"><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${em(u)}</td><td>${u.role==='admin'?'Admin':'User'}</td><td>Sign-up link sent</td><td></td><td><button type="button" class="admRm" data-u="${esc(u.username)}" data-n="${esc(u.name)}">Remove</button></td><td class="small">No (set after sign-up)</td><td class="small">Yes (set after sign-up)</td><td class="small">No (set after sign-up)</td><td class="small">Add after sign-up</td></tr>`));
    $('admRows').innerHTML=rows.join('')||'<tr><td colspan="10">No users yet.</td></tr>'}catch(_){$('admRows').innerHTML='<tr><td colspan="10">Couldn’t load the user list.</td></tr>'}}
  const formOpen=on=>{$('admForm').hidden=!on;$('admAdd').hidden=on;if(on){$('admForm').reset();setTimeout(()=>$('admName').focus(),30)}};
  const open=()=>{formOpen(false);$('admMsg').textContent='';$('admLinkRow').hidden=true;$('admDlg').classList.add('on');admLoad()};
@@ -2518,6 +2531,18 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
      const d=await r.json().catch(()=>({}));if(!r.ok)return msg(ERR[d.code]||'Couldn’t change that user.');
      box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));msg(what==='payment'?(on?`${n} can see clients’ Payment info.`:`${n} can no longer see clients’ Payment info.`):del?(on?`${n} can delete things again.`:`${n} can no longer delete anything.`):on?`${n} can see company and GA user names and passwords.`:`${n} can no longer see company and GA user names and passwords.`,true)}
    catch(_){msg('Couldn’t reach the server.')}finally{box.querySelectorAll('button').forEach(x=>x.disabled=false)}});
+ // Signature: any picture of a signature; white paper turns see-through and it's trimmed to the ink, sized like the ACORD signature box (388 x 108, twice over)
+ async function sigPng(file){const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error('that file isn’t a picture'));i.src=URL.createObjectURL(file)});
+   const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const x=c.getContext('2d');x.drawImage(img,0,0);const d=x.getImageData(0,0,c.width,c.height),p=d.data;let x0=c.width,y0=c.height,x1=-1,y1=-1;
+   for(let i=0;i<p.length;i+=4){const lum=(p[i]+p[i+1]+p[i+2])/3;if(lum>215||p[i+3]<40){p[i+3]=0;continue}p[i+3]=Math.min(p[i+3],Math.round((215-lum)*255/120));const k=i/4,px=k%c.width,py=(k-px)/c.width;if(px<x0)x0=px;if(px>x1)x1=px;if(py<y0)y0=py;if(py>y1)y1=py}
+   if(x1<0)throw new Error('no signature found in that picture');x.putImageData(d,0,0);const W=776,H=216,w=x1-x0+1,h=y1-y0+1,sc=Math.min((W-16)/w,(H-16)/h),o=document.createElement('canvas');o.width=W;o.height=H;
+   o.getContext('2d').drawImage(c,x0,y0,w,h,(W-w*sc)/2,(H-h*sc)/2,w*sc,h*sc);return o.toDataURL('image/png')}
+ const sigSave=async(u,sig,ok)=>{mySigP=null;const r=await fetch(`/api/admin/users/${encodeURIComponent(u)}/signature`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({sig})});
+   const d=await r.json().catch(()=>({}));if(!r.ok)return msg(d.code==='bad_signature'?'That signature picture is too big. Try a smaller picture.':ERR[d.code]||'Couldn’t save the signature.');msg(ok,true);admLoad()};
+ $('admRows').addEventListener('click',async e=>{const b=e.target.closest('.admSigUp,.admSigRm');if(!b)return;const box=b.parentElement;
+   if(b.classList.contains('admSigUp')){$('admSigIn').dataset.u=box.dataset.u;$('admSigIn').dataset.n=box.dataset.n;$('admSigIn').value='';$('admSigIn').click();return}
+   if(!(await sure(`Remove ${box.dataset.n}’s signature? ACORDs they make won’t have it until you add one again.`)))return;try{await sigSave(box.dataset.u,'',`Removed ${box.dataset.n}’s signature.`)}catch(_){msg('Couldn’t reach the server.')}});
+ $('admSigIn').onchange=async()=>{const f=$('admSigIn').files[0],{u,n}=$('admSigIn').dataset;if(!f)return;try{await sigSave(u,await sigPng(f),`Saved ${n}’s signature. It goes on the ACORDs and certificates they make.`)}catch(err){msg(err&&err.message?`Couldn’t use that picture: ${err.message}.`:'Couldn’t reach the server.')}};
  $('admRows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('.admEm'))e.target.blur()});
  $('admCopy').onclick=()=>{$('admLink').select();(navigator.clipboard?navigator.clipboard.writeText($('admLink').value):Promise.reject()).then(()=>toast('Link copied'),()=>document.execCommand('copy'))};
 }
@@ -3149,7 +3174,7 @@ const reClFiles=()=>renderClFiles(editClient||{files:clPending});
 async function putClFiles(files){if(editClient){await clientsCol.doc(editClient.id).update({files});editClient.files=files}else clPending.splice(0,clPending.length,...files);reClFiles();if(polTr)renderPpFiles()}
 // rename a client or policy file; the extension stays when it is left off
 async function renameClFile(id){const f=clFileList().find(x=>x.id===id),m=polTr?$('ppMsg'):$('clientMsg');if(!f)return;if(isLocked('client'))return toast('This client is view-only right now.');
-  let n=(prompt('New file name:',f.name)||'').replace(/[\\/:*?"<>|]+/g,'').trim();if(!n||n===f.name)return;
+  let n=(prompt('New file name:',f.name)||'').trim();{const m=n.match(/^(.*?)(\.[A-Za-z0-9]{1,5})?$/);n=fnClean(m[1])+(m[2]||'')}if(!n||n===f.name)return;
   const ext=(f.name.match(/\.[A-Za-z0-9]{1,5}$/)||[''])[0];if(ext&&!n.toLowerCase().endsWith(ext.toLowerCase()))n+=ext;
   try{await putClFiles(clFileList().map(x=>x.id===id?{...x,name:n}:x));toast(`Renamed to ${n}`)}catch(e){m.className='msg err';m.textContent=errText(e)}}
 async function dropClFile(id){const m=polTr?$('ppMsg'):$('clientMsg');try{await putClFiles(clFileList().filter(x=>x.id!==id));if(editClient)try{await assets.delete(id)}catch(_){}}catch(e){m.className='msg err';m.textContent=errText(e)}}
@@ -3170,8 +3195,10 @@ const certList=()=>(editClient&&editClient.certs)||[];
 function renderCerts(){const cs=certList(),n=cs.length;$('clCerts').textContent=n?`Certificates (${n})`:'Certificates';$('clCertNote').textContent=editClient?(n?'':'No certificates yet.'):'Save the client first to make certificates.';$('clCerts').disabled=!editClient;
   if(!$('certDlg').classList.contains('on'))return;$('certNew').hidden=!assets||!$('certForm').hidden;
   $('certList').innerHTML=n?[...cs].reverse().map(c=>`<li><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span class="sz">${esc(c.at?fmtDT(c.at):'')}</span><button class="pri" data-cert-open="${esc(c.id)}">Open</button>${assets?`<button data-cert-edit="${esc(c.id)}" title="Change the holder or description">Edit</button><button data-cert-copy="${esc(c.id)}">Copy cert</button>`:''}<button data-cert-save="${esc(c.id)}">Save</button>${assets?`<button class="danger" data-cert-del="${esc(c.id)}">Delete</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No certificates yet. Click + New cert.</li>'}
-const certFileName=(holder,at)=>{const nm=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()}).replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',d=new Date(at||Date.now());
-  return `${nm} COI${holder?' - '+String(holder).replace(/[\\/:*?"<>|]+/g,'').trim():''} ${pad(d.getMonth()+1)}-${pad(d.getDate())}-${d.getFullYear()}.pdf`};
+// file names keep only letters, numbers, spaces and dashes
+const fnClean=x=>String(x||'').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim();
+const certFileName=(holder,at)=>{const nm=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()}).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',d=new Date(at||Date.now());
+  return `${nm} COI${holder?' - '+String(holder).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim():''} ${pad(d.getMonth()+1)}-${pad(d.getDate())}-${d.getFullYear()}.pdf`};
 const certHolder=async bytes=>{try{const d=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true});return(d.getForm().getTextField('CertificateHolder_FullName_A').getText()||'').trim()}catch(_){return ''}};
 async function putCerts(certs){await clientsCol.doc(editClient.id).update({certs});editClient.certs=certs;renderCerts()}
 // what the editor calls on Save: store the new bytes, swap them into the client's list and name the file after the holder
@@ -3203,7 +3230,7 @@ async function newCertBytes(pick,hd){await acordReady();const doc=await PDFLib.P
     else if(sl==='umb'){T('ExcessUmbrella_InsurerLetterCode_A',L);C(/excess/i.test(p.line)&&!/umbrella/i.test(p.line)?'Policy_PolicyType_ExcessIndicator_A':'Policy_PolicyType_UmbrellaIndicator_A');T('Policy_ExcessLiability_PolicyNumberIdentifier_A',p.num);T('Policy_ExcessLiability_EffectiveDate_A',p.eff);T('Policy_ExcessLiability_ExpirationDate_A',p.exp)}
     else if(sl==='wc'){T('WorkersCompensationEmployersLiability_InsurerLetterCode_A',L);C('WorkersCompensationEmployersLiability_WorkersCompensationStatutoryLimitIndicator_A');T('Policy_WorkersCompensationAndEmployersLiability_PolicyNumberIdentifier_A',p.num);T('Policy_WorkersCompensationAndEmployersLiability_EffectiveDate_A',p.eff);T('Policy_WorkersCompensationAndEmployersLiability_ExpirationDate_A',p.exp)}
     else{T('OtherPolicy_InsurerLetterCode_A',L);T('OtherPolicy_OtherPolicyDescription_A',p.line);T('OtherPolicy_PolicyNumberIdentifier_A',p.num);T('OtherPolicy_PolicyEffectiveDate_A',p.eff);T('OtherPolicy_PolicyExpirationDate_A',p.exp)}}
-  return doc.save()}
+  await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A');return doc.save()}
 async function copyCertBytes(c,hd,keepDate){await acordReady();const doc=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true}),form=doc.getForm();
   certHolderFill(form,hd,true);if(!keepDate)try{form.getTextField('Form_CompletionDate_A').setText(today25())}catch(_){}return doc.save()}
 // the client's current (active) policies, in the table's order
@@ -3452,7 +3479,7 @@ $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data
     const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.fill(g,today);
     for(const [k,v] of Object.entries(vals)){if(!v)continue;try{const fl=form.getField(k);if(fl instanceof PDFLib.PDFDropdown)fl.select(String(v));else fl.setText(String(v))}catch(_){}}
     form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica));
-    const client=(g('f_client_name')||'Client').replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',name=`${client} ${S.suffix}.pdf`;
+    const client=(g('f_client_name')||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',name=`${client} ${S.suffix}.pdf`;
     const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
     if(ok){m.className='msg ok';m.textContent=`${name} is attached under Files.`}else{m.className='msg err';m.textContent=$('fileMsg').textContent}
   }catch(err){m.className='msg err';m.textContent='Couldn’t make the supplemental: '+(err.message||err.code||'error')}
