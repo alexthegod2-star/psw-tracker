@@ -506,8 +506,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="repDlg" role="dialog" aria-modal="true" aria-labelledby="repTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="repTitleH" style="margin:0">Policy report</h3><span class="small" id="repCount"></span></div>
   <div class="repF" id="repF">
-    <label>Exp date from<input id="rExpFrom" placeholder="MM/DD/YYYY"></label><label>Exp date to<input id="rExpTo" placeholder="MM/DD/YYYY"></label>
-    <label>Eff date from<input id="rEffFrom" placeholder="MM/DD/YYYY"></label><label>Eff date to<input id="rEffTo" placeholder="MM/DD/YYYY"></label>
+    <label>Date<select id="rDk"><option value="exp">Exp date</option><option value="eff">Eff date</option></select></label><label>From<input id="rFrom" placeholder="MM/DD/YYYY"></label><label>To<input id="rTo" placeholder="MM/DD/YYYY"></label>
     <label>Company<select id="rCo"></select></label><label>GA<select id="rGa"></select></label><label>Line of business<select id="rLine"></select></label>
     <label>Producer<select id="rProd"></select></label><label>Status<select id="rStat"><option value="">Any</option><option>Active</option><option>Expired</option><option>Cancelled</option></select></label>
     <label>New / Renewal<select id="rNb"><option value="">Any</option><option>New</option><option>Renewal</option></select></label><label>State<select id="rSt"></select></label>
@@ -3574,8 +3573,8 @@ const REP_COLS=[['client','Client'],['line','Line'],['company','Company'],['carr
 function repAll(){const out=[];clients.forEach(c=>(c.policies||[]).forEach(p=>{if(!p||!(p.line||p.number||p.company))return;out.push({c,client:clientName(c),line:p.line||'',company:p.company||'',carrier:p.carrier||'',number:p.number||'',eff:typedISO(p.eff||''),exp:typedISO(p.exp||''),premium:p.premium||'',producer:p.producer||'',status:p.status||'Active',nb:p.nb||'',state:p.state||'',phone:c.phone||c.cell||'',email:c.email||''})}));return out}
 function repOpts(rows){[['rCo','company','All companies'],['rGa','carrier','All GAs'],['rLine','line','All lines'],['rProd','producer','Everyone'],['rSt','state','All states']].forEach(([id,k,all])=>{const el=$(id),keep=el.value,vs=[...new Set(rows.map(r=>r[k].trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   el.innerHTML=`<option value="">${all}</option>`+vs.map(v=>`<option>${esc(v)}</option>`).join('');el.value=vs.includes(keep)?keep:''})}
-function repRows(){const all=repAll(),d=id=>{const v=$(id).value.trim();return v?typedISO(v):''},ef=d('rEffFrom'),et=d('rEffTo'),xf=d('rExpFrom'),xt=d('rExpTo'),eq=(id,v)=>!$(id).value||v.trim().toLowerCase()===$(id).value.toLowerCase();
-  const rows=all.filter(r=>(!xf||(r.exp&&r.exp>=xf))&&(!xt||(r.exp&&r.exp<=xt))&&(!ef||(r.eff&&r.eff>=ef))&&(!et||(r.eff&&r.eff<=et))&&eq('rCo',r.company)&&eq('rGa',r.carrier)&&eq('rLine',r.line)&&eq('rProd',r.producer)&&eq('rStat',r.status)&&eq('rNb',r.nb)&&eq('rSt',r.state));
+function repRows(){const all=repAll(),d=id=>{const v=$(id).value.trim();return v?typedISO(v):''},dk=$('rDk').value,df=d('rFrom'),dt=d('rTo'),eq=(id,v)=>!$(id).value||v.trim().toLowerCase()===$(id).value.toLowerCase();
+  const rows=all.filter(r=>(!df||(r[dk]&&r[dk]>=df))&&(!dt||(r[dk]&&r[dk]<=dt))&&eq('rCo',r.company)&&eq('rGa',r.carrier)&&eq('rLine',r.line)&&eq('rProd',r.producer)&&eq('rStat',r.status)&&eq('rNb',r.nb)&&eq('rSt',r.state));
   const {k,d:dir}=repSort,num=k==='premium';rows.sort((a,b)=>{const x=num?bNum(a[k])||0:a[k].toLowerCase(),y=num?bNum(b[k])||0:b[k].toLowerCase();return (x<y?-1:x>y?1:0)*dir||a.client.localeCompare(b.client)});return {all,rows}}
 function renderRep(){const {all,rows}=repRows();repOpts(all);const prem=rows.reduce((a,r)=>a+(bNum(r.premium)||0),0);
   $('repCount').textContent=`${rows.length} polic${rows.length===1?'y':'ies'}${prem?` · Premium ${bMoney(Math.round(prem*100)/100)}`:''}`;
@@ -3584,10 +3583,10 @@ function renderRep(){const {all,rows}=repRows();repOpts(all);const prem=rows.red
 $('repBtn').onclick=()=>{$('repDlg').classList.add('on');renderRep()};
 $('repClose').onclick=()=>$('repDlg').classList.remove('on');
 $('repF').addEventListener('input',renderRep);$('repF').addEventListener('change',renderRep);
-['rExpFrom','rExpTo','rEffFrom','rEffTo'].forEach(id=>$(id).addEventListener('blur',()=>{const x=typedISO($(id).value.trim());if(/^\d{4}-\d\d-\d\d$/.test(x))$(id).value=fmtDate(x)}));
-const repNext=n=>{const t=new Date(),e=new Date(t.getFullYear(),t.getMonth(),t.getDate()+n),f=x=>`${String(x.getMonth()+1).padStart(2,'0')}/${String(x.getDate()).padStart(2,'0')}/${x.getFullYear()}`;$('rExpFrom').value=f(t);$('rExpTo').value=f(e);renderRep()};
+['rFrom','rTo'].forEach(id=>$(id).addEventListener('blur',()=>{const x=typedISO($(id).value.trim());if(/^\d{4}-\d\d-\d\d$/.test(x))$(id).value=fmtDate(x)}));
+const repNext=n=>{const t=new Date(),e=new Date(t.getFullYear(),t.getMonth(),t.getDate()+n),f=x=>`${String(x.getMonth()+1).padStart(2,'0')}/${String(x.getDate()).padStart(2,'0')}/${x.getFullYear()}`;$('rDk').value='exp';$('rFrom').value=f(t);$('rTo').value=f(e);renderRep()};
 $('rNext30').onclick=()=>repNext(30);$('rNext60').onclick=()=>repNext(60);
-$('rClear').onclick=()=>{$('repF').querySelectorAll('input,select').forEach(el=>el.value='');renderRep()};
+$('rClear').onclick=()=>{$('repF').querySelectorAll('input,select').forEach(el=>el.value='');$('rDk').value='exp';renderRep()};
 $('repT').addEventListener('click',e=>{const th=e.target.closest('th[data-rk]');if(th){repSort=repSort.k===th.dataset.rk?{k:th.dataset.rk,d:-repSort.d}:{k:th.dataset.rk,d:1};renderRep();return}
   const tr=e.target.closest('tr[data-ri]');if(tr){const r=repRows.last[+tr.dataset.ri];$('repDlg').classList.remove('on');openClient(r.c)}});
 $('repCsv').onclick=async()=>{const q=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
