@@ -235,7 +235,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </div>
   <div id="binderView" hidden>
     <div class="bar">
-      <select id="bYear" aria-label="Year"></select>
+      <select id="bYear" aria-label="Year"></select><select id="bMon" aria-label="Month"></select>
       <input id="bq" type="search" placeholder="Search name, type, company">
       <button class="pri" id="bAdd">+ Add sale</button><button id="bPaste">Paste from Excel</button>
       <button id="bCsv">Download for Excel</button>
@@ -3455,15 +3455,18 @@ if(binCol)binCol.onSnapshot(s=>{binder=s.docs.map(d=>({id:d.id,...d.data()}));re
 function renderBinder(){if(!binderOn)return;
   const cy=String(new Date().getFullYear()),years=[...new Set([cy,...binder.map(b=>(b.month||'').slice(0,4)).filter(Boolean)])].sort().reverse();
   const ys=$('bYear'),keep=ys.value||cy;ys.innerHTML=years.map(y=>`<option>${y}</option>`).join('');ys.value=years.includes(keep)?keep:cy;const year=ys.value;
-  const q=$('bq').value.trim().toLowerCase();
-  const inYear=binder.filter(b=>(b.month||'').startsWith(year));
+  // month picker: every month from September 2026 on (and any later month with sales), within the year shown
+  {const ms=$('bMon'),keepM=ms.value,now=monKey(new Date()),ks=new Set(binder.map(b=>b.month).filter(k=>k&&k>='2026-09'));for(let d=new Date(2026,8,1);monKey(d)<=now;d.setMonth(d.getMonth()+1))ks.add(monKey(d));
+    const list=[...ks].filter(k=>k.startsWith(year)).sort().reverse();ms.innerHTML='<option value="">All months</option>'+list.map(k=>`<option value="${k}">${esc(MON[+k.slice(5)-1])}</option>`).join('');ms.value=list.includes(keepM)?keepM:''}
+  const mon=$('bMon').value,q=$('bq').value.trim().toLowerCase();
+  const inYear=binder.filter(b=>(b.month||'').startsWith(year)&&(!mon||b.month===mon));
   const rows=inYear.filter(b=>!q||[b.name,b.type,b.ga,b.carrier,b.finance,b.notes].join(' ').toLowerCase().includes(q));
-  if(view==='binder')$('count').textContent=`${inYear.length} entr${inYear.length===1?'y':'ies'} in ${year}`;
+  if(view==='binder')$('count').textContent=`${inYear.length} entr${inYear.length===1?'y':'ies'} in ${mon?monName(mon):year}`;
   const tot=list=>list.reduce((a,b)=>{const c=bCalc(b);a.premium+=b.premium||0;a.comm+=c.comm||0;a.yr+=c.yr||0;a.bf+=b.bf||0;a.comSplit+=c.comSplit||0;a.bfSplit+=c.bfSplit||0;a.total+=c.total;
     if(!b.comPaid)a.owed+=c.comSplit||0;if(!b.bfPaid&&(c.bfSplit||0)>0)a.owed+=c.bfSplit;if(b.premium)a.n++;return a},{premium:0,comm:0,yr:0,bf:0,comSplit:0,bfSplit:0,total:0,owed:0,n:0});
   const T=tot(rows),cm=monKey(new Date()),M=tot(rows.filter(b=>b.month===cm));
-  $('bSum').innerHTML=[['Policies written',T.n,0],['Premium',bMoney(r2(T.premium)),0],['Yr comm',bMoney(r2(T.yr)),0],['Broker fees',bMoney(r2(T.bf)),0],[`Made in ${year}`,bMoney(r2(T.total)),1],
-    ...(year===cy?[[`Made in ${MON[new Date().getMonth()]}`,bMoney(r2(M.total)),0]]:[]),['Not paid yet',bMoney(r2(T.owed)),0]].map(([l,v,h])=>`<div${h?' class="hl"':''}><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('');
+  $('bSum').innerHTML=[['Policies written',T.n,0],['Premium',bMoney(r2(T.premium)),0],['Yr comm',bMoney(r2(T.yr)),0],['Broker fees',bMoney(r2(T.bf)),0],[`Made in ${mon?MON[+mon.slice(5)-1]:year}`,bMoney(r2(T.total)),1],
+    ...(year===cy&&!mon?[[`Made in ${MON[new Date().getMonth()]}`,bMoney(r2(M.total)),0]]:[]),['Not paid yet',bMoney(r2(T.owed)),0]].map(([l,v,h])=>`<div${h?' class="hl"':''}><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('');
   const by={};rows.forEach(b=>(by[b.month||'']=by[b.month||'']||[]).push(b));
   const neg=n=>n!=null&&n<0?' neg':'';
   const head='<thead><tr><th class="num">#</th><th class="nm">Name</th><th>Eff date</th><th>Exp date</th><th>Type</th><th>GA</th><th>Com</th><th class="n">Term</th><th class="n">Premium</th><th class="n">Com %</th><th class="n">Comm</th><th class="n">Yr comm</th><th class="n">BF</th><th>Finance</th><th class="n">Split %</th><th class="n">Com split</th><th class="n">BF split</th><th class="n">Total made</th><th class="c">Com paid</th><th class="c">BF paid</th></tr></thead>';
@@ -3475,9 +3478,9 @@ function renderBinder(){if(!binderOn)return;
     const nm=k?MON[+k.slice(5)-1]:'No month',hasSp=list.some(b=>b.splitPct!=null);
     return `<section class="bmon"><div class="bmh"><h3>${esc(monName(k))}</h3><span class="small">${list.length} entr${list.length===1?'y':'ies'}</span><span class="sp"></span><span>Made <b>${bMoney(r2(t.total))}</b></span><button data-badd="${esc(k)}">+ Add to ${esc(nm)}</button></div>
       <div class="bwrap"><table class="btab">${head}<tbody>${body}</tbody><tfoot><tr><td></td><td>${esc(nm)} total</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="n">${bMoney(r2(t.premium))}</td><td></td><td class="n">${bMoney(r2(t.comm))}</td><td class="n">${bMoney(r2(t.yr))}</td><td class="n${neg(t.bf)}">${bMoney(r2(t.bf))}</td><td></td><td></td><td class="n">${hasSp?bMoney(r2(t.comSplit)):''}</td><td class="n">${hasSp?bMoney(r2(t.bfSplit)):''}</td><td class="n">${bMoney(r2(t.total))}</td><td></td><td></td></tr></tfoot></table></div></section>`}).join('');
-  const be=$('bempty');be.hidden=rows.length>0;be.innerHTML=inYear.length?'<b>Nothing matches</b>Try a different search.':`<b>No sales logged in ${esc(year)}</b>Click “+ Add sale”, or “Paste from Excel” to bring in your sheet.`;
+  const be=$('bempty');be.hidden=rows.length>0;be.innerHTML=inYear.length?'<b>Nothing matches</b>Try a different search.':`<b>No sales logged in ${esc(mon?monName(mon):year)}</b>Click “+ Add sale”, or “Paste from Excel” to bring in your sheet.`;
 }
-['bYear','bq'].forEach(id=>$(id).addEventListener('input',renderBinder));
+['bYear','bMon','bq'].forEach(id=>$(id).addEventListener('input',renderBinder));
 $('bMonths').addEventListener('click',async e=>{const p=e.target.closest('.bpaid');
   if(p){e.stopPropagation();const id=p.closest('[data-bin]').dataset.bin;try{await binCol.doc(id).update({[p.dataset.k]:p.checked?todayISO():''});toast(p.checked?'Marked paid':'Marked not paid')}catch(err){p.checked=!p.checked;toast(errText(err))}return}
   const a=e.target.closest('[data-badd]');if(a){openBin(null,{month:a.dataset.badd||monKey(new Date())});return}
