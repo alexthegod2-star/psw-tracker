@@ -489,7 +489,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="row" style="justify-content:space-between;align-items:center;margin:12px 0 6px;flex-wrap:wrap;gap:6px"><h4 style="margin:0">Certificate holder</h4><div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap"><select id="chPick" style="width:auto;min-width:220px" title="Pick a saved holder for this client"><option value="">Saved holders…</option></select><button type="button" id="chSaveList" style="white-space:nowrap">Add to holder list</button><button type="button" class="danger" id="chDelList" hidden>Remove</button></div></div>
     <div class="certGrid"><label class="w2">Name<input id="chName" autocomplete="off"></label><label class="w2">Address<input id="chAddr1" autocomplete="off"></label><label class="w2">Address line 2<input id="chAddr2" autocomplete="off"></label>
       <label>City<input id="chCity" autocomplete="off"></label><label>State<input id="chState" maxlength="2" autocomplete="off"></label><label>ZIP<input id="chZip" maxlength="10" autocomplete="off"></label></div>
-    <h4 style="margin:12px 0 6px">Description of operations / locations / vehicles</h4>
+    <div style="display:flex;gap:10px;align-items:center;margin:12px 0 6px"><h4 style="margin:0">Description of operations / locations / vehicles</h4><button type="button" id="chAI" title="Adds: Certificate Holder is also additional insured.">AI</button></div>
     <textarea id="chDesc" style="width:100%;min-height:80px" placeholder="Additional insured, project, job site, vehicles…"></textarea>
     <div class="row" style="justify-content:flex-end;margin-top:10px"><button type="button" id="certFormCancel">Cancel</button><button type="submit" class="pri" id="certFormGo">Make certificate</button></div>
   </form>
@@ -3235,6 +3235,8 @@ $('chDelList').onclick=async()=>{if(!editClient||$('chPick').value==='')return;i
   await putHolders(hs.filter((_,j)=>j!==i),null,`Removed ${h.chName} from the holder list.`)};
 const certFormClose=()=>{$('certForm').hidden=true;$('certNew').hidden=!assets;certMode=null};
 $('certFormCancel').onclick=certFormClose;
+// AI = additional insured: adds the line to the description (once)
+$('chAI').onclick=()=>{const t='Certificate Holder is also additional insured.',d=$('chDesc'),v=d.value.trim();if(!v.includes(t))d.value=v?v+'\n'+t:t;d.focus()};
 $('certForm').onsubmit=async e=>{e.preventDefault();if(!certMode||!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');const b=$('certFormGo');b.disabled=true;
   const hd=Object.fromEntries(CH_KEYS.map(([id])=>[id,$(id).value.trim()])),pick=[...$('certPols').querySelectorAll('input:checked')].map(x=>+x.value);certSay(certMode.mode==='copy'?'Copying…':certMode.mode==='edit'?'Saving…':'Making the certificate…');
   try{const c=certMode.mode==='edit'?await certSaver(new Blob([await copyCertBytes(certMode.c,hd,true)],{type:'application/pdf'}),certMode.c):await addCert(certMode.mode==='copy'?await copyCertBytes(certMode.c,hd):await newCertBytes(pick,hd));certFormClose();certSay('');await openEditor(c,{save:certSaver});edMsg('Check it over, type any limits, then Save.','ok')}
