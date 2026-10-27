@@ -518,21 +518,28 @@ def com_pct(c, p):
     return float(x) if re.fullmatch(r"\d+(\.\d+)?", x) else None
 
 
+def binder_owner(p):
+    """The username whose binder log a policy goes to: its producer by name ("Alex K") or username ("alex"), else None."""
+    x = str(p.get("producer") or "").strip().lower()
+    return BINDER_PRODUCERS.get(x) or next((u for u in BINDER_PRODUCERS.values() if u.lower() == x), None) if x else None
+
+
 def binder_sync(c, path, old, new):
-    """New policies on a client (a pid the client didn't have) whose producer has a binder log get a binder entry, dated this month."""
+    """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, dated this month."""
     segs = path.split("/")
     if len(segs) != 2 or segs[0] != "clients" or not isinstance(new, dict):
         return
     olds = [p for p in (old or {}).get("policies") or [] if isinstance(p, dict)]
-    had = {p.get("pid") for p in olds}
     same = lambda p: tuple(str(p.get(k) or "").strip().lower() for k in ("line", "number", "eff", "company"))
-    had_same = {same(p) for p in olds}  # older policies got their pid later, so a pid alone doesn't make a policy new
+    # the producer each policy had before (by pid; older policies got their pid later, so also by line/number/eff/company)
+    was = {**{same(p): binder_owner(p) for p in olds}, **{p.get("pid"): binder_owner(p) for p in olds if p.get("pid")}}
     name = (new.get("company") or " ".join(x for x in (new.get("firstName"), new.get("lastName")) if x) or "").strip()
     for p in new.get("policies") or []:
-        if not isinstance(p, dict) or not p.get("pid") or p["pid"] in had or same(p) in had_same:
+        if not isinstance(p, dict) or not p.get("pid"):
             continue
-        owner = BINDER_PRODUCERS.get(str(p.get("producer") or "").strip().lower())
-        if not owner:
+        owner = binder_owner(p)
+        # a new policy, or one whose producer was just set to someone with a binder log
+        if not owner or owner == was.get(p["pid"], was.get(same(p))):
             continue
         col = f"private/{owner}/binder"
         if c.execute("SELECT 1 FROM tracker_docs WHERE parent=? AND json_extract(data,'$.pid')=?", (col, p["pid"])).fetchone():
