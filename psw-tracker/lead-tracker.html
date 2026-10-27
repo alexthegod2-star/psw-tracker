@@ -1990,6 +1990,13 @@ async function ocrText(pics,say){const tw=await tess(),out=[];await tw.setParame
   try{for(let i=0;i<pics.length;i++){say(`Reading the printing on page ${i+1} of ${pics.length}…`);out.push((await tw.recognize(pics[i])).data.text)}}
   finally{await tw.setParameters({tessedit_pageseg_mode:'11'})}return out.join('\n')}
 const canvasPng=cv=>new Promise(r=>cv.toBlob(b=>r(b),'image/png'));
+// a dropped file as {t: its text, imgs: page pictures for Claude}; a scanned PDF or a photo goes to Claude as pictures, or through text recognition when Claude can't take pictures
+async function readScan(f,isImg,say){const ai=!!(sample&&sLimits&&sLimits.images);let t='',pics=[];
+  if(isImg){if(ai)return {t,imgs:[f]};const im=await createImageBitmap(f),cv=document.createElement('canvas');cv.width=im.width;cv.height=im.height;cv.getContext('2d').drawImage(im,0,0);pics=[cv]}
+  else{t=(await fileText(f)).trim();
+    if((/\.pdf$/i.test(f.name)||f.type==='application/pdf')&&t.replace(/\s+/g,'').length<200){say(`${f.name} looks like a scan, so reading the page pictures…`);pics=await pdfPics(new Uint8Array(await f.arrayBuffer()));
+      if(ai)return {t,imgs:await Promise.all(pics.map(canvasPng))}}}
+  if(pics.length)t=(t+'\n'+await ocrText(pics,say)).trim();return {t,imgs:[]}}
 // no Claude: Quick fill's basic read, plus "Label: answer" lines (and a fillable PDF's own boxes) matched by label like the carrier-form box does
 function qsBasic(t){const v={},b=basicRead(t),l=b.lead;Object.assign(v,(b.f&&b.f.quote)||{});const put=(k,x)=>{if(x&&!v[k])v[k]=x};
   t.split('\n').forEach(ln=>{const mm=/^\s*([^:\n]{2,60}?)\s*[:\-]\s+(\S.*)$/.exec(ln);if(!mm)return;const hit=SUP_GUESS.find(([re])=>re.test(mm[1].replace(/[_.\[\]\d]+/g,' ').trim()));if(!hit)return;
@@ -3210,7 +3217,7 @@ function clBasic(t){const em=t.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g)||[],ph=t.mat
 async function clFillFrom(t,name,img){const m=$('clReadMsg'),from=name?`from ${name}`:'from the pasted text',done=n=>n?`Filled ${n} empty box${n===1?'':'es'} ${from}. Check them, then Save client.`:'Couldn’t find anything new to fill in that.';
   if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now.';return}
   if(!sample){const n=clApply(clBasic(t));m.className=n?'msg ok':'msg err';m.textContent=done(n)+' (Basic mode: Claude isn’t turned on, so only email and phone are found.)';return}
-  const prompt=`You are filling in an insurance agency's client record from ${img?'the attached picture':'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be an application, quote, dec page, email or signature).
+  const prompt=`You are filling in an insurance agency's client record from ${img?`the attached picture${img.length>1?'s':''}`:'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be an application, quote, dec page, email or signature).
 Reply with only a JSON object with these keys: ${Object.entries(CL_FILL).map(([k,[,l]])=>k+' = '+l).join('; ')}.
 Use "" for anything not stated; never guess. Phone numbers and dates as written.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('clReadIn').disabled=$('clPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
@@ -3219,11 +3226,10 @@ Use "" for anything not stated; never guess. Phone numbers and dates as written.
   $('clReadIn').disabled=$('clPasteGo').disabled=false}
 async function clRead(f){const m=$('clReadMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
   if(assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f]); // keep the document with the client too
-  const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let t='';
-  if(!isImg){try{t=(await fileText(f)).trim()}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}lastFields={};
-    if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}}
-  else if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t turned on for this database. Drop the PDF instead.';return}
-  await clFillFrom(t,f.name,isImg?f:null)}
+  const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
+  try{r=await readScan(f,isImg,x=>m.textContent=x)}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}lastFields={};
+  if(!r.t&&!r.imgs.length){m.className='msg err';m.textContent=`No words could be read in ${f.name}.`;return}
+  await clFillFrom(r.t,f.name,r.imgs.length?r.imgs:null)}
 $('clReadIn').onchange=()=>{const f=$('clReadIn').files[0];$('clReadIn').value='';if(f)clRead(f)};
 {const fz=$('clReadRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
@@ -3293,17 +3299,16 @@ function ppBasic(t){ // no Claude: pick out the usual labels
   o.line=LOBS.find(l=>t.toLowerCase().includes(l.split('/')[0].toLowerCase()))||'';return o}
 async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
   if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value); // keep the document with the policy too
-  const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let t='';
-  if(!isImg){try{t=(await fileText(f)).trim()}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
-    const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}
-    lastFields={};if(!t){m.className='msg err';m.textContent=`${f.name} has no readable text (it may be a scan). Try a screenshot of it instead.`;return}}
-  else if(!sample||!sLimits||!sLimits.images){m.className='msg err';m.textContent='Reading pictures needs Claude, which isn’t turned on for this database. Drop the PDF instead.';return}
-  await ppFillFrom(t,f.name,isImg?f:null)}
+  const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
+  try{r=await readScan(f,isImg,x=>m.textContent=x)}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
+  if(!isImg){const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}}
+  lastFields={};if(!r.t&&!r.imgs.length){m.className='msg err';m.textContent=`No words could be read in ${f.name}.`;return}
+  await ppFillFrom(r.t,f.name,r.imgs.length?r.imgs:null)}
 // fills the policy from document text (or a picture) with Claude, or the basic label finder when Claude is off; used by a dropped file and by pasted text
 async function ppFillFrom(t,name,img){const m=$('ppReadMsg'),from=name?`from ${name}`:'from the pasted text';
   if(!sample){const n=ppApply(ppBasic(t));m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} (basic mode, Claude isn’t turned on for this database). Check them, then Done.`:'Couldn’t find policy details in that (basic mode, Claude isn’t turned on for this database).';return}
   const cur=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase());
-  const prompt=`You are filling in one insurance policy record for an insurance agency from ${img?'the attached picture':'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be a quote, a declarations page or a binder).
+  const prompt=`You are filling in one insurance policy record for an insurance agency from ${img?`the attached picture${img.length>1?'s':''}`:'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be a quote, a declarations page or a binder).
 Reply with only a JSON object {"line":"","carrier":"","company":"","number":"","eff":"","exp":"","premium":"","state":"","nb":"",${Object.keys(PP_FEES).map(k=>`"${k}":""`).join(',')},"extra":{}}.
 Keys: ${Object.entries(PP_MAIN).map(([k,l])=>k+' = '+l).join('; ')}.
 Money as written (e.g. "$1,234.00"). Leave out or use "" for anything not stated; never guess.
