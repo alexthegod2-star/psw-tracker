@@ -1724,7 +1724,7 @@ async function addPswFee(f){
   if(!(await ensureSaved()))return;
   m.className='msg';m.textContent=`Adding the fee to ${f.name}…`;
   try{await Promise.all([loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js'),loadJs(CDN+'pdf.js/3.11.174/pdf.min.js'),loadJs(CDN+'pako/2.1.0/pako.min.js')]);
-    pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';await loadJs('psw-fee.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';await loadJs('psw-fee.js?t='+Date.now()); // fresh each time, so a tab left open picks up fee tool updates
     const r=await PSWFee.add(new Uint8Array(await f.arrayBuffer()),fee,'PSW Agency Fee',{ask:sample?(q=>sample.json(q,{modelTier:'quick'})):null,onAi:()=>{m.textContent=`This quote’s layout is new to the fee tool, so Claude is reading ${f.name}…`},
       ocr:{start:()=>{m.textContent=`${f.name} has text that can’t be copied, so the fee tool is reading the page images (this takes a little longer)…`},read:async cv=>(await (await tess()).recognize(cv)).data}});
     const base=(r.insured||f.name.replace(/\.pdf$/i,'')).replace(/[\\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(),name=base+' for ins.pdf';
