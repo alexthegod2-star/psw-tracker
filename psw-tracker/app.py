@@ -16,6 +16,7 @@ import secrets
 import sqlite3
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -96,6 +97,10 @@ def init_db():
                 first = (r["name"] or "").split()[:1]
                 if r["username"].lower() in PAY_PEOPLE or (first and first[0].lower() in PAY_PEOPLE):
                     c.execute("UPDATE users SET payment=1 WHERE id=?", (r["id"],))
+        if "cell" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Cell: where the sign-in code is texted
+            c.execute("ALTER TABLE users ADD COLUMN cell TEXT NOT NULL DEFAULT ''")
+        c.execute("CREATE TABLE IF NOT EXISTS login_codes(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, code_hash TEXT NOT NULL, "
+                  "expires REAL NOT NULL, tries INTEGER NOT NULL DEFAULT 0, sent REAL NOT NULL)")
         if "sig" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Signature: picture stamped on ACORDs this person makes
             c.execute("ALTER TABLE users ADD COLUMN sig TEXT NOT NULL DEFAULT ''")
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
@@ -203,13 +208,112 @@ def login(username: str = Form(...), password: str = Form(...)):
         if not u or not check_pw(password, u["pw"]):
             time.sleep(1)
             return RedirectResponse("/login?bad=1", status_code=303)
-        tok = secrets.token_urlsafe(32)
-        c.execute("DELETE FROM sessions WHERE expires<?", (time.time(),))
-        c.execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)",
-                  (tok, u["id"], time.time() + SESSION_DAYS * 86400))
+        if SMS_ON and sms_number(u["cell"]):  # password was right: text a code, sign in after it is typed
+            t = secrets.token_urlsafe(24)
+            c.execute("DELETE FROM login_codes WHERE expires<? OR user_id=?", (time.time(), u["id"]))
+            code = send_login_code(u["cell"])
+            if not code:
+                return RedirectResponse("/login?sms=0", status_code=303)
+            c.execute("INSERT INTO login_codes(token_hash,user_id,code_hash,expires,tries,sent) VALUES(?,?,?,?,0,?)",
+                      (token_hash(t), u["id"], token_hash(code), time.time() + CODE_MINUTES * 60, time.time()))
+            return RedirectResponse(f"/login/code?t={t}", status_code=303)
+        tok = start_session(c, u["id"])
+    return signed_in(tok)
+
+
+def signed_in(tok):
     r = RedirectResponse("/", status_code=303)
     r.set_cookie(COOKIE, tok, max_age=SESSION_DAYS * 86400, httponly=True, secure=SECURE_COOKIE, samesite="lax")
     return r
+
+
+# ---------- core: texted sign-in code (on when TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM are set) ----------
+TWILIO_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_FROM = os.environ.get("TWILIO_FROM", "").strip()  # the Twilio phone number (+18185551234) or a Messaging Service SID (MG...)
+SMS_ON = bool(TWILIO_SID and TWILIO_TOKEN and TWILIO_FROM)
+CODE_MINUTES = 10
+CODE_TRIES = 5
+
+
+def sms_number(v):
+    """A US cell typed any way ((818) 555-1234, 818.555.1234, +1 818...) as +18185551234, else ''."""
+    d = re.sub(r"\D", "", str(v or ""))
+    if len(d) == 11 and d[0] == "1":
+        d = d[1:]
+    return "+1" + d if len(d) == 10 else ""
+
+
+def send_login_code(cell):
+    """Texts a new 6-digit code to this cell; returns the code, or '' if Twilio didn't take it."""
+    code = f"{secrets.randbelow(10**6):06d}"
+    to = sms_number(cell)
+    frm = {"MessagingServiceSid": TWILIO_FROM} if TWILIO_FROM.startswith("MG") else {"From": TWILIO_FROM}
+    body = urllib.parse.urlencode({"To": to, **frm, "Body": f"Your PSW database sign-in code is {code}. It expires in {CODE_MINUTES} minutes."}).encode()
+    req = urllib.request.Request(f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_SID}/Messages.json", data=body, method="POST",
+                                 headers={"Authorization": "Basic " + base64.b64encode(f"{TWILIO_SID}:{TWILIO_TOKEN}".encode()).decode()})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return code if r.status < 300 else ""
+    except Exception as e:
+        print("login code text failed:", e)
+        return ""
+
+
+def open_code(c, t):
+    return c.execute("SELECT l.*, u.cell FROM login_codes l JOIN users u ON u.id=l.user_id WHERE l.token_hash=? AND l.expires>? AND l.tries<? AND u.active=1",
+                     (token_hash(t), time.time(), CODE_TRIES)).fetchone()
+
+
+@app.get("/login/code")
+def login_code_page(t: str = ""):
+    with db() as c:
+        ok = bool(t) and open_code(c, t)
+    if not ok:
+        return RedirectResponse("/login?expired=1", status_code=303)
+    return FileResponse(STATIC / "login-code.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/auth/code")
+def login_code_info(t: str):
+    with db() as c:
+        row = open_code(c, t)
+    if not row:
+        err(404, "expired")
+    n = sms_number(row["cell"])
+    return {"to": f"(***) ***-{n[-4:]}" if n else ""}
+
+
+@app.post("/login/code")
+def login_code(t: str = Form(...), code: str = Form(...)):
+    with db() as c:
+        row = open_code(c, t)
+        if not row:
+            return RedirectResponse("/login?expired=1", status_code=303)
+        if not hmac.compare_digest(token_hash(re.sub(r"\D", "", code)), row["code_hash"]):
+            c.execute("UPDATE login_codes SET tries=tries+1 WHERE token_hash=?", (row["token_hash"],))
+            time.sleep(1)
+            left = CODE_TRIES - row["tries"] - 1
+            return RedirectResponse(f"/login/code?t={t}&bad={left}" if left > 0 else "/login?expired=1", status_code=303)
+        c.execute("DELETE FROM login_codes WHERE token_hash=?", (row["token_hash"],))
+        tok = start_session(c, row["user_id"])
+    return signed_in(tok)
+
+
+@app.post("/login/code/resend")
+def login_code_resend(t: str = Form(...)):
+    with db() as c:
+        row = open_code(c, t)
+        if not row:
+            return RedirectResponse("/login?expired=1", status_code=303)
+        if time.time() - row["sent"] < 30:  # one text every 30 seconds
+            return RedirectResponse(f"/login/code?t={t}&wait=1", status_code=303)
+        code = send_login_code(row["cell"])
+        if not code:
+            return RedirectResponse(f"/login/code?t={t}&sms=0", status_code=303)
+        c.execute("UPDATE login_codes SET code_hash=?, expires=?, tries=0, sent=? WHERE token_hash=?",
+                  (token_hash(code), time.time() + CODE_MINUTES * 60, time.time(), row["token_hash"]))
+    return RedirectResponse(f"/login/code?t={t}&sent=1", status_code=303)
 
 
 @app.post("/logout")
@@ -332,11 +436,11 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,cell,role,active,created,secrets,can_delete,payment,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
-    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
+    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "sms": SMS_ON, "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
 
 
 @app.post("/api/admin/users")
@@ -392,6 +496,19 @@ async def admin_set_email(username: str, request: Request):
     with db() as c:
         n = c.execute("UPDATE users SET email=? WHERE username=?", (email, username)).rowcount
         n += c.execute("UPDATE invites SET email=? WHERE username=? AND used IS NULL", (email, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/cell")
+async def admin_set_cell(username: str, request: Request):
+    need_owner(request)
+    v = str((await request.json()).get("cell", "")).strip()
+    if v and not sms_number(v):
+        err(400, "bad_cell")
+    with db() as c:
+        n = c.execute("UPDATE users SET cell=? WHERE username=?", (v[:40], username)).rowcount
     if not n:
         err(404, "no_such_user")
     return {"ok": True}
