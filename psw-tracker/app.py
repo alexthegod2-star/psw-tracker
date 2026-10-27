@@ -499,6 +499,48 @@ def hide_keys(data, keys):
 BINDER_OWNERS = {x.strip() for x in os.environ.get("PSW_BINDER_OWNERS", "alex").split(",") if x.strip()}
 
 
+# a policy added to a client with one of these producers also goes into that person's binder log ("username:Producer name", comma separated)
+BINDER_PRODUCERS = {}
+for x in os.environ.get("PSW_BINDER_PRODUCERS", "alex:Alex K").split(","):
+    if ":" in x:
+        BINDER_PRODUCERS[x.split(":", 1)[1].strip().lower()] = x.split(":", 1)[0].strip()
+
+
+def binder_sync(c, path, old, new):
+    """New policies on a client (a pid the client didn't have) whose producer has a binder log get a binder entry, dated this month."""
+    segs = path.split("/")
+    if len(segs) != 2 or segs[0] != "clients" or not isinstance(new, dict):
+        return
+    olds = [p for p in (old or {}).get("policies") or [] if isinstance(p, dict)]
+    had = {p.get("pid") for p in olds}
+    same = lambda p: tuple(str(p.get(k) or "").strip().lower() for k in ("line", "number", "eff", "company"))
+    had_same = {same(p) for p in olds}  # older policies got their pid later, so a pid alone doesn't make a policy new
+    name = (new.get("company") or " ".join(x for x in (new.get("firstName"), new.get("lastName")) if x) or "").strip()
+    for p in new.get("policies") or []:
+        if not isinstance(p, dict) or not p.get("pid") or p["pid"] in had or same(p) in had_same:
+            continue
+        owner = BINDER_PRODUCERS.get(str(p.get("producer") or "").strip().lower())
+        if not owner:
+            continue
+        col = f"private/{owner}/binder"
+        if c.execute("SELECT 1 FROM tracker_docs WHERE parent=? AND json_extract(data,'$.pid')=?", (col, p["pid"])).fetchone():
+            continue
+        eff, exp = str(p.get("eff") or ""), str(p.get("exp") or "")
+        term = 1
+        m1, m2 = re.match(r"(\d{4})-(\d\d)", eff), re.match(r"(\d{4})-(\d\d)", exp)
+        if m1 and m2 and (int(m2[1]) - int(m1[1])) * 12 + int(m2[2]) - int(m1[2]) == 6:
+            term = 6
+        prem = re.sub(r"[^\d.]", "", str(p.get("premium") or ""))
+        note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
+        d = {"name": name or "Client", "month": time.strftime("%Y-%m"), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
+             "ga": p.get("carrier") or "", "term": term, "premium": float(prem) if re.fullmatch(r"\d+(\.\d+)?", prem) else None, "comPct": None, "commAmt": None, "yrAmt": None,
+             "bf": None, "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
+             "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())}
+        i = new_id()
+        c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
+                  (f"{col}/{i}", col, i, json.dumps(d, separators=(",", ":")), time.time(), "binder"))
+
+
 def guard(request: Request, u, segs):
     if segs[0] == "private" and (len(segs) < 2 or bearer(request) or segs[1] != u["username"]):
         err(403, "private")
@@ -561,6 +603,7 @@ async def col_add(request: Request):
     with db() as c:
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
                   (f"{path}/{i}", path, i, data, time.time(), u["id"]))
+        binder_sync(c, f"{path}/{i}", None, json.loads(data))
         bump(c)
     return {"id": i}
 
@@ -591,6 +634,8 @@ async def doc_set(request: Request):
             old = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
             data = {**hide_keys(data, keys), **{k: v for k, v in (json.loads(old["data"]) if old else {}).items() if k in keys}}
         data = clean_data(data)
+        prev = c.execute("SELECT data FROM tracker_docs WHERE path=?", (path,)).fetchone()
+        binder_sync(c, path, json.loads(prev["data"]) if prev else None, json.loads(data))
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?) "
                   "ON CONFLICT(path) DO UPDATE SET data=excluded.data, updated=excluded.updated, updated_by=excluded.updated_by",
                   (path, "/".join(segs[:-1]), segs[-1], data, time.time(), u["id"]))
@@ -613,6 +658,7 @@ async def doc_update(request: Request):
         if not r:
             err(404, "not_found")
         cur = json.loads(r["data"])
+        binder_sync(c, path, cur, {**cur, **patch})
         cur.update(patch)
         c.execute("UPDATE tracker_docs SET data=?, updated=?, updated_by=? WHERE path=?",
                   (clean_data(cur), time.time(), u["id"], path))
