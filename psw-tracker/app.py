@@ -507,10 +507,11 @@ for x in os.environ.get("PSW_BINDER_PRODUCERS", "alex:Alex K").split(","):
 
 
 def com_pct(c, p):
-    """The policy's Commission % (extra.comPct, like "15%"), else its company's Com % (Company info), as a number, or None."""
+    """The policy's Commission % (extra.comPct, like "15%"), else its company's New or Renewal com % (Company info), as a number, or None."""
     x = str(((p.get("extra") or {}) if isinstance(p.get("extra"), dict) else {}).get("comPct") or "")
     if not x and p.get("company"):
-        r = c.execute("SELECT json_extract(data,'$.com') FROM tracker_docs WHERE parent='siteLinks' AND json_extract(data,'$.kind')='company' "
+        k = "$.comRen" if str(p.get("nb") or "").lower() == "renewal" else "$.com"
+        r = c.execute(f"SELECT coalesce(nullif(json_extract(data,'{k}'),''),json_extract(data,'$.com')) FROM tracker_docs WHERE parent='siteLinks' AND json_extract(data,'$.kind')='company' "
                       "AND lower(trim(json_extract(data,'$.name')))=?", (str(p["company"]).strip().lower(),)).fetchone()
         x = str(r[0] or "") if r else ""
     x = re.sub(r"[^\d.]", "", x)
