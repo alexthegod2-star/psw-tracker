@@ -151,7 +151,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .drop label[hidden]{display:none!important}#keepWrap{display:flex}
 .drop .hint{font-size:13px;color:var(--mute);margin-bottom:8px}
 .ed{position:fixed;inset:0;background:var(--bg);z-index:8;display:none;flex-direction:column}
-.ed.on{display:flex}
+.ed.on{display:flex}.ed.top{z-index:20}.certPols{display:flex;flex-direction:column;gap:4px}.certPols label{display:flex;gap:8px;align-items:center;font-size:14px}.certPols input{width:auto}.certGrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}.certGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.certGrid .w2{grid-column:1/-1}
 .edh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--card)}
 .edh .nm{flex:1 1 200px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .edh button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}
@@ -436,6 +436,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <section class="ppCard"><div class="ppCardH"><h4>Files</h4><button type="button" class="pri" id="clFileAdd">+ Add file</button></div>
         <div class="drop" id="clUpRow"><span style="font-weight:600">Drop files here, or</span><input type="file" id="clFileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*"></div>
         <ul class="files" id="clFiles"></ul></section>
+      <section class="ppCard"><div class="ppCardH"><h4>Certificates</h4><button type="button" class="pri" id="clCerts" data-open>Certificates</button></div>
+        <div class="small" id="clCertNote"></div></section>
       <section class="ppCard"><div class="ppCardH"><h4>Invoice</h4></div>
         <ul class="tasks" id="clInv"></ul><div class="small" id="clInvNone">No invoices yet. Open a policy to make one.</div></section>
     </aside>
@@ -476,6 +478,21 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="cosCols"><div id="cosColCo"><div class="row" style="justify-content:space-between;align-items:center"><h4>Companies</h4><button type="button" class="pri" id="cosAddCo">+ Add company</button></div><div class="cosList" id="cosCo"></div></div>
   <div id="cosColGa"><div class="row" style="justify-content:space-between;align-items:center"><h4>General agents</h4><button type="button" class="pri" id="cosAddGa">+ Add GA</button></div><div class="cosList" id="cosGa"></div></div></div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="cosClose" type="button">Close</button></div>
+</div></div>
+<div class="mbg" id="certDlg" role="dialog" aria-modal="true" aria-labelledby="certTitleH" style="z-index:12"><div class="mbox" style="width:min(760px,96vw);max-height:90vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="certTitleH" style="margin:0">Certificates</h3><button class="pri" id="certNew" type="button">+ New cert</button></div>
+  <div class="small" style="margin:6px 0 10px">New cert fills an ACORD 25 with this client, the policies you pick, the holder and the description, dated today. Copy cert makes a new one from an old one for a different holder.</div>
+  <form id="certForm" hidden style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
+    <div id="certPolBox"><h4 style="margin:0 0 6px">Policies on this certificate</h4><div id="certPols" class="certPols"></div></div>
+    <h4 style="margin:12px 0 6px">Certificate holder</h4>
+    <div class="certGrid"><label class="w2">Name<input id="chName" autocomplete="off"></label><label class="w2">Address<input id="chAddr1" autocomplete="off"></label><label class="w2">Address line 2<input id="chAddr2" autocomplete="off"></label>
+      <label>City<input id="chCity" autocomplete="off"></label><label>State<input id="chState" maxlength="2" autocomplete="off"></label><label>ZIP<input id="chZip" maxlength="10" autocomplete="off"></label></div>
+    <h4 style="margin:12px 0 6px">Description of operations / locations / vehicles</h4>
+    <textarea id="chDesc" style="width:100%;min-height:80px" placeholder="Additional insured, project, job site, vehicles…"></textarea>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button type="button" id="certFormCancel">Cancel</button><button type="submit" class="pri" id="certFormGo">Make certificate</button></div>
+  </form>
+  <ul class="files" id="certList" style="margin:0"></ul>
+  <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px"><span class="msg" id="certMsg"></span><button id="certClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="finDlg" role="dialog" aria-modal="true" aria-labelledby="finTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="finTitleH" style="margin:0">Alex Finance Personal</h3><div class="row" style="align-items:center"><button type="button" id="finPrev" title="Previous year">&lsaquo;</button><b id="finYr" style="min-width:48px;text-align:center"></b><button type="button" id="finNext" title="Next year">&rsaquo;</button></div></div>
@@ -1746,15 +1763,15 @@ const edVal=k=>{const f=ed&&ed.fields.find(x=>x.name==='f_'+k);const el=f&&edInp
 function closeEditor(){$('ed').classList.remove('on');$('ed').setAttribute('aria-hidden','true');$('edBody').innerHTML='';if(ed&&ed.pdf)ed.pdf.destroy();ed=null}
 // Save/Close: saves any changes to the lead, then closes (view-only users get the old close-without-saving warning)
 $('edClose').onclick=async()=>{const c=$('edClose');if(c.disabled)return;
-  if(ed&&ed.dirty&&assets&&cur&&cur.id){c.disabled=true;const q=sheetKind(ed.f.name)?sheetVals():null,ok=await saveEd(false);c.disabled=false;if(ok){closeEditor();if(q)await sheetToLead(q)}return}
+  if(ed&&ed.dirty&&assets&&(ed.save||cur&&cur.id)){c.disabled=true;const q=sheetKind(ed.f.name)?sheetVals():null,ok=await saveEd(false);c.disabled=false;if(ok){closeEditor();if(q)await sheetToLead(q)}return}
   if(ed&&ed.dirty&&$('edClose').dataset.armed!=='1'){$('edClose').dataset.armed='1';$('edClose').textContent='Close without saving?';setTimeout(()=>{$('edClose').dataset.armed='';$('edClose').textContent='Close'},4000);return}$('edClose').dataset.armed='';$('edClose').textContent='Close';closeEditor()};
-async function openEditor(f){
+async function openEditor(f,opt){
   {const home=/ personal home quote sheet\.pdf$/i.test(f.name);if((sheetKind(f.name)||home)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=home?await upgradeHome(f):await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
-  ed={f,kind,notes:[],fields:[],dirty:false};
+  ed={f,kind,notes:[],fields:[],dirty:false,save:opt&&opt.save};$('ed').classList.toggle('top',!!ed.save);
   {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edQs').hidden=!sup;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home||sup);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edQsMsg').textContent='';$('edSupMsg').textContent=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
-  $('edSave').hidden=!assets;$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=sheetKind(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+  $('edSave').hidden=!assets;$('edSave').textContent=ed.save?'Save to client':'Save to lead';$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=ed.save?'Save this certificate to the client':sheetKind(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
   try{
     ed.bytes=await fileBytes(f);
@@ -2131,9 +2148,11 @@ async function buildEdited(){
 }
 // saves the open file back to the lead; reopen keeps the editor open on the saved copy. Returns true when saved.
 async function saveEd(reopen){
-  if(!ed||!ed.bytes||!cur||!cur.id)return false;edMsg('Saving…');
+  if(!ed||!ed.bytes||!ed.save&&(!cur||!cur.id))return false;edMsg('Saving…');
   try{
     const blob=await buildEdited(),old=ed.f;
+    if(ed.save){const sv=ed.save,nf=await sv(blob,old);ed.f=nf;ed.dirty=false;edMsg('Saved to the client.','ok');toast(`${nf.name} saved`);
+      if(reopen){closeEditor();await openEditor(nf,{save:sv});edMsg('Saved to the client. You can keep editing.','ok')}return true}
     const r=await storeBytes(await blob.arrayBuffer(),blob.type);
     const fresh=leads.find(l=>l.id===cur.id)||cur;
     const files=(fresh.files||[]).map(x=>x.id===old.id?{...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})}:x);
@@ -2906,7 +2925,7 @@ function openClient(c,preset,quiet){editClient=c||null;const v=c||preset||{};clB
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
   $('clLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('')+
     (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
-  $('polRows').innerHTML='';(v.policies&&v.policies.length?sortPolicies(v.policies):[{}]).forEach(polRow);clPending=[];renderClFiles(c);clNoteLog=[...(v.noteLog||[])];$('clGenNotes').value=v.genNotes||'';$('clPaySec').hidden=!canPay;$('clPayInfo').value=canPay?(v.payInfo||''):'';if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
+  $('polRows').innerHTML='';(v.policies&&v.policies.length?sortPolicies(v.policies):[{}]).forEach(polRow);clPending=[];renderClFiles(c);renderCerts();clNoteLog=[...(v.noteLog||[])];$('clGenNotes').value=v.genNotes||'';$('clPaySec').hidden=!canPay;$('clPayInfo').value=canPay?(v.payInfo||''):'';if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
   $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
   $('clientDlg').classList.add('on');if(!quiet)setTimeout(()=>$('clCompany').focus(),30)}
 // more people on the client: same boxes as the first person, saved as people:[{firstName,...}]
@@ -3106,6 +3125,73 @@ $('clFiles').addEventListener('click',async e=>{const b=e.target.closest('button
     if(b.dataset.clsave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
     else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
   catch(err){$('clientMsg').className='msg err';$('clientMsg').textContent=`${f.name}: ${errText(err)}`}});
+/* ---------- client certificates (ACORD 25) ---------- */
+let tpl25=null;
+async function acord25Tpl(){if(!tpl25){const r=await fetch('tpl25.pdf');if(!r.ok)throw new Error('ACORD 25 template missing');tpl25=new Uint8Array(await r.arrayBuffer())}return tpl25}
+const certList=()=>(editClient&&editClient.certs)||[];
+function renderCerts(){const cs=certList(),n=cs.length;$('clCerts').textContent=n?`Certificates (${n})`:'Certificates';$('clCertNote').textContent=editClient?(n?'':'No certificates yet.'):'Save the client first to make certificates.';$('clCerts').disabled=!editClient;
+  if(!$('certDlg').classList.contains('on'))return;$('certNew').hidden=!assets||!$('certForm').hidden;
+  $('certList').innerHTML=n?[...cs].reverse().map(c=>`<li><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span class="sz">${esc(c.at?fmtDT(c.at):'')}</span><button class="pri" data-cert-open="${esc(c.id)}">Open</button>${assets?`<button data-cert-copy="${esc(c.id)}">Copy cert</button>`:''}<button data-cert-save="${esc(c.id)}">Save</button>${assets?`<button class="danger" data-cert-del="${esc(c.id)}">Delete</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No certificates yet. Click + New cert.</li>'}
+const certFileName=(holder,at)=>{const nm=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()}).replace(/[\\/:*?"<>|]+/g,'').trim()||'Client',d=new Date(at||Date.now());
+  return `${nm} COI${holder?' - '+String(holder).replace(/[\\/:*?"<>|]+/g,'').trim():''} ${pad(d.getMonth()+1)}-${pad(d.getDate())}-${d.getFullYear()}.pdf`};
+const certHolder=async bytes=>{try{const d=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true});return(d.getForm().getTextField('CertificateHolder_FullName_A').getText()||'').trim()}catch(_){return ''}};
+async function putCerts(certs){await clientsCol.doc(editClient.id).update({certs});editClient.certs=certs;renderCerts()}
+// what the editor calls on Save: store the new bytes, swap them into the client's list and name the file after the holder
+const certSaver=async(blob,old)=>{if(isLocked('client'))throw new Error('this client is view-only right now');const buf=await blob.arrayBuffer(),r=await storeBytes(buf,blob.type),holder=await certHolder(buf),x=certList().find(c=>c.id===old.id)||old;
+  const nx={...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',holder,name:certFileName(holder,x.at),editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})};
+  const certs=certList().some(c=>c.id===old.id)?certList().map(c=>c.id===old.id?nx:c):[...certList(),nx];await putCerts(certs);try{await assets.delete(old.id)}catch(_){}return nx};
+async function addCert(bytes){const r=await storeBytes(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'application/pdf'),at=new Date().toISOString(),holder=await certHolder(bytes);
+  const c={id:r.id,type:'application/pdf',size:r.sizeBytes,enc:r.enc||'',at,holder,name:certFileName(holder,at),...(me?{by:me}:{})};await putCerts([...certList(),c]);return c}
+const today25=()=>{const d=new Date();return `${pad(d.getMonth()+1)}/${pad(d.getDate())}/${d.getFullYear()}`};
+// which ACORD 25 box a policy's line of business goes in
+const certSlot=l=>/general liab|^gl$|bop|business owner/i.test(l)?'gl':/commercial auto|^auto|truck/i.test(l)?'auto':/umbrella|excess/i.test(l)?'umb':/workers|^wc$/i.test(l)?'wc':'other';
+async function newCertBytes(pick,hd){await acordReady();const doc=await PDFLib.PDFDocument.load(await acord25Tpl(),{ignoreEncryption:true}),form=doc.getForm();
+  const T=(k,v)=>{if(!v)return;try{form.getTextField(k).setText(String(v))}catch(_){}},C=k=>{try{form.getCheckBox(k).check()}catch(_){}},g=id=>$(id).value.trim();
+  T('Form_CompletionDate_A',today25());
+  T('Producer_FullName_A','Pacific Southwest Insurance Services');T('Producer_MailingAddress_LineOne_A','9036 Reseda Blvd., Suite 105');T('Producer_MailingAddress_CityName_A','Northridge');T('Producer_MailingAddress_StateOrProvinceCode_A','CA');T('Producer_MailingAddress_PostalCode_A','91324');
+  T('Producer_ContactPerson_FullName_A',myName);T('Producer_ContactPerson_PhoneNumber_A','(818) 701-1033');T('Producer_ContactPerson_EmailAddress_A','info@pswinsurance.com');
+  const nm=g('clCompany')||[g('clFirst'),g('clLast')].filter(Boolean).join(' '),addr=g('clAddress').split(/\n/).map(x=>x.trim()).filter(Boolean);
+  T('NamedInsured_FullName_A',nm+(g('clDba')?' DBA '+g('clDba'):''));T('NamedInsured_MailingAddress_LineOne_A',addr[0]);T('NamedInsured_MailingAddress_LineTwo_A',addr.slice(1).join(', '));T('NamedInsured_MailingAddress_CityName_A',g('clCity'));T('NamedInsured_MailingAddress_StateOrProvinceCode_A',g('clState'));T('NamedInsured_MailingAddress_PostalCode_A',g('clZip'));
+  const pols=certPolicies().filter((_,i)=>pick.includes(i));certHolderFill(form,hd);
+  const letters='ABCDEF',ins=[],letter=co=>{if(!co)return '';let i=ins.indexOf(co);if(i<0&&ins.length<6){ins.push(co);i=ins.length-1;T('Insurer_FullName_'+letters[i],co)}return i<0?'':letters[i]},used=new Set();
+  for(const p of pols){let sl=certSlot(p.line);if(used.has(sl))sl='other';if(used.has(sl))continue;used.add(sl);const L=letter(p.co);
+    if(sl==='gl'){T('GeneralLiability_InsurerLetterCode_A',L);C('GeneralLiability_CoverageIndicator_A');T('Policy_GeneralLiability_PolicyNumberIdentifier_A',p.num);T('Policy_GeneralLiability_EffectiveDate_A',p.eff);T('Policy_GeneralLiability_ExpirationDate_A',p.exp)}
+    else if(sl==='auto'){T('Vehicle_InsurerLetterCode_A',L);T('Policy_AutomobileLiability_PolicyNumberIdentifier_A',p.num);T('Policy_AutomobileLiability_EffectiveDate_A',p.eff);T('Policy_AutomobileLiability_ExpirationDate_A',p.exp)}
+    else if(sl==='umb'){T('ExcessUmbrella_InsurerLetterCode_A',L);C(/excess/i.test(p.line)&&!/umbrella/i.test(p.line)?'Policy_PolicyType_ExcessIndicator_A':'Policy_PolicyType_UmbrellaIndicator_A');T('Policy_ExcessLiability_PolicyNumberIdentifier_A',p.num);T('Policy_ExcessLiability_EffectiveDate_A',p.eff);T('Policy_ExcessLiability_ExpirationDate_A',p.exp)}
+    else if(sl==='wc'){T('WorkersCompensationEmployersLiability_InsurerLetterCode_A',L);C('WorkersCompensationEmployersLiability_WorkersCompensationStatutoryLimitIndicator_A');T('Policy_WorkersCompensationAndEmployersLiability_PolicyNumberIdentifier_A',p.num);T('Policy_WorkersCompensationAndEmployersLiability_EffectiveDate_A',p.eff);T('Policy_WorkersCompensationAndEmployersLiability_ExpirationDate_A',p.exp)}
+    else{T('OtherPolicy_InsurerLetterCode_A',L);T('OtherPolicy_OtherPolicyDescription_A',p.line);T('OtherPolicy_PolicyNumberIdentifier_A',p.num);T('OtherPolicy_PolicyEffectiveDate_A',p.eff);T('OtherPolicy_PolicyExpirationDate_A',p.exp)}}
+  return doc.save()}
+async function copyCertBytes(c,hd){await acordReady();const doc=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true}),form=doc.getForm();
+  certHolderFill(form,hd,true);try{form.getTextField('Form_CompletionDate_A').setText(today25())}catch(_){}return doc.save()}
+// the client's current (active) policies, in the table's order
+const certPolicies=()=>[...$('polRows').rows].map(t=>{const v=k=>{const el=t.querySelector(`[data-p=${k}]`);return el?el.value.trim():''};return{status:v('status'),line:v('line'),co:v('company')||v('carrier'),num:v('number'),eff:v('eff'),exp:v('exp')}}).filter(p=>(p.line||p.num)&&(!p.status||p.status==='Active'));
+const CH_KEYS=[['chName','CertificateHolder_FullName_A'],['chAddr1','CertificateHolder_MailingAddress_LineOne_A'],['chAddr2','CertificateHolder_MailingAddress_LineTwo_A'],['chCity','CertificateHolder_MailingAddress_CityName_A'],['chState','CertificateHolder_MailingAddress_StateOrProvinceCode_A'],['chZip','CertificateHolder_MailingAddress_PostalCode_A'],['chDesc','CertificateOfLiabilityInsurance_ACORDForm_RemarkText_A']];
+// write the holder boxes and description (all = also blank the ones left empty, for a copy)
+function certHolderFill(form,hd,all){CH_KEYS.forEach(([id,k])=>{const v=hd[id]||'';if(v||all)try{form.getTextField(k).setText(v)}catch(_){}})}
+let certMode=null;
+async function certFormOpen(mode,c){certMode={mode,c};certSay('');const pols=certPolicies();$('certPolBox').hidden=mode!=='new';
+  $('certPols').innerHTML=pols.length?pols.map((p,i)=>`<label><input type="checkbox" value="${i}" checked> ${esc([p.line||'Policy',p.co,p.num,[p.eff,p.exp].filter(Boolean).join(' – ')].filter(Boolean).join(' · '))}</label>`).join(''):'<span class="small">No active policies on this client. The certificate will have the client only.</span>';
+  CH_KEYS.forEach(([id])=>$(id).value='');
+  if(mode==='copy'){try{await acordReady();const f=(await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true})).getForm();try{$('chDesc').value=f.getTextField('CertificateOfLiabilityInsurance_ACORDForm_RemarkText_A').getText()||''}catch(_){}}catch(_){}}
+  $('certFormGo').textContent=mode==='copy'?'Make the copy':'Make certificate';$('certForm').hidden=false;$('certNew').hidden=true;setTimeout(()=>(mode==='new'&&pols.length?$('certPols').querySelector('input'):$('chName')).focus(),30)}
+const certFormClose=()=>{$('certForm').hidden=true;$('certNew').hidden=!assets;certMode=null};
+$('certFormCancel').onclick=certFormClose;
+$('certForm').onsubmit=async e=>{e.preventDefault();if(!certMode||!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');const b=$('certFormGo');b.disabled=true;
+  const hd=Object.fromEntries(CH_KEYS.map(([id])=>[id,$(id).value.trim()])),pick=[...$('certPols').querySelectorAll('input:checked')].map(x=>+x.value);certSay(certMode.mode==='copy'?'Copying…':'Making the certificate…');
+  try{const c=await addCert(certMode.mode==='copy'?await copyCertBytes(certMode.c,hd):await newCertBytes(pick,hd));certFormClose();certSay('');await openEditor(c,{save:certSaver});edMsg('Check it over, type any limits, then Save.','ok')}
+  catch(err){certSay(err&&err.code?errText(err):'Couldn’t make the certificate'+(err&&err.message?` (${err.message})`:'')+'.','err')}b.disabled=false};
+const certSay=(t,c)=>{$('certMsg').className='msg'+(c?' '+c:'');$('certMsg').textContent=t};
+$('clCerts').onclick=()=>{if(!editClient)return;certFormClose();$('certTitleH').textContent='Certificates · '+clientName(editClient);certSay('');$('certDlg').classList.add('on');renderCerts()};
+$('certClose').onclick=()=>{certFormClose();$('certDlg').classList.remove('on')};
+$('certNew').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new')};
+$('certList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.certOpen||b.dataset.certCopy||b.dataset.certSave||b.dataset.certDel,c=certList().find(x=>x.id===id);if(!c)return;
+  try{if(b.dataset.certOpen)return void await openEditor(c,{save:certSaver});
+    if(b.dataset.certSave){const blob=new Blob([await fileBytes(c)],{type:'application/pdf'});if(dl)await dl.save({filename:c.name,data:blob,mimeType:'application/pdf'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=c.name;a.click()}return}
+    if(isLocked('client'))return toast('This client is view-only right now.');
+    if(b.dataset.certCopy)return void await certFormOpen('copy',c);
+    if(b.dataset.certDel){if(!(await sure(`Delete the certificate ${c.name}? This can’t be undone.`)))return;await putCerts(certList().filter(x=>x.id!==id));try{await assets.delete(id)}catch(_){}toast('Certificate deleted')}}
+  catch(err){certSay(err&&err.code?errText(err):`${c.name}: ${err&&err.message||'something went wrong'}`,'err')}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('certDlg').classList.contains('on')&&!$('ed').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();$('certDlg').classList.remove('on')}},true);
 // lead -> client: "Copy to PSW client" makes the client (or fills only what an existing client is missing) and copies the files you tick
 const bizKey=s=>String(s||'').toLowerCase().replace(/[.,]/g,' ').replace(/\b(llc|inc|corp|corporation|co|company|ltd|dba)\b/g,'').replace(/[^a-z0-9]/g,'');
 function findClient(l){const dg=s=>String(s||'').replace(/\D/g,''),pn=c=>[c.firstName,c.lastName].join(' ').trim().toLowerCase();
