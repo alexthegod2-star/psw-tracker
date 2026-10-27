@@ -530,8 +530,17 @@ def binder_prem(p, key="premium"):
     return float(x) if re.fullmatch(r"\d+(\.\d+)?", x) else None
 
 
+def binder_month(p):
+    """The binder month a policy goes in: its effective date's month (2026-09-15 or 09/15/2026), else this month."""
+    e = str(p.get("eff") or "")
+    m = re.match(r"(\d{4})-(\d\d)", e) or re.match(r"(\d\d?)/\d\d?/(\d{4})", e)
+    if not m:
+        return time.strftime("%Y-%m")
+    return f"{m[1]}-{m[2]}" if len(m[1]) == 4 else f"{m[2]}-{int(m[1]):02d}"
+
+
 def binder_sync(c, path, old, new):
-    """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, dated this month.
+    """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, in their effective date's month.
     A policy already in the log keeps that entry's premium, com %, broker fee, dates, ... up to date, except boxes changed in the log by hand."""
     segs = path.split("/")
     if len(segs) != 2 or segs[0] != "clients" or not isinstance(new, dict):
@@ -559,9 +568,11 @@ def binder_sync(c, path, old, new):
         if r:  # already in the log: it follows the policy's premium, com %, dates, ... unless that box was changed in the log by hand
             d = json.loads(r["data"])
             fields = lambda q: {"eff": str(q.get("eff") or ""), "exp": str(q.get("exp") or ""), "type": q.get("line") or "", "carrier": q.get("company") or "",
-                                "ga": q.get("carrier") or "", "premium": binder_prem(q), "comPct": com_pct(c, q), "bf": binder_prem(q, "pswFee")}
+                                "ga": q.get("carrier") or "", "premium": binder_prem(q), "comPct": com_pct(c, q), "bf": binder_prem(q, "pswFee"), "month": binder_month(q) if q.get("eff") else ""}
             now, before = fields(p), fields(prev.get(p["pid"]) or {})
             add = {k: v for k, v in now.items() if v not in (None, "") and v != d.get(k) and d.get(k) in (None, "", before[k])}
+            if now["month"] and now["month"] != d.get("month") and d.get("month") == str(d.get("createdAt") or "")[:7]:
+                add["month"] = now["month"]  # entries made before the month followed the eff date sat in the month they were added
             if add:
                 c.execute("UPDATE tracker_docs SET data=?, updated=?, updated_by='binder' WHERE path=?", (json.dumps({**d, **add}, separators=(",", ":")), time.time(), r["path"]))
             continue
@@ -569,7 +580,7 @@ def binder_sync(c, path, old, new):
         if owner == was.get(p["pid"], was.get(same(p))):
             continue
         note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
-        d = {"name": name or "Client", "month": time.strftime("%Y-%m"), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
+        d = {"name": name or "Client", "month": binder_month(p), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
              "ga": p.get("carrier") or "", "term": term, "premium": prem, "comPct": com_pct(c, p), "commAmt": None, "yrAmt": None,
              "bf": binder_prem(p, "pswFee"), "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
              "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())}
