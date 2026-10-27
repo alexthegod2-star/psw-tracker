@@ -596,20 +596,26 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="msg" id="ppMsg"></div></section>
     <section class="ppCard"><div class="ppCardH"><h4>Tasks</h4><button type="button" class="pri" id="ppTaskAdd">+ Add task</button></div>
       <ul class="tasks" id="ppTasks"></ul><div class="small" id="ppTasksNone">No tasks for this policy yet.</div></section>
-    <section class="ppCard" id="ppInv"><div class="ppCardH"><h4>Invoice</h4><button type="button" id="ppInvPrint">Print invoice</button></div>
-      <label for="ppInvNo">Invoice #</label><input id="ppInvNo" data-inv="invNo">
-      <label for="ppInvDate">Invoice date</label><input id="ppInvDate" data-inv="invDate" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
-      <label for="ppInvDue">Due date</label><input id="ppInvDue" data-inv="invDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
-      <label for="ppInvAmt">Amount due</label><input id="ppInvAmt" data-inv="invAmt" placeholder="Same as Total" inputmode="decimal">
-      <label for="ppInvPaid">Payment</label><select id="ppInvPaid" data-inv="invPaid"><option value=""></option><option>Unpaid</option><option>Partly paid</option><option>Paid</option></select>
-      <label for="ppInvPaidAmt">Amount paid</label><input id="ppInvPaidAmt" data-inv="invPaidAmt" placeholder="$" inputmode="decimal">
-      <label for="ppInvPaidDate">Paid date</label><input id="ppInvPaidDate" data-inv="invPaidDate" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
-      <label for="ppInvMethod">Paid by</label><input id="ppInvMethod" data-inv="invMethod" list="payList" autocomplete="off" placeholder="Type or pick"><datalist id="payList"><option value="Credit card"><option value="Check"><option value="Cash"><option value="ACH / bank transfer"><option value="Zelle"><option value="Finance company"></datalist>
-    </section>
+    <section class="ppCard"><div class="ppCardH"><h4>Invoice</h4><button type="button" class="pri" id="ppInvOpen">Invoice</button></div>
+      <div class="small" id="ppInvNote"></div></section>
   </aside>
   <div id="ppExtraWrap" hidden><div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><h4 id="ppExtraH" style="margin:0"></h4><button type="button" class="pri" id="glStd" hidden title="Each occurrence $1,000,000, Damage to rented $100,000, Med exp $5,000, Personal &amp; adv $1,000,000, Aggregate $2,000,000, Products $1,000,000">Standard 1M/2M</button></div><div class="grid" id="ppExtra"></div></div></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
   <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Save</button></div>
+</div></div>
+<div class="mbg" id="invDlg" role="dialog" aria-modal="true" aria-labelledby="invTitleH" style="z-index:12"><div class="mbox" style="width:min(520px,96vw);max-height:90vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px"><h3 id="invTitleH" style="margin:0">Invoice</h3><button type="button" class="pri" id="ppInvPrint">Print invoice</button></div>
+  <section class="ppCard" id="ppInv">
+    <label for="ppInvNo">Invoice #</label><input id="ppInvNo" data-inv="invNo">
+    <label for="ppInvDate">Invoice date</label><input id="ppInvDate" data-inv="invDate" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
+    <label for="ppInvDue">Due date</label><input id="ppInvDue" data-inv="invDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
+    <label for="ppInvAmt">Amount due</label><input id="ppInvAmt" data-inv="invAmt" placeholder="Same as Total" inputmode="decimal">
+    <label for="ppInvPaid">Payment</label><select id="ppInvPaid" data-inv="invPaid"><option value=""></option><option>Unpaid</option><option>Partly paid</option><option>Paid</option></select>
+    <label for="ppInvPaidAmt">Amount paid</label><input id="ppInvPaidAmt" data-inv="invPaidAmt" placeholder="$" inputmode="decimal">
+    <label for="ppInvPaidDate">Paid date</label><input id="ppInvPaidDate" data-inv="invPaidDate" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
+    <label for="ppInvMethod">Paid by</label><input id="ppInvMethod" data-inv="invMethod" list="payList" autocomplete="off" placeholder="Type or pick"><datalist id="payList"><option value="Credit card"><option value="Check"><option value="Cash"><option value="ACH / bank transfer"><option value="Zelle"><option value="Finance company"></datalist>
+  </section>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button type="button" class="pri" id="invClose">Done</button></div>
 </div></div>
 <div class="mbg" id="binDlg" role="dialog" aria-modal="true" aria-labelledby="binTitleH"><div class="mbox" id="binBox">
   <h3 id="binTitleH">Add sale</h3>
@@ -3002,7 +3008,7 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)})}
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
-  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   siteBtns();$('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
@@ -3061,6 +3067,12 @@ $('ppInv').addEventListener('focusout',e=>{const el=e.target,v=el.value.trim();i
   if(el.id==='ppInvAmt'||el.id==='ppInvPaidAmt'){const n=bNum(v);if(n!=null)el.value=bMoney(n);return}
   if(/Date|Due$/.test(el.id)){const iso=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso)}});
 $('ppInvPaid').addEventListener('change',()=>{if($('ppInvPaid').value==='Paid'&&!$('ppInvPaidDate').value.trim())$('ppInvPaidDate').value=fmtDate(todayISO())});
+// the invoice opens on its own screen, like Certificates; its boxes are kept with the policy when it's saved
+function invNote(){const g=id=>$(id).value.trim(),bits=[g('ppInvNo')&&'#'+g('ppInvNo'),g('ppInvDate'),g('ppInvPaid'),g('ppInvAmt')||g('ppTotal')].filter(Boolean);
+  $('ppInvNote').textContent=g('ppInvNo')||g('ppInvDate')||g('ppInvPaid')?bits.join(' · '):'No invoice yet.'}
+function closeInv(){$('invDlg').classList.remove('on');invNote()}
+$('ppInvOpen').onclick=()=>{$('invTitleH').textContent='Invoice'+($('ppNumber').value.trim()?' · Policy '+$('ppNumber').value.trim():'');ppTotal();$('invDlg').classList.add('on');$('ppInvNo').focus()};
+$('invClose').onclick=closeInv;$('invDlg').addEventListener('mousedown',e=>{if(e.target===$('invDlg'))closeInv()});
 $('ppInvPrint').onclick=()=>{const g=id=>$(id).value.trim(),h=esc,name=[g('clFirst'),g('clLast')].filter(Boolean).join(' '),co=g('clCompany');
   if(!g('ppInvDate'))$('ppInvDate').value=fmtDate(todayISO());
   const fees=[['Premium',$('ppPremium').value],...[...$('ppFees').querySelectorAll('[data-f]')].map(el=>[el.id==='ppOther1'?($('ppOther1L').value.trim()||'Other'):el.id==='ppOther2'?($('ppOther2L').value.trim()||'Other'):$('ppFees').querySelector(`label[for=${el.id}]`).textContent,el.value])].filter(([,v])=>v.trim()).map(([l,v])=>{const n=bNum(v);return [l,n!=null?bMoney(n):v]});
@@ -3168,7 +3180,7 @@ $('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('not
   else toast('Note added. Hit Save client to keep it.')};
 $('clCancel').onclick=closeClient;$('clCancelTop').onclick=()=>$('clCancel').click();$('clSaveTop').onclick=()=>$('clSave').click(); // top-right copies of the bottom buttons
 $('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('invDlg').classList.contains('on')){e.stopImmediatePropagation();closeInv()}else if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
 $('clSave').onclick=async()=>{const m=$('clientMsg');
   const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),preferredName:$('clPref').value.trim(),dob:$('clDob').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),phone2:fmtClPhone($('clPhone2').value),email2:$('clEmail2').value.trim(),
     address:$('clAddress').value.trim(),location:$('clLocation').value.trim(),agent:$('clAgent').value,busType:$('clBusType').value,workPhone:fmtClPhone($('clWork').value),relationship:$('clRel').value.trim(),
