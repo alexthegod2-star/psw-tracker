@@ -2959,7 +2959,7 @@ const LOB_FIELDS={
   'Workers Comp':[['class_codes','Class codes / payroll','a'],['employees','# of employees'],['exp_mod','Experience mod'],['el_limits','Employers liability limits'],['owners','Owners included / excluded'],['subs','Subcontractor cost']],
   'Umbrella/Excess':[['limit','Limit'],['retention','Retention / SIR'],['underlying','Underlying policies (auto / GL / EL)','a'],['form','Follow form or standalone']],
   'CSLB Bond':[['bond_amount','Bond amount'],['license','CSLB license #'],['classification','Classification'],['bond_type','Bond type (contractor / LLC / qualifier)'],['bond_number','Bond #']],
-  'BOP':[['address','Location address'],['operations','Business / operations'],['building','Building'],['bpp','Business personal property'],['bi','Business income'],['occurrence','Liability each occurrence'],['aggregate','Liability aggregate'],['deductible','Deductible'],['sales','Sales'],['sq_ft','Sq ft']]};
+  'BOP':[['address','Location address'],['operations','Business / operations'],['building','Building'],['bpp','Business personal property'],['bi','Business income'],['occurrence','Liability each occurrence'],['aggregate','Liability aggregate'],['deductible','Deductible'],['sales','Sales'],['payroll','Payroll'],['subout','Subcontract costs'],['employees','Number of employees'],['sq_ft','Sq ft']]};
 // '#Home': the home quote sheet's Dwelling and Protection boxes (24a to 36b), same keys as the sheet; its roof year stays under the policy's old 'roof' key
 const HOME_PP=HOME_SECTIONS.filter(s=>s.title==='Dwelling'||s.title==='Protection').flatMap(s=>s.fields).flatMap(f=>[[f.k,f.n+'a '+f.label,f.opts],...(f.pair?[[f.pair,f.n+'b '+f.label2,f.opts2]]:[])]).map(([k,l,o])=>[k==='roof_year'?'roof':k,l,o]);
 // Rental Dwelling (landlord), Secondary Home and DIC use the same boxes as Personal Home; their old boxes still show when a policy has something saved in them
@@ -3266,7 +3266,7 @@ function ppFromQS(q,cur){ // PSW commercial quote sheet (GL / WC / property / BO
   const g=k=>q['f_'+k]||'',lob=g('line_of_business').toLowerCase(),rows=(p,n,f)=>Array.from({length:n},(_,i)=>f(k=>q[`${p}${i+1}_${k}`]||'')).filter(Boolean).join('\n');
   const line=cur||(/bop/.test(lob)?'BOP':/^wc|work/.test(lob)?'Workers Comp':/gl|liab/.test(lob)?'General Liability':/prop/.test(lob)?'Commercial Property':'');
   const b=k=>q['b1_'+k]||'',ft=+g('full_time')||0,pt=+g('part_time')||0;
-  return {line,eff:g('eff_date'),exp:g('exp_date'),extra:{operations:[g('description'),g('detailed_description')].filter(Boolean).join('\n'),sales:g('gross_receipts'),payroll:g('payroll'),
+  return {line,eff:g('eff_date'),exp:g('exp_date'),extra:{operations:[g('description'),g('detailed_description')].filter(Boolean).join('\n'),sales:g('gross_receipts'),payroll:g('payroll'),subout:g('subout'),
     address:b('address')||g('property_address'),year_built:b('yr'),sq_ft:b('sqft'),construction:b('const'),building:b('dwelling'),bpp:b('bpp'),bi:b('rents'),contents:b('bpp'),
     employees:ft||pt?String(ft+pt):'',class_codes:rows('cc',4,c=>[c('code'),c('desc'),c('payroll')&&'payroll '+c('payroll')].filter(Boolean).join(' ')),
     owners:rows('o',4,c=>[c('first'),c('last'),c('pct')&&c('pct')+'%',c('title')].filter(Boolean).join(' ')),addl_insured:rows('ai',4,c=>[c('name'),c('address')].filter(Boolean).join(', ')),
