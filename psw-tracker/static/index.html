@@ -878,7 +878,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-8',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-28',QS_LAYOUT='psw-qs-layout-22',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-9',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-28',QS_LAYOUT='psw-qs-layout-22',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -956,8 +956,9 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
       for(const r of g.rows){need(19);text(r.label,L+4,8.5,font,muted);for(let c=1;c<=g.count;c++)field(`${g.prefix}${c}_${r.k}`,v[`${g.prefix}${c}_${r.k}`],L+LW+(c-1)*(cw+6),cw,16);y-=19}}
     if(s.table){const t=s.table,gap=4;
       const lay=cols=>{const tot=cols.reduce((a,c)=>a+c.w,0),avail=R-L-20-gap*(cols.length-1);const xs=[];let x=L+20;cols.forEach(c=>{xs.push(x);x+=avail*c.w/tot+gap});return {xs,ws:cols.map(c=>avail*c.w/tot)}};
-      const A=lay(t.cols),B=t.cols2?lay(t.cols2):null;
-      const put=(c,r,x,w)=>{const nm=`${t.prefix}${r}_${c.k}`;c.opts?drop(nm,v[nm],c.opts,x,w,16):field(nm,v[nm],x,w,16)};
+      // a cols2 box with under:'k' sits right below that first-row box, same width
+      const A=lay(t.cols),B=t.cols2?(t.cols2.every(c=>c.under)?(ix=>({xs:ix.map(i=>A.xs[i]),ws:ix.map(i=>A.ws[i])}))(t.cols2.map(c=>t.cols.findIndex(x=>x.k===c.under))):lay(t.cols2)):null;
+      const put=(c,r,x,w)=>{const nm=`${t.prefix}${r}_${c.k}`;if(c.check){const cb=form.createCheckBox(nm);cb.addToPage(page,{x,y:y-14,width:11,height:11,borderColor:line,borderWidth:0.8,backgroundColor:rgb(1,1,1)});if(/^(yes|true|on|x)$/i.test(String(v[nm]||'')))cb.check();text(c.check,x+16,8.5,font,muted);return}c.opts?drop(nm,v[nm],c.opts,x,w,16):field(nm,v[nm],x,w,16)};
       need(14);t.cols.forEach((c,i)=>text(c.label,A.xs[i],7.5,bold,muted));y-=12;
       for(let r=1;r<=t.rows;r++){need(B?51:19);text(r+'.',L+4,8.5,bold,muted);
         t.cols.forEach((c,i)=>put(c,r,A.xs[i],A.ws[i]));y-=18;
@@ -1049,7 +1050,8 @@ const HOME_SECTIONS=[
    {k:'wiring_year',n:1,label:'Wiring updated (yr)',pc:'wiring',label2:'Purchase date',pair:'purchase_date'},{k:'plumbing_year',n:1,label:'Plumbing updated (yr)',pc:'plumbing',label2:'Purchase price',pair:'purchase_price'},{k:'heating_year',n:1,label:'Heating updated (yr)',pc:'heating',label2:'Feet to hydrant',pair:'hydrant_ft'},{k:'roof_year',n:1,label:'Roof updated (yr)',pc:'roof',label2:'Miles to fire stn',pair:'station_mi'},
    {k:'siding',n:1,label:'Siding',label2:'Pool?',pair:'uw_pool',opts:HOME_SIDING.map(x=>x[0]),opts2:YN}]},
  {title:'Protection',fields:[{k:'smoke',n:1,label:'Smoke detectors?',label2:'Burglar alarm',pair:'burglar_alarm',opts:YN,opts2:HOME_ALARM},{k:'fire_alarm',n:1,label:'Fire alarm',label2:'Sprinklers',pair:'sprinklers',opts:HOME_ALARM,opts2:['None','Partial','Full']},{k:'deadbolts',n:1,label:'Deadbolts?',label2:'Gated community?',pair:'gated',opts:YN,opts2:YN}]},
- {title:'Mortgagee',table:{prefix:'mg',rows:2,cols:[{k:'name',label:'Mortgagee / lender',w:2},{k:'address',label:'Address',w:2.2},{k:'city',label:'City',w:1.2},{k:'state',label:'St',w:.45},{k:'zip',label:'Zip',w:.7},{k:'loan',label:'Loan #',w:1.3}]}},
+ {title:'Mortgagee',table:{prefix:'mg',rows:2,cols:[{k:'name',label:'Mortgagee / lender',w:2},{k:'address',label:'Address',w:2.2},{k:'city',label:'City',w:1.2},{k:'state',label:'St',w:.45},{k:'zip',label:'Zip',w:.7},{k:'loan',label:'Loan #',w:1.3}],
+   cols2:[{k:'name2',label:'Name line 2',w:2,under:'name'},{k:'isaoa',label:'',check:'ISAOA/ATIMA',under:'address'}]}},
  {title:'Underwriting',fields:[{k:'uw_business',n:1,label:'Business on premises?',opts:YN},{k:'uw_trampoline',n:1,label:'Trampoline?',label2:'Wood stove?',pair:'uw_wood_stove',opts:YN,opts2:YN},{k:'uw_dog',n:1,label:'Dogs or animals?',label2:'Dog breed(s)',pair:'uw_dog_breed',opts:YN},{k:'uw_bite',n:1,label:'Animal bite history?',label2:'In a flood zone?',pair:'uw_flood',opts:YN,opts2:YN},
    {k:'uw_rented',n:1,label:'Rented / short-term rental?',label2:'Renovation now?',pair:'uw_construction',opts:YN,opts2:YN},{k:'uw_foreclosure',n:1,label:'Foreclosure / bankruptcy?',label2:'Cancelled / non-renewed?',pair:'uw_cancelled',opts:YN,opts2:YN},{k:'uw_explain',n:1,label:'Explain any Yes',area:1}]},
  {title:'Loss history',fields:[{k:'claims',n:1,label:'Claims last 5 yrs',area:1}]},
@@ -2300,9 +2302,10 @@ function build80(C,h){
   if(yes('brush')||yes('uw_flood'))v.Residential_Question_KBBCode_A='Y';
   if(yes('uw_dog')){set('AnimalExposure_AnimalTypeCode_A','Dog');set('AnimalExposure_BreedCode_A',g('uw_dog_breed'));set('AnimalExposure_BiteHistoryCode_A',yes('uw_bite')?'Y':'N')}
   // mortgagees
-  [['1','_A','_A'],['2','_C','_B']].forEach(([n,nm,ad])=>{const name=g(`mg${n}_name`);if(!name)return;const a=n==='1'?'_A':'_B';
+  // name line 2 (e.g. ISAOA/ATIMA) prints right under the name, so it takes address line one and the street moves to line two
+  [['1','_A','_A'],['2','_C','_B']].forEach(([n,nm,ad])=>{const name=g(`mg${n}_name`);if(!name)return;const a=n==='1'?'_A':'_B',n2=[g(`mg${n}_name2`),yes(`mg${n}_isaoa`)&&!/isaoa/i.test(g(`mg${n}_name2`))?'ISAOA/ATIMA':''].filter(Boolean).join(' ');
     set('AdditionalInterest_Interest_MortgageeIndicator'+a,true);set('AdditionalInterest_InterestRank'+a,n);set('AdditionalInterest_FullName'+nm,name);
-    set('AdditionalInterest_MailingAddress_LineOne'+ad,g(`mg${n}_address`));set('AdditionalInterest_MailingAddress_CityName'+ad,g(`mg${n}_city`));set('AdditionalInterest_MailingAddress_StateOrProvinceCode'+ad,g(`mg${n}_state`).toUpperCase());set('AdditionalInterest_MailingAddress_PostalCode'+ad,g(`mg${n}_zip`));set('AdditionalInterest_AccountNumberIdentifier'+ad,g(`mg${n}_loan`))});
+    if(n2){set('AdditionalInterest_MailingAddress_LineOne'+ad,n2);set('AdditionalInterest_MailingAddress_LineTwo'+ad,g(`mg${n}_address`))}else set('AdditionalInterest_MailingAddress_LineOne'+ad,g(`mg${n}_address`));set('AdditionalInterest_MailingAddress_CityName'+ad,g(`mg${n}_city`));set('AdditionalInterest_MailingAddress_StateOrProvinceCode'+ad,g(`mg${n}_state`).toUpperCase());set('AdditionalInterest_MailingAddress_PostalCode'+ad,g(`mg${n}_zip`));set('AdditionalInterest_AccountNumberIdentifier'+ad,g(`mg${n}_loan`))});
   // anything else the sheet says goes in the remarks
   const rem=[];if(yes('earthquake'))rem.push('Earthquake coverage requested');if(yes('water_backup'))rem.push('Water backup requested');if(g('scheduled'))rem.push('Scheduled items: '+g('scheduled'));
   if(yes('uw_rented'))rem.push('Property is rented to others / short-term rental');if(yes('uw_pool'))rem.push('In-ground pool on premises');if(g('uw_explain'))rem.push(g('uw_explain'));if(g('notes'))rem.push(g('notes'));
