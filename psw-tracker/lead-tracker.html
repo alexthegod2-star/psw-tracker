@@ -3332,7 +3332,9 @@ async function newCertBytes(pick,hd){await acordReady();const doc=await PDFLib.P
   const nm=g('clCompany')||[g('clFirst'),g('clLast')].filter(Boolean).join(' '),addr=g('clAddress').split(/\n/).map(x=>x.trim()).filter(Boolean);
   T('NamedInsured_FullName_A',nm+(g('clDba')?' DBA '+g('clDba'):''));T('NamedInsured_MailingAddress_LineOne_A',addr[0]);T('NamedInsured_MailingAddress_LineTwo_A',addr.slice(1).join(', '));T('NamedInsured_MailingAddress_CityName_A',g('clCity'));T('NamedInsured_MailingAddress_StateOrProvinceCode_A',g('clState'));T('NamedInsured_MailingAddress_PostalCode_A',g('clZip'));
   const pols=certPolicies().filter((_,i)=>pick.includes(i));certHolderFill(form,hd);
-  const letters='ABCDEF',ins=[],letter=co=>{if(!co)return '';let i=ins.indexOf(co);if(i<0&&ins.length<6){ins.push(co);i=ins.length-1;T('Insurer_FullName_'+letters[i],co);const s=sites.get(siteKey('company',co));if(s&&s.naic)T('Insurer_NAICCode_'+letters[i],s.naic)}return i<0?'':letters[i]},used=new Set();
+  // insurer letters follow the cert's row order: GL's company is A, auto's is B (or A again if it's the same company), then umbrella, WC, other
+  const ORD={gl:0,auto:1,umb:2,wc:3,other:4};pols.sort((a,b)=>ORD[certSlot(a.line)]-ORD[certSlot(b.line)]);
+  const letters='ABCDEF',ins=[],letter=co=>{co=String(co||'').trim();if(!co)return '';const k=co.toLowerCase().replace(/\s+/g,' ');let i=ins.indexOf(k);if(i<0&&ins.length<6){ins.push(k);i=ins.length-1;T('Insurer_FullName_'+letters[i],co);const s=sites.get(siteKey('company',co));if(s&&s.naic)T('Insurer_NAICCode_'+letters[i],s.naic)}return i<0?'':letters[i]},used=new Set();
   for(const p of pols){let sl=certSlot(p.line);if(used.has(sl))sl='other';if(used.has(sl))continue;used.add(sl);const L=letter(p.co);
     if(sl==='gl'){T('GeneralLiability_InsurerLetterCode_A',L);C('GeneralLiability_CoverageIndicator_A');
       // limits from the policy's boxes when it has them, else PSW's usual 1M / 100K / 5K / 1M / 2M / 1M; Occurrence and Per policy unless the policy says claims-made / per project / per location
