@@ -579,7 +579,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <label for="ppInvMethod">Paid by</label><input id="ppInvMethod" data-inv="invMethod" list="payList" autocomplete="off" placeholder="Type or pick"><datalist id="payList"><option value="Credit card"><option value="Check"><option value="Cash"><option value="ACH / bank transfer"><option value="Zelle"><option value="Finance company"></datalist>
     </section>
   </aside>
-  <div id="ppExtraWrap" hidden><h4 id="ppExtraH" style="margin:0"></h4><div class="grid" id="ppExtra"></div></div></div>
+  <div id="ppExtraWrap" hidden><div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><h4 id="ppExtraH" style="margin:0"></h4><button type="button" id="glStd" hidden title="Each occurrence $1,000,000, Damage to rented $100,000, Med exp $5,000, Personal &amp; adv $1,000,000, Aggregate $2,000,000, Products $1,000,000">Standard 1M/2M</button></div><div class="grid" id="ppExtra"></div></div></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
   <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Save</button></div>
 </div></div>
@@ -2812,11 +2812,16 @@ const HOME_PP=HOME_SECTIONS.filter(s=>s.title==='Dwelling'||s.title==='Protectio
 // Rental Dwelling (landlord), Secondary Home and DIC use the same boxes as Personal Home; their old boxes still show when a policy has something saved in them
 const LOB_OLD={};['Rental Dwelling','Secondary Home','DIC'].forEach(l=>{LOB_OLD[l]=LOB_FIELDS[l].filter(([k])=>!LOB_FIELDS['Personal Home'].some(([h])=>h===k)&&!HOME_PP.some(([h])=>h===k));LOB_FIELDS[l]=LOB_FIELDS['Personal Home']});
 let ppExtraVals={},ppExtraLine=null;
+// GL limits: the choices in each box's drop-down, and what Standard 1M/2M fills in (same as a certificate uses when the policy has none)
+const GL_M=n=>'$'+(n*1e6).toLocaleString('en-US'),GL_LIM={occurrence:[1,2,3,4,5,6,7,8,9,10].map(GL_M),aggregate:[1,2,3,4,5,6,7,8,9,10].map(GL_M),products:[1,2,3,4,5,6,7,8,9,10].map(GL_M),personal_adv:[1,2,3,4,5,6,7,8,9,10].map(GL_M),
+  rented:['$50,000','$100,000','$250,000','$500,000','$1,000,000'],med_exp:['$5,000','$10,000','$25,000','$100,000','$1,000,000']};
+const GL_STD={occurrence:'$1,000,000',rented:'$100,000',med_exp:'$5,000',personal_adv:'$1,000,000',aggregate:'$2,000,000',products:'$1,000,000'};
+$('glStd').onclick=()=>{for(const [k,v] of Object.entries(GL_STD)){const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(el){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))}}toast('Filled the standard 1M / 2M limits')};
 function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?[...LOB_FIELDS[line],...(LOB_OLD[line]||[]).filter(([k])=>String(ppExtraVals[k]||'').trim())]:null;
   if(!force&&line===ppExtraLine)return;ppExtraLine=line; // only redraw when the line really changes, so typing in a field isn't lost
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{ppExtraVals[el.dataset.x]=el.value}); // keep what was typed when the line changes
   $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';$('polBox').classList.remove('wide');return}
-  $('ppExtraH').textContent=line+' details';
+  $('ppExtraH').textContent=line+' details';$('glStd').hidden=line!=='General Liability';
   // '#Drivers' / '#Vehicles' draw the same 5-row driver and vehicle tables as the personal auto quote sheet (saved as d1_first, v1_vin, ...)
   const ppTable=title=>{const t0=PAUTO_SECTIONS.find(x=>x.title===title).table,t=title==='Vehicles'?{...t0,cols:[...t0.cols,...t0.cols2.filter(c=>c.k!=='owned')]}:t0,c2=[],cell=(c,i)=>{const k=`${t.prefix}${i}_${c.k}`;return c.opts?`<select data-x="${k}" title="${esc(c.label)}"><option value=""></option>${c.opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`:`<input data-x="${k}" title="${esc(c.label)}"${/dob$/.test(c.k)?' inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY"':c.k==='year'?' inputmode="numeric" maxlength="4" style="width:6ch;min-width:0"':c.k==='miles'?' inputmode="numeric" maxlength="7" style="width:9ch;min-width:0"':c.k==='vin'?' maxlength="17" style="min-width:20ch"':''}>`};
     const old=title==='Drivers'?'drivers':'vehicles',oldBox=ppExtraVals[old]?`<label>${esc(title)} (earlier notes)</label><textarea data-x="${old}" style="min-height:50px"></textarea>`:'';
@@ -2828,7 +2833,9 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   const homeCol=LOB_FIELDS[line]===LOB_FIELDS['Personal Home'],glRow=line==='General Liability',COV=['dwelling','other_structures','personal_property','loss_of_use','liability','med','deductible'];
   // GL: Business / operations across the top, limits down the left, gross receipts / payroll / subcontract costs down the right
   const GL_R=['sales','payroll','subout'],glL=fs.filter(([k,,a])=>!a&&!GL_R.includes(k)).map(([k])=>k),glPos=k=>{const r=GL_R.indexOf(k);return r>=0?` style="--gc:2;--gr:${r+2}"`:glL.includes(k)?` style="--gc:1;--gr:${glL.indexOf(k)+2}"`:' style="--gc:1/-1;--gr:1"'};
-  $('ppExtra').innerHTML=fs.map(([k,l,a])=>k==='#Home'?ppHome():k[0]==='#'?ppTable(k.slice(1)):`<div${glRow?` class="covRow glPos"${glPos(k)}`:a||homeCol&&k==='address'?' class="full"':homeCol&&COV.includes(k)?' class="covRow"':''}><label>${esc(l)}</label>${a?`<textarea data-x="${k}" style="min-height:70px"></textarea>`:`<input data-x="${k}">`}</div>`).join('');
+  const glList=k=>glRow&&GL_LIM[k]?` list="glLim_${k}" autocomplete="off" data-money="1"`:'';
+  $('ppExtra').innerHTML=fs.map(([k,l,a])=>k==='#Home'?ppHome():k[0]==='#'?ppTable(k.slice(1)):`<div${glRow?` class="covRow glPos"${glPos(k)}`:a||homeCol&&k==='address'?' class="full"':homeCol&&COV.includes(k)?' class="covRow"':''}><label>${esc(l)}</label>${a?`<textarea data-x="${k}" style="min-height:70px"></textarea>`:`<input data-x="${k}"${glList(k)}>`}</div>`).join('')+(glRow?Object.entries(GL_LIM).map(([k,o])=>`<datalist id="glLim_${k}">${o.map(v=>`<option value="${v}">`).join('')}</datalist>`).join(''):'');
+  if(glRow)$('ppExtra').querySelectorAll('[list^=glLim_]').forEach(el=>el.addEventListener('blur',()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)}));
   $('polBox').classList.toggle('wide',fs.some(([k])=>k[0]==='#'&&k!=='#Home'));
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{el.value=ppExtraVals[el.dataset.x]||''});
   // coverages A to F read $#,### (no cents), on open and when you leave the box
