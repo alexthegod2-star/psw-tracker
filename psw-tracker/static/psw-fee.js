@@ -203,17 +203,25 @@ function addXObjectToPage(pdfDoc,pageIndex,ref){
 function mixedWidth(docF,fb,text,size){
   return [...text].reduce((a,ch)=>a+(docF&&docF.has(ch)?docF.width(ch,size):fb.widthOfTextAtSize(ch,size)),0);
 }
+/* new text takes the colour of the quote text it copies (a fill like "0.2 0.4 0.6 rg", "0 g" or CMYK "k") */
+let INK=[0,0,0];
+const inkOf=t=>{ const m=String(t&&t.fill||"").trim().match(/^([-\d.\s]+?)\s*(rg|g|k)$/); if(!m) return [0,0,0];
+  const v=m[1].trim().split(/\s+/).map(Number); if(v.some(isNaN)) return [0,0,0];
+  if(m[2]==="g"&&v.length===1) return [v[0],v[0],v[0]];
+  if(m[2]==="rg"&&v.length===3) return v;
+  if(m[2]==="k"&&v.length===4) return v.slice(0,3).map(c=>(1-c)*(1-v[3]));
+  return [0,0,0]; };
 function drawMixed(page,docF,fb,text,x,y,size){
   const runs=[]; for(const ch of text){ const d=!!(docF&&docF.has(ch)); const r=runs[runs.length-1];
     if(r&&r.d===d) r.t+=ch; else runs.push({d,t:ch}); }
   for(const r of runs){
     if(r.d){ if(docF.draw) docF.draw(page,r.t,x,y); else drawWithDocFont(page,docF,r.t,x,y,size); x+=docF.width(r.t,size); }
-    else{ page.drawText(r.t,{x,y,size,font:fb,color:PDFLib.rgb(0,0,0)}); x+=fb.widthOfTextAtSize(r.t,size); }
+    else{ page.drawText(r.t,{x,y,size,font:fb,color:PDFLib.rgb(...INK)}); x+=fb.widthOfTextAtSize(r.t,size); }
   }
 }
 function drawWithDocFont(page,font,text,x,y,size){
   const L=PDFLib;
-  page.pushOperators(L.pushGraphicsState(),L.setFillingRgbColor(0,0,0),L.beginText(),
+  page.pushOperators(L.pushGraphicsState(),L.setFillingRgbColor(...INK),L.beginText(),
     L.setFontAndSize(font.name,size),L.moveText(x,y),L.showText(font.encode(text)),L.endText(),L.popGraphicsState());
 }
 
@@ -500,6 +508,8 @@ function glyphFont(pdfDoc,pi,spacing,lines,seeds){
 
 /* ---------- locate the premium table ---------- */
 const FEEISH=/fee|tax|stamp|surcharge/i;
+/* rows like "Hosted Tournament Liability   Not Covered" sit inside some fee lists without an amount */
+const NOAMT=/\b(not covered|not included|included|excluded|declined|waived|n\/a)\s*$/i;
 function locateAll(pages){
   const found=[];
   for(let i=0;i<pages.length;i++){
@@ -510,8 +520,8 @@ function locateAll(pages){
       const chain=[]; let prevY=T.y;
       for(let k=t-1;k>=0;k--){
         const L=lines[k]; if(L.y<=T.y) continue;
-        if(L.y-prevY>30) break;
-        if(!L.amounts.length){ if(L.text.trim()==="") continue; break; }
+        if(L.y-prevY>45) break;
+        if(!L.amounts.length){ if(L.text.trim()==="") continue; if(NOAMT.test(L.text)){ prevY=L.y; continue; } break; }
         chain.push(L); prevY=L.y;
       }
       if(chain.length<2 || !chain.some(l=>FEEISH.test(l.label)) || chain.some(l=>used.has(l))) continue;
@@ -528,11 +538,14 @@ function findTitle(pages){
   const ls=pages[0]&&pages[0].lines; if(!ls) return null;
   let t=ls.find(l=>/^QUOTE$/.test(l.text));
   if(!t) t=ls.find(l=>/^QUOTE\s*(NO|NUMBER|#)\b/i.test(l.text));
+  /* a "Quote Summary" title sits inside a box: clear only from the text above it up, so the box keeps its top edge */
+  let keep=null;
+  if(!t){ t=ls.find(l=>/^quote summary$/i.test(l.text)); const up=t&&ls.filter(l=>l.y>t.y+2).pop(); if(up) keep=up.y-up.items.reduce((m,i)=>Math.max(m,i.size),0)*0.35; }
   if(!t) return null;
-  return {pageIndex:0,line:t,size:Math.max(...t.items.map(x=>x.size)),lines:ls,height:pages[0].height,width:pages[0].width};
+  return {pageIndex:0,line:t,keep,size:Math.max(...t.items.map(x=>x.size)),lines:ls,height:pages[0].height,width:pages[0].width};
 }
 function clearHeaderArea(pdfDoc,title){
-  const yMin=title.line.y+title.size+2, pi=title.pageIndex;
+  const yMin=Math.max(title.line.y+title.size+2,title.keep||0), pi=title.pageIndex;
   const res=walkPage(pdfDoc,pi,{region:y=>y>yMin,shapeRegion:(lo,hi)=>lo>yMin});
   removeAnnotsIn(pdfDoc,pi,(lo,hi)=>(lo+hi)/2>yMin);
   return res.ok;
@@ -540,7 +553,7 @@ function clearHeaderArea(pdfDoc,title){
 async function addAgencyHeader(pdfDoc,title,fReg,fBold,cleared){
   const pi=title.pageIndex, page=pdfDoc.getPage(pi);
   const W=title.width, top=title.height;
-  const yMin=title.line.y+title.size+2;
+  const yMin=Math.max(title.line.y+title.size+2,title.keep||0);
   const lines=[
     {t:"Presented by",size:9,bold:false,gap:6,grey:true},
     {t:ag.name,size:18,bold:true,gap:7},
@@ -622,11 +635,36 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
 
   /* text drawn inside an old total amount (some PDFs draw each letter on its own) */
   const inAmt=(a,x)=>x>a.x-2 && x<Math.max(a.x+2,a.x+a.w-0.5);
-  let newY, totY=T.y, shift=0, ok=true;
+  /* a grand total under this one (e.g. Total, a membership fee, then Total Amount Due) goes up by the fee too */
+  const extra=[];
+  { let prev=T.y;
+    for(const L of loc.lines.filter(l=>l.y<T.y-1).sort((a,b)=>b.y-a.y)){
+      if(prev-L.y>pitch*2.5) break;
+      if(!L.amounts.length){ if(!L.text||NOAMT.test(L.text)) continue; break; }
+      if(/^total\b/i.test(L.label)) cols.forEach(c=>{
+        const a=L.amounts.reduce((b,x)=>!b||Math.abs(x.x+x.w-c.right)<Math.abs(b.x+b.w-c.right)?x:b,null);
+        if(a&&Math.abs(a.x+a.w-c.right)<40){ const t=fontAt(probe.texts,a.x,a.y,6); extra.push({a,c,t,f:docFont(t),neu:Math.round((toNum(a.str)+fee)*100)/100}); }
+      });
+      prev=L.y;
+    } }
+  const isOld=(x,y)=>(Math.abs(y-T.y)<1.5&&cols.some(c=>inAmt(c.tot,x)))||extra.some(e=>Math.abs(y-e.a.y)<1.5&&inAmt(e.a,x));
+  let newY, totY=T.y, shift=0, ok=true, moved=()=>false;
+  /* room below the fee rows: tighten them (to the closest row spacing in the list) so the new line fits above the Total */
+  const tighten=()=>{
+    const top=chain[chain.length-1];
+    const rows=loc.lines.filter(l=>l.text&&l.y<=top.y+0.5&&l.y>=last.y-0.5).sort((a,b)=>b.y-a.y);
+    const g=[]; for(let k=1;k<rows.length;k++) g.push(rows[k-1].y-rows[k].y);
+    const p=Math.max(lSize*1.5,...(g.length?[Math.min(...g)]:[]));
+    for(let j=rows.length-2;j>=0;j--){
+      const n=rows.length-j, y=rows[j].y-n*p;
+      if(y>=last.y-0.5) return {y,moves:rows.slice(j+1).map((L,i)=>({L,dy:rows[j].y-(i+1)*p-L.y}))};
+    }
+    return null;
+  };
   if(hasBlankRow){
     newY=last.y-pitch;
     /* remove only the old total amounts */
-    const r=walkPage(pdfDoc,pi,{region:(y,x)=>Math.abs(y-T.y)<1.5&&cols.some(c=>inAmt(c.tot,x)),shapeRegion:()=>false});
+    const r=walkPage(pdfDoc,pi,{region:(y,x)=>isOld(x,y),shapeRegion:()=>false});
     ok=r.ok;
   }else{
     /* no room: move the Total line and everything under it (until the next big gap) down one row */
@@ -636,12 +674,21 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     for(let j=k+1;j<below.length;j++){ if(lowest-below[j].y>pitch*3) break; lowest=below[j].y; }
     const next=below.find(l=>l.y<lowest-pitch*3);
     const floor=next?next.y+next.items.reduce((m,i)=>Math.max(m,i.size),0):36;
-    if(lowest-pitch*0.6-shift<floor){ return {err:"no room",pi}; }
-    const yHi=last.y-2, yLo=lowest-pitch*0.6;
-    const isOldTotal=(x,y)=>Math.abs(y-T.y)<1.5 && cols.some(c=>inAmt(c.tot,x));
-    const r=walkPage(pdfDoc,pi,{region:y=>y<yHi&&y>yLo,shapeRegion:(lo,hi)=>hi<=yHi+0.01&&lo>=yLo,shift,copy:true,skipCopy:isOldTotal});
-    ok=r.ok;
-    if(r.copies.length) appendRaw(pdfDoc,pi,r.copies.join("\n"));
+    if(lowest-pitch*0.6-shift<floor){
+      const t=tighten(); if(!t) return {err:"no room",pi};
+      shift=0; totY=T.y; newY=t.y;
+      ok=walkPage(pdfDoc,pi,{region:(y,x)=>isOld(x,y),shapeRegion:()=>false}).ok;
+      for(const m of t.moves){
+        const r=walkPage(pdfDoc,pi,{region:y=>Math.abs(y-m.L.y)<1.5,shapeRegion:()=>false,shift:-m.dy,copy:true});
+        ok=ok&&r.ok; if(r.copies.length) appendRaw(pdfDoc,pi,r.copies.join("\n"));
+      }
+    }else{
+      const yHi=last.y-2, yLo=lowest-pitch*0.6;
+      moved=y=>y<yHi&&y>yLo;
+      const r=walkPage(pdfDoc,pi,{region:moved,shapeRegion:(lo,hi)=>hi<=yHi+0.01&&lo>=yLo,shift,copy:true,skipCopy:isOld});
+      ok=r.ok;
+      if(r.copies.length) appendRaw(pdfDoc,pi,r.copies.join("\n"));
+    }
   }
   /* drawing waits until every page edit is done: rewriting a page's drawing drops text pdf-lib already added */
   const draw=()=>{
@@ -649,11 +696,15 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     const feeStr=fmt(fee);
     const lw=mixedWidth(fLbl,fReg,label,lSize);
     const lx=rightAligned?(last.labelRight-lw):last.labelX;
-    drawMixed(page,fLbl,fReg,label,lx,newY,lSize);
-    cols.forEach(c=>{ drawMixed(page,fFee,fbAmt,feeStr,place(c,mixedWidth(fFee,fbAmt,feeStr,c.feeSize),false),newY,c.feeSize); });
-    cols.forEach((c,i)=>{ const s=fmt(c.neu), f=fTot[i]||fFee, sz=c.tot.size; drawMixed(page,f,fbAmt,s,place(c,mixedWidth(f,fbAmt,s,sz),true),totY,sz); });
+    INK=inkOf(lblT); drawMixed(page,fLbl,fReg,label,lx,newY,lSize);
+    INK=inkOf(feeAmtT); cols.forEach(c=>{ drawMixed(page,fFee,fbAmt,feeStr,place(c,mixedWidth(fFee,fbAmt,feeStr,c.feeSize),false),newY,c.feeSize); });
+    cols.forEach((c,i)=>{ const s=fmt(c.neu), f=fTot[i]||fFee, sz=c.tot.size; INK=inkOf(totAmtT[i]); drawMixed(page,f,fbAmt,s,place(c,mixedWidth(f,fbAmt,s,sz),true),totY,sz); });
+    extra.forEach(e=>{ const s=fmt(e.neu), f=e.f||fTot[0]||fFee, sz=e.a.size, w=mixedWidth(f,fbAmt,s,sz); INK=inkOf(e.t);
+      const x=e.c.align==="left"?e.a.x:e.c.align==="center"?e.a.x+e.a.w/2-w/2:e.a.x+e.a.w-w;
+      drawMixed(page,f,fbAmt,s,x,e.a.y-(moved(e.a.y)?shift:0),sz); });
+    INK=[0,0,0];
   };
-  return {pi,cols,ok,newY,totY,shift,chain,draw};
+  return {pi,cols,ok,newY,totY,shift,chain,draw,extra};
 }
 
 
