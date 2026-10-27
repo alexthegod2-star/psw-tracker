@@ -457,6 +457,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="coGrid">
     <label for="co_code">Agency code</label><input id="co_code"><span></span>
     <label for="co_naic" class="coNaic">NAIC #</label><input id="co_naic" class="coNaic" inputmode="numeric" maxlength="10"><span class="coNaic"></span>
+    <label for="co_com" class="coNaic">Com %</label><input id="co_com" class="coNaic" inputmode="decimal" placeholder="Default commission for its policies"><span class="coNaic"></span>
     <label for="co_phone">Phone number</label><input id="co_phone" inputmode="tel"><button type="button" class="coTg" id="coMO" data-opts="M,O" title="Phone type: M = Mobile, O = Office (click to switch)">M</button>
     <label for="co_url">Website</label><input id="co_url" placeholder="www.example.com"><button type="button" class="pri" id="coWeb">Go ↗</button>
     <label for="co_user" class="coSec">User name</label><input id="co_user" class="coSec" autocomplete="off"><button type="button" class="coSec" data-copy="co_user">Copy</button>
@@ -2763,7 +2764,7 @@ addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','le
 // company / GA info: "Open" (once one is picked) shows a pop-up with agency code, login, phone, website and contact, shared with everyone
 const siteCol=db.collection('siteLinks'),sites=new Map(),siteKey=(kind,n)=>kind+':'+n.trim().toLowerCase();
 const siteFix=u=>{u=u.trim();return !u?'':/^https?:\/\//i.test(u)?u:'https://'+u};
-const CO_FIELDS=['code','naic','user','pass','phone','url'];let coCur=null,canSecrets=false,canPay=false; // canSecrets: Admin's User/Pass Yes lets this person change company/GA user names and passwords (everyone sees them; the server refuses the change too)
+const CO_FIELDS=['code','naic','com','user','pass','phone','url'];let coCur=null,canSecrets=false,canPay=false; // canSecrets: Admin's User/Pass Yes lets this person change company/GA user names and passwords (everyone sees them; the server refuses the change too)
 // contacts: one row each (name, email, phone, line of business); the first one is also kept in contactName/contactEmail/contactPhone
 function coConRow(c={}){const r=document.createElement('div');r.className='coCon';
   r.innerHTML=`<input data-c="name" placeholder="Name" title="Contact name"><input data-c="email" type="email" placeholder="Email" title="Contact email"><button type="button" data-ccopy>Copy</button><div class="coPh"><button type="button" class="coTg" data-ct="phoneType" data-opts="M,O" title="M = Mobile, O = Office (click to switch)">M</button><input data-c="phone" inputmode="tel" placeholder="Phone" title="Contact phone"></div><div class="coPh"><button type="button" class="coTg" data-ct="phone2Type" data-opts="M,O" title="M = Mobile, O = Office (click to switch)">M</button><input data-c="phone2" inputmode="tel" placeholder="Phone 2" title="Contact phone 2"></div><input data-c="line" list="lobList" placeholder="Line of business" title="Line of business"><input data-c="note" placeholder="Note" title="Note"><button type="button" class="danger" data-cdel title="Remove contact">✕</button>`;
@@ -2781,6 +2782,7 @@ function openCoInfo(kind,n){const hit=sites.get(siteKey(kind,n))||{};coCur={kind
   CO_FIELDS.forEach(k=>$('co_'+k).value=hit[k]||'');coMO(hit.phoneType||'');['co_user','co_pass'].forEach(k=>{$(k).readOnly=!canSecrets;$(k).title=canSecrets?'':'Only people set to Yes under User/Pass in Admin can change this'});$('coCons').innerHTML='';{const cs=Array.isArray(hit.contacts)&&hit.contacts.length?hit.contacts:(hit.contactName||hit.contactEmail||hit.contactPhone)?[{name:hit.contactName,email:hit.contactEmail,phone:hit.contactPhone}]:[{}];cs.forEach(c=>coConRow(c))}$('co_pass').type='password';$('coShowPass').textContent='Show';{const m=myLogins.get(siteKey(kind,n));$('co_myuser').value=m&&m.user||'';$('co_mypass').value=m&&m.pass||'';$('co_mypass').type='password';$('coShowMyPass').textContent='Show';coMine(!!m)}coWebBtn();$('coDlg').classList.add('on');setTimeout(()=>$('co_code').focus(),30)}
 const coWebBtn=()=>{$('coWeb').disabled=!$('co_url').value.trim()};
 $('co_url').addEventListener('input',coWebBtn);
+$('co_com').addEventListener('blur',()=>{const n=bPct($('co_com').value.trim());if(n!=null)$('co_com').value=n+'%'});
 $('coWeb').onclick=()=>{const u=siteFix($('co_url').value);if(u)window.open(u,'_blank','noopener')};
 // My login: each person's own user name and password for a company or GA, kept under private/<username>/ so nobody else can read it
 // Alex Finance Personal: yearly income/expense sheet saved in private/<username>/finance/<year>, so only that person can read it.
@@ -2856,7 +2858,7 @@ $('coCancel').onclick=closeCo;$('coDlg').addEventListener('click',e=>{if(e.targe
 const tgSet=(b,v)=>{const o=b.dataset.opts.split(',');b.dataset.v=o.includes(v)?v:o[0];b.textContent=b.dataset.v},tgNext=b=>{const o=b.dataset.opts.split(',');tgSet(b,o[(o.indexOf(b.dataset.v)+1)%o.length])};
 const coMO=v=>tgSet($('coMO'),v);
 $('coMO').onclick=()=>tgNext($('coMO'));
-$('coSave').onclick=async()=>{if(!coCur)return;const d={};CO_FIELDS.forEach(k=>{if(canSecrets||!['user','pass'].includes(k))d[k]=$('co_'+k).value.trim()});if(d.url)d.url=siteFix(d.url);d.phoneType=$('coMO').dataset.v||'';d.contacts=coConVals();{const f=d.contacts[0]||{};d.contactName=f.name||'';d.contactEmail=f.email||'';d.contactPhone=f.phone||''}
+$('coSave').onclick=async()=>{if(!coCur)return;const d={};CO_FIELDS.forEach(k=>{if(canSecrets||!['user','pass'].includes(k))d[k]=$('co_'+k).value.trim()});if(d.url)d.url=siteFix(d.url);{const c=bPct(d.com);if(c!=null)d.com=c+'%'}d.phoneType=$('coMO').dataset.v||'';d.contacts=coConVals();{const f=d.contacts[0]||{};d.contactName=f.name||'';d.contactEmail=f.email||'';d.contactPhone=f.phone||''}
   try{if(coCur.id)await siteCol.doc(coCur.id).update(d);else{const r=await siteCol.add({kind:coCur.kind,name:coCur.name,...d,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});coCur.id=r&&r.id||''}
     sites.set(siteKey(coCur.kind,coCur.name),{...(sites.get(siteKey(coCur.kind,coCur.name))||{}),id:coCur.id,kind:coCur.kind,name:coCur.name,...d});await saveMine();toast(`Saved ${coCur.name}`);closeCo()}catch(err){toast(errText(err))}};
 [['ppCompany','ppCoGo','company'],['ppCarrier','ppGaGo','ga']].forEach(([box,go,kind])=>{
@@ -2965,7 +2967,7 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)})}
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
-  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';ppComAmt();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   siteBtns();$('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
@@ -2992,7 +2994,9 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
 // Total = premium + every fee box, kept up to date as you type
 function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):'';$('ppInvAmt').placeholder=$('ppTotal').value?`${$('ppTotal').value} (Total)`:'Same as Total'}
 $('ppFees').addEventListener('input',e=>{if(e.target.id!=='ppCom')ppTotal();ppComAmt()});
-// Commission = premium x Commission %
+// Commission = premium x Commission %; an empty Commission % takes the company's Com % (Company info)
+function ppComDef(){if(!$('ppCom').value.trim()){const n=$('ppCompany').value.trim(),c=n&&(sites.get(siteKey('company',n))||{}).com;if(c)$('ppCom').value=c}ppComAmt()}
+$('ppCompany').addEventListener('change',ppComDef);
 function ppComAmt(){const p=bNum($('ppPremium').value),c=bPct($('ppCom').value.trim());$('ppComAmt').value=p!=null&&c!=null?bMoney(Math.round(p*c)/100):''}
 $('ppCom').addEventListener('blur',()=>{const n=bPct($('ppCom').value.trim());if(n!=null)$('ppCom').value=n+'%'});
 // Exp date fills in from Eff date + Term (months); you can still type over it
