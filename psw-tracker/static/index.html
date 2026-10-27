@@ -3195,7 +3195,7 @@ async function acord25Tpl(){if(!tpl25){const r=await fetch('tpl25.pdf');if(!r.ok
 const certList=()=>(editClient&&editClient.certs)||[];
 function renderCerts(){const cs=certList(),n=cs.length;$('clCerts').textContent=n?`Certificates (${n})`:'Certificates';$('clCertNote').textContent=editClient?(n?'':'No certificates yet.'):'Save the client first to make certificates.';$('clCerts').disabled=!editClient;
   if(!$('certDlg').classList.contains('on'))return;$('certNew').hidden=!assets||!$('certForm').hidden;
-  $('certList').innerHTML=n?[...cs].reverse().map(c=>`<li><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span class="sz">${esc(c.at?fmtDT(c.at):'')}</span><button class="pri" data-cert-open="${esc(c.id)}">Open</button>${assets?`<button data-cert-edit="${esc(c.id)}" title="Change the holder or description">Edit</button><button data-cert-copy="${esc(c.id)}">Copy cert</button>`:''}<button data-cert-save="${esc(c.id)}">Save</button>${assets?`<button class="danger" data-cert-del="${esc(c.id)}">Delete</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No certificates yet. Click + New cert.</li>'}
+  $('certList').innerHTML=n?[...cs].reverse().map(c=>`<li><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span class="sz">${esc(c.at?fmtDT(c.at):'')}</span><button class="pri" data-cert-open="${esc(c.id)}">Open</button>${assets?`<button data-cert-edit="${esc(c.id)}" title="Change the holder or description">Edit</button><button data-cert-copy="${esc(c.id)}">Copy cert</button>`:''}<a class="btn" href="#" data-cert-mail="${esc(c.id)}" title="New email to the client with this cert saved for you to drag in">Email cert to client</a><button data-cert-save="${esc(c.id)}">Save</button>${assets?`<button class="danger" data-cert-del="${esc(c.id)}">Delete</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No certificates yet. Click + New cert.</li>'}
 // file names keep only letters, numbers, spaces and dashes
 const fnClean=x=>String(x||'').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim();
 const certFileName=(holder,at)=>{const nm=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()}).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',d=new Date(at||Date.now());
@@ -3280,6 +3280,15 @@ $('certList').addEventListener('click',async e=>{const b=e.target.closest('butto
     if(b.dataset.certEdit)return void await certFormOpen('edit',c);
     if(b.dataset.certDel){if(!(await sure(`Delete the certificate ${c.name}? This can’t be undone.`)))return;await putCerts(certList().filter(x=>x.id!==id));try{await assets.delete(id)}catch(_){}toast('Certificate deleted')}}
   catch(err){certSay(err&&err.code?errText(err):`${c.name}: ${err&&err.message||'something went wrong'}`,'err')}});
+// Email cert to client: a new Outlook email (no body, so Outlook adds the signature) to the client, subject "<client> cert <holder>"; the PDF is saved for dragging in, since a mailto link can't carry attachments
+$('certList').addEventListener('click',e=>{const a=e.target.closest('[data-cert-mail]');if(!a||!editClient)return;const c=certList().find(x=>x.id===a.dataset.certMail);if(!c){e.preventDefault();return}
+  const to=$('clEmail').value.trim()||$('clEmail2').value.trim();if(!to){e.preventDefault();certSay('Add the client’s email first (Email box in the client info).','err');return}
+  const who=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()})||'Client',subject=`${who} cert ${c.holder||''}`.trim();
+  a.href=`mailto:${to}?subject=${encodeURIComponent(subject)}`;
+  if(!dl){certSay(`Opening a new email to ${to}. Saving files isn’t available here, so click Save on the cert and drag it in.`,'ok');return}
+  certSay(`Opening a new email to ${to}. Saving ${c.name}…`);
+  setTimeout(async()=>{try{await dl.save({filename:c.name,data:new Blob([await fileBytes(c)],{type:'application/pdf'}),mimeType:'application/pdf'});certSay(`Saved ${c.name}. Drag it from your Downloads folder into the email to ${to}.`,'ok')}
+    catch(err){if(err&&err.code==='declined')return certSay('');certSay(`${c.name}: ${errText(err)}`,'err')}},0)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('certDlg').classList.contains('on')&&!$('ed').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();$('certDlg').classList.remove('on')}},true);
 // lead -> client: "Copy to PSW client" makes the client (or fills only what an existing client is missing) and copies the files you tick
 const bizKey=s=>String(s||'').toLowerCase().replace(/[.,]/g,' ').replace(/\b(llc|inc|corp|corporation|co|company|ltd|dba)\b/g,'').replace(/[^a-z0-9]/g,'');
