@@ -379,6 +379,7 @@ function walkPage(pdfDoc,pageIndex,opts){
         case "S": case "s": case "f": case "F": case "f*": case "B": case "B*": case "b": case "b*": case "n": {
           if(tk.v!=="n" && !clip && path.length){
             const ys=path.map(p=>p[1]); const lo=Math.min(...ys), hi=Math.max(...ys);
+            if(opts.bounds) opts.bounds.push({lo,hi,white:/^f/i.test(tk.v)&&/^\s*1(\s+1\s+1)?\s+(g|rg)\s*$/.test(g.fill||"")});
             if(shapeIn(lo,hi)){
               if(copyOn) copies.push(["q",g.fill||"",g.stroke||"",g.lw||"",shifted(g.ctm).map(fmtN).join(" ")+" cm",pathSrc.join("\n"),tk.v,"Q"].filter(Boolean).join("\n"));
               if(edit) edits.push([tk.s,tk.e,"n"]);
@@ -403,6 +404,7 @@ function walkPage(pdfDoc,pageIndex,opts){
           } else if(st==="/Image"){
             const c=[pt(0,0),pt(1,0),pt(0,1),pt(1,1)]; const ys=c.map(p=>p[1]);
             const lo=Math.min(...ys), hi=Math.max(...ys);
+            if(opts.bounds) opts.bounds.push({lo,hi});
             if(shapeIn(lo,hi)){
               if(copyOn) copies.push(["q",shifted(g.ctm).map(fmtN).join(" ")+" cm","/"+addXObjectToPage(pdfDoc,pageIndex,ref)+" Do","Q"].join("\n"));
               if(edit) edits.push([nm.s,tk.e," "]);
@@ -441,19 +443,6 @@ function appendRaw(pdfDoc,pageIndex,src){
   const q=ctx.register(ctx.flateStream(strToBytes("q\n"))), Q=ctx.register(ctx.flateStream(strToBytes("\nQ\n")));
   const add=ctx.register(ctx.flateStream(strToBytes(src)));
   page.node.set(PDFName.of("Contents"),ctx.obj([q,...list,Q,add]));
-}
-function removeAnnotsIn(pdfDoc,pageIndex,test){
-  const {PDFName,PDFArray}=PDFLib; const ctx=pdfDoc.context, page=pdfDoc.getPage(pageIndex);
-  const annots=page.node.lookup(PDFName.of("Annots"));
-  if(!(annots instanceof PDFArray)) return;
-  const keep=annots.asArray().filter(a=>{
-    const d=ctx.lookup(a); if(!d||!d.lookup) return true;
-    const sub=String(d.get(PDFName.of("Subtype"))||"");
-    if(sub==="/Link"||sub==="/Widget") return true;
-    const rc=d.lookup(PDFName.of("Rect")); if(!(rc instanceof PDFArray)) return true;
-    const v=rc.asArray().map(x=>x.asNumber()); return !test(Math.min(v[1],v[3]),Math.max(v[1],v[3]));
-  });
-  if(keep.length) page.node.set(PDFName.of("Annots"),ctx.obj(keep)); else page.node.delete(PDFName.of("Annots"));
 }
 /* the font the quote used for text starting near (x,y) */
 function fontAt(texts,x,y,tolX){
@@ -533,27 +522,35 @@ function locateAll(pages){
 }
 function locate(pages){ return locateAll(pages)[0]||null; }
 
-/* ---------- agency header on page 1 ---------- */
-function findTitle(pages){
-  const ls=pages[0]&&pages[0].lines; if(!ls) return null;
-  let t=ls.find(l=>/^QUOTE$/.test(l.text));
-  if(!t) t=ls.find(l=>/^QUOTE\s*(NO|NUMBER|#)\b/i.test(l.text));
-  /* a "Quote Summary" title sits inside a box: clear only from the text above it up, so the box keeps its top edge */
-  let keep=null;
-  if(!t){ t=ls.find(l=>/^quote summary$/i.test(l.text)); const up=t&&ls.filter(l=>l.y>t.y+2).pop(); if(up) keep=up.y-up.items.reduce((m,i)=>Math.max(m,i.size),0)*0.35; }
-  if(!t) return null;
-  return {pageIndex:0,line:t,keep,size:Math.max(...t.items.map(x=>x.size)),lines:ls,height:pages[0].height,width:pages[0].width};
+/* ---------- agency header: added above the carrier's own header on page 1 ---------- */
+const HEAD_H=118; /* room the header needs at the top of a page */
+/* lowest and highest thing drawn on a page (text, shapes, images, form fields); a full-page or white background doesn't count */
+function pageBounds(pdfDoc,pi){
+  const {PDFName,PDFArray}=PDFLib, page=pdfDoc.getPage(pi), H=page.getHeight(), b=[];
+  const r=walkPage(pdfDoc,pi,{edit:false,bounds:b}); if(!r.ok) return null;
+  const ys=r.texts.map(t=>[t.y-t.size*0.3,t.y+t.size]);
+  b.forEach(v=>{ if(v.white||(v.lo<=1&&v.hi>=H-1)) return; ys.push([v.lo,v.hi]); });
+  const annots=page.node.lookup(PDFName.of("Annots"));
+  if(annots instanceof PDFArray) annots.asArray().forEach(a=>{ const d=pdfDoc.context.lookup(a), rc=d&&d.lookup&&d.lookup(PDFName.of("Rect"));
+    if(rc instanceof PDFArray){ const v=rc.asArray().map(x=>x.asNumber()); ys.push([Math.min(v[1],v[3]),Math.max(v[1],v[3])]); } });
+  if(!ys.length) return {lo:H,hi:0};
+  return {lo:Math.min(...ys.map(v=>v[0])),hi:Math.max(...ys.map(v=>v[1]))};
 }
-function clearHeaderArea(pdfDoc,title){
-  const yMin=Math.max(title.line.y+title.size+2,title.keep||0), pi=title.pageIndex;
-  const res=walkPage(pdfDoc,pi,{region:y=>y>yMin,shapeRegion:(lo,hi)=>lo>yMin});
-  removeAnnotsIn(pdfDoc,pi,(lo,hi)=>(lo+hi)/2>yMin);
-  return res.ok;
+/* move everything on a page (drawing and form fields) down by d points */
+function shiftPageDown(pdfDoc,pi,d){
+  const {PDFName,PDFArray,PDFRef}=PDFLib, ctx=pdfDoc.context, page=pdfDoc.getPage(pi);
+  page.pushOperators(PDFLib.pushGraphicsState(),PDFLib.popGraphicsState()); /* makes pdf-lib's own stream now, so text drawn later moves too */
+  const c=page.node.get(PDFName.of("Contents"));
+  const list=c instanceof PDFArray?c.asArray():(c instanceof PDFRef&&ctx.lookup(c) instanceof PDFArray?ctx.lookup(c).asArray():[c]);
+  const pre=ctx.register(ctx.flateStream(strToBytes("q 1 0 0 1 0 "+(-d).toFixed(3)+" cm\n"))), post=ctx.register(ctx.flateStream(strToBytes("\nQ\n")));
+  page.node.set(PDFName.of("Contents"),ctx.obj([pre,...list,post]));
+  const annots=page.node.lookup(PDFName.of("Annots"));
+  if(annots instanceof PDFArray) annots.asArray().forEach(a=>{ const dd=ctx.lookup(a), rc=dd&&dd.lookup&&dd.lookup(PDFName.of("Rect"));
+    if(rc instanceof PDFArray){ const v=rc.asArray().map(x=>x.asNumber()); dd.set(PDFName.of("Rect"),ctx.obj([v[0],v[1]-d,v[2],v[3]-d])); } });
 }
-async function addAgencyHeader(pdfDoc,title,fReg,fBold,cleared){
-  const pi=title.pageIndex, page=pdfDoc.getPage(pi);
-  const W=title.width, top=title.height;
-  const yMin=Math.max(title.line.y+title.size+2,title.keep||0);
+/* draws the agency block centred between yMin and top on one page */
+async function addAgencyHeader(pdfDoc,pi,yMin,top,fReg,fBold){
+  const page=pdfDoc.getPage(pi), W=page.getWidth();
   const lines=[
     {t:"Presented by",size:9,bold:false,gap:6,grey:true},
     {t:ag.name,size:18,bold:true,gap:7},
@@ -572,7 +569,6 @@ async function addAgencyHeader(pdfDoc,title,fReg,fBold,cleared){
   const side=!!img && textH+logoH+10>avail;
   if(side){ logoH=Math.max(24,Math.min(64,avail-4)); logoW=img.width*logoH/img.height; }
   const blockH=textH+(img&&!side?logoH+10:0);
-  page.drawRectangle({x:0,y:yMin+2,width:W,height:top-yMin-2,color:PDFLib.rgb(1,1,1)});
   let y=yMin+10+Math.max(0,(avail-blockH))/2+blockH;
   if(side){ const nw=fBold.widthOfTextAtSize(ag.name,18); page.drawImage(img,{x:Math.max(12,W/2-Math.max(nw/2+10,120)-logoW-14),y:y-blockH/2-logoH/2,width:logoW,height:logoH}); }
   else if(img){ y-=logoH; page.drawImage(img,{x:W/2-logoW/2,y,width:logoW,height:logoH}); y-=10; }
@@ -583,7 +579,20 @@ async function addAgencyHeader(pdfDoc,title,fReg,fBold,cleared){
     if(l.bold && l.size>=16) page.drawLine({start:{x:W/2-Math.max(w/2+10,120),y:y-5},end:{x:W/2+Math.max(w/2+10,120),y:y-5},thickness:.75,color:PDFLib.rgb(0,0,0)});
     y-=l.gap;
   }
-  return {ok:cleared,yMin};
+  return y;
+}
+/* room at the top of page 1: use it; else push the page down if there's room at the bottom; else add a cover page with the header */
+async function placeAgencyHeader(pdfDoc,bounds,insured,fReg,fBold){
+  const page=pdfDoc.getPage(0), H=page.getHeight(), W=page.getWidth();
+  const free=H-bounds.hi, need=HEAD_H-free;
+  if(need<=0) return await addAgencyHeader(pdfDoc,0,bounds.hi,H,fReg,fBold),"top";
+  if(bounds.lo-need>=18){ shiftPageDown(pdfDoc,0,need); await addAgencyHeader(pdfDoc,0,H-HEAD_H+need,H+need,fReg,fBold); return "pushed"; }
+  const cover=pdfDoc.insertPage(0,[W,H]);
+  let y=await addAgencyHeader(pdfDoc,0,H*0.55,H-36,fReg,fBold)-40;
+  const say=(t,size,font)=>{ if(!t) return; const w=font.widthOfTextAtSize(t,size); cover.drawText(t,{x:W/2-w/2,y,size,font,color:PDFLib.rgb(0,0,0)}); y-=size+10; };
+  say("Insurance Quote",20,fBold);
+  if(insured) say("Prepared for "+insured,13,fReg);
+  return "cover";
 }
 
 /* ---------- add the fee line and new total to one fees/total table ---------- */
@@ -782,16 +791,15 @@ async function add(srcBytes,fee,label,opts){
   const main=done.find(Boolean);
   if(!main) throw new Error("There isn't room on this quote's premium page to add a line under the fees.");
   const ok=done.every(r=>!r||r.ok);
-  let title=null, cleared=true, warn=ok?"":"Part of this quote's drawing couldn't be read, so check the updated page before sending it.";
-  if(ag.on && ag.name.trim()){ title=findTitle(pages); if(title) cleared=clearHeaderArea(pdfDoc,title); }
+  let warn=ok?"":"Part of this quote's drawing couldn't be read, so check the updated page before sending it.";
+  const head=ag.on && ag.name.trim(), bounds=head?pageBounds(pdfDoc,0):null;
   removeInitDate(pdfDoc,pages);
   done.forEach(r=>{ if(r) r.draw(); });
-  if(ag.on && ag.name.trim()){
-    if(title){ const hdr=await addAgencyHeader(pdfDoc,title,await pdfDoc.embedFont(F.TimesRoman),await pdfDoc.embedFont(F.TimesRomanBold),cleared); if(!hdr.ok) warn="The first page's original header couldn't be fully removed from the file, so it's covered instead."; }
-    else warn="Couldn't find where the quote starts on the first page, so the agency header wasn't added.";
-  }
+  const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||(ai&&ai.insured)||"";
+  if(head){ if(bounds) await placeAgencyHeader(pdfDoc,bounds,insured,await pdfDoc.embedFont(F.TimesRoman),await pdfDoc.embedFont(F.TimesRomanBold));
+    else warn=(warn?warn+" ":"")+"Couldn't read the first page's layout, so the agency header wasn't added."; }
   const bytes=await pdfDoc.save();
-  const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||(ai&&ai.insured)||"";
+
   const quoteNo=findField(pages,/^Quote Number:?\s+(\S+)/i)||findField(pages,/^QUOTE NO\.?:?\s*(\S+)/i);
   const cols=main.cols;
   const bad=done.filter(Boolean).flatMap(r=>r.cols).filter(c=>Math.abs(c.sum-c.old)>0.01);
