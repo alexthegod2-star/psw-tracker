@@ -3355,7 +3355,11 @@ const CH_KEYS=[['chName','CertificateHolder_FullName_A'],['chName2',''],['chAddr
 // write the holder boxes and description (all = also blank the ones left empty, for a copy)
 // the name's second line prints right under the name, so it takes address line one and the street (plus line 2) moves down;
 // the PDF subject remembers it so Edit can put it back in its own box
-function certHolderFill(form,hd,all){const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
+// the ACORD's holder lines are short (they start a third of the way in); stretch them across the whole Certificate Holder box, 10pt text
+const CH_BOX=[['CertificateHolder_FullName_A',22,111,280],['CertificateHolder_MailingAddress_LineOne_A',22,92,280],['CertificateHolder_MailingAddress_LineTwo_A',22,73,280],
+  ['CertificateHolder_MailingAddress_CityName_A',22,54,208],['CertificateHolder_MailingAddress_StateOrProvinceCode_A',232,54,24],['CertificateHolder_MailingAddress_PostalCode_A',258,54,44]];
+function certHolderBox(form){CH_BOX.forEach(([k,x,y,w])=>{try{const f=form.getTextField(k);f.acroField.getWidgets().forEach(wd=>wd.setRectangle({x,y,width:w,height:19}));f.setFontSize(10)}catch(_){}})}
+function certHolderFill(form,hd,all){certHolderBox(form);const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
   CH_KEYS.forEach(([id,k])=>{const v=m[id]||'';if(k&&(v||all))try{form.getTextField(k).setText(v)}catch(_){}});
   try{if(n2)form.doc.setSubject('psw-ch2:'+n2);else if(all&&/^psw-ch2:/.test(form.doc.getSubject()||''))form.doc.setSubject('')}catch(_){}}
 let certMode=null;
