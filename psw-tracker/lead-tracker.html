@@ -602,7 +602,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <label for="ppInvMethod">Paid by</label><input id="ppInvMethod" data-inv="invMethod" list="payList" autocomplete="off" placeholder="Type or pick"><datalist id="payList"><option value="Credit card"><option value="Check"><option value="Cash"><option value="ACH / bank transfer"><option value="Zelle"><option value="Finance company"></datalist>
     </section>
   </aside>
-  <div id="ppExtraWrap" hidden><div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><h4 id="ppExtraH" style="margin:0"></h4><button type="button" id="glStd" hidden title="Each occurrence $1,000,000, Damage to rented $100,000, Med exp $5,000, Personal &amp; adv $1,000,000, Aggregate $2,000,000, Products $1,000,000">Standard 1M/2M</button></div><div class="grid" id="ppExtra"></div></div></div>
+  <div id="ppExtraWrap" hidden><div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><h4 id="ppExtraH" style="margin:0"></h4><button type="button" class="pri" id="glStd" hidden title="Each occurrence $1,000,000, Damage to rented $100,000, Med exp $5,000, Personal &amp; adv $1,000,000, Aggregate $2,000,000, Products $1,000,000">Standard 1M/2M</button></div><div class="grid" id="ppExtra"></div></div></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
   <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Save</button></div>
 </div></div>
@@ -1823,6 +1823,10 @@ async function openEditor(f,opt){
           el.addEventListener('blur',()=>{const d=ed.fields.find(x=>x.name==='d1_'+m[1]),de=d&&edInput(d.id);if(de&&(!de.value.trim()||de.value===was)&&de.value!==el.value){de.value=el.value;ed.pdf.annotationStorage.setValue(d.id,{value:el.value})}was=el.value})});
         if(isQuoteSheet(f.name))al.querySelectorAll('select').forEach(typeSearch);
         if(/ personal home quote sheet\.pdf$/i.test(f.name)){homeCalc(al);homeSame(al)}
+        // home: ticking ISAOA/ATIMA under a mortgagee types it into that mortgagee's Name line 2 (unticking takes it back out); a box ticked earlier fills in on open
+        if(/ personal home quote sheet\.pdf$/i.test(f.name))['1','2'].forEach(n=>{const cb=anns.find(a=>a.fieldName===`mg${n}_isaoa`),tx=anns.find(a=>a.fieldName===`mg${n}_name2`),ce=cb&&edInput(cb.id),te=tx&&edInput(tx.id);if(!ce||!te)return;
+          const sync=()=>{const cur=te.value.replace(/\s*ISAOA\s*\/\s*ATIMA\s*/ig,' ').trim(),x=ce.checked?[cur,'ISAOA/ATIMA'].filter(Boolean).join(' '):cur;if(x!==te.value){te.value=x;ed.pdf.annotationStorage.setValue(tx.id,{value:x})}};
+          ce.addEventListener('change',sync);if(ce.checked)sync()});
         if(/ personal home quote sheet\.pdf$/i.test(f.name))anns.forEach(a=>{const el=edInput(a.id);if(!el||el.tagName==='SELECT')return;
           el.addEventListener('blur',()=>{const x=homeFix(a.fieldName,el.value,edVal);if(x!==el.value){el.value=x;ed.pdf.annotationStorage.setValue(a.id,{value:x})}})});
       }
