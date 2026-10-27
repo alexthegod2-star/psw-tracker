@@ -494,7 +494,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <form id="certForm" hidden style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
     <div id="certPolBox"><h4 style="margin:0 0 6px">Policies on this certificate</h4><div id="certPols" class="certPols"></div></div>
     <div class="row" style="justify-content:space-between;align-items:center;margin:12px 0 6px;flex-wrap:wrap;gap:6px"><h4 style="margin:0">Certificate holder</h4><div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap"><select id="chPick" style="width:auto;min-width:220px" title="Pick a saved holder for this client"><option value="">Saved holders…</option></select><button type="button" class="pri" id="chSaveList" style="white-space:nowrap">Add to cert holder list</button><button type="button" class="danger" id="chDelList" hidden>Remove</button></div></div>
-    <div class="certGrid"><label class="w2">Name<input id="chName" autocomplete="off"></label><label class="w2">Address<input id="chAddr1" autocomplete="off"></label><label class="w2">Address line 2<input id="chAddr2" autocomplete="off"></label>
+    <div class="certGrid"><label class="w2">Name<input id="chName" autocomplete="off"></label><label class="w2">Name second line<input id="chName2" autocomplete="off"></label><label class="w2">Address<input id="chAddr1" autocomplete="off"></label><label class="w2">Address line 2<input id="chAddr2" autocomplete="off"></label>
       <label>City<input id="chCity" autocomplete="off"></label><label>State<input id="chState" maxlength="2" autocomplete="off"></label><label>ZIP<input id="chZip" maxlength="10" autocomplete="off"></label></div>
     <div style="display:flex;gap:10px;align-items:center;margin:12px 0 6px"><h4 style="margin:0">Description of operations / locations / vehicles</h4><button type="button" class="pri" id="chAI" title="Adds: Certificate Holder is also additional insured.">AI</button></div>
     <textarea id="chDesc" style="width:100%;min-height:80px" placeholder="Additional insured, project, job site, vehicles…"></textarea>
@@ -3354,15 +3354,24 @@ async function copyCertBytes(c,hd,keepDate){await acordReady();const doc=await P
   certHolderFill(form,hd,true);if(!keepDate)try{form.getTextField('Form_CompletionDate_A').setText(today25())}catch(_){}return doc.save()}
 // the client's current (active) policies, in the table's order
 const certPolicies=()=>[...$('polRows').rows].map(t=>{const v=k=>{const el=t.querySelector(`[data-p=${k}]`);return el?el.value.trim():''};let x={};try{x=JSON.parse(v('extra')||'{}')}catch(_){}return{status:v('status'),line:v('line'),co:v('company')||v('carrier'),num:v('number'),eff:v('eff'),exp:v('exp'),x}}).filter(p=>(p.line||p.num)&&(!p.status||p.status==='Active'));
-const CH_KEYS=[['chName','CertificateHolder_FullName_A'],['chAddr1','CertificateHolder_MailingAddress_LineOne_A'],['chAddr2','CertificateHolder_MailingAddress_LineTwo_A'],['chCity','CertificateHolder_MailingAddress_CityName_A'],['chState','CertificateHolder_MailingAddress_StateOrProvinceCode_A'],['chZip','CertificateHolder_MailingAddress_PostalCode_A'],['chDesc','CertificateOfLiabilityInsurance_ACORDForm_RemarkText_A']];
+const CH_KEYS=[['chName','CertificateHolder_FullName_A'],['chName2',''],['chAddr1','CertificateHolder_MailingAddress_LineOne_A'],['chAddr2','CertificateHolder_MailingAddress_LineTwo_A'],['chCity','CertificateHolder_MailingAddress_CityName_A'],['chState','CertificateHolder_MailingAddress_StateOrProvinceCode_A'],['chZip','CertificateHolder_MailingAddress_PostalCode_A'],['chDesc','CertificateOfLiabilityInsurance_ACORDForm_RemarkText_A']];
 // write the holder boxes and description (all = also blank the ones left empty, for a copy)
-function certHolderFill(form,hd,all){CH_KEYS.forEach(([id,k])=>{const v=hd[id]||'';if(v||all)try{form.getTextField(k).setText(v)}catch(_){}})}
+// the name's second line prints right under the name, so it takes address line one and the street (plus line 2) moves down;
+// the PDF subject remembers it so Edit can put it back in its own box
+// the ACORD's holder lines are short (they start a third of the way in); stretch them across the whole Certificate Holder box, 10pt text
+const CH_BOX=[['CertificateHolder_FullName_A',22,111,280],['CertificateHolder_MailingAddress_LineOne_A',22,92,280],['CertificateHolder_MailingAddress_LineTwo_A',22,73,280],
+  ['CertificateHolder_MailingAddress_CityName_A',22,54,208],['CertificateHolder_MailingAddress_StateOrProvinceCode_A',232,54,24],['CertificateHolder_MailingAddress_PostalCode_A',258,54,44]];
+function certHolderBox(form){CH_BOX.forEach(([k,x,y,w])=>{try{const f=form.getTextField(k);f.acroField.getWidgets().forEach(wd=>wd.setRectangle({x,y,width:w,height:19}));f.setFontSize(10)}catch(_){}})}
+function certHolderFill(form,hd,all){certHolderBox(form);const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
+  CH_KEYS.forEach(([id,k])=>{const v=m[id]||'';if(k&&(v||all))try{form.getTextField(k).setText(v)}catch(_){}});
+  try{if(n2)form.doc.setSubject('psw-ch2:'+n2);else if(all&&/^psw-ch2:/.test(form.doc.getSubject()||''))form.doc.setSubject('')}catch(_){}}
 let certMode=null;
 async function certFormOpen(mode,c){certMode={mode,c};certSay('');const pols=certPolicies();$('certPolBox').hidden=mode!=='new';
   $('certPols').innerHTML=pols.length?pols.map((p,i)=>`<label><input type="checkbox" value="${i}" checked> ${esc([p.line||'Policy',p.co,p.num,[p.eff,p.exp].filter(Boolean).join(' – ')].filter(Boolean).join(' · '))}</label>`).join(''):'<span class="small">No active policies on this client. The certificate will have the client only.</span>';
   CH_KEYS.forEach(([id])=>$(id).value='');chPickFill();
   // copy brings the description along; edit brings the holder and description as they are on the cert
-  if(mode!=='new'){try{await acordReady();const f=(await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true})).getForm();CH_KEYS.forEach(([id,k])=>{if(mode==='edit'||id==='chDesc')try{$(id).value=f.getTextField(k).getText()||''}catch(_){}})}catch(_){}}
+  if(mode!=='new'){try{await acordReady();const d=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true}),f=d.getForm();CH_KEYS.forEach(([id,k])=>{if(k&&(mode==='edit'||id==='chDesc'))try{$(id).value=f.getTextField(k).getText()||''}catch(_){}});
+    const sj=d.getSubject()||'';if(mode==='edit'&&/^psw-ch2:/.test(sj)&&$('chAddr1').value===sj.slice(8)){$('chName2').value=sj.slice(8);$('chAddr1').value=$('chAddr2').value;$('chAddr2').value=''}}catch(_){}}
   $('certFormGo').textContent=mode==='copy'?'Make the copy':mode==='edit'?'Save changes':'Make certificate';$('certForm').hidden=false;$('certNew').hidden=true;setTimeout(()=>(mode==='new'&&pols.length?$('certPols').querySelector('input'):$('chName')).focus(),30)}
 const chList=()=>(editClient&&editClient.certHolders)||[];
 function chPickFill(sel){const hs=chList();$('chPick').innerHTML=`<option value="">${hs.length?'Saved holders…':'No saved holders yet'}</option>`+hs.map((h,i)=>`<option value="${i}">${esc(h.chName||'(no name)')}</option>`).join('');$('chPick').value=sel==null?'':String(sel);chBtns()}
