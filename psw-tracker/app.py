@@ -524,8 +524,15 @@ def binder_owner(p):
     return BINDER_PRODUCERS.get(x) or next((u for u in BINDER_PRODUCERS.values() if u.lower() == x), None) if x else None
 
 
+def binder_prem(p, key="premium"):
+    """A dollar amount on the policy as a number: its premium, or a fee kept in extra (pswFee = PSW agency fee, the binder's BF)."""
+    x = re.sub(r"[^\d.]", "", str((p if key == "premium" else p.get("extra") if isinstance(p.get("extra"), dict) else {}).get(key) or ""))
+    return float(x) if re.fullmatch(r"\d+(\.\d+)?", x) else None
+
+
 def binder_sync(c, path, old, new):
-    """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, dated this month."""
+    """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, dated this month.
+    A policy already in the log keeps that entry's premium, com %, broker fee, dates, ... up to date, except boxes changed in the log by hand."""
     segs = path.split("/")
     if len(segs) != 2 or segs[0] != "clients" or not isinstance(new, dict):
         return
@@ -533,27 +540,38 @@ def binder_sync(c, path, old, new):
     same = lambda p: tuple(str(p.get(k) or "").strip().lower() for k in ("line", "number", "eff", "company"))
     # the producer each policy had before (by pid; older policies got their pid later, so also by line/number/eff/company)
     was = {**{same(p): binder_owner(p) for p in olds}, **{p.get("pid"): binder_owner(p) for p in olds if p.get("pid")}}
+    prev = {p["pid"]: p for p in olds if p.get("pid")}
     name = (new.get("company") or " ".join(x for x in (new.get("firstName"), new.get("lastName")) if x) or "").strip()
     for p in new.get("policies") or []:
         if not isinstance(p, dict) or not p.get("pid"):
             continue
         owner = binder_owner(p)
-        # a new policy, or one whose producer was just set to someone with a binder log
-        if not owner or owner == was.get(p["pid"], was.get(same(p))):
+        if not owner:
             continue
         col = f"private/{owner}/binder"
-        if c.execute("SELECT 1 FROM tracker_docs WHERE parent=? AND json_extract(data,'$.pid')=?", (col, p["pid"])).fetchone():
-            continue
         eff, exp = str(p.get("eff") or ""), str(p.get("exp") or "")
         term = 1
         m1, m2 = re.match(r"(\d{4})-(\d\d)", eff), re.match(r"(\d{4})-(\d\d)", exp)
         if m1 and m2 and (int(m2[1]) - int(m1[1])) * 12 + int(m2[2]) - int(m1[2]) == 6:
             term = 6
-        prem = re.sub(r"[^\d.]", "", str(p.get("premium") or ""))
+        prem = binder_prem(p)
+        r = c.execute("SELECT path,data FROM tracker_docs WHERE parent=? AND json_extract(data,'$.pid')=?", (col, p["pid"])).fetchone()
+        if r:  # already in the log: it follows the policy's premium, com %, dates, ... unless that box was changed in the log by hand
+            d = json.loads(r["data"])
+            fields = lambda q: {"eff": str(q.get("eff") or ""), "exp": str(q.get("exp") or ""), "type": q.get("line") or "", "carrier": q.get("company") or "",
+                                "ga": q.get("carrier") or "", "premium": binder_prem(q), "comPct": com_pct(c, q), "bf": binder_prem(q, "pswFee")}
+            now, before = fields(p), fields(prev.get(p["pid"]) or {})
+            add = {k: v for k, v in now.items() if v not in (None, "") and v != d.get(k) and d.get(k) in (None, "", before[k])}
+            if add:
+                c.execute("UPDATE tracker_docs SET data=?, updated=?, updated_by='binder' WHERE path=?", (json.dumps({**d, **add}, separators=(",", ":")), time.time(), r["path"]))
+            continue
+        # a new policy, or one whose producer was just set to someone with a binder log
+        if owner == was.get(p["pid"], was.get(same(p))):
+            continue
         note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
         d = {"name": name or "Client", "month": time.strftime("%Y-%m"), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
-             "ga": p.get("carrier") or "", "term": term, "premium": float(prem) if re.fullmatch(r"\d+(\.\d+)?", prem) else None, "comPct": com_pct(c, p), "commAmt": None, "yrAmt": None,
-             "bf": None, "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
+             "ga": p.get("carrier") or "", "term": term, "premium": prem, "comPct": com_pct(c, p), "commAmt": None, "yrAmt": None,
+             "bf": binder_prem(p, "pswFee"), "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
              "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())}
         i = new_id()
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
