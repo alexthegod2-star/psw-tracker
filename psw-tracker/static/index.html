@@ -457,8 +457,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="coGrid">
     <label for="co_code">Agency code</label><input id="co_code"><span></span>
     <label for="co_naic" class="coNaic">NAIC #</label><input id="co_naic" class="coNaic" inputmode="numeric" maxlength="10"><span class="coNaic"></span>
-    <label for="co_com" class="coNaic">New com %</label><input id="co_com" class="coNaic" inputmode="decimal" placeholder="Commission on new policies"><span class="coNaic"></span>
-    <label for="co_comRen" class="coNaic">Renewal com %</label><input id="co_comRen" class="coNaic" inputmode="decimal" placeholder="Commission on renewals"><span class="coNaic"></span>
+    <label for="co_com">New com %</label><input id="co_com" inputmode="decimal" placeholder="Commission on new policies"><span></span>
+    <label for="co_comRen">Renewal com %</label><input id="co_comRen" inputmode="decimal" placeholder="Commission on renewals"><span></span>
     <label for="co_phone">Phone number</label><input id="co_phone" inputmode="tel"><button type="button" class="coTg" id="coMO" data-opts="M,O" title="Phone type: M = Mobile, O = Office (click to switch)">M</button>
     <label for="co_url">Website</label><input id="co_url" placeholder="www.example.com"><button type="button" class="pri" id="coWeb">Go ↗</button>
     <label for="co_user" class="coSec">User name</label><input id="co_user" class="coSec" autocomplete="off"><button type="button" class="coSec" data-copy="co_user">Copy</button>
@@ -2995,9 +2995,9 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
 // Total = premium + every fee box, kept up to date as you type
 function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):'';$('ppInvAmt').placeholder=$('ppTotal').value?`${$('ppTotal').value} (Total)`:'Same as Total'}
 $('ppFees').addEventListener('input',e=>{if(e.target.id!=='ppCom')ppTotal();ppComAmt()});
-// Commission = premium x Commission %; an empty Commission % takes the company's New or Renewal com % (Company info) by the policy's New / Renewal, and follows it while not typed over
-function ppComDef(){const el=$('ppCom');if(!el.value.trim()||el.dataset.auto){const n=$('ppCompany').value.trim(),co=n?sites.get(siteKey('company',n))||{}:{},c=($('ppNb').value==='Renewal'&&co.comRen)||co.com||'';el.value=c;if(c)el.dataset.auto='1';else delete el.dataset.auto}ppComAmt()}
-$('ppCompany').addEventListener('change',ppComDef);$('ppNb').addEventListener('change',ppComDef);$('ppCom').addEventListener('input',()=>delete $('ppCom').dataset.auto);
+// Commission = premium x Commission %; an empty Commission % takes the company's New or Renewal com % (Company info), else the GA's by the policy's New / Renewal, and follows it while not typed over
+function ppComDef(){const el=$('ppCom');if(!el.value.trim()||el.dataset.auto){const ren=$('ppNb').value==='Renewal',pick=(kind,box)=>{const n=$(box).value.trim(),co=n?sites.get(siteKey(kind,n))||{}:{};return (ren&&co.comRen)||co.com||''},c=pick('company','ppCompany')||pick('ga','ppCarrier');el.value=c;if(c)el.dataset.auto='1';else delete el.dataset.auto}ppComAmt()}
+$('ppCompany').addEventListener('change',ppComDef);$('ppCarrier').addEventListener('change',ppComDef);$('ppNb').addEventListener('change',ppComDef);$('ppCom').addEventListener('input',()=>delete $('ppCom').dataset.auto);
 function ppComAmt(){const p=bNum($('ppPremium').value),c=bPct($('ppCom').value.trim());$('ppComAmt').value=p!=null&&c!=null?bMoney(Math.round(p*c)/100):''}
 $('ppCom').addEventListener('blur',()=>{const n=bPct($('ppCom').value.trim());if(n!=null)$('ppCom').value=n+'%'});
 // Exp date fills in from Eff date + Term (months); you can still type over it
