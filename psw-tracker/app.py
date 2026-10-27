@@ -524,14 +524,15 @@ def binder_owner(p):
     return BINDER_PRODUCERS.get(x) or next((u for u in BINDER_PRODUCERS.values() if u.lower() == x), None) if x else None
 
 
-def binder_prem(p):
-    x = re.sub(r"[^\d.]", "", str(p.get("premium") or ""))
+def binder_prem(p, key="premium"):
+    """A dollar amount on the policy as a number: its premium, or a fee kept in extra (pswFee = PSW agency fee, the binder's BF)."""
+    x = re.sub(r"[^\d.]", "", str((p if key == "premium" else p.get("extra") if isinstance(p.get("extra"), dict) else {}).get(key) or ""))
     return float(x) if re.fullmatch(r"\d+(\.\d+)?", x) else None
 
 
 def binder_sync(c, path, old, new):
     """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, dated this month.
-    A policy already in the log keeps that entry's premium, com %, dates, ... up to date, except boxes changed in the log by hand."""
+    A policy already in the log keeps that entry's premium, com %, broker fee, dates, ... up to date, except boxes changed in the log by hand."""
     segs = path.split("/")
     if len(segs) != 2 or segs[0] != "clients" or not isinstance(new, dict):
         return
@@ -558,7 +559,7 @@ def binder_sync(c, path, old, new):
         if r:  # already in the log: it follows the policy's premium, com %, dates, ... unless that box was changed in the log by hand
             d = json.loads(r["data"])
             fields = lambda q: {"eff": str(q.get("eff") or ""), "exp": str(q.get("exp") or ""), "type": q.get("line") or "", "carrier": q.get("company") or "",
-                                "ga": q.get("carrier") or "", "premium": binder_prem(q), "comPct": com_pct(c, q)}
+                                "ga": q.get("carrier") or "", "premium": binder_prem(q), "comPct": com_pct(c, q), "bf": binder_prem(q, "pswFee")}
             now, before = fields(p), fields(prev.get(p["pid"]) or {})
             add = {k: v for k, v in now.items() if v not in (None, "") and v != d.get(k) and d.get(k) in (None, "", before[k])}
             if add:
@@ -570,7 +571,7 @@ def binder_sync(c, path, old, new):
         note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
         d = {"name": name or "Client", "month": time.strftime("%Y-%m"), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
              "ga": p.get("carrier") or "", "term": term, "premium": prem, "comPct": com_pct(c, p), "commAmt": None, "yrAmt": None,
-             "bf": None, "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
+             "bf": binder_prem(p, "pswFee"), "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
              "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())}
         i = new_id()
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
