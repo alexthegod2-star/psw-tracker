@@ -3268,6 +3268,9 @@ const CL_FILL={company:['clCompany','Business name'],busType:['clBusType','Busin
   address:['clAddress','Mailing street address'],city:['clCity','Mailing city'],state:['clState','Mailing state (2 letters)'],zip:['clZip','Mailing ZIP'],
   location:['clLocation','Business location street address, if different'],locCity:['clLocCity','Location city'],locState:['clLocState','Location state (2 letters)'],locZip:['clLocZip','Location ZIP']};
 function clApply(o){let n=0;
+  // only one phone number in the document (say just home or work): it goes in Cell phone too
+  if(o&&typeof o==='object'){const ph=[...new Set(['phone','phone2','workPhone'].map(k=>String(o[k]??'').replace(/\D/g,'')).filter(Boolean))];
+    if(ph.length===1&&!String(o.phone??'').trim())o={...o,phone:['phone2','workPhone'].map(k=>String(o[k]??'').trim()).find(Boolean)}}
   for(const [k,[id]] of Object.entries(CL_FILL)){const el=$(id);let v=String((o&&o[k])??'').trim();if(!el||!v||el.value.trim())continue;
     if(/phone|^workPhone$/i.test(k))v=fmtPhone(v);if(k==='dob')v=fmtDOB(v);if(/state$/i.test(k))v=v.toUpperCase().slice(0,2);
     if(el.tagName==='SELECT'){const hit=[...el.options].find(op=>op.value&&op.value.toLowerCase()===v.toLowerCase());if(!hit)continue;v=hit.value}
