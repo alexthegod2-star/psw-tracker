@@ -45,6 +45,7 @@ tbody tr:last-child td{border-bottom:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 #repDlg .mbox,#certDlg .mbox{background:#f3eefc}#repDlg input,#repDlg select,#certDlg input,#certDlg select,#certDlg textarea{background:#fff}.repT{background:#fff;border-radius:8px}#repDlg .repT th{background:#f3eefc}.linkish{background:none;border:0;padding:0;margin:0;color:#1f5fa8;text-decoration:underline;cursor:pointer;font:inherit;min-height:0}.mlConn{display:grid;gap:6px;margin-top:10px;padding:10px 12px;border:1px solid #c9b6f0;background:#f3eefc;border-radius:10px}.mlConn .row{gap:8px;flex-wrap:wrap}.mlConn input{flex:1 1 180px}.mlGrid{display:grid;gap:8px;margin-top:10px}.mlGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.mlGrid textarea{font:inherit;resize:vertical}#mlSigBox summary{cursor:pointer;font-size:13px}.sigBar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0 4px}.sigBar button{min-height:0;padding:2px 9px;font-size:13px}.sigBar select{width:auto;padding:2px 4px;font-size:13px}.sigSw{display:inline-flex;gap:3px;align-items:center;font-size:12px;margin:0 4px}.sigSw button{width:18px;height:18px;padding:0;border:1px solid #bbb;border-radius:4px}.sigSw input{width:26px;height:22px;padding:0;border:0;background:none}.sigEd{min-height:90px;max-height:260px;overflow:auto;border:1px solid var(--line,#ccc);border-radius:8px;padding:6px 8px;background:#fff;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:normal}.sigEd:empty:before{content:attr(data-ph);color:#999;white-space:pre-line}#mlDlg .mbox{background:#fdeaea}#mlDlg input,#mlDlg textarea,#mlDlg select{background:#fff}#mlDlg .mlConn{background:#fff6f6;border-color:#f0b8b8}.ccQuick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:-4px}.ccQuick button{min-height:0;padding:2px 10px;font-size:13px}.mlAtt{display:grid;gap:3px;margin-top:4px;font-size:13px;max-height:160px;overflow:auto}.mlGrid .mlAtt label{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}.mlAtt input{width:auto;flex:none;margin:0}.mlAtt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
 @media print{body.repPrint>*:not(#repDlg){display:none!important}body.repPrint #repDlg{position:static;background:none;padding:0}body.repPrint #repDlg .repT th{background:#fff}body.repPrint #repDlg .mbox{background:#fff;width:auto;max-height:none;border:0;box-shadow:none}body.repPrint .repF,body.repPrint #repDlg .row:last-child{display:none}}
+th[data-ck]{cursor:pointer;user-select:none}th[data-ck]:hover{text-decoration:underline}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}.fillTwo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:stretch}.fillTwo .drop{margin:0;flex-direction:column;align-items:stretch;justify-content:center}.fillTwo .drop input{width:100%;min-width:0}.fillPaste{display:flex;flex-direction:column;gap:6px}.fillPaste textarea{flex:1;min-height:70px;width:100%;resize:vertical}.fillPaste button{align-self:flex-end;margin:0}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
 .adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.admSig{display:flex;gap:6px;align-items:center}.admSig img{height:30px;max-width:110px;background:#fff;border:1px solid var(--line);border-radius:4px}.admSig button{padding:4px 10px;font-size:12px}
@@ -228,7 +229,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Client</th><th>First</th><th>Last</th><th>Cell</th><th>Email</th><th>Policies</th><th>Next renewal</th><th>Agent</th></tr></thead>
+        <thead><tr><th data-ck="name">Client</th><th data-ck="firstName">First</th><th data-ck="lastName">Last</th><th data-ck="phone">Cell</th><th data-ck="email">Email</th><th data-ck="pol">Policies</th><th data-ck="renew">Next renewal</th><th data-ck="agent">Agent</th></tr></thead>
         <tbody id="ctb"></tbody>
       </table>
       <div class="empty" id="cempty" hidden></div>
@@ -2783,6 +2784,11 @@ const clientsCol=db.collection('clients');let clients=[],editClient=null;
 const clientName=c=>c.company||[c.firstName,c.lastName].filter(Boolean).join(' ')||'(no name)';
 const nextRenew=c=>(c.policies||[]).map(p=>p.exp).filter(x=>x&&x>=todayISO()).sort()[0]||'';
 clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients();clStaleCheck()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
+// client list: click a heading to sort by it, again to reverse; blanks go last; ties fall back to the client name
+let cSortK='name',cSortDir=1;
+const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
+function clCmp(a,b){const v=c=>String(cSortK==='name'?clientName(c):cSortK==='pol'?pol(c):cSortK==='renew'?nextRenew(c)||'':cSortK==='phone'?String(c.phone||'').replace(/\D/g,''):c[cSortK]||'').trim().toLowerCase(),va=v(a),vb=v(b);
+  if(!va!==!vb)return va?-1:1;return (va.localeCompare(vb,undefined,{numeric:true})*cSortDir)||clientName(a).localeCompare(clientName(b))}
 function renderClients(){
   $('clientCount').textContent=clients.length;
   if(view==='clients')$('count').textContent=clients.length?`${clients.length} client${clients.length===1?'':'s'}`:'No clients yet';
@@ -2790,14 +2796,15 @@ function renderClients(){
   const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value;
   const rows=clients.filter(c=>{if(fa&&c.agent!==fa)return false;if(!q)return true;
     return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,c.phone,c.email,c.phone2,c.email2,c.address,c.location,c.notes,c.genNotes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
-    .sort((a,b)=>clientName(a).localeCompare(clientName(b)));
-  const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
+    .sort(clCmp);
+  document.querySelectorAll('th[data-ck]').forEach(th=>{th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.ck===cSortK?(cSortDir>0?' ▲':' ▼'):'')});
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
   $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(fmtClPhone(c.phone))}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td></tr>`).join('');
   $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(fmtClPhone(c.phone)),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent)].filter(Boolean).join(' · ')}</div></div>`).join('');
   const ce=$('cempty');ce.hidden=rows.length>0;ce.innerHTML=clients.length?'<b>No matching clients</b>Try a different search.':'<b>No clients yet</b>Click “+ New client”, or open a lead and click “→ PSW Client”.';
 }
 ['cq','cfAgent'].forEach(id=>$(id).addEventListener('input',renderClients));
+$('ctb').closest('table').querySelector('thead').addEventListener('click',e=>{const k=e.target.closest('th')?.dataset.ck;if(!k)return;if(k===cSortK)cSortDir*=-1;else{cSortK=k;cSortDir=1}renderClients()});
 ['ctb','ccards'].forEach(id=>$(id).addEventListener('click',e=>{const r=e.target.closest('[data-client]');if(r)openClient(clients.find(c=>c.id===r.dataset.client))}));
 // policy rows: dates type as MM/DD/YYYY, exp fills in a year after eff
 const LOBS=['Personal Auto','Personal Home','Rental Dwelling','Earthquake','DIC','Secondary Home','Commercial Auto','Commercial Property','General Liability','Workers Comp','Umbrella/Excess','CSLB Bond','BOP'];
