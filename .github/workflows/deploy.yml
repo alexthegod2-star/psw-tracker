@@ -20,9 +20,12 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
           # optional repo secret ANTHROPIC_API_KEY: sent along with the update; install.sh puts it in the server's .env (never in the repo)
           if [ -n "$ANTHROPIC_API_KEY" ]; then (umask 077; printf '%s' "$ANTHROPIC_API_KEY" > psw-tracker/.claude-key); fi
+          # optional repo secret RESEND_API_KEY (email sending): same route, as .resend-key
+          if [ -n "$RESEND_API_KEY" ]; then (umask 077; printf '%s' "$RESEND_API_KEY" > psw-tracker/.resend-key); fi
           install -m 700 -d ~/.ssh
           [ -n "$DEPLOY_HOST" ] || { echo "::error::Secret DEPLOY_HOST is missing or empty"; exit 1; }
           [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "::error::Secret DEPLOY_KNOWN_HOSTS is missing or empty"; exit 1; }

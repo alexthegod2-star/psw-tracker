@@ -42,6 +42,13 @@ if [ -s "$SRC/.claude-key" ]; then
     sed -i '/^ANTHROPIC_API_KEY=/d' "$APP/.env"; echo "ANTHROPIC_API_KEY=$KEY" >> "$APP/.env"; echo "== Claude reading key set"
   else echo "!! The ANTHROPIC_API_KEY secret doesn't look like an Anthropic key (sk-ant-...), so it was not used"; fi
 fi
+# Email sending: the deploy step sends the repo secret RESEND_API_KEY as .resend-key; it replaces the key in .env
+if [ -s "$SRC/.resend-key" ]; then
+  KEY="$(tr -d '[:space:]' < "$SRC/.resend-key")"; rm -f "$SRC/.resend-key"
+  if [[ "$KEY" =~ ^re_[A-Za-z0-9_-]+$ ]]; then
+    sed -i '/^RESEND_API_KEY=/d' "$APP/.env"; echo "RESEND_API_KEY=$KEY" >> "$APP/.env"; echo "== Email sending key set"
+  else echo "!! The RESEND_API_KEY secret doesn't look like a Resend key (re_...), so it was not used"; fi
+fi
 chown -R root:psw "$APP"; chmod 640 "$APP/.env"
 chown -R psw:psw "$DATA"; chmod 750 "$DATA"
 
