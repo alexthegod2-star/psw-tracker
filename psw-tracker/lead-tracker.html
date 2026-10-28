@@ -3528,7 +3528,7 @@ let mailSt=null;
 async function mailStatus(force){if(mailSt&&!force)return mailSt;try{const r=await fetch('/api/mail/status',{credentials:'same-origin'});mailSt=r.ok?await r.json():{configured:false}}catch(_){mailSt={configured:false}}return mailSt}
 mailStatus();
 const ML_ERR={mail_not_connected:'Connect your email first (box at the top), then Send again.',bad_login:'That email address and password didn’t work. Use the same ones Outlook uses.',
-  bad_from:'Use your own @pswinsurance.com email address.',imap_unreachable:'Couldn’t reach the Bluehost mail server to check the password. Try again in a minute.',
+  bad_from:'Use your own @pswinsurance.com email address.',imap_unreachable:'Couldn’t reach the email server to check the password. Try again in a minute.',
   domain_unverified:'pswinsurance.com isn’t verified in Resend yet (DNS records at Bluehost). Finish that setup step, then Send again.',too_large:'The attachments are too big for one email (25 MB in all). Untick some and send them in a second email.',
   bad_address:'One of the email addresses doesn’t look right. Separate more than one with commas.',no_recipient:'Add who it goes to.',mail_rejected:'The sending service turned the email down. Check the addresses and try again.',
   mail_unavailable:'Couldn’t reach the sending service just now. Try again in a minute.',mail_off:'Email from the database isn’t set up on the server yet.',not_found:'One of the attached files couldn’t be found.'};
@@ -3545,7 +3545,7 @@ const mlClose=()=>{$('mlDlg').classList.remove('on');mlCtx=null};
 $('mlCancel').onclick=mlClose;
 // connect: the server checks the address and password against the Bluehost mail server, then keeps the password (encrypted) for the Sent copy
 $('mlConnGo').onclick=async()=>{const email=$('mlAddr').value.trim(),password=$('mlPw').value;if(!email||!password){mlSay('Type your email address and its password.','err');return}
-  const b=$('mlConnGo');b.disabled=true;mlSay('Checking with Bluehost…');
+  const b=$('mlConnGo');b.disabled=true;mlSay('Checking your password…');
   try{const r=await fetch('/api/mail/connect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}),d=await r.json().catch(()=>({}));
     if(!r.ok){mlSay(ML_ERR[d.code]||'Couldn’t connect your email.','err');return}
     $('mlPw').value='';await mailStatus(true);mlFromLine();mlSay(`Connected ${d.email}. You can send now.`,'ok')}

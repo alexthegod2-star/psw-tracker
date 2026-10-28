@@ -1079,11 +1079,11 @@ NO_STORE = {"Cache-Control": "no-store"}
 
 # ---------- Email from the database: sent through Resend (an email-sending service, over HTTPS, so DigitalOcean's block on
 # email ports doesn't matter), from the person's own @pswinsurance.com address. Each person connects once with their
-# Bluehost email address and password; the password is only used to put a copy of each email in their Sent folder (IMAP).
+# email address and password (Bluehost sells it as Titan email); the password is only used to put a copy of each email in their Sent folder (IMAP).
 # Needs RESEND_API_KEY in .env, and pswinsurance.com verified in Resend (DNS records at Bluehost).
 MAIL_MAX = 25 * 1024 * 1024  # Resend takes 40 MB per email after base64, which adds a third
 MAIL_DOMAIN = os.environ.get("PSW_MAIL_DOMAIN", "pswinsurance.com").strip().lower()
-IMAP_HOST = os.environ.get("PSW_IMAP_HOST", "mail." + MAIL_DOMAIN).strip()
+IMAP_HOST = os.environ.get("PSW_IMAP_HOST", "imap.titan.email").strip()  # PSW mail is Titan (Outlook: Incoming mail server)
 IMAP_PORT = int(os.environ.get("PSW_IMAP_PORT", "993"))
 EMAIL_RE = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
 
@@ -1117,7 +1117,7 @@ def imap_open(email, pw):
 
 
 def imap_sent_box(m):
-    """the Sent folder Outlook uses: the one marked \\Sent, else the usual names (Bluehost's is INBOX.Sent)"""
+    """the Sent folder Outlook uses: the one marked \\Sent, else the usual names (older Bluehost boxes use INBOX.Sent)"""
     typ, rows = m.list()
     names = []
     for r in rows or []:
