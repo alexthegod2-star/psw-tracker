@@ -432,6 +432,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <datalist id="relList"><option value="Insured"><option value="Spouse"><option value="Child"><option value="Parent"><option value="Partner"><option value="Employee"><option value="Other"></datalist>
       <section class="ppCard clBiz"><div class="clg c4"><div><label for="clAddress">Mailing address</label><input id="clAddress"></div><div><label for="clCity">City</label><input id="clCity"></div><div><label for="clState">State</label><input id="clState" list="stList" maxlength="20"></div><div><label for="clZip">Zip</label><input id="clZip" inputmode="numeric" maxlength="10"></div></div>
       <div class="clg c4"><div><label for="clLocation">Location address</label><input id="clLocation"></div><div><label for="clLocCity">City</label><input id="clLocCity"></div><div><label for="clLocState">State</label><input id="clLocState" list="stList" maxlength="20"></div><div><label for="clLocZip">Zip</label><input id="clLocZip" inputmode="numeric" maxlength="10"></div></div></section>
+      <section class="ppCard"><div class="ppCardH"><h4>Email customer</h4><button type="button" class="pri" id="clMail" data-open>Email customer</button></div>
+        <div class="small" id="clMailNote"></div></section>
     </div>
     <div class="clMid">
       <section class="ppCard clInfo">
@@ -3179,7 +3181,7 @@ function openClient(c,preset,quiet){editClient=c||null;$('clPaste').value='';$('
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
   $('clLead').innerHTML='<option value="">No lead</option>'+ls.map(l=>`<option value="${esc(l.id)}">${esc(leadName(l))}</option>`).join('')+
     (v.leadId&&!ls.some(l=>l.id===v.leadId)?`<option value="${esc(v.leadId)}">${esc(leadName(v))}</option>`:'');$('clLead').value=v.leadId||'';
-  $('polRows').innerHTML='';(v.policies&&v.policies.length?sortPolicies(v.policies):[{}]).forEach(polRow);clPending=[];renderClFiles(c);renderCerts();clNoteLog=[...(v.noteLog||[])];$('clGenNotes').value=v.genNotes||'';$('clPaySec').hidden=!canPay;$('clPayInfo').value=canPay?(v.payInfo||''):'';if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
+  $('polRows').innerHTML='';(v.policies&&v.policies.length?sortPolicies(v.policies):[{}]).forEach(polRow);clPending=[];renderClFiles(c);renderCerts();clMailNote();clNoteLog=[...(v.noteLog||[])];$('clGenNotes').value=v.genNotes||'';$('clPaySec').hidden=!canPay;$('clPayInfo').value=canPay?(v.payInfo||''):'';if((v.notes||'').trim())clNoteLog.unshift({at:v.createdAt||v.created||'',text:v.notes.trim()});renderClNotes();renderClTasks();renderClInv();
   $('clDel').hidden=!c;$('clDel').textContent='Delete client';delete $('clDel').dataset.arm;$('clientMsg').textContent='';$('clSave').disabled=false;
   $('clientDlg').classList.add('on');if(!quiet)setTimeout(()=>$('clCompany').focus(),30)}
 // more people on the client: same boxes as the first person, saved as people:[{firstName,...}]
@@ -3537,7 +3539,7 @@ const mlSay=(t,c)=>{const m=$('mlMsg');m.className='msg'+(c?' '+c:'');m.textCont
 function mlFromLine(){const st=mailSt||{};$('mlFrom').innerHTML=st.connected?`From ${esc(st.email)} <button type="button" class="linkish" id="mlChange">change</button>`:'Email not connected';$('mlConn').hidden=!!st.connected;$('mlSend').disabled=!st.connected;if(!st.connected&&!$('mlAddr').value)$('mlAddr').value=/@/.test(st.email||'')&&st.email.toLowerCase().endsWith('@'+(st.domain||''))?st.email:''}
 // o: {to, subject, body, files:[{id,name,on}] stored files, extra:[{name,type,get()}] made here (always attached), onSent()}
 async function composeMail(o){mlCtx=o;await mailStatus(true);$('mlTo').value=o.to||'';$('mlCc').value='';ccMark();$('mlSubj').value=o.subject||'';$('mlBody').value=o.body||'';$('mlSig').innerHTML=sigLoad(mailSt.sig);$('mlSigBox').open=!mailSt.sig;
-  $('mlAtt').innerHTML=[...(o.extra||[]).map((f,i)=>`<label><input type="checkbox" data-mx="${i}" checked><span title="${esc(f.name)}">${esc(f.name)}</span></label>`),
+  $('mlAtt').innerHTML=[...(o.extra||[]).map((f,i)=>`<label><input type="checkbox" data-mx="${i}"${f.on===false?'':' checked'}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`),
     ...(o.files||[]).map(f=>`<label><input type="checkbox" data-mb="${esc(f.id)}"${f.on?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`)].join('')||'<div class="small">No files to attach.</div>';
   $('mlPw').value='';mlFromLine();mlSay('');
   $('mlDlg').classList.add('on');setTimeout(()=>(o.to?$('mlBody'):$('mlTo')).focus(),30)}
@@ -3609,6 +3611,16 @@ $('mlSend').onclick=async()=>{const o=mlCtx;if(!o)return;const to=$('mlTo').valu
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mlDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();mlClose()}},true);
 // the client's copy: every box printed into the page (flattened), so it can't be edited
 async function flatPdf(bytes){await acordReady();const L=PDFLib,doc=await L.PDFDocument.load(bytes,{ignoreEncryption:true}),f=doc.getForm();try{f.updateFieldAppearances(await doc.embedFont(L.StandardFonts.Helvetica))}catch(_){}f.flatten();return doc.save()}
+// Email customer (client screen): the Send email window to the client's emails, with the client's files and certificates to tick
+const clMailTo=()=>[$('clEmail').value.trim(),$('clEmail2').value.trim()].filter(Boolean).join('; ');
+const clMailNote=()=>{const to=clMailTo();$('clMailNote').textContent=to?`To ${to}`:'Add the client’s email (Primary email box) to send.'};
+['clEmail','clEmail2'].forEach(id=>$(id).addEventListener('input',clMailNote));
+$('clMail').addEventListener('click',()=>{const to=clMailTo();if(!to){clMailNote();$('clEmail').focus();return}
+  const who=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()});
+  if(mailSt&&mailSt.configured){const c=editClient||{};
+    composeMail({to,subject:who&&who!=='(no name)'?who:'',body:'',files:[...((c.files||clPending)||[])].reverse().filter(f=>!f.enc).map(f=>({id:f.id,name:f.name,on:false})),
+      extra:editClient?[...certList()].reverse().map(x=>({name:x.name,type:'application/pdf',on:false,get:async()=>flatPdf(await fileBytes(x))})):[]});return}
+  location.href=`mailto:${to.replace(/;\s*/g,',')}`});
 // Email cert to client: a new Outlook email (no body, so Outlook adds the signature) to the client, subject "<client> cert <holder>"; the PDF is saved for dragging in, since a mailto link can't carry attachments
 $('certList').addEventListener('click',e=>{const a=e.target.closest('[data-cert-mail]');if(!a||!editClient)return;const c=certList().find(x=>x.id===a.dataset.certMail);if(!c){e.preventDefault();return}
   const to=$('clEmail').value.trim()||$('clEmail2').value.trim();if(!to){e.preventDefault();certSay('Add the client’s email first (Email box in the client info).','err');return}
