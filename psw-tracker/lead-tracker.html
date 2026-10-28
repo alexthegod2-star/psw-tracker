@@ -43,7 +43,7 @@ tbody tr:last-child td{border-bottom:none}
 .sold{display:inline-block;background:#1f9d55;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}.dead{display:inline-block;background:#111;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-#repDlg .mbox,#certDlg .mbox{background:#f3eefc}#repDlg input,#repDlg select,#certDlg input,#certDlg select,#certDlg textarea{background:#fff}.repT{background:#fff;border-radius:8px}#repDlg .repT th{background:#f3eefc}.mlGrid{display:grid;gap:8px;margin-top:10px}.mlGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.mlGrid textarea{font:inherit;resize:vertical}#mlSigBox summary{cursor:pointer;font-size:13px}.mlAtt{display:grid;gap:3px;margin-top:4px;font-size:13px;max-height:160px;overflow:auto}.mlGrid .mlAtt label{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}.mlAtt input{width:auto;flex:none;margin:0}.mlAtt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
+#repDlg .mbox,#certDlg .mbox{background:#f3eefc}#repDlg input,#repDlg select,#certDlg input,#certDlg select,#certDlg textarea{background:#fff}.repT{background:#fff;border-radius:8px}#repDlg .repT th{background:#f3eefc}.linkish{background:none;border:0;padding:0;margin:0;color:#1f5fa8;text-decoration:underline;cursor:pointer;font:inherit;min-height:0}.mlConn{display:grid;gap:6px;margin-top:10px;padding:10px 12px;border:1px solid #c9b6f0;background:#f3eefc;border-radius:10px}.mlConn .row{gap:8px;flex-wrap:wrap}.mlConn input{flex:1 1 180px}.mlGrid{display:grid;gap:8px;margin-top:10px}.mlGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.mlGrid textarea{font:inherit;resize:vertical}#mlSigBox summary{cursor:pointer;font-size:13px}.mlAtt{display:grid;gap:3px;margin-top:4px;font-size:13px;max-height:160px;overflow:auto}.mlGrid .mlAtt label{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}.mlAtt input{width:auto;flex:none;margin:0}.mlAtt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
 @media print{body.repPrint>*:not(#repDlg){display:none!important}body.repPrint #repDlg{position:static;background:none;padding:0}body.repPrint #repDlg .repT th{background:#fff}body.repPrint #repDlg .mbox{background:#fff;width:auto;max-height:none;border:0;box-shadow:none}body.repPrint .repF,body.repPrint #repDlg .row:last-child{display:none}}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}.fillTwo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:stretch}.fillTwo .drop{margin:0;flex-direction:column;align-items:stretch;justify-content:center}.fillTwo .drop input{width:100%;min-width:0}.fillPaste{display:flex;flex-direction:column;gap:6px}.fillPaste textarea{flex:1;min-height:70px;width:100%;resize:vertical}.fillPaste button{align-self:flex-end;margin:0}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
@@ -377,13 +377,15 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="mlDlg" role="dialog" aria-modal="true" aria-labelledby="mlTitle" style="z-index:20"><div class="mbox" style="width:min(760px,96vw);max-height:92vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="mlTitle" style="margin:0">Send email</h3><span class="small" id="mlFrom"></span></div>
+  <div id="mlConn" class="mlConn" hidden><b>Connect your email once</b><span class="small">Your @pswinsurance.com address and its email password (the one Outlook uses). Emails go out from that address, and a copy goes in your Outlook Sent folder.</span>
+    <div class="row"><input id="mlAddr" type="email" autocomplete="username" placeholder="you@pswinsurance.com"><input id="mlPw" type="password" autocomplete="current-password" placeholder="Email password"><button type="button" class="pri" id="mlConnGo">Connect</button></div></div>
   <div class="mlGrid"><label>To<input id="mlTo" autocomplete="off" placeholder="name@example.com (more than one: separate with commas)"></label><label>Cc<input id="mlCc" autocomplete="off"></label>
     <label>Subject<input id="mlSubj" autocomplete="off"></label><label>Message<textarea id="mlBody" rows="9"></textarea></label>
     <details id="mlSigBox"><summary>Signature (added under every email you send from here)</summary><textarea id="mlSig" rows="5" placeholder="Your name&#10;Pacific Southwest Insurance Services&#10;(818) 701-1033"></textarea></details>
     <div><b style="font-size:13px">Attachments</b><div id="mlAtt" class="mlAtt"></div></div></div>
   <p class="msg" id="mlMsg"></p>
   <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px"><a href="#" id="mlOutlook" target="_blank" rel="noopener" class="small">Open in Outlook instead</a>
-    <div class="row"><button type="button" id="mlConnect" class="pri" hidden>Connect Outlook</button><button type="button" id="mlCancel">Cancel</button><button type="button" class="pri" id="mlSend">Send</button></div></div>
+    <div class="row"><button type="button" id="mlCancel">Cancel</button><button type="button" class="pri" id="mlSend">Send</button></div></div>
 </div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
 <div class="mbg" id="mcDlg" role="dialog" aria-modal="true" aria-labelledby="mcTitleH"><div class="mbox" id="mcBox">
@@ -3520,28 +3522,37 @@ $('certList').addEventListener('click',async e=>{const b=e.target.closest('butto
     if(b.dataset.certEdit)return void await certFormOpen('edit',c);
     if(b.dataset.certDel){if(!(await sure(`Delete the certificate ${c.name}? This can’t be undone.`)))return;await putCerts(certList().filter(x=>x.id!==id));try{await assets.delete(id)}catch(_){}toast('Certificate deleted')}}
   catch(err){certSay(err&&err.code?errText(err):`${c.name}: ${err&&err.message||'something went wrong'}`,'err')}});
-// ---------- Send email from the database through the person's own Outlook (Microsoft 365). Until the server has the
-// Microsoft app set up (mail status configured:false) every email button keeps opening Outlook the old way.
+// ---------- Send email from the database (through Resend, from the person's own @pswinsurance.com address, with a copy in
+// their Outlook Sent folder). Until the server has a Resend key (mail status configured:false) every email button keeps opening Outlook the old way.
 let mailSt=null;
 async function mailStatus(force){if(mailSt&&!force)return mailSt;try{const r=await fetch('/api/mail/status',{credentials:'same-origin'});mailSt=r.ok?await r.json():{configured:false}}catch(_){mailSt={configured:false}}return mailSt}
 mailStatus();
-const ML_ERR={mail_not_connected:'Outlook isn’t connected yet. Click Connect Outlook, sign in, then Send again.',too_large:'The attachments are too big to send from here (3 MB in all). Untick some, or use Open in Outlook instead.',
-  bad_address:'One of the email addresses doesn’t look right. Separate more than one with commas.',no_recipient:'Add who it goes to.',mail_rejected:'Outlook turned the email down. Check the addresses and try again.',
-  mail_unavailable:'Couldn’t reach Outlook just now. Try again in a minute.',mail_off:'Email from the database isn’t set up on the server yet.',not_found:'One of the attached files couldn’t be found.'};
+const ML_ERR={mail_not_connected:'Connect your email first (box at the top), then Send again.',bad_login:'That email address and password didn’t work. Use the same ones Outlook uses.',
+  bad_from:'Use your own @pswinsurance.com email address.',imap_unreachable:'Couldn’t reach the Bluehost mail server to check the password. Try again in a minute.',
+  domain_unverified:'pswinsurance.com isn’t verified in Resend yet (DNS records at Bluehost). Finish that setup step, then Send again.',too_large:'The attachments are too big for one email (25 MB in all). Untick some and send them in a second email.',
+  bad_address:'One of the email addresses doesn’t look right. Separate more than one with commas.',no_recipient:'Add who it goes to.',mail_rejected:'The sending service turned the email down. Check the addresses and try again.',
+  mail_unavailable:'Couldn’t reach the sending service just now. Try again in a minute.',mail_off:'Email from the database isn’t set up on the server yet.',not_found:'One of the attached files couldn’t be found.'};
 let mlCtx=null;
 const mlSay=(t,c)=>{const m=$('mlMsg');m.className='msg'+(c?' '+c:'');m.textContent=t||''};
-function mlFromLine(){const st=mailSt||{};$('mlFrom').textContent=st.connected?'From '+st.email:'Outlook not connected';$('mlConnect').hidden=!!st.connected;$('mlSend').disabled=!st.connected}
+function mlFromLine(){const st=mailSt||{};$('mlFrom').innerHTML=st.connected?`From ${esc(st.email)} <button type="button" class="linkish" id="mlChange">change</button>`:'Email not connected';$('mlConn').hidden=!!st.connected;$('mlSend').disabled=!st.connected;if(!st.connected&&!$('mlAddr').value)$('mlAddr').value=/@/.test(st.email||'')&&st.email.toLowerCase().endsWith('@'+(st.domain||''))?st.email:''}
 // o: {to, subject, body, files:[{id,name,on}] stored files, extra:[{name,type,get()}] made here (always attached), onSent()}
 async function composeMail(o){mlCtx=o;await mailStatus(true);$('mlTo').value=o.to||'';$('mlCc').value='';$('mlSubj').value=o.subject||'';$('mlBody').value=o.body||'';$('mlSig').value=mailSt.sig||'';$('mlSigBox').open=!mailSt.sig;
   $('mlAtt').innerHTML=[...(o.extra||[]).map((f,i)=>`<label><input type="checkbox" data-mx="${i}" checked><span title="${esc(f.name)}">${esc(f.name)}</span></label>`),
     ...(o.files||[]).map(f=>`<label><input type="checkbox" data-mb="${esc(f.id)}"${f.on?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`)].join('')||'<div class="small">No files to attach.</div>';
-  mlFromLine();mlSay(mailSt.connected?'':'Connect your Outlook once, then Send. Emails go out from your own address and show in your Outlook Sent folder.');
+  $('mlPw').value='';mlFromLine();mlSay('');
   $('mlDlg').classList.add('on');setTimeout(()=>(o.to?$('mlBody'):$('mlTo')).focus(),30)}
 const mlClose=()=>{$('mlDlg').classList.remove('on');mlCtx=null};
 $('mlCancel').onclick=mlClose;
-$('mlConnect').onclick=()=>{window.open('/mail/connect','_blank');mlSay('Sign in to Outlook in the new tab. This box updates when you’re done.')};
-window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.data||!('pswMail' in e.data))return;await mailStatus(true);if($('mlDlg').classList.contains('on')){mlFromLine();mlSay(mailSt.connected?'Outlook connected. You can send now.':'Outlook wasn’t connected.',mailSt.connected?'ok':'err')}});
-window.addEventListener('focus',async()=>{if($('mlDlg').classList.contains('on')&&!(mailSt&&mailSt.connected)){await mailStatus(true);mlFromLine();if(mailSt.connected)mlSay('Outlook connected. You can send now.','ok')}});
+// connect: the server checks the address and password against the Bluehost mail server, then keeps the password (encrypted) for the Sent copy
+$('mlConnGo').onclick=async()=>{const email=$('mlAddr').value.trim(),password=$('mlPw').value;if(!email||!password){mlSay('Type your email address and its password.','err');return}
+  const b=$('mlConnGo');b.disabled=true;mlSay('Checking with Bluehost…');
+  try{const r=await fetch('/api/mail/connect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}),d=await r.json().catch(()=>({}));
+    if(!r.ok){mlSay(ML_ERR[d.code]||'Couldn’t connect your email.','err');return}
+    $('mlPw').value='';await mailStatus(true);mlFromLine();mlSay(`Connected ${d.email}. You can send now.`,'ok')}
+  catch(_){mlSay('Couldn’t reach the server.','err')}finally{b.disabled=false}};
+$('mlPw').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('mlConnGo').click()}});
+// change: show the connect box again (a different address, or a new password after changing it at Bluehost)
+$('mlFrom').addEventListener('click',e=>{if(e.target.id!=='mlChange')return;$('mlConn').hidden=false;$('mlAddr').value=mailSt.email||'';$('mlPw').focus()});
 // Open in Outlook instead: the old way (subject only, so Outlook adds its signature; the message is copied to paste in)
 $('mlOutlook').onclick=()=>{const to=$('mlTo').value.trim();$('mlOutlook').href=`mailto:${to}?subject=${encodeURIComponent($('mlSubj').value)}`;if($('mlBody').value.trim())copyText($('mlBody').value);mlClose()};
 const mlHtml=t=>esc(t).replace(/\r?\n/g,'<br>');
@@ -3555,7 +3566,7 @@ $('mlSend').onclick=async()=>{const o=mlCtx;if(!o)return;const to=$('mlTo').valu
     const r=await fetch('/api/mail/send',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,cc:$('mlCc').value.trim(),subject:$('mlSubj').value,html,attachments:atts})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){if(d.code==='mail_not_connected'){await mailStatus(true);mlFromLine()}mlSay(ML_ERR[d.code]||'Couldn’t send the email.','err');btn.disabled=!(mailSt&&mailSt.connected);return}
-    mlClose();toast(`Email sent to ${to}.`);if(o.onSent)try{o.onSent()}catch(_){}}
+    mlClose();toast(d.sentCopy?`Email sent to ${to}.`:`Email sent to ${to}. It couldn’t be copied to your Outlook Sent folder this time.`);if(o.onSent)try{o.onSent()}catch(_){}}
   catch(err){mlSay(err&&err.message?`Couldn’t send: ${err.message}`:'Couldn’t reach the server.','err');btn.disabled=false}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mlDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();mlClose()}},true);
 // the client's copy: every box printed into the page (flattened), so it can't be edited
