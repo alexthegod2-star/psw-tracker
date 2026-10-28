@@ -1081,7 +1081,9 @@ NO_STORE = {"Cache-Control": "no-store"}
 # Needs an app registration in Microsoft Entra (MS_CLIENT_ID, MS_CLIENT_SECRET, MS_TENANT_ID in .env). Sent mail goes through
 # Microsoft Graph (HTTPS), lands in the person's Outlook Sent Items, and comes from their own address; DigitalOcean's SMTP block doesn't apply.
 MS_SCOPES = "offline_access User.Read Mail.Send"
-MAIL_MAX = 3 * 1024 * 1024  # Graph's one-call sendMail takes about 4 MB in all; attachments grow a third as base64
+MAIL_SMALL = 3 * 1024 * 1024  # up to this in all, one sendMail call (Graph takes about 4 MB per call; base64 adds a third)
+MAIL_MAX = 35 * 1024 * 1024  # Microsoft 365's usual biggest email; past MAIL_SMALL the files go up in pieces (upload sessions)
+MAIL_PART = 10 * 320 * 1024  # upload piece size: Graph wants multiples of 320 KB, under 4 MB
 EMAIL_RE = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
 
 
@@ -1124,6 +1126,14 @@ def ms_token(form):
     cid, sec, ten = ms_conf()
     return ms_post(f"https://login.microsoftonline.com/{ten}/oauth2/v2.0/token",
                    {"client_id": cid, "client_secret": sec, "scope": MS_SCOPES, **form})
+
+
+def graph_put(url, chunk, start, total):
+    """one piece of a big attachment; the upload URL carries its own permission, so no sign-in header"""
+    req = urllib.request.Request(url, method="PUT", data=chunk, headers={
+        "content-length": str(len(chunk)), "content-range": f"bytes {start}-{start + len(chunk) - 1}/{total}"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        r.read()
 
 
 def graph(method, path, token, body=None):
@@ -1254,8 +1264,7 @@ async def mail_send(request: Request):
         total += len(data)
         if total > MAIL_MAX:
             err(413, "too_large")
-        atts.append({"@odata.type": "#microsoft.graph.fileAttachment", "name": name, "contentType": typ,
-                     "contentBytes": base64.b64encode(data).decode()})
+        atts.append((name, typ, data))
     with db() as c:
         mail_table(c)
         r = c.execute("SELECT refresh FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
@@ -1276,15 +1285,39 @@ async def mail_send(request: Request):
         with db() as c:
             c.execute("UPDATE mail_accounts SET refresh=?, updated=? WHERE user_id=?",
                       (ms_box().encrypt(t["refresh_token"].encode()).decode(), time.time(), u["id"]))
+    tok = t["access_token"]
+    fa = lambda n, ty, d: {"@odata.type": "#microsoft.graph.fileAttachment", "name": n, "contentType": ty, "contentBytes": base64.b64encode(d).decode()}
     msg = {"subject": str(b.get("subject") or "")[:250], "body": {"contentType": "HTML", "content": str(b.get("html") or "")[:200000]},
-           "toRecipients": to, "ccRecipients": cc, "attachments": atts}
+           "toRecipients": to, "ccRecipients": cc}
+    draft = None
     try:
-        graph("POST", "/me/sendMail", t["access_token"], {"message": msg, "saveToSentItems": True})
+        if total <= MAIL_SMALL:  # small: one call
+            graph("POST", "/me/sendMail", tok, {"message": {**msg, "attachments": [fa(*x) for x in atts]}, "saveToSentItems": True})
+        else:  # big: make a draft, add each file (big ones in pieces), then send it; it lands in Sent Items like any other
+            draft = graph("POST", "/me/messages", tok, msg)["id"]
+            q = urllib.parse.quote(draft, safe="")
+            for name, typ, data in atts:
+                if len(data) <= MAIL_SMALL:
+                    graph("POST", f"/me/messages/{q}/attachments", tok, fa(name, typ, data))
+                    continue
+                up = graph("POST", f"/me/messages/{q}/attachments/createUploadSession", tok,
+                           {"AttachmentItem": {"attachmentType": "file", "name": name, "size": len(data), "contentType": typ}})
+                for i in range(0, len(data), MAIL_PART):
+                    graph_put(up["uploadUrl"], data[i:i + MAIL_PART], i, len(data))
+            graph("POST", f"/me/messages/{q}/send", tok)
+            draft = None
     except urllib.error.HTTPError as e:
-        err(413 if e.code == 413 else 502, "too_large" if e.code == 413 else "mail_rejected")
+        code = "too_large" if e.code == 413 else "mail_rejected"
     except Exception:
-        err(502, "mail_unavailable")
-    return {"ok": True}
+        code = "mail_unavailable"
+    else:
+        return {"ok": True}
+    if draft:  # don't leave a half-built email in Drafts
+        try:
+            graph("DELETE", f"/me/messages/{urllib.parse.quote(draft, safe='')}", tok)
+        except Exception:
+            pass
+    err(413 if code == "too_large" else 502, code)
 
 
 @app.get("/healthz")
