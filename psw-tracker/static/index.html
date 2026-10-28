@@ -2569,13 +2569,14 @@ $('edBody').addEventListener('input',e=>{
 });
 
 /* ---------- binding docs checklist (saved on the lead as binding:{key:true | 'na'}) ---------- */
+const BIND_PAY=['Authorize pay by phone','Authorize invoice','Zelle','eCheck']; // how the insured paid PSW
 const BIND_DOCS=[['acords','ACORDs'],['supplemental','Supplemental'],['d1','D1'],['sl2','SL2'],['tria','TRIA'],['financing','Financing'],['ins_pay_psw','Ins pay to PSW'],['psw_pay_ga','PSW pay to GA']];
 function renderBind(){const b=(cur&&cur.binding)||{};
-  $('bindList').innerHTML=BIND_DOCS.map(([k,l])=>{const na=b[k]==='na';return `<div class="brow${na?' isna':''}"><input type="checkbox" id="bind_${k}" data-bind="${k}"${b[k]===true?' checked':''}><button type="button" class="nab${na?' on':''}" data-na="${k}" title="Not applicable">NA</button><label for="bind_${k}">${esc(l)}</label></div>`}).join('')}
+  $('bindList').innerHTML=BIND_DOCS.map(([k,l])=>{const na=b[k]==='na';return `<div class="brow${na?' isna':''}"><input type="checkbox" id="bind_${k}" data-bind="${k}"${b[k]===true?' checked':''}><button type="button" class="nab${na?' on':''}" data-na="${k}" title="Not applicable">NA</button><label for="bind_${k}">${esc(l)}</label>${k==='ins_pay_psw'?`<select data-bindhow="${k}" aria-label="How the insured paid" style="width:auto;padding:2px 6px;font-size:13px;margin:0 0 0 4px"><option value=""></option>${BIND_PAY.map(o=>`<option${b[k+'_how']===o?' selected':''}>${o}</option>`).join('')}</select>`:''}</div>`}).join('')}
 async function saveBind(k,val){const m=$('bindMsg');if(!(await ensureSaved())){renderBind();return}
   const binding={...((leads.find(l=>l.id===cur.id)||cur).binding||{}),[k]:val};
   try{await leadsCol.doc(cur.id).update({binding});cur.binding=binding;m.textContent=''}catch(err){m.className='msg err';m.textContent=errText(err)}renderBind()}
-$('bindList').addEventListener('change',e=>{const k=e.target.dataset.bind;if(k)saveBind(k,e.target.checked)});
+$('bindList').addEventListener('change',e=>{const k=e.target.dataset.bind,h=e.target.dataset.bindhow;if(k)saveBind(k,e.target.checked);else if(h)saveBind(h+'_how',e.target.value)});
 $('bindList').addEventListener('click',e=>{const bt=e.target.closest('[data-na]');if(!bt)return;const k=bt.dataset.na;saveBind(k,((cur&&cur.binding)||{})[k]==='na'?false:'na')});
 
 /* ---------- every delete asks first: "Are you sure?" pop-up, Yes deletes, No keeps it ---------- */
