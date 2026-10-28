@@ -1077,72 +1077,71 @@ def quote_public_page(tok: str):
 NO_STORE = {"Cache-Control": "no-store"}
 
 
-# ---------- Outlook: each person connects their own Microsoft 365 mailbox once; the database then sends email through it ----------
-# Needs an app registration in Microsoft Entra (MS_CLIENT_ID, MS_CLIENT_SECRET, MS_TENANT_ID in .env). Sent mail goes through
-# Microsoft Graph (HTTPS), lands in the person's Outlook Sent Items, and comes from their own address; DigitalOcean's SMTP block doesn't apply.
-MS_SCOPES = "offline_access User.Read Mail.Send"
-MAIL_SMALL = 3 * 1024 * 1024  # up to this in all, one sendMail call (Graph takes about 4 MB per call; base64 adds a third)
-MAIL_MAX = 35 * 1024 * 1024  # Microsoft 365's usual biggest email; past MAIL_SMALL the files go up in pieces (upload sessions)
-MAIL_PART = 10 * 320 * 1024  # upload piece size: Graph wants multiples of 320 KB, under 4 MB
+# ---------- Email from the database: sent through Resend (an email-sending service, over HTTPS, so DigitalOcean's block on
+# email ports doesn't matter), from the person's own @pswinsurance.com address. Each person connects once with their
+# Bluehost email address and password; the password is only used to put a copy of each email in their Sent folder (IMAP).
+# Needs RESEND_API_KEY in .env, and pswinsurance.com verified in Resend (DNS records at Bluehost).
+MAIL_MAX = 25 * 1024 * 1024  # Resend takes 40 MB per email after base64, which adds a third
+MAIL_DOMAIN = os.environ.get("PSW_MAIL_DOMAIN", "pswinsurance.com").strip().lower()
+IMAP_HOST = os.environ.get("PSW_IMAP_HOST", "mail." + MAIL_DOMAIN).strip()
+IMAP_PORT = int(os.environ.get("PSW_IMAP_PORT", "993"))
 EMAIL_RE = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
 
 
-def ms_conf():
-    cid, sec = os.environ.get("MS_CLIENT_ID", "").strip(), os.environ.get("MS_CLIENT_SECRET", "").strip()
-    return (cid, sec, os.environ.get("MS_TENANT_ID", "common").strip() or "common") if cid and sec else None
+def mail_on():
+    return bool(os.environ.get("RESEND_API_KEY", "").strip())
 
 
-def ms_redirect():
-    return os.environ.get("PSW_PUBLIC_URL", "https://165-227-56-252.sslip.io").rstrip("/") + "/mail/callback"
-
-
-def ms_box():
-    """refresh tokens are kept encrypted with a key made from the client secret (a new secret means everyone reconnects)"""
+def mail_box():
+    """email passwords are kept encrypted with a key that lives only on the server (DATA/mail.key, made the first time)"""
     from cryptography.fernet import Fernet
-    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(("psw-mail:" + ms_conf()[1]).encode()).digest()))
+    f = DATA / "mail.key"
+    if not f.exists():
+        f.write_bytes(Fernet.generate_key())
+        os.chmod(f, 0o600)
+    return Fernet(f.read_bytes().strip())
 
 
 def mail_table(c):
     c.execute("CREATE TABLE IF NOT EXISTS mail_accounts(user_id TEXT PRIMARY KEY, email TEXT NOT NULL DEFAULT '', "
               "refresh TEXT NOT NULL DEFAULT '', sig TEXT NOT NULL DEFAULT '', updated REAL NOT NULL)")
+    if "sent_box" not in {r[1] for r in c.execute("PRAGMA table_info(mail_accounts)")}:  # `refresh` holds the encrypted email password
+        c.execute("ALTER TABLE mail_accounts ADD COLUMN sent_box TEXT NOT NULL DEFAULT ''")
 
 
-def ms_post(url, form):
-    req = urllib.request.Request(url, data=urllib.parse.urlencode(form).encode(),
-                                 headers={"content-type": "application/x-www-form-urlencoded"})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        try:
-            return json.loads(e.read())
-        except Exception:
-            return {"error": "http_%d" % e.code}
-    except Exception:
-        return {"error": "unreachable"}
+def imap_open(email, pw):
+    import imaplib
+    m = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT, timeout=20)
+    m.login(email, pw)
+    return m
 
 
-def ms_token(form):
-    cid, sec, ten = ms_conf()
-    return ms_post(f"https://login.microsoftonline.com/{ten}/oauth2/v2.0/token",
-                   {"client_id": cid, "client_secret": sec, "scope": MS_SCOPES, **form})
+def imap_sent_box(m):
+    """the Sent folder Outlook uses: the one marked \\Sent, else the usual names (Bluehost's is INBOX.Sent)"""
+    typ, rows = m.list()
+    names = []
+    for r in rows or []:
+        s = r.decode(errors="replace") if isinstance(r, bytes) else str(r)
+        mm = re.match(r'^\((?P<f>[^)]*)\)\s+(?:"[^"]*"|NIL)\s+(?P<n>.+)$', s)
+        if not mm:
+            continue
+        n = mm.group("n").strip()
+        if "\\sent" in mm.group("f").lower():
+            return n
+        names.append(n.strip('"'))
+    for want in ("INBOX.Sent", "Sent", "INBOX.Sent Items", "Sent Items", "INBOX.Sent Messages", "Sent Messages"):
+        for n in names:
+            if n.lower() == want.lower():
+                return '"%s"' % n if " " in n else n
+    return "INBOX.Sent"
 
 
-def graph_put(url, chunk, start, total):
-    """one piece of a big attachment; the upload URL carries its own permission, so no sign-in header"""
-    req = urllib.request.Request(url, method="PUT", data=chunk, headers={
-        "content-length": str(len(chunk)), "content-range": f"bytes {start}-{start + len(chunk) - 1}/{total}"})
+def resend_post(payload):
+    req = urllib.request.Request("https://api.resend.com/emails", data=json.dumps(payload).encode(), headers={
+        "authorization": "Bearer " + os.environ.get("RESEND_API_KEY", "").strip(), "content-type": "application/json",
+        "user-agent": "psw-tracker"})
     with urllib.request.urlopen(req, timeout=120) as r:
-        r.read()
-
-
-def graph(method, path, token, body=None):
-    req = urllib.request.Request("https://graph.microsoft.com/v1.0" + path, method=method,
-                                 data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"authorization": "Bearer " + token, "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        t = r.read()
-        return json.loads(t) if t else {}
+        return json.loads(r.read() or b"{}")
 
 
 @app.get("/api/mail/status")
@@ -1151,56 +1150,41 @@ def mail_status(request: Request):
     with db() as c:
         mail_table(c)
         r = c.execute("SELECT email,refresh,sig FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
-    return {"configured": bool(ms_conf()), "connected": bool(ms_conf() and r and r["refresh"]),
-            "email": (r["email"] if r and r["refresh"] else ""), "sig": r["sig"] if r else ""}
+    return {"configured": mail_on(), "connected": bool(mail_on() and r and r["email"] and r["refresh"]),
+            "email": (r["email"] if r else "") or u["email"] or "", "sig": r["sig"] if r else "", "domain": MAIL_DOMAIN}
 
 
-@app.get("/mail/connect")
-def mail_connect(request: Request):
-    need_user(request)
-    if not ms_conf():
-        err(404, "mail_off")
-    cid, _, ten = ms_conf()
-    state = secrets.token_urlsafe(24)
-    q = urllib.parse.urlencode({"client_id": cid, "response_type": "code", "redirect_uri": ms_redirect(), "response_mode": "query",
-                                "scope": MS_SCOPES, "state": state, "prompt": "select_account"})
-    r = RedirectResponse(f"https://login.microsoftonline.com/{ten}/oauth2/v2.0/authorize?{q}", status_code=302)
-    r.set_cookie("psw_ms_state", state, max_age=900, httponly=True, secure=SECURE_COOKIE, samesite="lax", path="/mail")
-    return r
-
-
-def mail_page(ok, text):
-    # the sign-in runs in its own tab: tell the tracker tab it's done, then close
-    return HTMLResponse("<!doctype html><meta charset=utf-8><title>Outlook</title><body style=\"font:16px system-ui;padding:40px;color:#16263a\">"
-                        f"<p>{text}</p><p>You can close this tab.</p><script>try{{opener&&opener.postMessage({{pswMail:{'true' if ok else 'false'}}},location.origin)}}catch(_){{}}"
-                        f"{'setTimeout(()=>close(),1500)' if ok else ''}</script>", headers={"Cache-Control": "no-store"})
-
-
-@app.get("/mail/callback")
-def mail_callback(request: Request, code: str = "", state: str = "", error: str = ""):
+@app.post("/api/mail/connect")
+async def mail_connect(request: Request):
     u = need_user(request)
-    if not ms_conf():
+    if not mail_on():
         err(404, "mail_off")
-    if error or not code:
-        return mail_page(False, "Outlook wasn’t connected (sign-in was cancelled or not allowed).")
-    if not state or not hmac.compare_digest(state, request.cookies.get("psw_ms_state", "")):
-        return mail_page(False, "That sign-in link expired. Go back to the database and click Connect Outlook again.")
-    t = ms_token({"grant_type": "authorization_code", "code": code, "redirect_uri": ms_redirect()})
-    if not t.get("refresh_token"):
-        return mail_page(False, "Microsoft didn’t finish the sign-in. Check the app setup (permissions and secret) and try again.")
+    b = await request.json()
+    email, pw = str(b.get("email") or "").strip().lower(), str(b.get("password") or "")
+    if not EMAIL_RE.match(email) or not email.endswith("@" + MAIL_DOMAIN):
+        err(400, "bad_from")
+    if not pw:
+        err(400, "bad_login")
+    import imaplib
     try:
-        me = graph("GET", "/me?$select=mail,userPrincipalName", t["access_token"])
+        m = imap_open(email, pw)
+    except imaplib.IMAP4.error:
+        err(400, "bad_login")
     except Exception:
-        me = {}
-    email = (me.get("mail") or me.get("userPrincipalName") or "").strip()
+        err(502, "imap_unreachable")
+    try:
+        box = imap_sent_box(m)
+    finally:
+        try:
+            m.logout()
+        except Exception:
+            pass
     with db() as c:
         mail_table(c)
-        c.execute("INSERT INTO mail_accounts(user_id,email,refresh,updated) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
-                  "email=excluded.email, refresh=excluded.refresh, updated=excluded.updated",
-                  (u["id"], email, ms_box().encrypt(t["refresh_token"].encode()).decode(), time.time()))
-    r = mail_page(True, f"Outlook connected{(' as ' + email) if email else ''}. The database can send email for you now.")
-    r.delete_cookie("psw_ms_state", path="/mail")
-    return r
+        c.execute("INSERT INTO mail_accounts(user_id,email,refresh,sent_box,updated) VALUES(?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
+                  "email=excluded.email, refresh=excluded.refresh, sent_box=excluded.sent_box, updated=excluded.updated",
+                  (u["id"], email, mail_box().encrypt(pw.encode()).decode(), box, time.time()))
+    return {"ok": True, "email": email}
 
 
 @app.post("/api/mail/disconnect")
@@ -1208,7 +1192,7 @@ def mail_disconnect(request: Request):
     u = need_user(request)
     with db() as c:
         mail_table(c)
-        c.execute("UPDATE mail_accounts SET refresh='', email='' WHERE user_id=?", (u["id"],))
+        c.execute("UPDATE mail_accounts SET refresh='', email='', sent_box='' WHERE user_id=?", (u["id"],))
     return {"ok": True}
 
 
@@ -1230,14 +1214,14 @@ def addr_list(v):
         if a:
             if not EMAIL_RE.match(a):
                 err(400, "bad_address")
-            out.append({"emailAddress": {"address": a}})
+            out.append(a)
     return out[:50]
 
 
 @app.post("/api/mail/send")
 async def mail_send(request: Request):
     u = need_user(request)
-    if not ms_conf():
+    if not mail_on():
         err(404, "mail_off")
     b = await request.json()
     to, cc = addr_list(b.get("to")), addr_list(b.get("cc"))
@@ -1267,57 +1251,55 @@ async def mail_send(request: Request):
         atts.append((name, typ, data))
     with db() as c:
         mail_table(c)
-        r = c.execute("SELECT refresh FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
-    if not r or not r["refresh"]:
+        acct = c.execute("SELECT email,refresh,sent_box FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
+    if not acct or not acct["email"] or not acct["refresh"]:
         err(409, "mail_not_connected")
+    sender = f'{u["name"]} <{acct["email"]}>' if u["name"] else acct["email"]
+    subject, html = str(b.get("subject") or "")[:250], str(b.get("html") or "")[:200000]
+    payload = {"from": sender, "to": to, "subject": subject, "html": html, "reply_to": acct["email"],
+               "attachments": [{"filename": n, "content": base64.b64encode(d).decode(), "content_type": t} for n, t, d in atts]}
+    if cc:
+        payload["cc"] = cc
     try:
-        refresh = ms_box().decrypt(r["refresh"].encode()).decode()
-    except Exception:
-        err(409, "mail_not_connected")
-    t = ms_token({"grant_type": "refresh_token", "refresh_token": refresh})
-    if not t.get("access_token"):
-        if t.get("error") in ("invalid_grant", "interaction_required"):
-            with db() as c:
-                c.execute("UPDATE mail_accounts SET refresh='' WHERE user_id=?", (u["id"],))
-            err(409, "mail_not_connected")
-        err(502, "mail_unavailable")
-    if t.get("refresh_token"):
-        with db() as c:
-            c.execute("UPDATE mail_accounts SET refresh=?, updated=? WHERE user_id=?",
-                      (ms_box().encrypt(t["refresh_token"].encode()).decode(), time.time(), u["id"]))
-    tok = t["access_token"]
-    fa = lambda n, ty, d: {"@odata.type": "#microsoft.graph.fileAttachment", "name": n, "contentType": ty, "contentBytes": base64.b64encode(d).decode()}
-    msg = {"subject": str(b.get("subject") or "")[:250], "body": {"contentType": "HTML", "content": str(b.get("html") or "")[:200000]},
-           "toRecipients": to, "ccRecipients": cc}
-    draft = None
-    try:
-        if total <= MAIL_SMALL:  # small: one call
-            graph("POST", "/me/sendMail", tok, {"message": {**msg, "attachments": [fa(*x) for x in atts]}, "saveToSentItems": True})
-        else:  # big: make a draft, add each file (big ones in pieces), then send it; it lands in Sent Items like any other
-            draft = graph("POST", "/me/messages", tok, msg)["id"]
-            q = urllib.parse.quote(draft, safe="")
-            for name, typ, data in atts:
-                if len(data) <= MAIL_SMALL:
-                    graph("POST", f"/me/messages/{q}/attachments", tok, fa(name, typ, data))
-                    continue
-                up = graph("POST", f"/me/messages/{q}/attachments/createUploadSession", tok,
-                           {"AttachmentItem": {"attachmentType": "file", "name": name, "size": len(data), "contentType": typ}})
-                for i in range(0, len(data), MAIL_PART):
-                    graph_put(up["uploadUrl"], data[i:i + MAIL_PART], i, len(data))
-            graph("POST", f"/me/messages/{q}/send", tok)
-            draft = None
+        resend_post(payload)
     except urllib.error.HTTPError as e:
-        code = "too_large" if e.code == 413 else "mail_rejected"
-    except Exception:
-        code = "mail_unavailable"
-    else:
-        return {"ok": True}
-    if draft:  # don't leave a half-built email in Drafts
         try:
-            graph("DELETE", f"/me/messages/{urllib.parse.quote(draft, safe='')}", tok)
+            msg = json.loads(e.read()).get("message", "")
         except Exception:
-            pass
-    err(413 if code == "too_large" else 502, code)
+            msg = ""
+        if e.code == 413:
+            err(413, "too_large")
+        if e.code == 403 and "domain" in msg.lower():
+            err(502, "domain_unverified")
+        err(502, "mail_rejected")
+    except Exception:
+        err(502, "mail_unavailable")
+    # a copy in the person's own Sent folder, so it shows in Outlook like any email they sent
+    from email.message import EmailMessage
+    from email.policy import SMTP
+    from email.utils import formatdate, make_msgid
+    em = EmailMessage()
+    em["From"], em["To"], em["Subject"], em["Date"] = sender, ", ".join(to), subject, formatdate(localtime=True)
+    if cc:
+        em["Cc"] = ", ".join(cc)
+    em["Message-ID"] = make_msgid(domain=MAIL_DOMAIN)
+    em.set_content("This email was sent from the PSW database.")
+    em.add_alternative(html, subtype="html")
+    for n, t, d in atts:
+        mt, _, st = (t if "/" in t else "application/octet-stream").partition("/")
+        em.add_attachment(d, maintype=mt, subtype=st, filename=n)
+    copied = False
+    try:
+        import imaplib
+        m = imap_open(acct["email"], mail_box().decrypt(acct["refresh"].encode()).decode())
+        try:
+            typ, _ = m.append(acct["sent_box"] or "INBOX.Sent", "\\Seen", imaplib.Time2Internaldate(time.time()), em.as_bytes(policy=SMTP))
+            copied = typ == "OK"
+        finally:
+            m.logout()
+    except Exception:
+        copied = False
+    return {"ok": True, "sentCopy": copied}
 
 
 @app.get("/healthz")
