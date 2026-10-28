@@ -3525,7 +3525,7 @@ $('certList').addEventListener('click',async e=>{const b=e.target.closest('butto
 let mailSt=null;
 async function mailStatus(force){if(mailSt&&!force)return mailSt;try{const r=await fetch('/api/mail/status',{credentials:'same-origin'});mailSt=r.ok?await r.json():{configured:false}}catch(_){mailSt={configured:false}}return mailSt}
 mailStatus();
-const ML_ERR={mail_not_connected:'Outlook isn’t connected yet. Click Connect Outlook, sign in, then Send again.',too_large:'The attachments are too big to send from here (3 MB in all). Untick some, or use Open in Outlook instead.',
+const ML_ERR={mail_not_connected:'Outlook isn’t connected yet. Click Connect Outlook, sign in, then Send again.',too_large:'The attachments are too big for one email (35 MB in all). Untick some and send them in a second email.',
   bad_address:'One of the email addresses doesn’t look right. Separate more than one with commas.',no_recipient:'Add who it goes to.',mail_rejected:'Outlook turned the email down. Check the addresses and try again.',
   mail_unavailable:'Couldn’t reach Outlook just now. Try again in a minute.',mail_off:'Email from the database isn’t set up on the server yet.',not_found:'One of the attached files couldn’t be found.'};
 let mlCtx=null;
