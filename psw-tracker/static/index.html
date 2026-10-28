@@ -45,6 +45,7 @@ tbody tr:last-child td{border-bottom:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 #repDlg .mbox,#certDlg .mbox{background:#f3eefc}#repDlg input,#repDlg select,#certDlg input,#certDlg select,#certDlg textarea{background:#fff}.repT{background:#fff;border-radius:8px}#repDlg .repT th{background:#f3eefc}.linkish{background:none;border:0;padding:0;margin:0;color:#1f5fa8;text-decoration:underline;cursor:pointer;font:inherit;min-height:0}.mlConn{display:grid;gap:6px;margin-top:10px;padding:10px 12px;border:1px solid #c9b6f0;background:#f3eefc;border-radius:10px}.mlConn .row{gap:8px;flex-wrap:wrap}.mlConn input{flex:1 1 180px}.mlGrid{display:grid;gap:8px;margin-top:10px}.mlGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.mlGrid textarea{font:inherit;resize:vertical}#mlSigBox summary{cursor:pointer;font-size:13px}.sigBar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0 4px}.sigBar button{min-height:0;padding:2px 9px;font-size:13px}.sigBar select{width:auto;padding:2px 4px;font-size:13px}.sigSw{display:inline-flex;gap:3px;align-items:center;font-size:12px;margin:0 4px}.sigSw button{width:18px;height:18px;padding:0;border:1px solid #bbb;border-radius:4px}.sigSw input{width:26px;height:22px;padding:0;border:0;background:none}.sigEd{min-height:90px;max-height:260px;overflow:auto;border:1px solid var(--line,#ccc);border-radius:8px;padding:6px 8px;background:#fff;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:normal}.sigEd:empty:before{content:attr(data-ph);color:#999;white-space:pre-line}#mlDlg .mbox{background:#fdeaea}#mlDlg input,#mlDlg textarea,#mlDlg select{background:#fff}#mlDlg .mlConn{background:#fff6f6;border-color:#f0b8b8}.ccQuick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:-4px}.ccQuick button{min-height:0;padding:2px 10px;font-size:13px}.mlAtt{display:grid;gap:3px;margin-top:4px;font-size:13px;max-height:160px;overflow:auto}.mlGrid .mlAtt label{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}.mlAtt input{width:auto;flex:none;margin:0}.mlAtt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
 @media print{body.repPrint>*:not(#repDlg){display:none!important}body.repPrint #repDlg{position:static;background:none;padding:0}body.repPrint #repDlg .repT th{background:#fff}body.repPrint #repDlg .mbox{background:#fff;width:auto;max-height:none;border:0;box-shadow:none}body.repPrint .repF,body.repPrint #repDlg .row:last-child{display:none}}
+th[data-ck]{cursor:pointer;user-select:none}th[data-ck]:hover{text-decoration:underline}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}.fillTwo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:stretch}.fillTwo .drop{margin:0;flex-direction:column;align-items:stretch;justify-content:center}.fillTwo .drop input{width:100%;min-width:0}.fillPaste{display:flex;flex-direction:column;gap:6px}.fillPaste textarea{flex:1;min-height:70px;width:100%;resize:vertical}.fillPaste button{align-self:flex-end;margin:0}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
 .adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.admSig{display:flex;gap:6px;align-items:center}.admSig img{height:30px;max-width:110px;background:#fff;border:1px solid var(--line);border-radius:4px}.admSig button{padding:4px 10px;font-size:12px}
@@ -228,7 +229,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Client</th><th>First</th><th>Last</th><th>Cell</th><th>Email</th><th>Policies</th><th>Next renewal</th><th>Agent</th></tr></thead>
+        <thead><tr><th data-ck="name">Client</th><th data-ck="firstName">First</th><th data-ck="lastName">Last</th><th data-ck="phone">Cell</th><th data-ck="email">Email</th><th data-ck="pol">Policies</th><th data-ck="renew">Next renewal</th><th data-ck="agent">Agent</th></tr></thead>
         <tbody id="ctb"></tbody>
       </table>
       <div class="empty" id="cempty" hidden></div>
@@ -600,7 +601,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div></section>
   </div>
   <aside class="ppSide">
-    <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
+    <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4><label class="small" style="display:flex;gap:6px;align-items:center;margin:0;cursor:pointer;font-weight:600"><input type="checkbox" id="ppAlsoCl" style="width:auto;margin:0">Also fill client</label></div>
       <div class="fillTwo"><div class="drop" id="ppReadRow"><span style="font-weight:600">Drop a quote sheet, dec page or binder here to fill this policy, or</span><input type="file" id="ppReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*"></div>
       <div class="fillPaste"><textarea id="ppPaste" placeholder="Or paste text from a quote, dec page or binder here"></textarea><button type="button" class="pri" id="ppPasteGo">Fill from text</button></div></div>
       <div class="msg" id="ppReadMsg"></div></section>
@@ -2783,6 +2784,11 @@ const clientsCol=db.collection('clients');let clients=[],editClient=null;
 const clientName=c=>c.company||[c.firstName,c.lastName].filter(Boolean).join(' ')||'(no name)';
 const nextRenew=c=>(c.policies||[]).map(p=>p.exp).filter(x=>x&&x>=todayISO()).sort()[0]||'';
 clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients();clStaleCheck()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
+// client list: click a heading to sort by it, again to reverse; blanks go last; ties fall back to the client name
+let cSortK='name',cSortDir=1;
+const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
+function clCmp(a,b){const v=c=>String(cSortK==='name'?clientName(c):cSortK==='pol'?pol(c):cSortK==='renew'?nextRenew(c)||'':cSortK==='phone'?String(c.phone||'').replace(/\D/g,''):c[cSortK]||'').trim().toLowerCase(),va=v(a),vb=v(b);
+  if(!va!==!vb)return va?-1:1;return (va.localeCompare(vb,undefined,{numeric:true})*cSortDir)||clientName(a).localeCompare(clientName(b))}
 function renderClients(){
   $('clientCount').textContent=clients.length;
   if(view==='clients')$('count').textContent=clients.length?`${clients.length} client${clients.length===1?'':'s'}`:'No clients yet';
@@ -2790,14 +2796,15 @@ function renderClients(){
   const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value;
   const rows=clients.filter(c=>{if(fa&&c.agent!==fa)return false;if(!q)return true;
     return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,c.phone,c.email,c.phone2,c.email2,c.address,c.location,c.notes,c.genNotes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
-    .sort((a,b)=>clientName(a).localeCompare(clientName(b)));
-  const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
+    .sort(clCmp);
+  document.querySelectorAll('th[data-ck]').forEach(th=>{th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.ck===cSortK?(cSortDir>0?' ▲':' ▼'):'')});
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
   $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(fmtClPhone(c.phone))}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td></tr>`).join('');
   $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(fmtClPhone(c.phone)),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent)].filter(Boolean).join(' · ')}</div></div>`).join('');
   const ce=$('cempty');ce.hidden=rows.length>0;ce.innerHTML=clients.length?'<b>No matching clients</b>Try a different search.':'<b>No clients yet</b>Click “+ New client”, or open a lead and click “→ PSW Client”.';
 }
 ['cq','cfAgent'].forEach(id=>$(id).addEventListener('input',renderClients));
+$('ctb').closest('table').querySelector('thead').addEventListener('click',e=>{const k=e.target.closest('th')?.dataset.ck;if(!k)return;if(k===cSortK)cSortDir*=-1;else{cSortK=k;cSortDir=1}renderClients()});
 ['ctb','ccards'].forEach(id=>$(id).addEventListener('click',e=>{const r=e.target.closest('[data-client]');if(r)openClient(clients.find(c=>c.id===r.dataset.client))}));
 // policy rows: dates type as MM/DD/YYYY, exp fills in a year after eff
 const LOBS=['Personal Auto','Personal Home','Rental Dwelling','Earthquake','DIC','Secondary Home','Commercial Auto','Commercial Property','General Liability','Workers Comp','Umbrella/Excess','CSLB Bond','BOP'];
@@ -2973,7 +2980,7 @@ let polTr=null,polNew=false;const PP=['line','carrier','company','number','premi
 // each line of business adds its own basic fields to the pop-up (kept with the policy as "extra"); a's' field is a bigger box
 const LOB_FIELDS={
   'Personal Auto':[['#Drivers'],['#Vehicles'],['bi','Bodily injury'],['pd','Property damage'],['um','UM / UIM'],['med','Med pay'],['comp','Comp ded'],['coll','Coll ded'],['rental','Rental'],['towing','Towing']],
-  'Commercial Auto':[['ptype','Policy type'],['csl','Liability (CSL)'],['um','UM / UIM'],['umpd','UMPD'],['med','Med pay'],['cargo','Cargo'],['hnoa','Hired / non-owned'],['#Drivers'],['#Vehicles']],
+  'Commercial Auto':[['ptype','Policy type'],['csl','BI/PD or CSL'],['um','UM / UIM'],['umpd','UMPD'],['med','Med pay'],['cargo','Cargo'],['hnoa','Hired / non-owned'],['#Drivers'],['#Vehicles']],
   'Personal Home':[['address','Property address'],['dwelling','Dwelling (A)'],['other_structures','Other structures (B)'],['personal_property','Personal property (C)'],['loss_of_use','Loss of use (D)'],['liability','Liability (E)'],['med','Med pay (F)'],['deductible','Deductible'],['#Home']],
   'Rental Dwelling':[['address','Property address'],['year_built','Year built'],['units','Units'],['dwelling','Dwelling'],['other_structures','Other structures'],['loss_of_rents','Loss of rents'],['liability','Liability'],['deductible','Deductible'],['sq_ft','Sq ft'],['construction','Construction']],
   'Secondary Home':[['address','Property address'],['year_built','Year built'],['dwelling','Dwelling (A)'],['personal_property','Personal property (C)'],['loss_of_use','Loss of use (D)'],['liability','Liability (E)'],['deductible','Deductible'],['occupancy','Occupancy (seasonal / vacant / rented)']],
@@ -3024,7 +3031,18 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   $('polBox').classList.toggle('wide',fs.some(([k])=>k[0]==='#'&&k!=='#Home'));
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{el.value=ppExtraVals[el.dataset.x]||''});
   // coverages A to F read $#,### (no cents), on open and when you leave the box
-  if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)})}
+  if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)});
+  ppNumAll()}
+// policy details: a plain number gets commas (100000 -> 100,000), and a money box also gets a $ (Alex's standing rule); split limits like 100/300 and years, codes and zips stay as typed
+const PP_COUNT=/employee|sq\.? ?ft|square f|miles|mileage|radius|units|stories|number of|# of/i,PP_SKIP=/year|\byr\b|built|code|zip|vin|licen|phone|%|\bmod\b|date|dob|\bage\b|state|plate|score|points|#/i,
+  PP_MONEY=/limit|deduct|ded\b|building|property|income|sales|receipt|payroll|cost|premium|dwelling|contents|structures|loss of use|occurrence|aggregate|products|injury|premises|med|amount|value|cargo|bond|retention|liability|rents|price|\bbpp\b|\bum\b|umpd|csl|bi\/pd|coverage/i;
+function ppNumKind(el){const td=el.closest('td'),th=td&&td.closest('table')?.querySelector('thead tr')?.children[td.cellIndex],l=[el.title,el.closest('label')?.textContent,el.parentElement?.querySelector(':scope>label')?.textContent,th?.textContent,el.dataset.x.replace(/^[dv]\d+_/,'')].filter(Boolean).join(' ');
+  return PP_COUNT.test(l)?'n':PP_SKIP.test(l)?'':PP_MONEY.test(l)?'$':''}
+function ppNumFix(el){const v=el.value.trim(),plain=/^\$?\s*\d[\d,]*(\.\d+)?$/.test(v);if(!plain&&!/^\$?\s*\d[\d,.]*\s*(k|m|mil|million)$/i.test(v))return;const k=el.dataset.nk??(el.dataset.nk=ppNumKind(el));
+  if(k==='$'){if(!plain)el.value=fmtMoney(v);else{const n=parseFloat(v.replace(/[$,\s]/g,'')),c=n%1?2:0;el.value='$'+n.toLocaleString('en-US',{minimumFractionDigits:c,maximumFractionDigits:2})}}
+  else if(k==='n'&&plain){const n=parseFloat(v.replace(/[$,\s]/g,''));if(!isNaN(n))el.value=n.toLocaleString('en-US')}}
+function ppNumAll(){$('ppExtra').querySelectorAll('input[data-x]').forEach(ppNumFix)}
+$('ppExtra').addEventListener('focusout',e=>{if(e.target.matches('input[data-x]'))ppNumFix(e.target)});
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
   try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
@@ -3175,7 +3193,7 @@ function openClient(c,preset,quiet){editClient=c||null;$('clPaste').value='';$('
   $('clientTitleH').textContent=c?'Edit client':'New client';
   [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPref','preferredName'],['clDob','dob'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clLocation','location'],['clBusType','busType'],['clWork','workPhone'],['clRel','relationship'],['clCity','city'],['clState','state'],['clZip','zip'],['clLocCity','locCity'],['clLocState','locState'],['clLocZip','locZip'],['clSource','leadSource']].forEach(([id,k])=>$(id).value=v[k]||'');$('clStatus').value=v.status||'Active';$('clWork').value=fmtClPhone($('clWork').value);
   $('clPeople').innerHTML='';(v.people||[]).forEach(addPerson);
-  $('clSince').value=fmtDate(v.since||'');$('clPhone').value=fmtClPhone($('clPhone').value);$('clPhone2').value=fmtClPhone($('clPhone2').value);
+  $('clSince').value=fmtDate(v.since||(c?'':todayISO()));  // a new client starts as a client today$('clPhone').value=fmtClPhone($('clPhone').value);$('clPhone2').value=fmtClPhone($('clPhone2').value);
   const agents=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
   $('clAgent').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('clAgent').value=v.agent||'';
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
@@ -3268,6 +3286,9 @@ const CL_FILL={company:['clCompany','Business name'],busType:['clBusType','Busin
   address:['clAddress','Mailing street address'],city:['clCity','Mailing city'],state:['clState','Mailing state (2 letters)'],zip:['clZip','Mailing ZIP'],
   location:['clLocation','Business location street address, if different'],locCity:['clLocCity','Location city'],locState:['clLocState','Location state (2 letters)'],locZip:['clLocZip','Location ZIP']};
 function clApply(o){let n=0;
+  // only one phone number in the document (say just home or work): it goes in Cell phone too
+  if(o&&typeof o==='object'){const ph=[...new Set(['phone','phone2','workPhone'].map(k=>String(o[k]??'').replace(/\D/g,'')).filter(Boolean))];
+    if(ph.length===1&&!String(o.phone??'').trim())o={...o,phone:['phone2','workPhone'].map(k=>String(o[k]??'').trim()).find(Boolean)}}
   for(const [k,[id]] of Object.entries(CL_FILL)){const el=$(id);let v=String((o&&o[k])??'').trim();if(!el||!v||el.value.trim())continue;
     if(/phone|^workPhone$/i.test(k))v=fmtPhone(v);if(k==='dob')v=fmtDOB(v);if(/state$/i.test(k))v=v.toUpperCase().slice(0,2);
     if(el.tagName==='SELECT'){const hit=[...el.options].find(op=>op.value&&op.value.toLowerCase()===v.toLowerCase());if(!hit)continue;v=hit.value}
@@ -3275,15 +3296,15 @@ function clApply(o){let n=0;
   return n}
 function clBasic(t){const em=t.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g)||[],ph=t.match(/(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g)||[];return {email:em[0],email2:em[1],phone:ph[0]}}
 async function clFillFrom(t,name,img){const m=$('clReadMsg'),from=name?`from ${name}`:'from the pasted text',done=n=>n?`Filled ${n} empty box${n===1?'':'es'} ${from}. Check them, then Save client.`:'Couldn’t find anything new to fill in that.';
-  if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now.';return}
-  if(!sample){const n=clApply(clBasic(t));m.className=n?'msg ok':'msg err';m.textContent=done(n)+' (Basic mode: Claude isn’t turned on, so only email and phone are found.)';return}
+  if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now.';return -1}
+  if(!sample){const n=clApply(clBasic(t));m.className=n?'msg ok':'msg err';m.textContent=done(n)+' (Basic mode: Claude isn’t turned on, so only email and phone are found.)';return n}
   const prompt=`You are filling in an insurance agency's client record from ${img?`the attached picture${img.length>1?'s':''}`:'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be an application, quote, dec page, email or signature).
 Reply with only a JSON object with these keys: ${Object.entries(CL_FILL).map(([k,[,l]])=>k+' = '+l).join('; ')}.
 Use "" for anything not stated; never guess. Phone numbers and dates as written.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('clReadIn').disabled=$('clPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
-  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const n=o&&typeof o==='object'?clApply(o):0;m.className=n?'msg ok':'msg err';m.textContent=done(n)}
-  catch(e){const n=t?clApply(clBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
-  $('clReadIn').disabled=$('clPasteGo').disabled=false}
+  let n=0;try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});n=o&&typeof o==='object'?clApply(o):0;m.className=n?'msg ok':'msg err';m.textContent=done(n)}
+  catch(e){n=t?clApply(clBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
+  $('clReadIn').disabled=$('clPasteGo').disabled=false;return n}
 async function clRead(f){const m=$('clReadMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
   if(assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f]); // keep the document with the client too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
@@ -3317,6 +3338,10 @@ function ppFromHome(q,cur){ // PSW personal home quote sheet boxes -> Personal H
 function ppFromSheet(q){ // PSW personal auto quote sheet boxes -> policy fields
   const x={bi:q.f_bi_limit,pd:q.f_pd_limit,um:q.f_um_uim,med:q.f_med_pay,comp:q.f_comp_ded,coll:q.f_coll_ded,rental:q.f_rental,towing:q.f_towing};
   for(const [k,v] of Object.entries(q))if(/^[dv]\d+_/.test(k))x[k]=v;return {line:'Personal Auto',eff:q.f_eff_date||'',extra:x}}
+// a split auto limit as one value in thousands: BI "100/300" (or "$100,000/$300,000") and PD "100" -> "100/300/100"
+function biPd(bi,pd){const k=x=>String(x||'').split('/').map(y=>{const t=y.replace(/[$,\s]/g,'').replace(/k$/i,''),n=+t;return t&&!isNaN(n)?String(n>=1000?n/1000:n):y.trim()}).filter(Boolean),b=k(bi),d=k(pd);
+  if(!d.length&&b.length<2)return String(bi||'').trim();  // a single combined limit stays as written
+  if(!b.length)return d.join('/');if(d.length&&b.length<3)b.push(...d);return b.join('/')}
 function ppFromAuto(q){ // PSW commercial auto quote sheet -> Commercial Auto policy fields (drivers and vehicles use the same keys)
   const g=k=>q['f_'+k]||'',x={csl:g('liability_limit'),um:g('um_uim'),med:g('med_pay'),comp:g('comp_ded'),coll:g('coll_ded'),hnoa:g('hired_nonowned'),cargo:g('cargo_limit'),radius:q.v1_radius||''};
   for(const [k,v] of Object.entries(q))if(/^[dv]\d+_/.test(k))x[k]=v;
@@ -3349,6 +3374,7 @@ function ppApply(o){let n=0;const set=(el,v)=>{v=String(v??'').trim();if(!el||!v
   for(const [k,v] of Object.entries(o.extra||{})){const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)continue;let w=String(v??'').trim();
     if(/_dob$/.test(k)&&w)w=fmtDOB(w);if(/^v\d+_miles$/.test(k)){const d=w.replace(/\D/g,'').slice(0,6);w=d?Number(d).toLocaleString('en-US'):''}if(/^v\d+_year$/.test(k))w=w.replace(/\D/g,'').slice(0,4);if(el.dataset.money&&/\d/.test(w))w=fmtMoney(w);set(el,w)}
   $('ppExtra').querySelectorAll('[data-x$=_dob]').forEach(el=>{if(el.value)el.dispatchEvent(new Event('input',{bubbles:true}))}); // Yrs lic from age
+  ppNumAll();
   return n}
 function ppBasic(t){ // no Claude: pick out the usual labels
   const g=re=>{const m=re.exec(t);return m?m[1].trim():''},o={};
@@ -3361,9 +3387,14 @@ async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=
   if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value); // keep the document with the policy too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
   try{r=await readScan(f,isImg,x=>m.textContent=x)}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
-  if(!isImg){const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}}
+  if(!isImg){const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;await ppAlsoClient(r.t,f.name,r.imgs.length?r.imgs:null);return}}
   lastFields={};if(!r.t&&!r.imgs.length){m.className='msg err';m.textContent=`No words could be read in ${f.name}.`;return}
-  await ppFillFrom(r.t,f.name,r.imgs.length?r.imgs:null)}
+  await ppFillFrom(r.t,f.name,r.imgs.length?r.imgs:null);await ppAlsoClient(r.t,f.name,r.imgs.length?r.imgs:null)}
+// "Also fill client": the same document fills the client's empty boxes too (the client screen is open under the policy)
+async function ppAlsoClient(t,name,img){if(!$('ppAlsoCl').checked||(!t&&!img))return;const m=$('ppReadMsg'),base=m.textContent;m.textContent=base+' Now filling the client…';
+  const n=await clFillFrom(t,name,img);m.textContent=base+(n<0?' The client is view-only, so it wasn’t filled.':n?` Also filled ${n} empty client box${n===1?'':'es'}; Save client keeps them.`:' Nothing new for the client.')}
+try{$('ppAlsoCl').checked=localStorage.getItem('ppAlsoCl')==='1'}catch(_){}
+$('ppAlsoCl').addEventListener('change',()=>{try{localStorage.setItem('ppAlsoCl',$('ppAlsoCl').checked?'1':'0')}catch(_){}});
 // fills the policy from document text (or a picture) with Claude, or the basic label finder when Claude is off; used by a dropped file and by pasted text
 async function ppFillFrom(t,name,img){const m=$('ppReadMsg'),from=name?`from ${name}`:'from the pasted text';
   if(!sample){const n=ppApply(ppBasic(t));m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} (basic mode, Claude isn’t turned on for this database). Check them, then Done.`:'Couldn’t find policy details in that (basic mode, Claude isn’t turned on for this database).';return}
@@ -3374,15 +3405,16 @@ Keys: ${Object.entries(PP_MAIN).map(([k,l])=>k+' = '+l).join('; ')}.
 Money as written (e.g. "$1,234.00"). Leave out or use "" for anything not stated; never guess.
 "extra" holds details for the line of business, using only that line's keys:
 ${(cur?[cur]:LOBS).map(l=>`${l}: `+ppDetailKeys(l).map(([k,lb])=>k+' = '+lb).join('; ')).join('\n')}
-Limits as written (e.g. "100/300", "$1,000,000"). For keys with listed choices use one of them.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
+Limits as written (e.g. "100/300", "$1,000,000"). For keys with listed choices use one of them.${(cur||'')==='Commercial Auto'||!cur?`
+For Commercial Auto, put a split limit in extra as "bi" (bodily injury, sometimes labeled Liability, e.g. "100/300") and "pd" (property damage, e.g. "100") instead of "csl"; use "csl" only for a single combined limit.`:''}`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('ppReadIn').disabled=$('ppPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
-  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const n=o&&typeof o==='object'?ppApply(o):0;
+  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const ex=o&&o.extra;if(ex&&typeof ex==='object'&&(ex.bi||ex.pd||ex.liability)){const v=biPd(ex.bi||ex.liability||ex.csl,ex.pd);if(v)ex.csl=v;delete ex.bi;delete ex.pd;delete ex.liability}const n=o&&typeof o==='object'?ppApply(o):0;
     m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} ${from}. Check them, then Done.`:'Couldn’t find policy details in that.'}
   catch(e){const n=t?ppApply(ppBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
   $('ppReadIn').disabled=$('ppPasteGo').disabled=false}
 $('ppPasteGo').onclick=async()=>{const t=$('ppPaste').value.trim(),m=$('ppReadMsg');
   if(!t){m.className='msg err';m.textContent='Paste the text from the quote, dec page or binder first.';$('ppPaste').focus();return}
-  await ppFillFrom(t,'',null)};
+  await ppFillFrom(t,'',null);await ppAlsoClient(t,'',null)};
 $('ppReadIn').onchange=()=>{const f=$('ppReadIn').files[0];$('ppReadIn').value='';if(f)ppRead(f)};
 {const fz=$('ppReadRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
