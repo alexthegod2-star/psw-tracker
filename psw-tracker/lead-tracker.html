@@ -3558,7 +3558,7 @@ $('mlOutlook').onclick=()=>{const to=$('mlTo').value.trim();$('mlOutlook').href=
 const mlHtml=t=>esc(t).replace(/\r?\n/g,'<br>');
 // signature: formatted (bold, colors, sizes, links); kept as cleaned-up HTML. Older plain-text signatures still load.
 const SIG_TAGS=new Set(['B','STRONG','I','EM','U','BR','DIV','P','SPAN','FONT','A','TABLE','TBODY','TR','TD','UL','OL','LI','H1','H2','H3','H4','SUB','SUP','HR']);
-const SIG_CSS=/^(color|background-color|font-weight|font-style|font-size|font-family|text-decoration|text-decoration-line|text-align|margin|margin-top|margin-bottom|line-height)$/;
+const SIG_CSS=/^(color|background-color|font-weight|font-style|font-size|font-family|text-decoration|text-decoration-line|text-align)$/;  // no margins/line-height: Outlook's spacing doubles the lines
 function sigClean(html){const t=document.createElement('template');t.innerHTML=html||'';
   const walk=n=>{for(const k of [...n.childNodes]){if(k.nodeType===3)continue;
     if(k.nodeType!==1){k.remove();continue}
@@ -3571,7 +3571,9 @@ function sigClean(html){const t=document.createElement('template');t.innerHTML=h
       else if(k.tagName==='FONT'&&(n2==='color'||n2==='size'||n2==='face')){}
       else k.removeAttribute(a.name)}
     if(k.tagName==='A')k.setAttribute('target','_blank');
-    walk(k)}};
+    walk(k);
+    // Outlook pastes each line as a paragraph (<p>), which browsers and inboxes space out; a plain line (<div>) keeps it single-spaced
+    if(k.tagName==='P'||/^H[1-4]$/.test(k.tagName)){const d=document.createElement('div');for(const a of [...k.attributes])d.setAttribute(a.name,a.value);d.append(...k.childNodes);if(!d.textContent.trim()&&!d.querySelector('br'))d.append(document.createElement('br'));k.replaceWith(d)}}};
   walk(t.content);return t.innerHTML.replace(/(<br>\s*)+$/,'').trim()}
 const sigLoad=s=>!s?'':/<[a-z][\s\S]*>/i.test(s)?sigClean(s):mlHtml(s);
 const sigNow=()=>{const h=sigClean($('mlSig').innerHTML);const t=document.createElement('div');t.innerHTML=h;return t.textContent.trim()?h:''};
