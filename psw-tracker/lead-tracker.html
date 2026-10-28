@@ -3031,7 +3031,18 @@ function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLin
   $('polBox').classList.toggle('wide',fs.some(([k])=>k[0]==='#'&&k!=='#Home'));
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{el.value=ppExtraVals[el.dataset.x]||''});
   // coverages A to F read $#,### (no cents), on open and when you leave the box
-  if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)})}
+  if(homeCol)COV.slice(0,6).forEach(k=>{const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)return;el.dataset.money='1';const fix=()=>{if(/\d/.test(el.value))el.value=fmtMoney(el.value)};fix();el.addEventListener('blur',fix)});
+  ppNumAll()}
+// policy details: a plain number gets commas (100000 -> 100,000), and a money box also gets a $ (Alex's standing rule); split limits like 100/300 and years, codes and zips stay as typed
+const PP_COUNT=/employee|sq\.? ?ft|square f|miles|mileage|radius|units|stories|number of|# of/i,PP_SKIP=/year|\byr\b|built|code|zip|vin|licen|phone|%|\bmod\b|date|dob|\bage\b|state|plate|score|points|#/i,
+  PP_MONEY=/limit|deduct|ded\b|building|property|income|sales|receipt|payroll|cost|premium|dwelling|contents|structures|loss of use|occurrence|aggregate|products|injury|premises|med|amount|value|cargo|bond|retention|liability|rents|price|\bbpp\b|\bum\b|umpd|csl|bi\/pd|coverage/i;
+function ppNumKind(el){const td=el.closest('td'),th=td&&td.closest('table')?.querySelector('thead tr')?.children[td.cellIndex],l=[el.title,el.closest('label')?.textContent,el.parentElement?.querySelector(':scope>label')?.textContent,th?.textContent,el.dataset.x.replace(/^[dv]\d+_/,'')].filter(Boolean).join(' ');
+  return PP_COUNT.test(l)?'n':PP_SKIP.test(l)?'':PP_MONEY.test(l)?'$':''}
+function ppNumFix(el){const v=el.value.trim(),plain=/^\$?\s*\d[\d,]*(\.\d+)?$/.test(v);if(!plain&&!/^\$?\s*\d[\d,.]*\s*(k|m|mil|million)$/i.test(v))return;const k=el.dataset.nk??(el.dataset.nk=ppNumKind(el));
+  if(k==='$'){if(!plain)el.value=fmtMoney(v);else{const n=parseFloat(v.replace(/[$,\s]/g,'')),c=n%1?2:0;el.value='$'+n.toLocaleString('en-US',{minimumFractionDigits:c,maximumFractionDigits:2})}}
+  else if(k==='n'&&plain){const n=parseFloat(v.replace(/[$,\s]/g,''));if(!isNaN(n))el.value=n.toLocaleString('en-US')}}
+function ppNumAll(){$('ppExtra').querySelectorAll('input[data-x]').forEach(ppNumFix)}
+$('ppExtra').addEventListener('focusout',e=>{if(e.target.matches('input[data-x]'))ppNumFix(e.target)});
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
   try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
@@ -3363,6 +3374,7 @@ function ppApply(o){let n=0;const set=(el,v)=>{v=String(v??'').trim();if(!el||!v
   for(const [k,v] of Object.entries(o.extra||{})){const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)continue;let w=String(v??'').trim();
     if(/_dob$/.test(k)&&w)w=fmtDOB(w);if(/^v\d+_miles$/.test(k)){const d=w.replace(/\D/g,'').slice(0,6);w=d?Number(d).toLocaleString('en-US'):''}if(/^v\d+_year$/.test(k))w=w.replace(/\D/g,'').slice(0,4);if(el.dataset.money&&/\d/.test(w))w=fmtMoney(w);set(el,w)}
   $('ppExtra').querySelectorAll('[data-x$=_dob]').forEach(el=>{if(el.value)el.dispatchEvent(new Event('input',{bubbles:true}))}); // Yrs lic from age
+  ppNumAll();
   return n}
 function ppBasic(t){ // no Claude: pick out the usual labels
   const g=re=>{const m=re.exec(t);return m?m[1].trim():''},o={};
