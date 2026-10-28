@@ -16,6 +16,7 @@ import secrets
 import sqlite3
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -1074,6 +1075,216 @@ def quote_public_page(tok: str):
 
 # ---------- pages and supporting files ----------
 NO_STORE = {"Cache-Control": "no-store"}
+
+
+# ---------- Outlook: each person connects their own Microsoft 365 mailbox once; the database then sends email through it ----------
+# Needs an app registration in Microsoft Entra (MS_CLIENT_ID, MS_CLIENT_SECRET, MS_TENANT_ID in .env). Sent mail goes through
+# Microsoft Graph (HTTPS), lands in the person's Outlook Sent Items, and comes from their own address; DigitalOcean's SMTP block doesn't apply.
+MS_SCOPES = "offline_access User.Read Mail.Send"
+MAIL_MAX = 3 * 1024 * 1024  # Graph's one-call sendMail takes about 4 MB in all; attachments grow a third as base64
+EMAIL_RE = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
+
+
+def ms_conf():
+    cid, sec = os.environ.get("MS_CLIENT_ID", "").strip(), os.environ.get("MS_CLIENT_SECRET", "").strip()
+    return (cid, sec, os.environ.get("MS_TENANT_ID", "common").strip() or "common") if cid and sec else None
+
+
+def ms_redirect():
+    return os.environ.get("PSW_PUBLIC_URL", "https://165-227-56-252.sslip.io").rstrip("/") + "/mail/callback"
+
+
+def ms_box():
+    """refresh tokens are kept encrypted with a key made from the client secret (a new secret means everyone reconnects)"""
+    from cryptography.fernet import Fernet
+    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(("psw-mail:" + ms_conf()[1]).encode()).digest()))
+
+
+def mail_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS mail_accounts(user_id TEXT PRIMARY KEY, email TEXT NOT NULL DEFAULT '', "
+              "refresh TEXT NOT NULL DEFAULT '', sig TEXT NOT NULL DEFAULT '', updated REAL NOT NULL)")
+
+
+def ms_post(url, form):
+    req = urllib.request.Request(url, data=urllib.parse.urlencode(form).encode(),
+                                 headers={"content-type": "application/x-www-form-urlencoded"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        try:
+            return json.loads(e.read())
+        except Exception:
+            return {"error": "http_%d" % e.code}
+    except Exception:
+        return {"error": "unreachable"}
+
+
+def ms_token(form):
+    cid, sec, ten = ms_conf()
+    return ms_post(f"https://login.microsoftonline.com/{ten}/oauth2/v2.0/token",
+                   {"client_id": cid, "client_secret": sec, "scope": MS_SCOPES, **form})
+
+
+def graph(method, path, token, body=None):
+    req = urllib.request.Request("https://graph.microsoft.com/v1.0" + path, method=method,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"authorization": "Bearer " + token, "content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        t = r.read()
+        return json.loads(t) if t else {}
+
+
+@app.get("/api/mail/status")
+def mail_status(request: Request):
+    u = need_user(request)
+    with db() as c:
+        mail_table(c)
+        r = c.execute("SELECT email,refresh,sig FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
+    return {"configured": bool(ms_conf()), "connected": bool(ms_conf() and r and r["refresh"]),
+            "email": (r["email"] if r and r["refresh"] else ""), "sig": r["sig"] if r else ""}
+
+
+@app.get("/mail/connect")
+def mail_connect(request: Request):
+    need_user(request)
+    if not ms_conf():
+        err(404, "mail_off")
+    cid, _, ten = ms_conf()
+    state = secrets.token_urlsafe(24)
+    q = urllib.parse.urlencode({"client_id": cid, "response_type": "code", "redirect_uri": ms_redirect(), "response_mode": "query",
+                                "scope": MS_SCOPES, "state": state, "prompt": "select_account"})
+    r = RedirectResponse(f"https://login.microsoftonline.com/{ten}/oauth2/v2.0/authorize?{q}", status_code=302)
+    r.set_cookie("psw_ms_state", state, max_age=900, httponly=True, secure=SECURE_COOKIE, samesite="lax", path="/mail")
+    return r
+
+
+def mail_page(ok, text):
+    # the sign-in runs in its own tab: tell the tracker tab it's done, then close
+    return HTMLResponse("<!doctype html><meta charset=utf-8><title>Outlook</title><body style=\"font:16px system-ui;padding:40px;color:#16263a\">"
+                        f"<p>{text}</p><p>You can close this tab.</p><script>try{{opener&&opener.postMessage({{pswMail:{'true' if ok else 'false'}}},location.origin)}}catch(_){{}}"
+                        f"{'setTimeout(()=>close(),1500)' if ok else ''}</script>", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/mail/callback")
+def mail_callback(request: Request, code: str = "", state: str = "", error: str = ""):
+    u = need_user(request)
+    if not ms_conf():
+        err(404, "mail_off")
+    if error or not code:
+        return mail_page(False, "Outlook wasn’t connected (sign-in was cancelled or not allowed).")
+    if not state or not hmac.compare_digest(state, request.cookies.get("psw_ms_state", "")):
+        return mail_page(False, "That sign-in link expired. Go back to the database and click Connect Outlook again.")
+    t = ms_token({"grant_type": "authorization_code", "code": code, "redirect_uri": ms_redirect()})
+    if not t.get("refresh_token"):
+        return mail_page(False, "Microsoft didn’t finish the sign-in. Check the app setup (permissions and secret) and try again.")
+    try:
+        me = graph("GET", "/me?$select=mail,userPrincipalName", t["access_token"])
+    except Exception:
+        me = {}
+    email = (me.get("mail") or me.get("userPrincipalName") or "").strip()
+    with db() as c:
+        mail_table(c)
+        c.execute("INSERT INTO mail_accounts(user_id,email,refresh,updated) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
+                  "email=excluded.email, refresh=excluded.refresh, updated=excluded.updated",
+                  (u["id"], email, ms_box().encrypt(t["refresh_token"].encode()).decode(), time.time()))
+    r = mail_page(True, f"Outlook connected{(' as ' + email) if email else ''}. The database can send email for you now.")
+    r.delete_cookie("psw_ms_state", path="/mail")
+    return r
+
+
+@app.post("/api/mail/disconnect")
+def mail_disconnect(request: Request):
+    u = need_user(request)
+    with db() as c:
+        mail_table(c)
+        c.execute("UPDATE mail_accounts SET refresh='', email='' WHERE user_id=?", (u["id"],))
+    return {"ok": True}
+
+
+@app.post("/api/mail/signature")
+async def mail_signature(request: Request):
+    u = need_user(request)
+    sig = str((await request.json()).get("sig", ""))[:4000]
+    with db() as c:
+        mail_table(c)
+        c.execute("INSERT INTO mail_accounts(user_id,sig,updated) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET sig=excluded.sig",
+                  (u["id"], sig, time.time()))
+    return {"ok": True}
+
+
+def addr_list(v):
+    out = []
+    for a in (v if isinstance(v, list) else re.split(r"[,;]", str(v or ""))):
+        a = str(a).strip()
+        if a:
+            if not EMAIL_RE.match(a):
+                err(400, "bad_address")
+            out.append({"emailAddress": {"address": a}})
+    return out[:50]
+
+
+@app.post("/api/mail/send")
+async def mail_send(request: Request):
+    u = need_user(request)
+    if not ms_conf():
+        err(404, "mail_off")
+    b = await request.json()
+    to, cc = addr_list(b.get("to")), addr_list(b.get("cc"))
+    if not to:
+        err(400, "no_recipient")
+    atts, total = [], 0
+    for a in (b.get("attachments") or [])[:20]:
+        name = re.sub(r"[\\/\r\n]", " ", str(a.get("name") or "file"))[:150]
+        if a.get("blob"):  # a file already stored on a lead or client
+            bid = str(a["blob"])
+            if not SEG.match(bid):
+                err(400, "bad_id")
+            with db() as c:
+                r = c.execute("SELECT type FROM tracker_blobs WHERE id=?", (bid,)).fetchone()
+            if not r or not (BLOBS / bid).exists():
+                err(404, "not_found")
+            data, typ = (BLOBS / bid).read_bytes(), r["type"]
+        else:  # made in the browser (e.g. the flattened cert)
+            try:
+                data = base64.b64decode(str(a.get("b64") or ""), validate=True)
+            except Exception:
+                err(400, "bad_file")
+            typ = str(a.get("type") or "application/octet-stream")[:100]
+        total += len(data)
+        if total > MAIL_MAX:
+            err(413, "too_large")
+        atts.append({"@odata.type": "#microsoft.graph.fileAttachment", "name": name, "contentType": typ,
+                     "contentBytes": base64.b64encode(data).decode()})
+    with db() as c:
+        mail_table(c)
+        r = c.execute("SELECT refresh FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
+    if not r or not r["refresh"]:
+        err(409, "mail_not_connected")
+    try:
+        refresh = ms_box().decrypt(r["refresh"].encode()).decode()
+    except Exception:
+        err(409, "mail_not_connected")
+    t = ms_token({"grant_type": "refresh_token", "refresh_token": refresh})
+    if not t.get("access_token"):
+        if t.get("error") in ("invalid_grant", "interaction_required"):
+            with db() as c:
+                c.execute("UPDATE mail_accounts SET refresh='' WHERE user_id=?", (u["id"],))
+            err(409, "mail_not_connected")
+        err(502, "mail_unavailable")
+    if t.get("refresh_token"):
+        with db() as c:
+            c.execute("UPDATE mail_accounts SET refresh=?, updated=? WHERE user_id=?",
+                      (ms_box().encrypt(t["refresh_token"].encode()).decode(), time.time(), u["id"]))
+    msg = {"subject": str(b.get("subject") or "")[:250], "body": {"contentType": "HTML", "content": str(b.get("html") or "")[:200000]},
+           "toRecipients": to, "ccRecipients": cc, "attachments": atts}
+    try:
+        graph("POST", "/me/sendMail", t["access_token"], {"message": msg, "saveToSentItems": True})
+    except urllib.error.HTTPError as e:
+        err(413 if e.code == 413 else 502, "too_large" if e.code == 413 else "mail_rejected")
+    except Exception:
+        err(502, "mail_unavailable")
+    return {"ok": True}
 
 
 @app.get("/healthz")

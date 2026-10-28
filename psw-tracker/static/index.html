@@ -43,7 +43,7 @@ tbody tr:last-child td{border-bottom:none}
 .sold{display:inline-block;background:#1f9d55;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}.dead{display:inline-block;background:#111;color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 6px;border-radius:4px;margin-right:8px;vertical-align:1px}
 .tgl{padding:3px 10px 3px 6px;font-size:12px;font-weight:600;border-radius:999px;gap:2px}.tgl .cdot{margin-right:4px;pointer-events:none}
 .cdot:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-#repDlg .mbox,#certDlg .mbox{background:#f3eefc}#repDlg input,#repDlg select,#certDlg input,#certDlg select,#certDlg textarea{background:#fff}.repT{background:#fff;border-radius:8px}#repDlg .repT th{background:#f3eefc}.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
+#repDlg .mbox,#certDlg .mbox{background:#f3eefc}#repDlg input,#repDlg select,#certDlg input,#certDlg select,#certDlg textarea{background:#fff}.repT{background:#fff;border-radius:8px}#repDlg .repT th{background:#f3eefc}.mlGrid{display:grid;gap:8px;margin-top:10px}.mlGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.mlGrid textarea{font:inherit;resize:vertical}#mlSigBox summary{cursor:pointer;font-size:13px}.mlAtt{display:grid;gap:3px;margin-top:4px;font-size:13px;max-height:160px;overflow:auto}.mlGrid .mlAtt label{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}.mlAtt input{width:auto;flex:none;margin:0}.mlAtt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
 @media print{body.repPrint>*:not(#repDlg){display:none!important}body.repPrint #repDlg{position:static;background:none;padding:0}body.repPrint #repDlg .repT th{background:#fff}body.repPrint #repDlg .mbox{background:#fff;width:auto;max-height:none;border:0;box-shadow:none}body.repPrint .repF,body.repPrint #repDlg .row:last-child{display:none}}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}.fillTwo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:stretch}.fillTwo .drop{margin:0;flex-direction:column;align-items:stretch;justify-content:center}.fillTwo .drop input{width:100%;min-width:0}.fillPaste{display:flex;flex-direction:column;gap:6px}.fillPaste textarea{flex:1;min-height:70px;width:100%;resize:vertical}.fillPaste button{align-self:flex-end;margin:0}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
@@ -375,6 +375,16 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <label class="btn" style="margin:0">Choose file<input type="file" id="edSupIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edSupMsg" style="margin-top:8px"></div></div></div>
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
+<div class="mbg" id="mlDlg" role="dialog" aria-modal="true" aria-labelledby="mlTitle" style="z-index:20"><div class="mbox" style="width:min(760px,96vw);max-height:92vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="mlTitle" style="margin:0">Send email</h3><span class="small" id="mlFrom"></span></div>
+  <div class="mlGrid"><label>To<input id="mlTo" autocomplete="off" placeholder="name@example.com (more than one: separate with commas)"></label><label>Cc<input id="mlCc" autocomplete="off"></label>
+    <label>Subject<input id="mlSubj" autocomplete="off"></label><label>Message<textarea id="mlBody" rows="9"></textarea></label>
+    <details id="mlSigBox"><summary>Signature (added under every email you send from here)</summary><textarea id="mlSig" rows="5" placeholder="Your name&#10;Pacific Southwest Insurance Services&#10;(818) 701-1033"></textarea></details>
+    <div><b style="font-size:13px">Attachments</b><div id="mlAtt" class="mlAtt"></div></div></div>
+  <p class="msg" id="mlMsg"></p>
+  <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px"><a href="#" id="mlOutlook" target="_blank" rel="noopener" class="small">Open in Outlook instead</a>
+    <div class="row"><button type="button" id="mlConnect" class="pri" hidden>Connect Outlook</button><button type="button" id="mlCancel">Cancel</button><button type="button" class="pri" id="mlSend">Send</button></div></div>
+</div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
 <div class="mbg" id="mcDlg" role="dialog" aria-modal="true" aria-labelledby="mcTitleH"><div class="mbox" id="mcBox">
   <div class="row" style="align-items:center"><h3 id="mcTitleH" style="margin:0 auto 0 0">Edit contacts</h3><button type="button" id="mcAdd">+ Add contact</button><button class="pri" id="mcSaveTop">Save</button></div>
@@ -1680,11 +1690,13 @@ $('mailBtns').addEventListener('click',async e=>{
   const cust=a.dataset.mail==='cust',{nm,co}=mailClient(),who=co||nm||'New client';
   if(cust&&!$('email').value.trim()){e.preventDefault();const m=$('mailMsg');m.className='msg err';m.textContent='Add the customer’s email in Lead info first.';return}
   const r=cust?{label:$('firstName').value.trim(),to:$('email').value.trim()}:{...mailList[+a.dataset.mail],to:mailTo(mailList[+a.dataset.mail])};
-  if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.key]))setTimeout(()=>setMailSent(r.key,true),0); // after the email opens
   const files=((cur&&cur.files)||[]).filter(f=>mailSel.has(f.id));
   const first=r.label.split('/')[0];
   const subject=cust?`Quote information - ${who}`:`QUOTE ${co||nm}`.trim();
   const body=cust?`Hi${first?' '+first:''},\n\nPlease fill out the attached quote sheet and send it back to me. I filled in what I have so far.`:`Hi ${first},\n\nPlease quote`;
+  // sent from the database: the ticked files go along, and the carrier is marked sent once it actually goes
+  if(mailSt&&mailSt.configured){e.preventDefault();composeMail({to:r.to,subject,body,files:((cur&&cur.files)||[]).map(f=>({id:f.id,name:f.name,on:mailSel.has(f.id)})),onSent:()=>{if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.key]))setMailSent(r.key,true)}});return}
+  if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.key]))setTimeout(()=>setMailSent(r.key,true),0); // after the email opens
   a.href=`mailto:${r.to}?subject=${encodeURIComponent(subject)}`; // no body, so Outlook adds the signature
   const copied=copyText(body),paste=copied?' The greeting is copied: click in the email and press Ctrl+V.':'';
   const m=$('mailMsg');m.className='msg';
@@ -3508,12 +3520,51 @@ $('certList').addEventListener('click',async e=>{const b=e.target.closest('butto
     if(b.dataset.certEdit)return void await certFormOpen('edit',c);
     if(b.dataset.certDel){if(!(await sure(`Delete the certificate ${c.name}? This can’t be undone.`)))return;await putCerts(certList().filter(x=>x.id!==id));try{await assets.delete(id)}catch(_){}toast('Certificate deleted')}}
   catch(err){certSay(err&&err.code?errText(err):`${c.name}: ${err&&err.message||'something went wrong'}`,'err')}});
+// ---------- Send email from the database through the person's own Outlook (Microsoft 365). Until the server has the
+// Microsoft app set up (mail status configured:false) every email button keeps opening Outlook the old way.
+let mailSt=null;
+async function mailStatus(force){if(mailSt&&!force)return mailSt;try{const r=await fetch('/api/mail/status',{credentials:'same-origin'});mailSt=r.ok?await r.json():{configured:false}}catch(_){mailSt={configured:false}}return mailSt}
+mailStatus();
+const ML_ERR={mail_not_connected:'Outlook isn’t connected yet. Click Connect Outlook, sign in, then Send again.',too_large:'The attachments are too big to send from here (3 MB in all). Untick some, or use Open in Outlook instead.',
+  bad_address:'One of the email addresses doesn’t look right. Separate more than one with commas.',no_recipient:'Add who it goes to.',mail_rejected:'Outlook turned the email down. Check the addresses and try again.',
+  mail_unavailable:'Couldn’t reach Outlook just now. Try again in a minute.',mail_off:'Email from the database isn’t set up on the server yet.',not_found:'One of the attached files couldn’t be found.'};
+let mlCtx=null;
+const mlSay=(t,c)=>{const m=$('mlMsg');m.className='msg'+(c?' '+c:'');m.textContent=t||''};
+function mlFromLine(){const st=mailSt||{};$('mlFrom').textContent=st.connected?'From '+st.email:'Outlook not connected';$('mlConnect').hidden=!!st.connected;$('mlSend').disabled=!st.connected}
+// o: {to, subject, body, files:[{id,name,on}] stored files, extra:[{name,type,get()}] made here (always attached), onSent()}
+async function composeMail(o){mlCtx=o;await mailStatus(true);$('mlTo').value=o.to||'';$('mlCc').value='';$('mlSubj').value=o.subject||'';$('mlBody').value=o.body||'';$('mlSig').value=mailSt.sig||'';$('mlSigBox').open=!mailSt.sig;
+  $('mlAtt').innerHTML=[...(o.extra||[]).map((f,i)=>`<label><input type="checkbox" data-mx="${i}" checked><span title="${esc(f.name)}">${esc(f.name)}</span></label>`),
+    ...(o.files||[]).map(f=>`<label><input type="checkbox" data-mb="${esc(f.id)}"${f.on?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`)].join('')||'<div class="small">No files to attach.</div>';
+  mlFromLine();mlSay(mailSt.connected?'':'Connect your Outlook once, then Send. Emails go out from your own address and show in your Outlook Sent folder.');
+  $('mlDlg').classList.add('on');setTimeout(()=>(o.to?$('mlBody'):$('mlTo')).focus(),30)}
+const mlClose=()=>{$('mlDlg').classList.remove('on');mlCtx=null};
+$('mlCancel').onclick=mlClose;
+$('mlConnect').onclick=()=>{window.open('/mail/connect','_blank');mlSay('Sign in to Outlook in the new tab. This box updates when you’re done.')};
+window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.data||!('pswMail' in e.data))return;await mailStatus(true);if($('mlDlg').classList.contains('on')){mlFromLine();mlSay(mailSt.connected?'Outlook connected. You can send now.':'Outlook wasn’t connected.',mailSt.connected?'ok':'err')}});
+window.addEventListener('focus',async()=>{if($('mlDlg').classList.contains('on')&&!(mailSt&&mailSt.connected)){await mailStatus(true);mlFromLine();if(mailSt.connected)mlSay('Outlook connected. You can send now.','ok')}});
+// Open in Outlook instead: the old way (subject only, so Outlook adds its signature; the message is copied to paste in)
+$('mlOutlook').onclick=()=>{const to=$('mlTo').value.trim();$('mlOutlook').href=`mailto:${to}?subject=${encodeURIComponent($('mlSubj').value)}`;if($('mlBody').value.trim())copyText($('mlBody').value);mlClose()};
+const mlHtml=t=>esc(t).replace(/\r?\n/g,'<br>');
+const b64of=async b=>{const u=new Uint8Array(b instanceof Blob?await b.arrayBuffer():b);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+$('mlSend').onclick=async()=>{const o=mlCtx;if(!o)return;const to=$('mlTo').value.trim();if(!to){mlSay(ML_ERR.no_recipient,'err');$('mlTo').focus();return}
+  const btn=$('mlSend');btn.disabled=true;mlSay('Sending…');
+  try{const sig=$('mlSig').value;if(sig!==(mailSt.sig||'')){await fetch('/api/mail/signature',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({sig})});mailSt.sig=sig}
+    const atts=[];for(const box of $('mlAtt').querySelectorAll('input:checked')){if(box.dataset.mb){const f=o.files.find(x=>x.id===box.dataset.mb);atts.push({blob:f.id,name:f.name})}
+      else{const f=o.extra[+box.dataset.mx];atts.push({name:f.name,type:f.type,b64:await b64of(await f.get())})}}
+    const html=`<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${mlHtml($('mlBody').value)}${sig.trim()?'<br><br>'+mlHtml(sig):''}</div>`;
+    const r=await fetch('/api/mail/send',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,cc:$('mlCc').value.trim(),subject:$('mlSubj').value,html,attachments:atts})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){if(d.code==='mail_not_connected'){await mailStatus(true);mlFromLine()}mlSay(ML_ERR[d.code]||'Couldn’t send the email.','err');btn.disabled=!(mailSt&&mailSt.connected);return}
+    mlClose();toast(`Email sent to ${to}.`);if(o.onSent)try{o.onSent()}catch(_){}}
+  catch(err){mlSay(err&&err.message?`Couldn’t send: ${err.message}`:'Couldn’t reach the server.','err');btn.disabled=false}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mlDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();mlClose()}},true);
 // the client's copy: every box printed into the page (flattened), so it can't be edited
 async function flatPdf(bytes){await acordReady();const L=PDFLib,doc=await L.PDFDocument.load(bytes,{ignoreEncryption:true}),f=doc.getForm();try{f.updateFieldAppearances(await doc.embedFont(L.StandardFonts.Helvetica))}catch(_){}f.flatten();return doc.save()}
 // Email cert to client: a new Outlook email (no body, so Outlook adds the signature) to the client, subject "<client> cert <holder>"; the PDF is saved for dragging in, since a mailto link can't carry attachments
 $('certList').addEventListener('click',e=>{const a=e.target.closest('[data-cert-mail]');if(!a||!editClient)return;const c=certList().find(x=>x.id===a.dataset.certMail);if(!c){e.preventDefault();return}
   const to=$('clEmail').value.trim()||$('clEmail2').value.trim();if(!to){e.preventDefault();certSay('Add the client’s email first (Email box in the client info).','err');return}
   const who=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()})||'Client',subject=`${who} cert ${c.holder||''}`.trim();
+  if(mailSt&&mailSt.configured){e.preventDefault();composeMail({to,subject,body:'',extra:[{name:c.name,type:'application/pdf',get:async()=>flatPdf(await fileBytes(c))}]});return}
   a.href=`mailto:${to}?subject=${encodeURIComponent(subject)}`;
   if(!dl){certSay(`Opening a new email to ${to}. Saving files isn’t available here, so click Save on the cert and drag it in.`,'ok');return}
   certSay(`Opening a new email to ${to}. Saving ${c.name}…`);
