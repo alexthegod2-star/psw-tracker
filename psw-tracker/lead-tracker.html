@@ -2980,7 +2980,7 @@ let polTr=null,polNew=false;const PP=['line','carrier','company','number','premi
 // each line of business adds its own basic fields to the pop-up (kept with the policy as "extra"); a's' field is a bigger box
 const LOB_FIELDS={
   'Personal Auto':[['#Drivers'],['#Vehicles'],['bi','Bodily injury'],['pd','Property damage'],['um','UM / UIM'],['med','Med pay'],['comp','Comp ded'],['coll','Coll ded'],['rental','Rental'],['towing','Towing']],
-  'Commercial Auto':[['ptype','Policy type'],['csl','Liability (CSL)'],['um','UM / UIM'],['umpd','UMPD'],['med','Med pay'],['cargo','Cargo'],['hnoa','Hired / non-owned'],['#Drivers'],['#Vehicles']],
+  'Commercial Auto':[['ptype','Policy type'],['csl','BI/PD or CSL'],['um','UM / UIM'],['umpd','UMPD'],['med','Med pay'],['cargo','Cargo'],['hnoa','Hired / non-owned'],['#Drivers'],['#Vehicles']],
   'Personal Home':[['address','Property address'],['dwelling','Dwelling (A)'],['other_structures','Other structures (B)'],['personal_property','Personal property (C)'],['loss_of_use','Loss of use (D)'],['liability','Liability (E)'],['med','Med pay (F)'],['deductible','Deductible'],['#Home']],
   'Rental Dwelling':[['address','Property address'],['year_built','Year built'],['units','Units'],['dwelling','Dwelling'],['other_structures','Other structures'],['loss_of_rents','Loss of rents'],['liability','Liability'],['deductible','Deductible'],['sq_ft','Sq ft'],['construction','Construction']],
   'Secondary Home':[['address','Property address'],['year_built','Year built'],['dwelling','Dwelling (A)'],['personal_property','Personal property (C)'],['loss_of_use','Loss of use (D)'],['liability','Liability (E)'],['deductible','Deductible'],['occupancy','Occupancy (seasonal / vacant / rented)']],
@@ -3327,6 +3327,10 @@ function ppFromHome(q,cur){ // PSW personal home quote sheet boxes -> Personal H
 function ppFromSheet(q){ // PSW personal auto quote sheet boxes -> policy fields
   const x={bi:q.f_bi_limit,pd:q.f_pd_limit,um:q.f_um_uim,med:q.f_med_pay,comp:q.f_comp_ded,coll:q.f_coll_ded,rental:q.f_rental,towing:q.f_towing};
   for(const [k,v] of Object.entries(q))if(/^[dv]\d+_/.test(k))x[k]=v;return {line:'Personal Auto',eff:q.f_eff_date||'',extra:x}}
+// a split auto limit as one value in thousands: BI "100/300" (or "$100,000/$300,000") and PD "100" -> "100/300/100"
+function biPd(bi,pd){const k=x=>String(x||'').split('/').map(y=>{const t=y.replace(/[$,\s]/g,'').replace(/k$/i,''),n=+t;return t&&!isNaN(n)?String(n>=1000?n/1000:n):y.trim()}).filter(Boolean),b=k(bi),d=k(pd);
+  if(!d.length&&b.length<2)return String(bi||'').trim();  // a single combined limit stays as written
+  if(!b.length)return d.join('/');if(d.length&&b.length<3)b.push(...d);return b.join('/')}
 function ppFromAuto(q){ // PSW commercial auto quote sheet -> Commercial Auto policy fields (drivers and vehicles use the same keys)
   const g=k=>q['f_'+k]||'',x={csl:g('liability_limit'),um:g('um_uim'),med:g('med_pay'),comp:g('comp_ded'),coll:g('coll_ded'),hnoa:g('hired_nonowned'),cargo:g('cargo_limit'),radius:q.v1_radius||''};
   for(const [k,v] of Object.entries(q))if(/^[dv]\d+_/.test(k))x[k]=v;
@@ -3384,9 +3388,10 @@ Keys: ${Object.entries(PP_MAIN).map(([k,l])=>k+' = '+l).join('; ')}.
 Money as written (e.g. "$1,234.00"). Leave out or use "" for anything not stated; never guess.
 "extra" holds details for the line of business, using only that line's keys:
 ${(cur?[cur]:LOBS).map(l=>`${l}: `+ppDetailKeys(l).map(([k,lb])=>k+' = '+lb).join('; ')).join('\n')}
-Limits as written (e.g. "100/300", "$1,000,000"). For keys with listed choices use one of them.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
+Limits as written (e.g. "100/300", "$1,000,000"). For keys with listed choices use one of them.${(cur||'')==='Commercial Auto'||!cur?`
+For Commercial Auto, put a split limit in extra as "bi" (bodily injury, sometimes labeled Liability, e.g. "100/300") and "pd" (property damage, e.g. "100") instead of "csl"; use "csl" only for a single combined limit.`:''}`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('ppReadIn').disabled=$('ppPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
-  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const n=o&&typeof o==='object'?ppApply(o):0;
+  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const ex=o&&o.extra;if(ex&&typeof ex==='object'&&(ex.bi||ex.pd||ex.liability)){const v=biPd(ex.bi||ex.liability||ex.csl,ex.pd);if(v)ex.csl=v;delete ex.bi;delete ex.pd;delete ex.liability}const n=o&&typeof o==='object'?ppApply(o):0;
     m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} ${from}. Check them, then Done.`:'Couldn’t find policy details in that.'}
   catch(e){const n=t?ppApply(ppBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
   $('ppReadIn').disabled=$('ppPasteGo').disabled=false}
