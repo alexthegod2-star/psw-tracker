@@ -1199,7 +1199,7 @@ def mail_disconnect(request: Request):
 @app.post("/api/mail/signature")
 async def mail_signature(request: Request):
     u = need_user(request)
-    sig = str((await request.json()).get("sig", ""))[:4000]
+    sig = str((await request.json()).get("sig", ""))[:60000]  # formatted (HTML) signature
     with db() as c:
         mail_table(c)
         c.execute("INSERT INTO mail_accounts(user_id,sig,updated) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET sig=excluded.sig",
