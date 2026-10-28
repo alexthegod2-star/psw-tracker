@@ -3175,7 +3175,7 @@ function openClient(c,preset,quiet){editClient=c||null;$('clPaste').value='';$('
   $('clientTitleH').textContent=c?'Edit client':'New client';
   [['clCompany','company'],['clDba','dba'],['clFirst','firstName'],['clLast','lastName'],['clPref','preferredName'],['clDob','dob'],['clPhone','phone'],['clEmail','email'],['clPhone2','phone2'],['clEmail2','email2'],['clAddress','address'],['clLocation','location'],['clBusType','busType'],['clWork','workPhone'],['clRel','relationship'],['clCity','city'],['clState','state'],['clZip','zip'],['clLocCity','locCity'],['clLocState','locState'],['clLocZip','locZip'],['clSource','leadSource']].forEach(([id,k])=>$(id).value=v[k]||'');$('clStatus').value=v.status||'Active';$('clWork').value=fmtClPhone($('clWork').value);
   $('clPeople').innerHTML='';(v.people||[]).forEach(addPerson);
-  $('clSince').value=fmtDate(v.since||'');$('clPhone').value=fmtClPhone($('clPhone').value);$('clPhone2').value=fmtClPhone($('clPhone2').value);
+  $('clSince').value=fmtDate(v.since||(c?'':todayISO()));  // a new client starts as a client today$('clPhone').value=fmtClPhone($('clPhone').value);$('clPhone2').value=fmtClPhone($('clPhone2').value);
   const agents=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim())].filter(Boolean))];
   $('clAgent').innerHTML='<option value="">Unassigned</option>'+agents.map(a=>`<option>${esc(a)}</option>`).join('');$('clAgent').value=v.agent||'';
   const ls=[...leads].sort((a,b)=>leadName(a).localeCompare(leadName(b)));
