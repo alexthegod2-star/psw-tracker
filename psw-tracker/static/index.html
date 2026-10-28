@@ -601,7 +601,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     </div></section>
   </div>
   <aside class="ppSide">
-    <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
+    <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4><label class="small" style="display:flex;gap:6px;align-items:center;margin:0;cursor:pointer;font-weight:600"><input type="checkbox" id="ppAlsoCl" style="width:auto;margin:0">Also fill client</label></div>
       <div class="fillTwo"><div class="drop" id="ppReadRow"><span style="font-weight:600">Drop a quote sheet, dec page or binder here to fill this policy, or</span><input type="file" id="ppReadIn" accept=".pdf,.docx,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*"></div>
       <div class="fillPaste"><textarea id="ppPaste" placeholder="Or paste text from a quote, dec page or binder here"></textarea><button type="button" class="pri" id="ppPasteGo">Fill from text</button></div></div>
       <div class="msg" id="ppReadMsg"></div></section>
@@ -3296,15 +3296,15 @@ function clApply(o){let n=0;
   return n}
 function clBasic(t){const em=t.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g)||[],ph=t.match(/(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g)||[];return {email:em[0],email2:em[1],phone:ph[0]}}
 async function clFillFrom(t,name,img){const m=$('clReadMsg'),from=name?`from ${name}`:'from the pasted text',done=n=>n?`Filled ${n} empty box${n===1?'':'es'} ${from}. Check them, then Save client.`:'Couldn’t find anything new to fill in that.';
-  if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now.';return}
-  if(!sample){const n=clApply(clBasic(t));m.className=n?'msg ok':'msg err';m.textContent=done(n)+' (Basic mode: Claude isn’t turned on, so only email and phone are found.)';return}
+  if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now.';return -1}
+  if(!sample){const n=clApply(clBasic(t));m.className=n?'msg ok':'msg err';m.textContent=done(n)+' (Basic mode: Claude isn’t turned on, so only email and phone are found.)';return n}
   const prompt=`You are filling in an insurance agency's client record from ${img?`the attached picture${img.length>1?'s':''}`:'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be an application, quote, dec page, email or signature).
 Reply with only a JSON object with these keys: ${Object.entries(CL_FILL).map(([k,[,l]])=>k+' = '+l).join('; ')}.
 Use "" for anything not stated; never guess. Phone numbers and dates as written.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('clReadIn').disabled=$('clPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
-  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const n=o&&typeof o==='object'?clApply(o):0;m.className=n?'msg ok':'msg err';m.textContent=done(n)}
-  catch(e){const n=t?clApply(clBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
-  $('clReadIn').disabled=$('clPasteGo').disabled=false}
+  let n=0;try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});n=o&&typeof o==='object'?clApply(o):0;m.className=n?'msg ok':'msg err';m.textContent=done(n)}
+  catch(e){n=t?clApply(clBasic(t)):0;m.className='msg err';m.textContent=sampleErr(e.code)+(n?` Filled ${n} box${n===1?'':'es'}.`:'')}
+  $('clReadIn').disabled=$('clPasteGo').disabled=false;return n}
 async function clRead(f){const m=$('clReadMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
   if(assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f]); // keep the document with the client too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
@@ -3387,9 +3387,14 @@ async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=
   if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value); // keep the document with the policy too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
   try{r=await readScan(f,isImg,x=>m.textContent=x)}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
-  if(!isImg){const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;return}}
+  if(!isImg){const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;await ppAlsoClient(r.t,f.name,r.imgs.length?r.imgs:null);return}}
   lastFields={};if(!r.t&&!r.imgs.length){m.className='msg err';m.textContent=`No words could be read in ${f.name}.`;return}
-  await ppFillFrom(r.t,f.name,r.imgs.length?r.imgs:null)}
+  await ppFillFrom(r.t,f.name,r.imgs.length?r.imgs:null);await ppAlsoClient(r.t,f.name,r.imgs.length?r.imgs:null)}
+// "Also fill client": the same document fills the client's empty boxes too (the client screen is open under the policy)
+async function ppAlsoClient(t,name,img){if(!$('ppAlsoCl').checked||(!t&&!img))return;const m=$('ppReadMsg'),base=m.textContent;m.textContent=base+' Now filling the client…';
+  const n=await clFillFrom(t,name,img);m.textContent=base+(n<0?' The client is view-only, so it wasn’t filled.':n?` Also filled ${n} empty client box${n===1?'':'es'}; Save client keeps them.`:' Nothing new for the client.')}
+try{$('ppAlsoCl').checked=localStorage.getItem('ppAlsoCl')==='1'}catch(_){}
+$('ppAlsoCl').addEventListener('change',()=>{try{localStorage.setItem('ppAlsoCl',$('ppAlsoCl').checked?'1':'0')}catch(_){}});
 // fills the policy from document text (or a picture) with Claude, or the basic label finder when Claude is off; used by a dropped file and by pasted text
 async function ppFillFrom(t,name,img){const m=$('ppReadMsg'),from=name?`from ${name}`:'from the pasted text';
   if(!sample){const n=ppApply(ppBasic(t));m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} box${n===1?'':'es'} (basic mode, Claude isn’t turned on for this database). Check them, then Done.`:'Couldn’t find policy details in that (basic mode, Claude isn’t turned on for this database).';return}
@@ -3409,7 +3414,7 @@ For Commercial Auto, put a split limit in extra as "bi" (bodily injury, sometime
   $('ppReadIn').disabled=$('ppPasteGo').disabled=false}
 $('ppPasteGo').onclick=async()=>{const t=$('ppPaste').value.trim(),m=$('ppReadMsg');
   if(!t){m.className='msg err';m.textContent='Paste the text from the quote, dec page or binder first.';$('ppPaste').focus();return}
-  await ppFillFrom(t,'',null)};
+  await ppFillFrom(t,'',null);await ppAlsoClient(t,'',null)};
 $('ppReadIn').onchange=()=>{const f=$('ppReadIn').files[0];$('ppReadIn').value='';if(f)ppRead(f)};
 {const fz=$('ppReadRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
