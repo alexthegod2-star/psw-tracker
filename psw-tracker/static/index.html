@@ -3630,20 +3630,23 @@ async function certFormOpen(mode,c,kind){kind=mode==='new'?kind||'25':certKind(c
     if(k27)e27Read(f,mode==='edit');
     const sj=d.getSubject()||'';if(mode==='edit'&&/^psw-ch2:/.test(sj)&&$('chAddr1').value===sj.slice(8)){$('chName2').value=sj.slice(8);$('chAddr1').value=$('chAddr2').value;$('chAddr2').value=''}}catch(_){}}
   $('certFormGo').textContent=mode==='copy'?'Make the copy':mode==='edit'?'Save changes':k27?'Make '+an:'Make certificate';$('certForm').hidden=false;$('certNewBtns').hidden=true;setTimeout(()=>(mode==='new'&&pols.length?$('certPols').querySelector('input'):$('chName')).focus(),30)}
-const chList=()=>(editClient&&editClient.certHolders)||[];
-function chPickFill(sel){const hs=chList();$('chPick').innerHTML=`<option value="">${hs.length?'Saved holders…':'No saved holders yet'}</option>`+hs.map((h,i)=>`<option value="${i}">${esc(h.chName||'(no name)')}</option>`).join('');$('chPick').value=sel==null?'':String(sel);chBtns()}
+// ACORD 27 / 28 keep their own saved mortgagee list (mtgHolders, with the loan # and interest); the ACORD 25 keeps certHolders
+const chMtg=()=>!!certMode&&certMode.kind!=='25',chField=()=>chMtg()?'mtgHolders':'certHolders',chWord=()=>chMtg()?'mortgagee':'holder',
+  chKeys=()=>chMtg()?[...CH_KEYS,['e27Loan'],['e27Int'],['e27Other']]:CH_KEYS;
+const chList=()=>(editClient&&editClient[chField()])||[];
+function chPickFill(sel){const hs=chList();$('chPick').innerHTML=`<option value="">${hs.length?`Saved ${chWord()}s…`:`No saved ${chWord()}s yet`}</option>`+hs.map((h,i)=>`<option value="${i}">${esc(h.chName||'(no name)')}</option>`).join('');$('chPick').value=sel==null?'':String(sel);chBtns()}
 // with a saved holder picked the button updates that one (a new name renames it); otherwise it adds a new one
-const chBtns=()=>{const on=$('chPick').value!=='';$('chSaveList').textContent=on?'Update holder':'Add to cert holder list';$('chDelList').hidden=!on};
-$('chPick').onchange=()=>{const h=chList()[+$('chPick').value];if(h)CH_KEYS.forEach(([id])=>$(id).value=h[id]||'');chBtns()};
-async function putHolders(list,sel,msg){try{await clientsCol.doc(editClient.id).update({certHolders:list});editClient.certHolders=list;chPickFill(sel);certSay(msg,'ok')}catch(e){certSay(errText(e),'err')}}
-$('chSaveList').onclick=async()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');const h=Object.fromEntries(CH_KEYS.map(([id])=>[id,$(id).value.trim()]));
-  if(!h.chName){certSay('Type the holder’s name first.','err');$('chName').focus();return}const hs=chList(),pi=$('chPick').value===''?-1:+$('chPick').value,key=h.chName.toLowerCase(),same=hs.findIndex((x,j)=>j!==pi&&(x.chName||'').toLowerCase()===key);
-  if(same>=0&&!(await sure(`There's already a saved holder named ${hs[same].chName}. Replace it with these details?`)))return;
+const chBtns=()=>{const on=$('chPick').value!=='';$('chSaveList').textContent=on?'Update '+chWord():chMtg()?'Add to mortgagee list':'Add to cert holder list';$('chDelList').hidden=!on};
+$('chPick').onchange=()=>{const h=chList()[+$('chPick').value];if(h)chKeys().forEach(([id])=>{if(h[id]!=null||id[0]==='c')$(id).value=h[id]||''});chBtns()};
+async function putHolders(list,sel,msg){try{await clientsCol.doc(editClient.id).update({[chField()]:list});editClient[chField()]=list;chPickFill(sel);certSay(msg,'ok')}catch(e){certSay(errText(e),'err')}}
+$('chSaveList').onclick=async()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');const h=Object.fromEntries(chKeys().map(([id])=>[id,$(id).value.trim()]));
+  if(!h.chName){certSay(`Type the ${chWord()}’s name first.`,'err');$('chName').focus();return}const hs=chList(),pi=$('chPick').value===''?-1:+$('chPick').value,key=h.chName.toLowerCase(),same=hs.findIndex((x,j)=>j!==pi&&(x.chName||'').toLowerCase()===key);
+  if(same>=0&&!(await sure(`There's already a saved ${chWord()} named ${hs[same].chName}. Replace it with these details?`)))return;
   const old=pi>=0?hs[pi].chName:'',list=hs.filter((_,j)=>j!==pi&&j!==same).concat([h]).sort((a,b)=>a.chName.localeCompare(b.chName));
-  await putHolders(list,list.indexOf(h),pi>=0?(old&&old!==h.chName?`Renamed ${old} to ${h.chName} and saved the changes.`:`Updated ${h.chName}.`):same>=0?`Updated ${h.chName}.`:`Added ${h.chName} to the holder list.`)};
+  await putHolders(list,list.indexOf(h),pi>=0?(old&&old!==h.chName?`Renamed ${old} to ${h.chName} and saved the changes.`:`Updated ${h.chName}.`):same>=0?`Updated ${h.chName}.`:`Added ${h.chName} to the ${chWord()} list.`)};
 $('chDelList').onclick=async()=>{if(!editClient||$('chPick').value==='')return;if(isLocked('client'))return toast('This client is view-only right now.');const hs=chList(),i=+$('chPick').value,h=hs[i];if(!h)return;
-  if(!(await sure(`Remove ${h.chName||'this holder'} from this client's saved holders? Certificates already made keep it.`)))return;
-  await putHolders(hs.filter((_,j)=>j!==i),null,`Removed ${h.chName} from the holder list.`)};
+  if(!(await sure(`Remove ${h.chName||'this '+chWord()} from this client's saved ${chWord()}s? Certificates already made keep it.`)))return;
+  await putHolders(hs.filter((_,j)=>j!==i),null,`Removed ${h.chName} from the ${chWord()} list.`)};
 const certFormClose=()=>{$('certForm').hidden=true;$('certNewBtns').hidden=!assets;certMode=null};
 $('certFormCancel').onclick=certFormClose;
 // ACORD 27 and 28: ISAOA/ATIMA (its successors and/or assigns, as their interests may appear) goes in Address line 2
