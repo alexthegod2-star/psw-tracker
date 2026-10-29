@@ -1769,7 +1769,9 @@ async function addPswFee(f){
     const base=(r.insured||f.name.replace(/\.pdf$/i,'')).replace(/[\\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(),name=base+' for ins.pdf';
     const ok=await uploadOne(new File([r.bytes],name,{type:'application/pdf'}));
     if(ok!==true)return;
-    m.className='msg '+(r.warn?'err':'ok');m.textContent=`Added ${r.fee}: carrier total ${r.oldTotal}, new total ${r.newTotal}. Saved as “${name}” under Files.`+(r.warn?' '+r.warn:'')}
+    // it worked, so the message is green; only a note about a part that didn't get done (no header, no room on a page) shows in red
+    m.className='msg ok';m.textContent=`Added ${r.fee}: carrier total ${r.oldTotal}, new total ${r.newTotal}. Saved as “${name}” under Files.`;
+    for(const w of String(r.warn||'').split(/(?<=\.)\s+(?=[A-Z])/).filter(Boolean)){const sp=document.createElement('span');sp.textContent=' '+w;if(/wasn't added|No room/.test(w))sp.style.color='var(--bad)';m.append(sp)}}
   catch(err){m.className='msg err';m.textContent=`${f.name}: ${err&&err.message?err.message:'couldn’t add the fee'}${sample?'':' Turning on Claude reading (the API key on the server) lets it read more carriers’ quotes.'} If it’s password-protected, save an unlocked copy and try again.`}}
 $('feeIn').onchange=()=>{const f=$('feeIn').files[0];$('feeIn').value='';addPswFee(f)};
 {const fz=$('feeRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fz.classList.add('over')}));
