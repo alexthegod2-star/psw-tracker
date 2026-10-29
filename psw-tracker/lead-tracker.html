@@ -164,7 +164,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .pg{position:relative;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);flex:none}
 .pg canvas,.pg img{display:block}
 .adding .pg{cursor:crosshair}
-.edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide.right{left:auto;right:16px}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}.ed.sideR .edb{padding-right:256px}
+.edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide.right{left:auto;right:16px}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}#edQs{width:420px;display:flex;gap:10px;align-items:stretch}#edQs>.drop{flex:1 1 0;min-width:0}.qsPaste{display:flex;flex-direction:column;gap:8px}.qsPaste textarea{flex:1;min-height:150px;width:100%;font:inherit;font-size:13px;resize:vertical}.ed.sideR .edb{padding-left:452px}@media (max-width:1720px){#edQs{width:220px;flex-direction:column}.ed.sideR .edb{padding-left:256px}}.ed.sideR .edb{padding-right:256px}
 .tn{position:absolute;z-index:5;min-width:40px;padding:0 2px;color:#000;background:rgba(255,235,59,.35);border:1px dashed #b58900;font-family:Helvetica,Arial,sans-serif;line-height:1.15;white-space:pre;outline:none}
 .tn:focus{background:rgba(255,235,59,.6)}
 .edtxt{width:min(900px,100%);flex:1;min-height:60vh;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
@@ -371,7 +371,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here, either the fillable PDF or a printed copy. Its answers go into this sheet; then hit Save to lead.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edDropIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edDropMsg" style="margin-top:8px"></div></div></div>
   <div class="edSide" id="edQs" hidden><div class="drop" id="edQsDrop"><b>Fill this sheet from a file</b><p class="small" style="margin:6px 0 8px">Drop an application, email, ACORD, spreadsheet or picture here. What it says goes into this sheet's empty boxes; then hit Save to lead.</p>
-    <label class="btn" style="margin:0">Choose file<input type="file" id="edQsIn" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><div class="msg small" id="edQsMsg" style="margin-top:8px"></div></div></div>
+    <label class="btn" style="margin:0">Choose file<input type="file" id="edQsIn" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><div class="msg small" id="edQsMsg" style="margin-top:8px"></div></div>
+    <div class="drop qsPaste"><b>Or paste the text</b><textarea id="edQsText" placeholder="Paste an email, an application or the client’s details here"></textarea><button type="button" class="pri" id="edQsTextGo">Fill from text</button></div></div>
   <div class="edSide right" id="edSup" hidden><div class="drop" id="edSupDrop"><b>Fill a carrier form</b><p class="small" style="margin:6px 0 8px">Drop a fillable supplemental or application here. It's filled from this quote sheet and saved to the lead's Files as “com sup”.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edSupIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edSupMsg" style="margin-top:8px"></div></div></div>
 </div>
@@ -1833,7 +1834,7 @@ async function openEditor(f,opt){
   {const home=/ personal home quote sheet\.pdf$/i.test(f.name);if((sheetKind(f.name)||home)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=home?await upgradeHome(f):await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
   ed={f,kind,notes:[],fields:[],dirty:false,save:opt&&opt.save};$('ed').classList.toggle('top',!!ed.save);
-  {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edQs').hidden=!sup;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home||sup);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edQsMsg').textContent='';$('edSupMsg').textContent=''}
+  {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edQs').hidden=!sup;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home||sup);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edQsMsg').textContent='';$('edSupMsg').textContent='';$('edQsText').value=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
   $('edSave').hidden=!assets;$('edSave').textContent=ed.save?'Save to client':'Save to lead';$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=ed.save?'Save this certificate to the client':sheetKind(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
@@ -2073,6 +2074,9 @@ The customer is the business wanting insurance, not the agent, carrier or sender
 {const d=$('edQsDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)qsTake(f)});
   $('edQsIn').onchange=()=>{const f=$('edQsIn').files[0];$('edQsIn').value='';if(f)qsTake(f)}}
+// or paste the text beside it: read the same way as a dropped text file
+$('edQsTextGo').onclick=async()=>{const t=$('edQsText').value.trim();if(!t){$('edQsMsg').className='msg small err';$('edQsMsg').textContent='Paste some text first.';$('edQsText').focus();return}
+  const b=$('edQsTextGo');b.disabled=true;lastFields={};try{await qsTake(new File([t],'the pasted text.txt',{type:'text/plain'}))}finally{b.disabled=false;const m=$('edQsMsg');m.textContent=m.textContent.replace(/the pasted text\.txt/g,'the pasted text')}};
 // com quote sheet: drop any fillable carrier form on the right; its boxes are filled from this sheet (Claude matches them when it's set up,
 // otherwise common boxes like name, address, phone, dates, payroll and sales are matched by their labels) and it's saved to Files as "<client> com sup.pdf"
 async function supFields(bytes){await loadPdfJs();const doc=await pdfjsLib.getDocument({data:bytes.slice(),...PDF_FONTS}).promise,out=new Map();
