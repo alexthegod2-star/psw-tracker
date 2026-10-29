@@ -131,6 +131,7 @@ app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 @app.on_event("startup")
 def _startup():
     init_db()
+    binder_backfill()
 
 
 def err(status, code):
@@ -540,9 +541,15 @@ def binder_month(p):
     return f"{m[1]}-{m[2]}" if len(m[1]) == 4 else f"{m[2]}-{int(m[1]):02d}"
 
 
-def binder_sync(c, path, old, new):
-    """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, in their effective date's month.
-    A policy already in the log keeps that entry's premium, com %, broker fee, dates, ... up to date, except boxes changed in the log by hand."""
+BINDER_FROM = "2026-09"  # the binder pulls in every policy from this month on; older ones only when they are new or newly given that producer
+
+
+def binder_sync(c, path, old, new, backfill=False):
+    """The binder log pulls from the clients: a policy whose producer has a binder log gets an entry in that log, in its effective date's month
+    (new policies, ones just given that producer, and any from BINDER_FROM on that are missing).
+    A policy already in the log keeps that entry's premium, com %, broker fee, dates, ... up to date, except boxes changed in the log by hand.
+    When a policy's producer changes to someone else, or the policy is removed, its entry leaves the log (unless its commission or BF is marked paid).
+    backfill: a check of a client as it stands (on startup), so nothing counts as new."""
     segs = path.split("/")
     if len(segs) != 2 or segs[0] != "clients" or not isinstance(new, dict):
         return
@@ -577,8 +584,9 @@ def binder_sync(c, path, old, new):
             if add:
                 c.execute("UPDATE tracker_docs SET data=?, updated=?, updated_by='binder' WHERE path=?", (json.dumps({**d, **add}, separators=(",", ":")), time.time(), r["path"]))
             continue
-        # a new policy, or one whose producer was just set to someone with a binder log
-        if owner == was.get(p["pid"], was.get(same(p))):
+        # a new policy, one whose producer was just set to someone with a binder log, or one from BINDER_FROM on that is missing
+        not_new = backfill or owner == was.get(p["pid"], was.get(same(p)))
+        if not_new and (not p.get("eff") or binder_month(p) < BINDER_FROM):
             continue
         note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
         d = {"name": name or "Client", "month": binder_month(p), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
@@ -588,6 +596,26 @@ def binder_sync(c, path, old, new):
         i = new_id()
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
                   (f"{col}/{i}", col, i, json.dumps(d, separators=(",", ":")), time.time(), "binder"))
+    # entries this client's policies put in a log whose owner is no longer the producer (or whose policy is gone) leave it, unless marked paid
+    now_owner = {p["pid"]: binder_owner(p) for p in new.get("policies") or [] if isinstance(p, dict) and p.get("pid")}
+    for owner in set(BINDER_PRODUCERS.values()):
+        col = f"private/{owner}/binder"
+        for r in c.execute("SELECT path,data FROM tracker_docs WHERE parent=? AND json_extract(data,'$.clientId')=?", (col, segs[1])).fetchall():
+            d = json.loads(r["data"])
+            if d.get("pid") and now_owner.get(d["pid"]) != owner and not d.get("comPaid") and not d.get("bfPaid"):
+                c.execute("DELETE FROM tracker_docs WHERE path=?", (r["path"],))
+
+
+def binder_backfill():
+    """On startup: every client's policies checked against the binder logs, so the logs match the clients (see binder_sync)."""
+    with db() as c:
+        for r in c.execute("SELECT path,data FROM tracker_docs WHERE parent='clients'").fetchall():
+            try:
+                d = json.loads(r["data"])
+            except ValueError:
+                continue
+            binder_sync(c, r["path"], d, d, backfill=True)
+        bump(c)
 
 
 def guard(request: Request, u, segs):
