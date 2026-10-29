@@ -515,14 +515,17 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="cosClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="certDlg" role="dialog" aria-modal="true" aria-labelledby="certTitleH" style="z-index:12"><div class="mbox" style="width:min(1100px,96vw);max-height:90vh;overflow:auto">
-  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="certTitleH" style="margin:0">Certificates</h3><button class="pri" id="certNew" type="button">+ New cert</button></div>
-  <div class="small" style="margin:6px 0 10px">New cert fills an ACORD 25 with this client, the policies you pick, the holder and the description, dated today. Copy cert makes a new one from an old one for a different holder.</div>
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="certTitleH" style="margin:0">Certificates</h3><span class="row" id="certNewBtns" style="gap:8px"><button class="pri" id="certNew" type="button">+ New cert</button><button class="pri" id="certNew27" type="button" title="ACORD 27 Evidence of Property Insurance">+ New ACORD 27</button><button class="pri" id="certNew28" type="button" title="ACORD 28 Evidence of Commercial Property Insurance">+ New ACORD 28</button></span></div>
+  <div class="small" style="margin:6px 0 10px">New cert fills an ACORD 25 with this client, the policies you pick, the holder and the description, dated today. New ACORD 27 (Evidence of Property) and New ACORD 28 (Evidence of Commercial Property) fill from one property policy for a mortgagee, loss payee or other interest. Copy cert makes a new one from an old one for a different holder.</div>
   <form id="certForm" hidden style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
-    <div id="certPolBox"><h4 style="margin:0 0 6px">Policies on this certificate</h4><div id="certPols" class="certPols"></div></div>
-    <div class="row" style="justify-content:space-between;align-items:center;margin:12px 0 6px;flex-wrap:wrap;gap:6px"><h4 style="margin:0">Certificate holder</h4><div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap"><select id="chPick" style="width:auto;min-width:220px" title="Pick a saved holder for this client"><option value="">Saved holders…</option></select><button type="button" class="pri" id="chSaveList" style="white-space:nowrap">Add to cert holder list</button><button type="button" class="danger" id="chDelList" hidden>Remove</button></div></div>
+    <div id="certPolBox"><h4 style="margin:0 0 6px" id="certPolH">Policies on this certificate</h4><div id="certPols" class="certPols"></div></div>
+    <div class="row" style="justify-content:space-between;align-items:center;margin:12px 0 6px;flex-wrap:wrap;gap:6px"><h4 style="margin:0" id="certHoldH">Certificate holder</h4><div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap"><select id="chPick" style="width:auto;min-width:220px" title="Pick a saved holder for this client"><option value="">Saved holders…</option></select><button type="button" class="pri" id="chSaveList" style="white-space:nowrap">Add to cert holder list</button><button type="button" class="danger" id="chDelList" hidden>Remove</button></div></div>
     <div class="certGrid"><label class="w2">Name<input id="chName" autocomplete="off"></label><label class="w2">Name second line<input id="chName2" autocomplete="off"></label><label class="w2">Address<input id="chAddr1" autocomplete="off"></label><label class="w2">Address line 2<input id="chAddr2" autocomplete="off"></label>
       <label>City<input id="chCity" autocomplete="off"></label><label>State<input id="chState" maxlength="2" autocomplete="off"></label><label>ZIP<input id="chZip" maxlength="10" autocomplete="off"></label></div>
-    <div style="display:flex;gap:10px;align-items:center;margin:12px 0 6px"><h4 style="margin:0">Description of operations / locations / vehicles</h4><button type="button" class="pri" id="chAI" title="Adds: Certificate Holder is also additional insured.">AI</button></div>
+    <div id="e27Box" hidden><div class="certGrid" style="margin-top:8px"><label>Interest<select id="e27Int"><option>Mortgagee</option><option>Loss payee</option><option>Lender's loss payable</option><option>Additional insured</option><option>Contract of sale</option><option>Other</option></select></label><label>Loan / account number<input id="e27Loan" autocomplete="off"></label><label>Other interest<input id="e27Other" autocomplete="off" placeholder="If Other"></label></div>
+      <h4 style="margin:12px 0 6px">Property location</h4>
+      <div class="certGrid"><label class="w2">Street<input id="e27Street" autocomplete="off"></label><label>City<input id="e27City" autocomplete="off"></label><label>State<input id="e27State" maxlength="2" autocomplete="off"></label><label>ZIP<input id="e27Zip" maxlength="10" autocomplete="off"></label><label class="w2">Property description<input id="e27Desc" autocomplete="off" placeholder="Building, dwelling, contents…"></label></div></div>
+    <div style="display:flex;gap:10px;align-items:center;margin:12px 0 6px"><h4 style="margin:0" id="certDescH">Description of operations / locations / vehicles</h4><button type="button" class="pri" id="chAI" title="Adds: Certificate Holder is also additional insured.">AI</button></div>
     <textarea id="chDesc" style="width:100%;min-height:80px" placeholder="Additional insured, project, job site, vehicles…"></textarea>
     <div class="row" style="justify-content:flex-end;margin-top:10px"><button type="button" id="certFormCancel">Cancel</button><button type="submit" class="pri" id="certFormGo">Make certificate</button></div>
   </form>
@@ -2381,8 +2384,9 @@ async function sigSwap(bytes){const s=await mySig();if(!s)return bytes;const L=P
     for(const [k,ref] of xo.entries()){const o=doc.context.lookup(ref),d=o&&o.dict;if(d&&String(d.get(L.PDFName.of('Subtype')))==='/Image'&&num(d,'Width')===388&&num(d,'Height')===108){xo.set(k,img.ref);n++}}}
   return n?doc.save():bytes}
 // ACORD 25 / 80: put the signature on the producer's signature line (the box named field)
-async function sigDraw(doc,field){const s=await mySig();if(!s)return;const fl=doc.getForm().getFields().find(f=>f.getName().replace(/\[0\]$/,'').endsWith(field));if(!fl)return;
-  const w=fl.acroField.getWidgets()[0],r=w.getRectangle(),ref=doc.context.getObjectRef(w.dict),pg=doc.getPages().find(p=>{const a=p.node.Annots();return a&&a.asArray().some(x=>x===ref)})||doc.getPages()[0];
+// a form with no signature box (the ACORD 28) passes where to sign on page 1 instead
+async function sigDraw(doc,field,at){const s=await mySig();if(!s)return;const fl=doc.getForm().getFields().find(f=>f.getName().replace(/\[0\]$/,'').endsWith(field));if(!fl&&!at)return;
+  const w=fl&&fl.acroField.getWidgets()[0],r=w?w.getRectangle():at,ref=w&&doc.context.getObjectRef(w.dict),pg=(w&&doc.getPages().find(p=>{const a=p.node.Annots();return a&&a.asArray().some(x=>x===ref)}))||doc.getPages()[0];
   const img=await doc.embedPng(sigBytes(s)),h=Math.max(r.height,16),wd=h*img.width/img.height;pg.drawImage(img,{x:r.x+4,y:r.y+(r.height-h)/2,width:Math.min(wd,r.width-8),height:Math.min(wd,r.width-8)*img.height/img.width})}
 // fill an ACORD's boxes by their names (the F[0].Pn[0]. wrapper and [0] left off); true checks a box; text shrinks to fit
 function fillBoxes(doc,v,helv){const L=PDFLib,f=doc.getForm();
@@ -3485,20 +3489,22 @@ let tpl25=null;
 async function acord25Tpl(){if(!tpl25){const r=await fetch('tpl25.pdf');if(!r.ok)throw new Error('ACORD 25 template missing');tpl25=new Uint8Array(await r.arrayBuffer())}return tpl25}
 const certList=()=>(editClient&&editClient.certs)||[];
 function renderCerts(){const cs=certList(),n=cs.length;$('clCerts').textContent=n?`Certificates (${n})`:'Certificates';$('clCertNote').textContent=editClient?(n?'':'No certificates yet.'):'Save the client first to make certificates.';$('clCerts').disabled=!editClient;
-  if(!$('certDlg').classList.contains('on'))return;$('certNew').hidden=!assets||!$('certForm').hidden;
+  if(!$('certDlg').classList.contains('on'))return;$('certNewBtns').hidden=!assets||!$('certForm').hidden;
   $('certList').innerHTML=n?[...cs].reverse().map(c=>`<li><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span class="sz">${esc(c.at?fmtDT(c.at):'')}</span><button class="pri" data-cert-open="${esc(c.id)}">Open</button>${assets?`<button data-cert-edit="${esc(c.id)}" title="Change the holder or description">Edit</button><button data-cert-copy="${esc(c.id)}">Copy cert</button>`:''}<a class="btn" href="#" data-cert-mail="${esc(c.id)}" title="New email to the client with this cert saved for you to drag in">Email cert to client</a><button data-cert-save="${esc(c.id)}">Save</button>${assets?`<button class="danger" data-cert-del="${esc(c.id)}">Delete</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No certificates yet. Click + New cert.</li>'}
 // file names keep only letters, numbers, spaces and dashes
 const fnClean=x=>String(x||'').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim();
-const certFileName=(holder,at)=>{const nm=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()}).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',d=new Date(at||Date.now());
-  return `${nm} COI${holder?' - '+String(holder).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim():''} ${pad(d.getMonth()+1)}-${pad(d.getDate())}-${d.getFullYear()}.pdf`};
-const certHolder=async bytes=>{try{const d=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true});return(d.getForm().getTextField('CertificateHolder_FullName_A').getText()||'').trim()}catch(_){return ''}};
+const certFileName=(holder,at,kind)=>{const nm=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()}).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',d=new Date(at||Date.now());
+  return `${nm} ${kind==='27'?'EOI':kind==='28'?'EOCP':'COI'}${holder?' - '+String(holder).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim():''} ${pad(d.getMonth()+1)}-${pad(d.getDate())}-${d.getFullYear()}.pdf`};
+const certHolder=async bytes=>{try{const d=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true}),f=d.getForm(),t=k=>{try{return(f.getTextField(k).getText()||'').trim()}catch(_){return ''}};const na=f.getFields().find(x=>/(^|\.)NameAdd\[0\]$/.test(x.getName()));return t('CertificateHolder_FullName_A')||t('AdditionalInterest_FullName_A')||(na?(na.getText()||'').split('\n')[0].trim():'')}catch(_){return ''}};
+// a cert is an ACORD 25 unless it says it's a 27 (Evidence of Property Insurance); older ones go by their file name
+const certKind=c=>!c?'25':c.kind||(/ EOCP( |\.pdf$)/.test(c.name||'')?'28':/ EOI( |\.pdf$)/.test(c.name||'')?'27':'25');
 async function putCerts(certs){await clientsCol.doc(editClient.id).update({certs});editClient.certs=certs;renderCerts()}
 // what the editor calls on Save: store the new bytes, swap them into the client's list and name the file after the holder
 const certSaver=async(blob,old)=>{if(isLocked('client'))throw new Error('this client is view-only right now');const buf=await blob.arrayBuffer(),r=await storeBytes(buf,blob.type),holder=await certHolder(buf),x=certList().find(c=>c.id===old.id)||old;
-  const nx={...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',holder,name:certFileName(holder,x.at),editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})};
+  const nx={...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',holder,name:certFileName(holder,x.at,certKind(x)),editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})};
   const certs=certList().some(c=>c.id===old.id)?certList().map(c=>c.id===old.id?nx:c):[...certList(),nx];await putCerts(certs);try{await assets.delete(old.id)}catch(_){}return nx};
-async function addCert(bytes){const r=await storeBytes(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'application/pdf'),at=new Date().toISOString(),holder=await certHolder(bytes);
-  const c={id:r.id,type:'application/pdf',size:r.sizeBytes,enc:r.enc||'',at,holder,name:certFileName(holder,at),...(me?{by:me}:{})};await putCerts([...certList(),c]);return c}
+async function addCert(bytes,kind){const r=await storeBytes(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'application/pdf'),at=new Date().toISOString(),holder=await certHolder(bytes);
+  const c={id:r.id,type:'application/pdf',size:r.sizeBytes,enc:r.enc||'',at,holder,name:certFileName(holder,at,kind),...(kind==='27'||kind==='28'?{kind}:{}),...(me?{by:me}:{})};await putCerts([...certList(),c]);return c}
 const today25=()=>{const d=new Date();return `${pad(d.getMonth()+1)}/${pad(d.getDate())}/${d.getFullYear()}`};
 // which ACORD 25 box a policy's line of business goes in
 const certSlot=l=>/general liab|^gl$|bop|business owner/i.test(l)?'gl':/commercial auto|^auto|truck/i.test(l)?'auto':/umbrella|excess/i.test(l)?'umb':/workers|^wc$/i.test(l)?'wc':'other';
@@ -3525,8 +3531,73 @@ async function newCertBytes(pick,hd){await acordReady();const doc=await PDFLib.P
     else if(sl==='wc'){T('WorkersCompensationEmployersLiability_InsurerLetterCode_A',L);C('WorkersCompensationEmployersLiability_WorkersCompensationStatutoryLimitIndicator_A');T('Policy_WorkersCompensationAndEmployersLiability_PolicyNumberIdentifier_A',p.num);T('Policy_WorkersCompensationAndEmployersLiability_EffectiveDate_A',p.eff);T('Policy_WorkersCompensationAndEmployersLiability_ExpirationDate_A',p.exp)}
     else{T('OtherPolicy_InsurerLetterCode_A',L);T('OtherPolicy_OtherPolicyDescription_A',p.line);T('OtherPolicy_PolicyNumberIdentifier_A',p.num);T('OtherPolicy_PolicyEffectiveDate_A',p.eff);T('OtherPolicy_PolicyExpirationDate_A',p.exp)}}
   await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A');return doc.save()}
-async function copyCertBytes(c,hd,keepDate){await acordReady();const doc=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true}),form=doc.getForm();
-  certHolderFill(form,hd,true);if(!keepDate)try{form.getTextField('Form_CompletionDate_A').setText(today25())}catch(_){}return doc.save()}
+async function copyCertBytes(c,hd,keepDate,ex){await acordReady();const doc=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true}),form=doc.getForm();
+  if(certKind(c)==='28'){await e28Fill(doc,hd,ex||{},keepDate);return doc.save()}
+  certHolderFill(form,hd,true,certKind(c));if(certKind(c)==='27')e27Fill(form,ex||{},true);if(!keepDate)try{form.getTextField('Form_CompletionDate_A').setText(today25())}catch(_){}return doc.save()}
+/* ---------- ACORD 27 Evidence of Property Insurance ---------- */
+let tpl27=null;
+async function acord27Tpl(){if(!tpl27){const r=await fetch('tpl27.pdf');if(!r.ok)throw new Error('ACORD 27 template missing');tpl27=new Uint8Array(await r.arrayBuffer())}return tpl27}
+// the additional interest takes the holder boxes; the description box is the 27's Remarks
+const CH27_KEYS=[['chName','AdditionalInterest_FullName_A'],['chName2',''],['chAddr1','AdditionalInterest_MailingAddress_LineOne_A'],['chAddr2','AdditionalInterest_MailingAddress_LineTwo_A'],['chCity','AdditionalInterest_MailingAddress_CityName_A'],['chState','AdditionalInterest_MailingAddress_StateOrProvinceCode_A'],['chZip','AdditionalInterest_MailingAddress_PostalCode_A'],['chDesc','EvidenceOfProperty_RemarkText_A']];
+const E27_KEYS=[['e27Loan','AdditionalInterest_AccountNumberIdentifier_A'],['e27Other','AdditionalInterest_Interest_OtherDescription_A'],['e27Street','EvidenceOfProperty_PhysicalAddress_StreetLineOne_A'],['e27City','EvidenceOfProperty_PhysicalAddress_CityName_A'],['e27State','EvidenceOfProperty_PhysicalAddress_StateOrProvinceCode_A'],['e27Zip','EvidenceOfProperty_PhysicalAddress_PostalCode_A'],['e27Desc','EvidenceOfProperty_PropertyDescription_A']];
+const E27_INT={'Mortgagee':'AdditionalInterest_Interest_MortgageeIndicator_A','Loss payee':'AdditionalInterest_Interest_LossPayeeIndicator_A',"Lender's loss payable":'AdditionalInterest_Interest_LendersLossPayableIndicator_A','Additional insured':'AdditionalInterest_Interest_AdditionalInsuredIndicator_A','Other':'AdditionalInterest_Interest_OtherIndicator_A'};
+const e27Vals=()=>({...Object.fromEntries(E27_KEYS.map(([id])=>[id,$(id).value.trim()])),int:$('e27Int').value});
+// an interest the form has no box for is ticked as Other, with its name in the Other line
+const intOther=(ex,boxes)=>boxes[ex.int]?{...ex}:{...ex,int:'Other',e27Other:ex.e27Other||ex.int};
+function e27Fill(form,ex,all){ex=intOther(ex,E27_INT);E27_KEYS.forEach(([id,k])=>{const v=ex[id]||'';if(v||all)try{form.getTextField(k).setText(v)}catch(_){}});
+  if(ex.e27Loan||all)try{form.getTextField('AdditionalInterest_AccountNumberIdentifier_B').setText(ex.e27Loan||'')}catch(_){}
+  for(const [n,k] of Object.entries(E27_INT))try{const b=form.getCheckBox(k);if(n===ex.int)b.check();else b.uncheck()}catch(_){}}
+function e27Read(form,all){E27_KEYS.forEach(([id,k])=>{if(all||id!=='e27Loan')try{$(id).value=form.getTextField(k).getText()||''}catch(_){}});
+  for(const [n,k] of Object.entries(E27_INT))try{if(form.getCheckBox(k).isChecked())$('e27Int').value=n}catch(_){}
+  if($('e27Int').value==='Other'&&$('e27Other').value==='Contract of sale'){$('e27Int').value='Contract of sale';$('e27Other').value=''}}
+// the property's address: the policy's own address box, else the client's location, else the mailing address
+function e27Location(p){const x=(p&&p.x)||{},g=id=>$(id).value.trim(),pa=String(x.address||'').trim();
+  if(pa){const m=/^(.*?),\s*([^,]+?),\s*([A-Za-z]{2})\s*(\d{5}(?:-\d{4})?)?\s*$/.exec(pa);if(m){$('e27Street').value=m[1];$('e27City').value=m[2];$('e27State').value=m[3].toUpperCase();$('e27Zip').value=m[4]||''}else{$('e27Street').value=pa;$('e27City').value='';$('e27State').value='';$('e27Zip').value=''}}
+  else if(g('clLocation')){$('e27Street').value=g('clLocation');$('e27City').value=g('clLocCity');$('e27State').value=g('clLocState');$('e27Zip').value=g('clLocZip')}
+  else{$('e27Street').value=g('clAddress').split(/\n/)[0]||'';$('e27City').value=g('clCity');$('e27State').value=g('clState');$('e27Zip').value=g('clZip')}}
+// coverage rows on the 27 from the policy's own boxes (home, rental, commercial property, BOP…); the deductible goes on the first row
+const COV27=[['dwelling','Dwelling'],['building','Building'],['other_structures','Other structures'],['personal_property','Personal property'],['bpp','Business personal property'],['contents','Contents'],['loss_of_use','Loss of use'],['loss_of_rents','Loss of rents'],['bi','Business income'],['liability','Liability'],['med','Medical payments']];
+async function new27Bytes(i,hd,ex){await acordReady();const doc=await PDFLib.PDFDocument.load(await acord27Tpl(),{ignoreEncryption:true}),form=doc.getForm();
+  const T=(k,v)=>{if(!v)return;try{form.getTextField(k).setText(String(v))}catch(_){}},g=id=>$(id).value.trim(),amt=v=>String(v||'').replace(/^\$\s*/,'').trim();
+  T('Form_CompletionDate_A',today25());
+  T('Producer_FullName_A','Pacific Southwest Insurance Services');T('Producer_MailingAddress_LineOne_A','9036 Reseda Blvd., Suite 105');T('Producer_MailingAddress_CityName_A','Northridge');T('Producer_MailingAddress_StateOrProvinceCode_A','CA');T('Producer_MailingAddress_PostalCode_A','91324');
+  T('Producer_ContactPerson_PhoneNumber_A','(818) 701-1033');T('Producer_ContactPerson_EmailAddress_A','info@pswinsurance.com');
+  const nm=g('clCompany')||[g('clFirst'),g('clLast')].filter(Boolean).join(' '),addr=g('clAddress').split(/\n/).map(x=>x.trim()).filter(Boolean);
+  T('NamedInsured_FullName_A',nm+(g('clDba')?' DBA '+g('clDba'):''));T('NamedInsured_MailingAddress_LineOne_A',addr[0]);T('NamedInsured_MailingAddress_LineTwo_A',addr.slice(1).join(', '));T('NamedInsured_MailingAddress_CityName_A',g('clCity'));T('NamedInsured_MailingAddress_StateOrProvinceCode_A',g('clState'));T('NamedInsured_MailingAddress_PostalCode_A',g('clZip'));
+  const p=certPolicies()[i];
+  if(p){T('Insurer_FullName_A',p.co);T('Policy_PolicyNumberIdentifier_A',p.num);T('Policy_EffectiveDate_A',p.eff);T('Policy_ExpirationDate_A',p.exp);
+    const x=p.x||{},rows=COV27.filter(([k])=>amt(x[k])),L='ABCDEFGHIJ';
+    rows.slice(0,10).forEach(([k,l],j)=>{T('EvidenceOfProperty_CoverageDescription_'+L[j],l);T('EvidenceOfProperty_LimitAmount_'+L[j],amt(x[k]));if(!j)T('EvidenceOfProperty_DeductibleAmount_A',amt(x.deductible))})}
+  certHolderFill(form,hd,false,'27');e27Fill(form,ex,false);
+  await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A');return doc.save()}
+/* ---------- ACORD 28 Evidence of Commercial Property Insurance (this form's boxes have short names, several hold more than one line) ---------- */
+let tpl28=null;
+async function acord28Tpl(){if(!tpl28){const r=await fetch('tpl28.pdf');if(!r.ok)throw new Error('ACORD 28 template missing');tpl28=new Uint8Array(await r.arrayBuffer())}return tpl28}
+const E28_INT={'Mortgagee':'Check67',"Lender's loss payable":'Check68','Contract of sale':'Check69','Other':'Check70'};
+const f28=(form,n)=>form.getFields().find(x=>x.getName().replace(/^F\[0\]\.P\d+\[0\]\./,'').replace(/\[0\]$/,'')===n);
+const cityLine=(c,st,z)=>[c,[st,z].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+// the holder, interest, loan, property location and remarks: what Copy and Edit change; the form also keeps them (in its keywords) so Edit can put them back in their own boxes
+async function e28Fill(doc,hd,ex,keepDate){const form=doc.getForm(),helv=await doc.embedFont(PDFLib.StandardFonts.Helvetica);ex=intOther(ex,E28_INT);
+  const v={NameAdd:[hd.chName,hd.chName2,hd.chAddr1,hd.chAddr2,cityLine(hd.chCity,hd.chState,hd.chZip)].map(x=>String(x||'').trim()).filter(Boolean).join('\n'),Loan:ex.e27Loan||'',Other:ex.int==='Other'?ex.e27Other||'':'',
+    Location:[[ex.e27Street,cityLine(ex.e27City,ex.e27State,ex.e27Zip)].filter(Boolean).join(', '),ex.e27Desc].filter(Boolean).join('\n'),Evidence:hd.chDesc||''};
+  for(const [k,x] of Object.entries(v)){const fl=f28(form,k);if(fl)try{fl.setText('')}catch(_){}}fillBoxes(doc,Object.fromEntries(Object.entries(v).filter(([,x])=>x)),helv);
+  for(const [n,k] of Object.entries(E28_INT)){const fl=f28(form,k);if(fl)try{n===ex.int?fl.check():fl.uncheck()}catch(_){}}
+  if(!keepDate){const fl=f28(form,'Date');if(fl)try{fl.setText(today25())}catch(_){}}
+  doc.setKeywords(['psw28:'+JSON.stringify({hd,ex})])}
+function e28Read(doc,all){let o=null;try{const k=(doc.getKeywords()||'').replace(/^psw28:/,'');o=JSON.parse(k)}catch(_){}if(!o)return;
+  CH_KEYS.forEach(([id])=>{if(all||id==='chDesc')$(id).value=o.hd[id]||''});E27_KEYS.forEach(([id])=>{if(all||id!=='e27Loan')$(id).value=o.ex[id]||''});$('e27Int').value=o.ex.int||'Mortgagee'}
+async function new28Bytes(i,hd,ex){await acordReady();const doc=await PDFLib.PDFDocument.load(await acord28Tpl(),{ignoreEncryption:true}),helv=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+  const g=id=>$(id).value.trim(),amt=x=>String(x||'').replace(/^\$\s*/,'').trim(),nm=g('clCompany')||[g('clFirst'),g('clLast')].filter(Boolean).join(' ');
+  const v={Date:today25(),Contact:['Pacific Southwest Insurance Services','9036 Reseda Blvd., Suite 105','Northridge, CA 91324',myName].filter(Boolean).join('\n'),Phone:'(818) 701-1033',Email:'info@pswinsurance.com',
+    Named:[nm+(g('clDba')?' DBA '+g('clDba'):''),...g('clAddress').split(/\n/).map(x=>x.trim()).filter(Boolean),cityLine(g('clCity'),g('clState'),g('clZip'))].filter(Boolean).join('\n')};
+  const p=certPolicies()[i];
+  if(p){const x=p.x||{};Object.assign(v,{Company:p.co||'',Type:p.line||'',Policy:p.num||'',Date3:p.eff||'',Date2:p.exp||''});
+    // building or business personal property: the policy's building limit, else its BPP; business income gets Yes and its limit
+    const bl=amt(x.building||x.dwelling),bp=amt(x.bpp||x.contents);if(bl){v.Check2=true;v.Amount=bl}else if(bp){v.Check3=true;v.Amount=bp}if(bl&&bp)v.Evidence=`Business personal property: $${bp}`;
+    if(amt(x.deductible))v.Deductible=amt(x.deductible);if(amt(x.bi)){v.Check8=true;v.Check10=true;v.Limit1=amt(x.bi)}}
+  fillBoxes(doc,Object.fromEntries(Object.entries(v).filter(([,x])=>x)),helv);
+  if(v.Evidence&&!hd.chDesc)hd={...hd,chDesc:v.Evidence};await e28Fill(doc,hd,ex,true);
+  await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A',{x:308,y:49,width:280,height:20});return doc.save()}
 // the client's current (active) policies, in the table's order
 const certPolicies=()=>[...$('polRows').rows].map(t=>{const v=k=>{const el=t.querySelector(`[data-p=${k}]`);return el?el.value.trim():''};let x={};try{x=JSON.parse(v('extra')||'{}')}catch(_){}return{status:v('status'),line:v('line'),co:v('company')||v('carrier'),num:v('number'),eff:v('eff'),exp:v('exp'),x}}).filter(p=>(p.line||p.num)&&(!p.status||p.status==='Active'));
 const CH_KEYS=[['chName','CertificateHolder_FullName_A'],['chName2',''],['chAddr1','CertificateHolder_MailingAddress_LineOne_A'],['chAddr2','CertificateHolder_MailingAddress_LineTwo_A'],['chCity','CertificateHolder_MailingAddress_CityName_A'],['chState','CertificateHolder_MailingAddress_StateOrProvinceCode_A'],['chZip','CertificateHolder_MailingAddress_PostalCode_A'],['chDesc','CertificateOfLiabilityInsurance_ACORDForm_RemarkText_A']];
@@ -3537,17 +3608,23 @@ const CH_KEYS=[['chName','CertificateHolder_FullName_A'],['chName2',''],['chAddr
 const CH_BOX=[['CertificateHolder_FullName_A',22,111,280],['CertificateHolder_MailingAddress_LineOne_A',22,92,280],['CertificateHolder_MailingAddress_LineTwo_A',22,73,280],
   ['CertificateHolder_MailingAddress_CityName_A',22,54,208],['CertificateHolder_MailingAddress_StateOrProvinceCode_A',232,54,24],['CertificateHolder_MailingAddress_PostalCode_A',258,54,44]];
 function certHolderBox(form){CH_BOX.forEach(([k,x,y,w])=>{try{const f=form.getTextField(k);f.acroField.getWidgets().forEach(wd=>wd.setRectangle({x,y,width:w,height:19}));f.setFontSize(10)}catch(_){}})}
-function certHolderFill(form,hd,all){certHolderBox(form);const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
-  CH_KEYS.forEach(([id,k])=>{const v=m[id]||'';if(k&&(v||all))try{form.getTextField(k).setText(v)}catch(_){}});
+function certHolderFill(form,hd,all,kind){const keys=kind==='27'?CH27_KEYS:CH_KEYS;if(kind!=='27')certHolderBox(form);const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
+  keys.forEach(([id,k])=>{const v=m[id]||'';if(k&&(v||all))try{form.getTextField(k).setText(v)}catch(_){}});
   try{if(n2)form.doc.setSubject('psw-ch2:'+n2);else if(all&&/^psw-ch2:/.test(form.doc.getSubject()||''))form.doc.setSubject('')}catch(_){}}
 let certMode=null;
-async function certFormOpen(mode,c){certMode={mode,c};certSay('');const pols=certPolicies();$('certPolBox').hidden=mode!=='new';
-  $('certPols').innerHTML=pols.length?pols.map((p,i)=>`<label><input type="checkbox" value="${i}" checked> ${esc([p.line||'Policy',p.co,p.num,[p.eff,p.exp].filter(Boolean).join(' – ')].filter(Boolean).join(' · '))}</label>`).join(''):'<span class="small">No active policies on this client. The certificate will have the client only.</span>';
-  CH_KEYS.forEach(([id])=>$(id).value='');chPickFill();
+async function certFormOpen(mode,c,kind){kind=mode==='new'?kind||'25':certKind(c);const k27=kind!=='25',an='ACORD '+kind;certMode={mode,c,kind};certSay('');const pols=certPolicies();$('certPolBox').hidden=mode!=='new';
+  // ACORD 27 is one property policy: pick it with a radio, property lines first
+  const prop=p=>/home|dwelling|property|earthquake|dic|bop|condo|renters|fire|flood/i.test(p.line||'')?0:1,first=k27?pols.map((p,i)=>i).sort((a,b)=>prop(pols[a])-prop(pols[b]))[0]:-1;
+  $('certPols').innerHTML=pols.length?pols.map((p,i)=>`<label><input type="${k27?'radio':'checkbox'}" name="certPol" value="${i}"${!k27||i===first?' checked':''}> ${esc([p.line||'Policy',p.co,p.num,[p.eff,p.exp].filter(Boolean).join(' – ')].filter(Boolean).join(' · '))}</label>`).join(''):`<span class="small">No active policies on this client. The ${k27?an:'certificate'} will have the client only.</span>`;
+  $('certPolH').textContent=k27?'Policy on this '+an:'Policies on this certificate';$('certHoldH').textContent=k27?'Additional interest (mortgagee, loss payee…)':'Certificate holder';$('certDescH').textContent=k27?'Remarks':'Description of operations / locations / vehicles';$('chAI').hidden=k27;$('e27Box').hidden=!k27;
+  CH_KEYS.forEach(([id])=>$(id).value='');E27_KEYS.forEach(([id])=>$(id).value='');$('e27Int').value='Mortgagee';chPickFill();
+  if(k27&&mode==='new')e27Location(pols[first]);
   // copy brings the description along; edit brings the holder and description as they are on the cert
-  if(mode!=='new'){try{await acordReady();const d=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true}),f=d.getForm();CH_KEYS.forEach(([id,k])=>{if(k&&(mode==='edit'||id==='chDesc'))try{$(id).value=f.getTextField(k).getText()||''}catch(_){}});
+  if(mode!=='new'&&kind==='28'){try{await acordReady();const d=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true});e28Read(d,mode==='edit')}catch(_){}}
+  else if(mode!=='new'){try{await acordReady();const d=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true}),f=d.getForm();(k27?CH27_KEYS:CH_KEYS).forEach(([id,k])=>{if(k&&(mode==='edit'||id==='chDesc'))try{$(id).value=f.getTextField(k).getText()||''}catch(_){}});
+    if(k27)e27Read(f,mode==='edit');
     const sj=d.getSubject()||'';if(mode==='edit'&&/^psw-ch2:/.test(sj)&&$('chAddr1').value===sj.slice(8)){$('chName2').value=sj.slice(8);$('chAddr1').value=$('chAddr2').value;$('chAddr2').value=''}}catch(_){}}
-  $('certFormGo').textContent=mode==='copy'?'Make the copy':mode==='edit'?'Save changes':'Make certificate';$('certForm').hidden=false;$('certNew').hidden=true;setTimeout(()=>(mode==='new'&&pols.length?$('certPols').querySelector('input'):$('chName')).focus(),30)}
+  $('certFormGo').textContent=mode==='copy'?'Make the copy':mode==='edit'?'Save changes':k27?'Make '+an:'Make certificate';$('certForm').hidden=false;$('certNewBtns').hidden=true;setTimeout(()=>(mode==='new'&&pols.length?$('certPols').querySelector('input'):$('chName')).focus(),30)}
 const chList=()=>(editClient&&editClient.certHolders)||[];
 function chPickFill(sel){const hs=chList();$('chPick').innerHTML=`<option value="">${hs.length?'Saved holders…':'No saved holders yet'}</option>`+hs.map((h,i)=>`<option value="${i}">${esc(h.chName||'(no name)')}</option>`).join('');$('chPick').value=sel==null?'':String(sel);chBtns()}
 // with a saved holder picked the button updates that one (a new name renames it); otherwise it adds a new one
@@ -3562,18 +3639,22 @@ $('chSaveList').onclick=async()=>{if(!editClient)return;if(isLocked('client'))re
 $('chDelList').onclick=async()=>{if(!editClient||$('chPick').value==='')return;if(isLocked('client'))return toast('This client is view-only right now.');const hs=chList(),i=+$('chPick').value,h=hs[i];if(!h)return;
   if(!(await sure(`Remove ${h.chName||'this holder'} from this client's saved holders? Certificates already made keep it.`)))return;
   await putHolders(hs.filter((_,j)=>j!==i),null,`Removed ${h.chName} from the holder list.`)};
-const certFormClose=()=>{$('certForm').hidden=true;$('certNew').hidden=!assets;certMode=null};
+const certFormClose=()=>{$('certForm').hidden=true;$('certNewBtns').hidden=!assets;certMode=null};
 $('certFormCancel').onclick=certFormClose;
 // AI = additional insured: adds the line to the description (once)
 $('chAI').onclick=()=>{const t='Certificate Holder is also additional insured.',d=$('chDesc'),v=d.value.trim();if(!v.includes(t))d.value=v?v+'\n'+t:t;d.focus()};
 $('certForm').onsubmit=async e=>{e.preventDefault();if(!certMode||!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');const b=$('certFormGo');b.disabled=true;
-  const hd=Object.fromEntries(CH_KEYS.map(([id])=>[id,$(id).value.trim()])),pick=[...$('certPols').querySelectorAll('input:checked')].map(x=>+x.value);certSay(certMode.mode==='copy'?'Copying…':certMode.mode==='edit'?'Saving…':'Making the certificate…');
-  try{const c=certMode.mode==='edit'?await certSaver(new Blob([await copyCertBytes(certMode.c,hd,true)],{type:'application/pdf'}),certMode.c):await addCert(certMode.mode==='copy'?await copyCertBytes(certMode.c,hd):await newCertBytes(pick,hd));certFormClose();certSay('');await openEditor(c,{save:certSaver});edMsg('Check it over, type any limits, then Save.','ok')}
+  const hd=Object.fromEntries(CH_KEYS.map(([id])=>[id,$(id).value.trim()])),pick=[...$('certPols').querySelectorAll('input:checked')].map(x=>+x.value),k27=certMode.kind!=='25',ex=k27?e27Vals():null;certSay(certMode.mode==='copy'?'Copying…':certMode.mode==='edit'?'Saving…':k27?`Making the ACORD ${certMode.kind}…`:'Making the certificate…');
+  try{const c=certMode.mode==='edit'?await certSaver(new Blob([await copyCertBytes(certMode.c,hd,true,ex)],{type:'application/pdf'}),certMode.c):await addCert(certMode.mode==='copy'?await copyCertBytes(certMode.c,hd,false,ex):certMode.kind==='28'?await new28Bytes(pick[0],hd,ex):k27?await new27Bytes(pick[0],hd,ex):await newCertBytes(pick,hd),certMode.kind);certFormClose();certSay('');await openEditor(c,{save:certSaver});edMsg('Check it over, type any limits, then Save.','ok')}
   catch(err){certSay(err&&err.code?errText(err):'Couldn’t make the certificate'+(err&&err.message?` (${err.message})`:'')+'.','err')}b.disabled=false};
 const certSay=(t,c)=>{$('certMsg').className='msg'+(c?' '+c:'');$('certMsg').textContent=t};
 $('clCerts').onclick=()=>{if(!editClient)return;certFormClose();$('certTitleH').textContent='Certificates · '+clientName(editClient);certSay('');$('certDlg').classList.add('on');renderCerts()};
 $('certClose').onclick=()=>{certFormClose();$('certDlg').classList.remove('on')};
-$('certNew').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new')};
+$('certNew').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'25')};
+$('certNew27').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'27')};
+$('certNew28').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'28')};
+// picking another policy for a new ACORD 27 brings its property address
+$('certPols').addEventListener('change',e=>{if(certMode&&certMode.kind!=='25'&&certMode.mode==='new'&&e.target.type==='radio')e27Location(certPolicies()[+e.target.value])});
 $('certList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.certOpen||b.dataset.certEdit||b.dataset.certCopy||b.dataset.certSave||b.dataset.certDel,c=certList().find(x=>x.id===id);if(!c)return;
   try{if(b.dataset.certOpen)return void await openEditor(c,{save:certSaver});
     if(b.dataset.certSave){const blob=new Blob([await fileBytes(c)],{type:'application/pdf'});if(dl)await dl.save({filename:c.name,data:blob,mimeType:'application/pdf'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=c.name;a.click()}return}

@@ -1,0 +1,668 @@
+%PDF-1.4
+%ÿğ°
+1 0 obj 
+<< /AcroForm << /DR << /Font << /F2 2 0 R >> >> /Fields [ 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R 28 0 R 29 0 R 30 0 R 31 0 R 32 0 R 33 0 R 34 0 R 35 0 R 36 0 R 37 0 R 38 0 R 39 0 R 40 0 R 41 0 R 42 0 R 43 0 R 44 0 R 45 0 R 46 0 R 47 0 R 48 0 R 49 0 R 50 0 R 51 0 R 52 0 R 53 0 R 54 0 R 55 0 R 56 0 R 57 0 R 58 0 R 59 0 R 60 0 R 61 0 R 62 0 R 63 0 R 64 0 R 65 0 R 66 0 R 67 0 R 68 0 R 69 0 R 70 0 R 71 0 R 72 0 R 73 0 R 74 0 R 75 0 R 76 0 R 77 0 R 78 0 R 79 0 R 80 0 R 81 0 R 82 0 R 83 0 R 84 0 R 85 0 R 86 0 R 87 0 R 88 0 R 89 0 R 90 0 R 91 0 R ] >> /OpenAction << /JS (function DateV\(event\) {  var regEx = /^\\d{1,2}\\/\\d{1,2}\\/\\d{4}$/; if \(event.value!=null && event.value.length>0 && !regEx.test\(event.value\)\) { event.rc = false; app.alert\("The date must be of the format MM/DD/YYYY."\); } };) /S /JavaScript /Type /Action >> /Pages 92 0 R /Type /Catalog >>
+endobj
+93 0 obj 
+<< /Author (ACORD Corporation) /CreationDate (D:20181130154548-05'00') /Creator (Silverlake Software LLC - Forms Dev Environment) /ModDate (D:20181130154548-05'00') /Producer (Silverlake Software LLC - Form Designer - v1.4.18134) /Title (ACORD 0027 2016-03r2 Acroform) >>
+endobj
+2 0 obj 
+<< /BaseFont /Arial /Encoding /WinAnsiEncoding /FirstChar 0 /FontDescriptor << /Ascent 905.27 /CapHeight 716.31 /Descent -211.91 /Flags 32 /FontBBox [ -45.90 -168.46 1000.00 938.48 ] /FontName /Arial /ItalicAngle 0.00 /StemV 0.00 /Type /FontDescriptor >> /LastChar 255 /Subtype /Type1 /Type /Font /Widths [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 277.83 277.83 354.98 556.15 556.15 889.16 666.99 190.92 333.01 333.01 389.16 583.98 277.83 333.01 277.83 277.83 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 277.83 277.83 583.98 583.98 583.98 556.15 1015.14 666.99 666.99 722.17 722.17 666.99 610.84 777.83 722.17 277.83 500.00 666.99 556.15 833.01 722.17 777.83 666.99 777.83 722.17 666.99 610.84 722.17 666.99 943.85 666.99 666.99 610.84 277.83 277.83 277.83 469.24 556.15 333.01 556.15 556.15 500.00 556.15 556.15 277.83 556.15 556.15 222.17 222.17 500.00 222.17 833.01 556.15 556.15 556.15 556.15 333.01 500.00 277.83 556.15 500.00 722.17 500.00 500.00 500.00 333.98 259.77 333.98 583.98 0 556.15 0 222.17 556.15 333.01 1000.00 556.15 556.15 333.01 1000.00 666.99 333.01 1000.00 0 610.84 0 0 222.17 222.17 333.01 333.01 350.10 556.15 1000.00 333.01 1000.00 500.00 333.01 943.85 0 500.00 666.99 277.83 333.01 556.15 556.15 556.15 556.15 259.77 556.15 333.01 736.82 370.12 556.15 583.98 333.01 736.82 552.25 399.90 548.83 333.01 333.01 333.01 576.17 537.11 333.01 333.01 333.01 365.23 556.15 833.98 833.98 833.98 610.84 666.99 666.99 666.99 666.99 666.99 666.99 1000.00 722.17 666.99 666.99 666.99 666.99 277.83 277.83 277.83 277.83 722.17 722.17 777.83 777.83 777.83 777.83 777.83 583.98 777.83 722.17 722.17 722.17 722.17 666.99 666.99 610.84 556.15 556.15 556.15 556.15 556.15 556.15 889.16 500.00 556.15 556.15 556.15 556.15 277.83 277.83 277.83 277.83 556.15 556.15 556.15 556.15 556.15 556.15 556.15 548.83 610.84 556.15 556.15 556.15 556.15 500.00 556.15 500.00 ] >>
+endobj
+3 0 obj 
+<< /DV (ACORD 0027 2016-03r2 Acroform) /F 2 /Ff 1 /FT /Tx /P 94 0 R /Rect [ 0 1 0 1 ] /Subtype /Widget /T (Form_EditionIdentifier_A) /TU (The edition identifier of the form including the form number and edition \(the date is typically formatted YYYY/MM\).) /Type /Annot /V (ACORD 0027 2016-03r2 Acroform) >>
+endobj
+4 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 94 0 R /Q 1 /Rect [ 511 744 590 756 ] /Subtype /Widget /T (Form_CompletionDate_A) /TU (Enter date: The date on which the form is completed.  \(MM/DD/YYYY\) ) /Type /Annot >>
+endobj
+5 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 678 302 690 ] /Subtype /Widget /T (Producer_FullName_A) /TU (Enter text: The full name of the producer / agency. ) /Type /Annot >>
+endobj
+6 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 666 302 678 ] /Subtype /Widget /T (Producer_MailingAddress_LineOne_A) /TU (Enter text: The mailing address line one of the producer / agency. ) /Type /Annot >>
+endobj
+7 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 654 302 666 ] /Subtype /Widget /T (Producer_MailingAddress_LineTwo_A) /TU (Enter text: The mailing address line two of the producer / agency. ) /Type /Annot >>
+endobj
+8 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 642 238 654 ] /Subtype /Widget /T (Producer_MailingAddress_CityName_A) /TU (Enter text: The mailing address city name of the producer / agency. ) /Type /Annot >>
+endobj
+9 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Q 1 /Rect [ 238 642 256 654 ] /Subtype /Widget /T (Producer_MailingAddress_StateOrProvinceCode_A) /TU (Enter code: The mailing address state or province code of the producer / agency. ) /Type /Annot >>
+endobj
+10 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 256 642 302 654 ] /Subtype /Widget /T (Producer_MailingAddress_PostalCode_A) /TU (Enter code: The mailing address postal code of the producer / agency. ) /Type /Annot >>
+endobj
+11 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 173 690 302 702 ] /Subtype /Widget /T (Producer_ContactPerson_PhoneNumber_A) /TU (Enter number: The phone number of the individual at the producer's establishment that is the primary contact.  If applicable, include the area code and extension. ) /Type /Annot >>
+endobj
+12 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 50 630 115 642 ] /Subtype /Widget /T (Producer_FaxNumber_A) /TU (Enter number: The fax number of the producer / agency. ) /Type /Annot >>
+endobj
+13 0 obj 
+<< /DA (/F2 6.8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 155 630 306 642 ] /Subtype /Widget /T (Producer_ContactPerson_EmailAddress_A) /TU (Enter text: The e-mail address of the individual at the producer's establishment that is the primary contact. ) /Type /Annot >>
+endobj
+14 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 43 618 158 630 ] /Subtype /Widget /T (Insurer_ProducerIdentifier_A) /TU (Enter code: The identification code assigned to the producer \(e.g., agency or brokerage firm\) by the insurer. ) /Type /Annot >>
+endobj
+15 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 202 618 302 630 ] /Subtype /Widget /T (Insurer_SubProducerIdentifier_A) /TU (Enter code: The identification code assigned by the insurer to the sub-producer \(e.g., individual\) within a producer's office \(e.g., agency or brokerage\). ) /Type /Annot >>
+endobj
+16 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 72 606 302 618 ] /Subtype /Widget /T (Producer_CustomerIdentifier_A) /TU (Enter identifier: The customer's identification number assigned by the producer \(e.g., agency or brokerage\). ) /Type /Annot >>
+endobj
+17 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 666 590 678 ] /Subtype /Widget /T (Insurer_FullName_A) /TU (Enter text: The insurer's full legal company name\(s\) as found in the file copy of the policy.  Use the actual name of the company within the group to which the policy has been issued.  This is not the insurer's group name or trade name. ) /Type /Annot >>
+endobj
+18 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 654 590 666 ] /Subtype /Widget /T (Insurer_MailingAddress_AddressLineOne_A) /TU (Enter text: The first line of the insurer's mailing address. ) /Type /Annot >>
+endobj
+19 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 642 590 654 ] /Subtype /Widget /T (Insurer_MailingAddress_AddressLineTwo_A) /TU (Enter text: The second line of the insurer's mailing address. ) /Type /Annot >>
+endobj
+20 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 630 526 642 ] /Subtype /Widget /T (Insurer_MailingAddress_CityName_A) /TU (Enter text: The city of the insurer's mailing address. ) /Type /Annot >>
+endobj
+21 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 526 630 544 642 ] /Subtype /Widget /T (Insurer_MailingAddress_StateOrProvinceCode_A) /TU (Enter code: The state or province code of the insurer's mailing address. ) /Type /Annot >>
+endobj
+22 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 544 630 590 642 ] /Subtype /Widget /T (Insurer_MailingAddress_PostalCode_A) /TU (Enter code: The postal code of the insurer's mailing address. ) /Type /Annot >>
+endobj
+23 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 582 302 594 ] /Subtype /Widget /T (NamedInsured_FullName_A) /TU (Enter text: The named insured\(s\) as it / they will appear on the policy declarations page. ) /Type /Annot >>
+endobj
+24 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 570 302 582 ] /Subtype /Widget /T (NamedInsured_MailingAddress_LineOne_A) /TU (Enter text: The named insured's mailing address line one. ) /Type /Annot >>
+endobj
+25 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 558 302 570 ] /Subtype /Widget /T (NamedInsured_MailingAddress_LineTwo_A) /TU (Enter text: The named insured's mailing address line two. ) /Type /Annot >>
+endobj
+26 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 546 238 558 ] /Subtype /Widget /T (NamedInsured_MailingAddress_CityName_A) /TU (Enter text: The named insured's mailing address city name. ) /Type /Annot >>
+endobj
+27 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Q 1 /Rect [ 238 546 256 558 ] /Subtype /Widget /T (NamedInsured_MailingAddress_StateOrProvinceCode_A) /TU (Enter code: The named insured's mailing address state or province code. ) /Type /Annot >>
+endobj
+28 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 256 546 302 558 ] /Subtype /Widget /T (NamedInsured_MailingAddress_PostalCode_A) /TU (Enter code: The named insured's mailing address postal code. ) /Type /Annot >>
+endobj
+29 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 582 461 594 ] /Subtype /Widget /T (AdditionalInterest_AccountNumberIdentifier_A) /TU (Enter identifier: The loan number, account number or other controlling number that the additional interest may have assigned the insured. ) /Type /Annot >>
+endobj
+30 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 468 582 590 594 ] /Subtype /Widget /T (Policy_PolicyNumberIdentifier_A) /TU (Enter identifier: The identifier assigned by the insurer to the policy, or submission, being referenced exactly as it appears on the policy, including prefix and suffix symbols.  If required for self-insurance, the self-insured license or contract number. ) /Type /Annot >>
+endobj
+31 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 94 0 R /Q 1 /Rect [ 310 558 389 570 ] /Subtype /Widget /T (Policy_EffectiveDate_A) /TU (Enter date: The effective date of the policy.  The date that the terms and conditions of the policy commence.  \(MM/DD/YYYY\) ) /Type /Annot >>
+endobj
+32 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 94 0 R /Q 1 /Rect [ 396 558 475 570 ] /Subtype /Widget /T (Policy_ExpirationDate_A) /TU (Enter date: The date on which the terms and conditions of the policy will expire.  \(MM/DD/YYYY\) ) /Type /Annot >>
+endobj
+33 0 obj 
+<< /AP << /D << /1 95 0 R /Off 96 0 R >> /N << /1 97 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 482 558 497 570 ] /Subtype /Widget /T (EvidenceOfProperty_ContinuousBasisIndicator_A) /TU (Check the box \(if applicable\): Indicates the policy is issued on a Continuous basis. ) /Type /Annot >>
+endobj
+34 0 obj 
+<< /AA << /V << /JS (DateV\(event\);) /S /JavaScript /Type /Action >> >> /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /MaxLen 10 /P 94 0 R /Q 1 /Rect [ 436 534 529 546 ] /Subtype /Widget /T (EvidenceOfProperty_PriorEvidenceDate_A) /TU (Enter date: The date the prior Evidence of Property Insurance, which this form replaces, was issued to this additional interest. ) /Type /Annot >>
+endobj
+35 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 498 302 510 ] /Subtype /Widget /T (EvidenceOfProperty_PhysicalAddress_StreetLineOne_A) /TU (Enter text: The first line of the physical street address of the property. ) /Type /Annot >>
+endobj
+36 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 498 590 510 ] /Subtype /Widget /T (EvidenceOfProperty_PhysicalAddress_StreetLineTwo_A) /TU (Enter text: The second line of the physical street address of the property. ) /Type /Annot >>
+endobj
+37 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 486 302 498 ] /Subtype /Widget /T (EvidenceOfProperty_PhysicalAddress_CityName_A) /TU (Enter text: The city name of the physical address of the property. ) /Type /Annot >>
+endobj
+38 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 486 526 498 ] /Subtype /Widget /T (EvidenceOfProperty_PhysicalAddress_CountyName_A) /TU (Enter text: The county name for the property. ) /Type /Annot >>
+endobj
+39 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Q 1 /Rect [ 526 486 544 498 ] /Subtype /Widget /T (EvidenceOfProperty_PhysicalAddress_StateOrProvinceCode_A) /TU (Enter code: The state or province code for the property. ) /Type /Annot >>
+endobj
+40 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 544 486 590 498 ] /Subtype /Widget /T (EvidenceOfProperty_PhysicalAddress_PostalCode_A) /TU (Enter code: The postal code for the property. ) /Type /Annot >>
+endobj
+41 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 94 0 R /Rect [ 22 456 590 486 ] /Subtype /Widget /T (EvidenceOfProperty_PropertyDescription_A) /TU (Enter text: The description of the property.  For buildings, provide the street address and a brief description of the occupancy of the building \(e.g., 123 Johnston Ave, Endicott - one-family dwelling with detached two car garage, or Route 66, five miles south of intersection with I99 - 12 X 12 Storage Building\).  For other property items, such as inland marine scheduled property \(for lessor information\), describe the item specifically. ) /Type /Annot >>
+endobj
+42 0 obj 
+<< /AP << /D << /1 98 0 R /Off 99 0 R >> /N << /1 100 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 245 402 259 414 ] /Subtype /Widget /T (Policy_PolicyType_BasicIndicator_A) /TU (Check the box \(if applicable\): Indicates the type of policy / perils insured is basic. ) /Type /Annot >>
+endobj
+43 0 obj 
+<< /AP << /D << /1 101 0 R /Off 102 0 R >> /N << /1 103 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 295 402 310 414 ] /Subtype /Widget /T (Policy_PolicyType_BroadIndicator_A) /TU (Check the box \(if applicable\): Indicates the type of policy / perils insured is broad. ) /Type /Annot >>
+endobj
+44 0 obj 
+<< /AP << /D << /1 104 0 R /Off 105 0 R >> /N << /1 106 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 349 402 364 414 ] /Subtype /Widget /T (Policy_PolicyType_SpecialIndicator_A) /TU (Check the box \(if applicable\): Indicates the type of policy / perils insured is special. ) /Type /Annot >>
+endobj
+45 0 obj 
+<< /AP << /D << /1 107 0 R /Off 108 0 R >> /N << /1 109 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 407 402 421 414 ] /Subtype /Widget /T (Policy_PolicyType_OtherIndicator_A) /TU (Check the box \(if applicable\): Indicates the type of policy / perils insured is other than those listed. ) /Type /Annot >>
+endobj
+46 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 425 402 590 414 ] /Subtype /Widget /T (Policy_PolicyType_OtherDescription_A) /TU (Enter text: The description of the type of policy issued to the insured. ) /Type /Annot >>
+endobj
+47 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 378 439 390 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_A) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+48 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 378 526 390 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_A) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+49 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 378 590 390 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_A) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+50 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 366 439 378 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_B) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+51 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 366 526 378 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_B) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+52 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 366 590 378 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_B) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+53 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 354 439 366 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_C) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+54 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 354 526 366 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_C) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+55 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 354 590 366 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_C) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+56 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 342 439 354 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_D) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+57 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 342 526 354 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_D) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+58 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 342 590 354 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_D) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+59 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 330 439 342 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_E) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+60 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 330 526 342 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_E) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+61 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 330 590 342 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_E) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+62 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 318 439 330 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_F) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+63 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 318 526 330 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_F) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+64 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 318 590 330 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_F) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+65 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 306 439 318 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_G) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+66 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 306 526 318 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_G) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+67 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 306 590 318 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_G) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+68 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 294 439 306 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_H) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+69 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 294 526 306 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_H) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+70 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 294 590 306 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_H) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+71 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 282 439 294 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_I) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+72 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 282 526 294 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_I) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+73 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 282 590 294 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_I) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+74 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 22 270 439 282 ] /Subtype /Widget /T (EvidenceOfProperty_CoverageDescription_J) /TU (Enter text: The description of the coverages provided, causes of loss \(perils\), and the forms attached \(e.g., Homeowner - HO3 0792\). ) /Type /Annot >>
+endobj
+75 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 446 270 526 282 ] /Subtype /Widget /T (EvidenceOfProperty_LimitAmount_J) /TU (Enter limit: The amount of insurance for the associated coverage. ) /Type /Annot >>
+endobj
+76 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 533 270 590 282 ] /Subtype /Widget /T (EvidenceOfProperty_DeductibleAmount_J) /TU (Enter deductible: The deductible for the associated coverage. ) /Type /Annot >>
+endobj
+77 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 94 0 R /Rect [ 22 180 590 255 ] /Subtype /Widget /T (EvidenceOfProperty_RemarkText_A) /TU (Enter text: The additional comments or special conditions that may exist upon the policy.  ACORD 101, Additional Remarks Schedule, may be attached if more space is required. ) /Type /Annot >>
+endobj
+78 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 72 90 299 102 ] /Subtype /Widget /T (AdditionalInterest_FullName_A) /TU (Enter text: The additional interest's full name. ) /Type /Annot >>
+endobj
+79 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 72 78 299 90 ] /Subtype /Widget /T (AdditionalInterest_MailingAddress_LineOne_A) /TU (Enter text: The additional interest's mailing address line one. ) /Type /Annot >>
+endobj
+80 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 72 66 299 78 ] /Subtype /Widget /T (AdditionalInterest_MailingAddress_LineTwo_A) /TU (Enter text: The additional interest's mailing address line two. ) /Type /Annot >>
+endobj
+81 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 72 54 234 66 ] /Subtype /Widget /T (AdditionalInterest_MailingAddress_CityName_A) /TU (Enter text: The additional interest's mailing address city name. ) /Type /Annot >>
+endobj
+82 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Q 1 /Rect [ 234 54 252 66 ] /Subtype /Widget /T (AdditionalInterest_MailingAddress_StateOrProvinceCode_A) /TU (Enter code: The additional interest's mailing address state or province code. ) /Type /Annot >>
+endobj
+83 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 252 54 299 66 ] /Subtype /Widget /T (AdditionalInterest_MailingAddress_PostalCode_A) /TU (Enter code: The additional interest's mailing address postal code. ) /Type /Annot >>
+endobj
+84 0 obj 
+<< /AP << /D << /1 110 0 R /Off 111 0 R >> /N << /1 112 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 302 120 317 132 ] /Subtype /Widget /T (AdditionalInterest_Interest_AdditionalInsuredIndicator_A) /TU (Check the box \(if applicable\): Indicates the additional interest type is an additional insured. ) /Type /Annot >>
+endobj
+85 0 obj 
+<< /AP << /D << /1 113 0 R /Off 114 0 R >> /N << /1 115 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 389 120 403 132 ] /Subtype /Widget /T (AdditionalInterest_Interest_LendersLossPayableIndicator_A) /TU (Check the box \(if applicable\): Indicates the additional interest type is a lender's loss payable. ) /Type /Annot >>
+endobj
+86 0 obj 
+<< /AP << /D << /1 116 0 R /Off 117 0 R >> /N << /1 118 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 504 120 518 132 ] /Subtype /Widget /T (AdditionalInterest_Interest_LossPayeeIndicator_A) /TU (Check the box \(if applicable\): Indicates the additional interest type is a loss payee. ) /Type /Annot >>
+endobj
+87 0 obj 
+<< /AP << /D << /1 119 0 R /Off 120 0 R >> /N << /1 121 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 302 108 317 120 ] /Subtype /Widget /T (AdditionalInterest_Interest_MortgageeIndicator_A) /TU (Check the box \(if applicable\): Indicates the additional interest type is a mortgagee. ) /Type /Annot >>
+endobj
+88 0 obj 
+<< /AP << /D << /1 122 0 R /Off 123 0 R >> /N << /1 124 0 R >> >> /AS /Off /F 4 /Ff 8388608 /FT /Btn /MK << /CA (8) >> /P 94 0 R /Rect [ 389 108 403 120 ] /Subtype /Widget /T (AdditionalInterest_Interest_OtherIndicator_A) /TU (Check the box \(if applicable\): Indicates the additional interest is other than those listed. ) /Type /Annot >>
+endobj
+89 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 407 108 590 120 ] /Subtype /Widget /T (AdditionalInterest_Interest_OtherDescription_A) /TU (Enter text: The description of the other type of additional interest. ) /Type /Annot >>
+endobj
+90 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8388608 /FT /Tx /P 94 0 R /Rect [ 310 84 587 96 ] /Subtype /Widget /T (AdditionalInterest_AccountNumberIdentifier_B) /TU (Enter identifier: The loan number, account number or other controlling number that the additional interest may have assigned the insured. ) /Type /Annot >>
+endobj
+91 0 obj 
+<< /DA (/F2 8 Tf 0 g) /F 4 /Ff 8392704 /FT /Tx /P 94 0 R /Rect [ 306 48 590 72 ] /Subtype /Widget /T (Producer_AuthorizedRepresentative_Signature_A) /TU (Sign here: Accommodates the signature of the authorized representative \(e.g., producer, agent, broker, etc.\) of the company\(ies\) listed on the document.  This is required in most states. ) /Type /Annot >>
+endobj
+92 0 obj 
+<< /Count 1 /Kids [ 94 0 R ] /Type /Pages >>
+endobj
+94 0 obj 
+<< /Annots 125 0 R /Contents 126 0 R /CropBox [ 0 0 612 792 ] /MediaBox [ 0 0 612 792 ] /Parent 92 0 R /Resources << /Font << /F1 127 0 R /F2 2 0 R >> /ProcSet [ /PDF /Text /ImageB ] /XObject << /Img1 128 0 R >> >> /Type /Page >>
+endobj
+95 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+96 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+97 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+98 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+99 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+100 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+101 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+102 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+103 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+104 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+105 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+106 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+107 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+108 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+109 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+110 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+111 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+112 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+113 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+114 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+115 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+116 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+117 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+118 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+119 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+120 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+121 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+122 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 67 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\ÆzF@°l./—¡!ˆ–Ïñà’ÆÈrÁ¼\¼\ °Wè
+endstream
+endobj
+123 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 41 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ğ37UHÑ
+`ÂĞDÏHØE©¼\i¼\¼\ «Q¨
+endstream
+endobj
+124 0 obj 
+<< /BBox [ 0.00 0.00 14.40 12.00 ] /Filter [ /FlateDecode ] /FormType 1 /Length 45 /Subtype /Form /Type /XObject >>
+stream
+xœ+äå2Ö32P04Ğ30PÈåå24q@¼.iŒ,ÌËÈË |ç1
+endstream
+endobj
+125 0 obj 
+[ 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R 28 0 R 29 0 R 30 0 R 31 0 R 32 0 R 33 0 R 34 0 R 35 0 R 36 0 R 37 0 R 38 0 R 39 0 R 40 0 R 41 0 R 42 0 R 43 0 R 44 0 R 45 0 R 46 0 R 47 0 R 48 0 R 49 0 R 50 0 R 51 0 R 52 0 R 53 0 R 54 0 R 55 0 R 56 0 R 57 0 R 58 0 R 59 0 R 60 0 R 61 0 R 62 0 R 63 0 R 64 0 R 65 0 R 66 0 R 67 0 R 68 0 R 69 0 R 70 0 R 71 0 R 72 0 R 73 0 R 74 0 R 75 0 R 76 0 R 77 0 R 78 0 R 79 0 R 80 0 R 81 0 R 82 0 R 83 0 R 84 0 R 85 0 R 86 0 R 87 0 R 88 0 R 89 0 R 90 0 R 91 0 R ]
+endobj
+126 0 obj 
+<< /Filter [ /FlateDecode ] /Length 2305 >>
+stream
+xœ•Z[Së8~§*ÿAUó°œ*–,Ûñ¼9¶šqìŒíÀ°Åu`v9°gwæ/í¿Ü–-ù"µC†‡ÜÚ}oµ¾–ğ–”oéyæeòõë·ÅÉºYœ\l(	Ãe‘æ·Å	ã-‘út¥Ş›‡Å‰·d!işXœœÖWå>ÏHRÜ’rCš+A’uy-H&ê´’k‘‘]™ËTŠš¬I“"y¿®Å¦¬DË ~İÉ*idY,iÚß*QnÎHQ62äFæ9<ÿ…4ÿXœˆæ‰Ì™ñÎÄLäòDfD$IÓ²Ê” ·¹jh-¼%»ª¼–5˜Q/]]Q«@é¢«N§Ñ K}Pº´ƒ­7ƒÖ( Ó@³zí;_uïç¬{\œÔ˜Jßó¸úì³pt*Ïé’iÿ#4}Bp¼#ğ²+».	I^^ÈûóÓïß?@ÃÇãûqpªÌ8Ø)`¹;…á…çß}9(,ÛÏl$Í[ú«NZóû£6ùõşÛ#¹} /oOoäşıl}zşøşøşø@¾İ¿ÿóƒ¼ıÖ=k«c$Œ:F;Û#šä(uVg’­ÊÊUõ¾jk!—uÓVe^Ş«
+x-DAd]ïáç¦lë¤}¾É^»:‡*Ô¨d©
+-“)Ôræ36ät¨$®¿*ĞºI@VqÙ®°Jü²—•ØŠ¢9#¨¶´§%<Ğ®ğH=?4U’6ŠXªÅD²2İ+¦®ä+QïÁ«›+™ª5 ëcìÂqPW:‡âZfBÅÔÃ‚4·£Èn“[µòu$Á$õƒz(‘ÅÙÖöÙdáÌTnÉ$WC7Q½AªÄc0éÈàÀ´¬ıú'íE)R±¬Ï ¥ù¾í Èlˆl[,õBe,‚e•Ë­ljğ¦hÊŠdŸvnì	‚òDnÇ]…‘Ÿúnàë. ½—ë>Áã)ée¦/è•Êı°oEtébå¢ºµZ’Æã%&ÂØ*vûZ^¦­€‹.;\˜ÛCF–©’ñu—„•S%—7­ç:‡,0Ña&:†¤ØE§åòÃx«'¹\¶@L—7¯ËåêI.—-ÑÅây].—!!\¶@L×jVÂÕ“\.[ ¦+š×årõ$—Ëˆé
+çu¹\=Éå²bº‚y].WOr¹l˜.>¯ËåêI.—-ÓåÏër¹z’ËeÄt±y].WOr¹LSEÚF<%M›ê¨!í{0	½KQ'½ë¢İìó>¨&ælHc™¾ª¹À’É–,Ö j[îaw#’CÒxÀè2XM¤­:S›O#×¹°ZjßDæê»íÖ|ò¦\Ø5|=Ø¥t‚v»¬é¾¸} '¹}À&¸Ìb˜r!ÉöVZ±GİPî®Êâ`&zö(Z¹;M.R˜cŞ ZüùıîËVFz+]·v@À‚q±eÀD÷¼¿›3¦QØ$¿ìf7ĞÙ]q\t’ŒĞ$Î·‰Ìœ9şüI–¸­tÍã‰¹f*ùÜ^“ß¦îpï-ê·õ)íZXùc<³pğ¨<næY“Op:<¡1zè m ¸kI=F#e‘ßh¼U#:©äåààıè€¥ÓC­ì»`Ö¡í$ \ÔµÚ±lI¦nd¥Pú55ÈÖÀkÖÁ„QˆKóØ‹LûŞ-É•[ÇÙÄ¡?dÚàuvZÑæ'ìC´{ã!u#›}ò†Ém-š5Hiçj5§™sT:ÕäØ­Õİi}÷åŒ$ûæª¬äßÁîJì È0¶ÑRÑºP“KuÖ&¹=Íq“23Ç Åk¶ÜÀÅ‹†É´ı2qÁ³ar7Åxæ—³7i×fbJ÷uSn¡<`dûá¨~I±]oş¬í½Ãôã}£uLbÖµP@™°7™^³Û‘l£PL¡êy$=¨¢qÅ€åÜücÍZŞÌÔ®[†šÂ]èlQLN™\Caór,8FfØN
+Rì·kQÍ ÌK«hBl¯(ÌbdÔ.\{cóÓ }f†zj«@º
+f³Şç92­®Ğµ™‘î·\S­8\aGê¤HêhÈI¯Dú³@N$yU%g¦¦‹Fj×…`}:ì­ÑG]Ê'$,H‘Xñãüº	á²ÌÀ,DFqÍ¥	·)-îEªø™Ã.h%§w
+vq±Ùâ²MC–fõ\óÿ3_A8u|äÅf#ÒvG\µ[¶"íVÁp2ê©7— %ò$L³«$àˆ¤©•2;ö g`ñ”ô™M80OËí.)ì-ø˜iËÅWhçÏİ#°‡½‹á²¦æYWDT/°ÙI…ûœ«"	}¿Ÿ¬ o™=¥½Y»;İn/²ìâşÆ×6F9g~§]_PE¥3÷S”õî MüÎì`@¢|éûÇ\vü{qtixa¼uGïí—6ê¦òB~{¢${[œüràšÑÉ´i•Ø&ÕÏ5„D¾~}ùÏÃóë©ÿõøõùş…¤o¯ÏßŸß^?° é1L†ÂI‚º>ãwc¦9òwMŠ=»t|s™‰0i’ËÄÂY&CB˜6¦ Ëğ€uŞ¬K†„hB¸zË=÷®c¼²°Kmìûæ"qXğÛ²j.w;Ó&zƒˆ~L:VD¶us’0Æzƒò²†^˜Ü
+·³ÙDMÓñÉ¥¥ttécà	2®˜Á‰qgô±¾ÛAPŸ«àØñÄ,§¦Äwù>nûº=ìå=˜šmİó £/òt“éß¹tºIiVã40=¥Åí?Ì$Ü]d–Èr‰fæ„ÇêLÜ>qq§VmVUÀã¶”`c±ßwo}Ì=¿(zAŒšæAĞ°H×I-Óƒì!=Ä^•ÉAí¾`WwŞ2!lsÙêûÚh½S½éMÍÓ,¦åiş•§=~ÄÓÆñÖÀ2oı¦'ä¢ÈDõ·š˜¦”LîìN¡òˆ¦Çõ¦5&0ã¶ş%Bû
+endstream
+endobj
+127 0 obj 
+<< /BaseFont /Arial,Bold /Encoding /WinAnsiEncoding /FirstChar 0 /FontDescriptor << /Ascent 905.27 /CapHeight 715.82 /Descent -211.91 /Flags 32 /FontBBox [ -45.90 -175.78 1000.00 938.48 ] /FontName /Arial,Bold /ItalicAngle 0.00 /StemV 0.00 /Type /FontDescriptor >> /LastChar 255 /Subtype /Type1 /Type /Font /Widths [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 277.83 333.01 474.12 556.15 556.15 889.16 722.17 237.79 333.01 333.01 389.16 583.98 277.83 333.01 277.83 277.83 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 556.15 333.01 333.01 583.98 583.98 583.98 610.84 975.10 722.17 722.17 722.17 722.17 666.99 610.84 777.83 722.17 277.83 556.15 722.17 610.84 833.01 722.17 777.83 666.99 777.83 722.17 666.99 610.84 722.17 666.99 943.85 666.99 666.99 610.84 333.01 277.83 333.01 583.98 556.15 333.01 556.15 610.84 556.15 610.84 556.15 333.01 610.84 610.84 277.83 277.83 556.15 277.83 889.16 610.84 610.84 610.84 610.84 389.16 556.15 333.01 610.84 556.15 777.83 556.15 556.15 500.00 389.16 279.79 389.16 583.98 0 556.15 0 277.83 556.15 500.00 1000.00 556.15 556.15 333.01 1000.00 666.99 333.01 1000.00 0 610.84 0 0 277.83 277.83 500.00 500.00 350.10 556.15 1000.00 333.01 1000.00 556.15 333.01 943.85 0 500.00 666.99 277.83 333.01 556.15 556.15 556.15 556.15 279.79 556.15 333.01 736.82 370.12 556.15 583.98 333.01 736.82 552.25 399.90 548.83 333.01 333.01 333.01 576.17 556.15 333.01 333.01 333.01 365.23 556.15 833.98 833.98 833.98 610.84 722.17 722.17 722.17 722.17 722.17 722.17 1000.00 722.17 666.99 666.99 666.99 666.99 277.83 277.83 277.83 277.83 722.17 722.17 777.83 777.83 777.83 777.83 777.83 583.98 777.83 722.17 722.17 722.17 722.17 666.99 666.99 610.84 556.15 556.15 556.15 556.15 556.15 556.15 889.16 556.15 556.15 556.15 556.15 556.15 277.83 277.83 277.83 277.83 610.84 610.84 610.84 610.84 610.84 610.84 610.84 548.83 610.84 610.84 610.84 610.84 610.84 556.15 610.84 556.15 ] >>
+endobj
+128 0 obj 
+<< /BitsPerComponent 8 /ColorSpace /DeviceGray /Filter [ /FlateDecode ] /Height 122 /Length 4626 /Subtype /Image /Type /XObject /Width 285 >>
+stream
+xœí]{\Lé?]U£+åRH*]F+—BÉ-Š²Y»‰Q¬²?¬{Xë²vå³î,-k±.‰!aÑÙhY¶T’İè2İk~gÎ™™÷™™sfN™f
+ß?Vûç½=ó¾ÏûÜŞs¸ÜøˆµUœŠÅåœª:e§5 ®$ëŞ¥#;¾û:Èw¬ûp‡>}ú¸ç¼lëÑëéo•=>%¡áÕİÃçw¶é¬ƒÑ@ßjPÀº³9Ê©BÑ˜›úû²ÉıMh™"u£«K”=f… âŸÓ“í™±AÕuÓ#e¼eÑX’´'x`WÍ&2†Ó deO ÅŸ¸# ·ZóøÂ‡Vpª²gÑÈü9¸¿î;1†„ÙÎ÷ì„/LüŞÍXŒ!ñùKeÏG~H?2§ÜCÀá_eÏI.hÌÚãg¡*c®*êj$ÔUr‡ı²'öîÈ8üÍfRa™ôrpñ˜·zcÔşè„x—Eí\³0Ğs]ç|ß|eÏíİwd’¹ä¬T­GO]¸5æÊ½gô:]Ãë	GW:KS~Õ
+œŠœñæBH/±3[ÛØÁwéîËéùÌÚh(É<»Â³³:5w¢Zv-‡Äˆ~"igë>w[\VysÚÊ9âHÅ«<yZx½Û]L¢£ËWŸ¿Ó&xõG¾$w¶ÈkÀ
+CÙÍğÂá·ïå“Q)‡fÓÖXˆ3§oV òöÖŒİÂwÃ¥l9¶¹ÊT”9j7äØzK£>e¾%Ü†£Ö'¼`(v™#c–¨lŞ$ïZeqşÚÄ5ÙAûä¹b Nõ„Ì	j¡^äÂ½Ãˆı¤ã¶êâóìç±`{›:éæ¼Ávöú)•ÓÂ]UMCÌü¦…;“’æá#í0a—B¬AÎd!sú¼PD‡ï‚Û³qåwø–TE9YŞ¸	˜Óïµ‚ºlª/OÅ0×ué~ÊèÆgÎĞ
+öÚdœaÖá—=ÆÃ|æ|*weAn¨‰wÁ4<N¾R|ÏuãHæÌQ|×ëÙ-}¢œ¾Ï‘±‹]Êé]&.Òó<¦4³¸| 77¥ÑD²Y,–wDŠ¢%ÀÍ±Ö·”ˆà1ÇºŒ †ÇŞYŠ—{o¦cDº";”D9ÁôÏ#q¦°Ãb®Fâ˜Æ(l\™ë'nUºòõ‚§v¥}ÌãM$©>gñØsU1£Ê?¹öX©bº’†·66€Ö}_-)‘$¢ŞDáÿ§ˆÕp?úF³\òF%®%¯£}êÍbÅp"Ç4_Ga
+SM¨HT»c]Ó=La±¹8sØøÂaóãÊb)T(+œ¡XíC|¥¤ğ˜ãÿı†÷O.76¥ãm/Mú§7‹Í0'ŠøG1ûªµ W~áàÌá±E¨çDJ>œ1–+ai~¤»~PÌùz±”‡,S.¹­Iaó†X>
+JçJyÉ;É	æd±ˆs
+<m6vÜtäHµ&q–¸òrï¿oLY¦mÀÛ,/4JÆ;æà|aE¹¶ìIŞPVX\\T\Û„o‹Š‹‹92¦Ñ2ÈÂY29æ*oy¥\2%#äoŠ<ppëF±¥úÒÌóûÖÍñ3¢¿½ƒC×‘Ÿ…m8x£€>) ¡ìÙ¥ıkç~î>Â‘íààÀ4Âkê’]g2ië†‡§>ÇıœââRªøzİƒ¿%ˆÈ+yË©R¦àaGñ¶RJ$77U.ßu¿AaCÆ¹môÄƒ÷8T»Œ\›E±Š²ã7ûÛPÔÀôÙsüGÑÉ-#um>´ptìjÖÛuÆ–Dq‡QŒ†65´´MºZò8œ\Äç+ïwõ&¼:yór¸£¥¦>4ÜßìÓLNÓ°SOS#¨¶üK¬Jæn_{”x­®oÜ£GÇöA½‚â%úYOÅI!G?=/J&š„‰óü+¤×=Ràíòfê¯(.h…%%Ó9{È¯Ñ³™ºùÔ_Ÿå=¾¶?ÌQ›_ì^k¼>îÛAP¡Å§k\˜YXû“¯¹¶˜_³nzØmÅŠeËfù»vSm7ş„ENèIWïÑ$<†Ø™Šdé¸EWô)Q¸áy•ñ1•;
+µA›¡pä×`¿½.r‡D,shåf¯e£QÏ‹-iîÙÖ^`àëDÄÕ£ÎèÑR²¨>s3(ÄÂÁîM )”Ûğ‹ ·¶<ÿnôªÑ"éãhvz uƒc05Í‹°.ˆÆí„dH±ñJüÉATP´ÁRX¡Ój
+É’5	t\ìEå*hQÕBÅZwõjTl$~?¤<)¦óZ\‘ÍQ”ùBîjß£ ©)V{¨î¼ñØda4­1¥_«L¢–WNıÎFb¶È¹ëòŸ…ÅUƒPé˜*®¢ajS&^)‡? µ’$ÀóI´ş¡¢£ÂàÜ`´ßõvÑ ß|Úİ+,ÎéˆJ¿FÔÕ@a¿
+‹SÀÎ¡<kïÀı8´IÙU¢¼Á†Kè×mÑSµL"/)}Q®çèé‘i!”I¿¢BU (ÃĞ}(,ş•ê‰•$¶Áô÷£†/@±´Õ: ÚwÄHbAF´æN&&tG5¯I!Ì³ÃşEP
+Ö©-ˆ^œôîŸê‘¨t Å®Âñ
+póa2~ÓADïöƒê?ˆ’\ 
+Ÿ*#[ä
+ØØi”ŸÊi|“âE7T6#%ü®ßP÷ef_Äd
+<pˆ
+Ë¹™ Wy{*Ë™4šsïI§]HİøªÇ!°À®ŠCª£ú>T¼«%Ñô²ôÒ…i˜C®›Ü
+ éh> $…0IÜ…IŒ¡ æ¨;K'^hmI»®¬3¤=Bš¹öVÔ@%ÈdSï*.7ôb|›ÁpÔMğFTa‡Ş±ÿr=Fí~j¨Ÿ‘A<ÛÌÉrÈ_Hx¥b;@ë!ÍQ¯ é¤nŞiL&Á-'S§©—ÉâŒ~0{QÚË] ªacex&jİñP2R‹ä®Ú	>Ùİ,A™ıj¡±Õ×ú“¦—‚ —~ŒÎòÚäCjYœ¨¾î5MİdĞ¬>£İ
+’:1•8ÄiÀ"ÁüHu¬UÓû¯rŸŞŠ^ç%bÆ¾â™Ì`Qô- è‡dxE+ˆÉ$ªCÈ	¢¸Ph-=Ô¥ŒÁ(¿È’QPöbë‰¢r°«4Ì»›™´'ïèÚ?-®då õw]/ßƒNé9ä/ì/ÔÎ¯€
+Bñ«`³¿Ò4E?]ú¨5‰Z/@¬KÚ-"[HZÕƒ(Íè¨;:ùVï‘ödp’×}Iú¡”ÆrpùD#?øá Y#F©7sA}©V85 µé°[ŠJÌ»Q`Û÷ <œ€¿ğÙSàòFå°lh‚oÑ@uÀ$7´r,¨ñ‰Ÿ‰ ¿‘€&i0—Ù7»	t y/¬Ñó º!¹FØÒB7$øz±Ús§	Œ[ÌdD2ômzÒiå£A	2ˆÀm3Ÿ,»NÍ-Ü
+@1Bòœ9ŒÎ4½ìËS3ZæjšEMR=¿r/&wêD˜3I:í3hXæË‚5¨Hõ	¾ñàA#)Â ‡Æ4k"Ş§‘½©82yƒ+†e6t…gr±®ÊÔğ—JÊÒØ’ï¥ªŠÊ†ñÌ ‚0ƒKbM” ‹Ò¿^¼•PœNMÀ_7¾±'‹à"ôS$œ up»vbô¨Q{J#l„¢ÛJàƒºVÊF^A)Ù‰9 /g»){©ÿ
+Ì–)5«¦„^’	|P×&Õ·- il¬¦‰ñ‚W¼ô”rõ¬ZÎBïÌT¨GuÑĞ<Cô§Ÿ‡˜Rº‡«B…ê™ƒçë~ı(vh-Ô²Éó*ß92qØWƒ@ŞùS·ö(	Õ•ò›ÚÏ ¥ÚØH)P`(¯;d'ggÙií3	Ê¾”Ö4^­È•â\)W¬¨$PÃš.õ6É—ô#T¾„_vÏAÚ¾Wş¾]²“ÊıH«~*ûÎW%¹Ñ{P[IÑ`Ø²l?”Í£K¦M›/<ËöµCÆP&ú?_ƒ6°î0Øªª_‚­†aıôw=‰Ë…ÇÁÁétH¦(æ6†¤†’!Fi0È+0ÁOBcÉãEµüÃSL°ÍhYïÍ–´”ó~D2VÍ[ä–3tÙÙµš2¸İ±/…Ôeà¸S©Ş&,‘>‡…ÒùÂC5É›vÇi—ÅÙ~¢Ç`õjùüşÈüªÜÛ;&™âöM(lçÆ0Paê•<ô«Udš…ÔÓé‰yƒâ+T'ò/¡ì¸]9Ù2Ó“ãö¯ñ1G«·ËÇ™dHD7­¸º42yv"Ø)XÏ9ë‰‹;{pãWã{“Ş›~¢Iã•¿ #@•q &îÂÙC›æz  p{m[á0¨Æ52ÇHXûöèB¢“Èû­zúo{(Ş	%JI16‡~ûAS›Š6JÍí%¶¢oaÓÔÑAc¹ÜoéuŒ¯1´Ï5tXÀ	¦n:~wŠ¤ÒÑ0‘XÂ×àü#O˜#©íTÃ —Tµ-=ÖœÏ-jÔ¯íŞÏeH_ËÉR|,q»ÛÙ:uêdkgÖ_äıWµ‰[üœº‰¿ØGÇÌqì’ßQúûr£¹ÛŠ½[Iİ°·ÛÔŸâ©e@¡¹…]Ÿ!..ìlLD	;;w³³í;ÔÅÅÅÁÖV5ñ³åsr¡ÀÁc}¾\¾ûó¥0'-­¸¼,?]Ú¬H~˜“]R^V^’óà„¡Y’â§•á!¡8BB­Şy*şÔ{¸uÏnşñË†Å¡d°å»™Io…TŞ}’ó²¬¬¬èyÖÑvkï¥ædç—ãÏ^fgßJ%˜SSò¶Œ¥¥­÷‚ç{šÜ¬§ÅéJIfl(uY6Ñ‡ŠhÛ6ùÊ+… ÑÉ­M¼_E)ˆWùì£È¡ÃtlRë`NMA«;4ÿë„Mlƒª¸÷LÙcÀ.sSşèŠ3?Rä«*>fN•o¯Häí
+ùş©’Ç@…§qƒ[VjDËâß¥.ó™¹“<Ë™.H¸ñ¥Õ”Öú
+DÂ+Û[Y/u*8Ü¿›ÏßJê\6ÆN—¦¤êÊwVX¶ó¿®”®¡Ú™`N?Å€£ø §ÊºlĞV—üØó2Ù¤òDÑÅy0ƒYJ~õ,¼à§³êÒ¿Fî¨¿½b†uZ|_q]6/I!]ôñNÊZ³^ß^F’#L„¶WÀ‡mÊÿüÖ•’¶[ù:9€+>Ö½›‹Š„•.¼“¦ÏéVñV" 7PLµX/µÏO…Ûa,³éwšp']ÉXCL¡-"^Æ¯ŸÀOÙM(Zœùj‰å^9_‚ópG€5?^k×Æ¾ˆWd% yJn(L>0·¿ }TÅqEübÎ2±x/6dÇ³wo5÷Ò–€(m·ã´?ä„´>¤›ˆsë>ãæ5ª,÷ÆŞğæ ‰Å`øö§­Á×ØDH0‡EğÁûMş‚EÑ£óÛç4ıè@¿oşb˜øĞQîNÅëìyıy%ç{]É³¤Ãß†Œa›iˆ6¡j¹àrës~6	é]©¹ƒCÃĞÉoñö˜[ÿdæ•TÔÖÕXSË)}“–štş·ïLÕ[—â‹ŠšvÁ1ïÁ×6/IŠQ°:Z:ºùÌgJèlB§øLğéÌîÑ¡=íçyO¾vwÓ’nÍ‚Áà•·d\ƒmKx<^^ŒQ±ğùñ^[=›hP¶¶ƒì‰Ë„ş°E1OŞ3Îøwåk¤£ÛEÑOÛğÇídàÚLŠo1‚¹ÇÂCJz{¿âğpİ@-Ù¬€Ğ4øcBV«ş^‡ÜP{û»q–íd3Ã´ÌØcÃ·_NÏ>Ş+ui6ÍlLóUH\14èå´r×ÅÏ?Ôœ§ÒÜä[–‡úqv²¶Âaé0ÄÙËoö7>•”]PŞ:zZ*9<´aãñ#š„ÿÓ…M
+endstream
+endobj
+xref
+0 129
+0000000000 65535 f
+0000000017 00000 n
+0000001328 00000 n
+0000003268 00000 n
+0000003595 00000 n
+0000003919 00000 n
+0000004137 00000 n
+0000004384 00000 n
+0000004631 00000 n
+0000004880 00000 n
+0000005159 00000 n
+0000005414 00000 n
+0000005762 00000 n
+0000005985 00000 n
+0000006283 00000 n
+0000006571 00000 n
+0000006910 00000 n
+0000007198 00000 n
+0000007604 00000 n
+0000007853 00000 n
+0000008103 00000 n
+0000008340 00000 n
+0000008606 00000 n
+0000008852 00000 n
+0000009116 00000 n
+0000009359 00000 n
+0000009602 00000 n
+0000009847 00000 n
+0000010122 00000 n
+0000010372 00000 n
+0000010703 00000 n
+0000011139 00000 n
+0000011522 00000 n
+0000011878 00000 n
+0000012228 00000 n
+0000012630 00000 n
+0000012903 00000 n
+0000013178 00000 n
+0000013438 00000 n
+0000013680 00000 n
+0000013947 00000 n
+0000014189 00000 n
+0000014822 00000 n
+0000015164 00000 n
+0000015508 00000 n
+0000015856 00000 n
+0000016218 00000 n
+0000016476 00000 n
+0000016801 00000 n
+0000017048 00000 n
+0000017296 00000 n
+0000017621 00000 n
+0000017868 00000 n
+0000018116 00000 n
+0000018441 00000 n
+0000018688 00000 n
+0000018936 00000 n
+0000019261 00000 n
+0000019508 00000 n
+0000019756 00000 n
+0000020081 00000 n
+0000020328 00000 n
+0000020576 00000 n
+0000020901 00000 n
+0000021148 00000 n
+0000021396 00000 n
+0000021721 00000 n
+0000021968 00000 n
+0000022216 00000 n
+0000022541 00000 n
+0000022788 00000 n
+0000023036 00000 n
+0000023361 00000 n
+0000023608 00000 n
+0000023856 00000 n
+0000024181 00000 n
+0000024428 00000 n
+0000024676 00000 n
+0000025029 00000 n
+0000025254 00000 n
+0000025507 00000 n
+0000025760 00000 n
+0000026015 00000 n
+0000026300 00000 n
+0000026560 00000 n
+0000026935 00000 n
+0000027313 00000 n
+0000027671 00000 n
+0000028028 00000 n
+0000028388 00000 n
+0000028653 00000 n
+0000028982 00000 n
+0000029365 00000 n
+0000001036 00000 n
+0000029430 00000 n
+0000029680 00000 n
+0000029904 00000 n
+0000030102 00000 n
+0000030304 00000 n
+0000030528 00000 n
+0000030726 00000 n
+0000030929 00000 n
+0000031154 00000 n
+0000031353 00000 n
+0000031556 00000 n
+0000031781 00000 n
+0000031980 00000 n
+0000032183 00000 n
+0000032408 00000 n
+0000032607 00000 n
+0000032810 00000 n
+0000033035 00000 n
+0000033234 00000 n
+0000033437 00000 n
+0000033662 00000 n
+0000033861 00000 n
+0000034064 00000 n
+0000034289 00000 n
+0000034488 00000 n
+0000034691 00000 n
+0000034916 00000 n
+0000035115 00000 n
+0000035318 00000 n
+0000035543 00000 n
+0000035742 00000 n
+0000035945 00000 n
+0000036586 00000 n
+0000038977 00000 n
+0000040928 00000 n
+trailer
+<< /Info 93 0 R /Root 1 0 R /Size 129 >>
+startxref
+45738
+%%EOF
