@@ -157,6 +157,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .drop .hint{font-size:13px;color:var(--mute);margin-bottom:8px}
 .ed{position:fixed;inset:0;background:var(--bg);z-index:8;display:none;flex-direction:column}
 .ed.on{display:flex}.ed.top{z-index:20}.certPols{display:flex;flex-direction:column;gap:4px}.certPols label{display:flex;gap:8px;align-items:center;font-size:14px}.certPols input{width:auto}.certGrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}.certGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.certGrid .w2{grid-column:1/-1}
+.chPaste{margin-top:10px;text-align:left;font-size:13px}.chPaste textarea{width:100%;min-height:70px;margin-top:6px;font:inherit;font-size:13px;resize:vertical}
 .edh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--card)}
 .edh .nm{flex:1 1 200px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .edh button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}
@@ -522,6 +523,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="row" style="justify-content:space-between;align-items:center;margin:12px 0 6px;flex-wrap:wrap;gap:6px"><h4 style="margin:0" id="certHoldH">Certificate holder</h4><div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap"><select id="chPick" style="width:auto;min-width:220px" title="Pick a saved holder for this client"><option value="">Saved holders…</option></select><button type="button" class="pri" id="chSaveList" style="white-space:nowrap">Add to cert holder list</button><button type="button" class="danger" id="chDelList" hidden>Remove</button></div></div>
     <div class="certGrid"><label class="w2">Name<input id="chName" autocomplete="off"></label><label class="w2">Name second line<input id="chName2" autocomplete="off"></label><label class="w2">Address<input id="chAddr1" autocomplete="off"></label><label class="w2">Address line 2<span style="display:flex;gap:6px;align-items:center"><input id="chAddr2" autocomplete="off" style="flex:1;min-width:0"><button type="button" class="pri" id="chIsaoa" hidden title="Puts ISAOA/ATIMA in Address line 2" style="white-space:nowrap">ISAOA/ATIMA</button></span></label>
       <label>City<input id="chCity" autocomplete="off"></label><label>State<input id="chState" maxlength="2" autocomplete="off"></label><label>ZIP<input id="chZip" maxlength="10" autocomplete="off"></label></div>
+    <div class="drop chPaste" id="chDrop"><b>Paste or drop the holder / mortgagee info</b><textarea id="chPaste" placeholder="Paste the lender’s clause, or the holder’s name and address (and loan number), or drop an email or letter here. It fills the boxes above as soon as you paste."></textarea><div class="msg small" id="chPasteMsg"></div></div>
     <div id="e27Box" hidden><div class="certGrid" style="margin-top:8px"><label>Interest<select id="e27Int"><option>Mortgagee</option><option>Loss payee</option><option>Lender's loss payable</option><option>Additional insured</option><option>Contract of sale</option><option>Other</option></select></label><label>Loan / account number<input id="e27Loan" autocomplete="off"></label><label>Other interest<input id="e27Other" autocomplete="off" placeholder="If Other"></label></div>
       <h4 style="margin:12px 0 6px">Property location</h4>
       <div class="certGrid"><label class="w2">Street<input id="e27Street" autocomplete="off"></label><label>City<input id="e27City" autocomplete="off"></label><label>State<input id="e27State" maxlength="2" autocomplete="off"></label><label>ZIP<input id="e27Zip" maxlength="10" autocomplete="off"></label><label class="w2">Property description<input id="e27Desc" autocomplete="off" placeholder="Building, dwelling, contents…"></label></div></div>
@@ -3620,7 +3622,7 @@ async function certFormOpen(mode,c,kind){kind=mode==='new'?kind||'25':certKind(c
   const prop=p=>/home|dwelling|property|earthquake|dic|bop|condo|renters|fire|flood/i.test(p.line||'')?0:1,first=k27?pols.map((p,i)=>i).sort((a,b)=>prop(pols[a])-prop(pols[b]))[0]:-1;
   $('certPols').innerHTML=pols.length?pols.map((p,i)=>`<label><input type="${k27?'radio':'checkbox'}" name="certPol" value="${i}"${!k27||i===first?' checked':''}> ${esc([p.line||'Policy',p.co,p.num,[p.eff,p.exp].filter(Boolean).join(' – ')].filter(Boolean).join(' · '))}</label>`).join(''):`<span class="small">No active policies on this client. The ${k27?an:'certificate'} will have the client only.</span>`;
   $('certPolH').textContent=k27?'Policy on this '+an:'Policies on this certificate';$('certHoldH').textContent=k27?'Additional interest (mortgagee, loss payee…)':'Certificate holder';$('certDescH').textContent=k27?'Remarks':'Description of operations / locations / vehicles';$('chAI').hidden=k27;$('chIsaoa').hidden=!k27;$('e27Box').hidden=!k27;
-  CH_KEYS.forEach(([id])=>$(id).value='');E27_KEYS.forEach(([id])=>$(id).value='');$('e27Int').value='Mortgagee';chPickFill();
+  CH_KEYS.forEach(([id])=>$(id).value='');E27_KEYS.forEach(([id])=>$(id).value='');$('chPaste').value='';chSay('');$('e27Int').value='Mortgagee';chPickFill();
   if(k27&&mode==='new')e27Location(pols[first]);
   // copy brings the description along; edit brings the holder and description as they are on the cert
   if(mode!=='new'&&kind==='28'){try{await acordReady();const d=await PDFLib.PDFDocument.load(await fileBytes(c),{ignoreEncryption:true});e28Read(d,mode==='edit')}catch(_){}}
@@ -3646,6 +3648,31 @@ const certFormClose=()=>{$('certForm').hidden=true;$('certNewBtns').hidden=!asse
 $('certFormCancel').onclick=certFormClose;
 // ACORD 27 and 28: ISAOA/ATIMA (its successors and/or assigns, as their interests may appear) goes in Address line 2
 $('chIsaoa').onclick=()=>{$('chAddr2').value='ISAOA/ATIMA';$('chAddr2').focus()};
+// paste or drop the holder / mortgagee: name, address, loan number and kind of interest go in their boxes (Claude reads it when it's on, else the lines are read in order)
+const chSay=(t,c)=>{const m=$('chPasteMsg');m.className='msg small'+(c?' '+c:'');m.textContent=t||''};
+function chBasic(t){const o={},L=t.split(/\n/).map(x=>x.replace(/^\s*(certificate holder|holder|mortgagee|lender|loss payee|additional interest|additional insured|name and address|name|address|mailing address)\s*[:\-]\s*/i,'').trim()).filter(Boolean),rest=[];
+  for(const x of L){const lm=/\b(?:loan|acct|account|ref(?:erence)?)\b\s*(?:#|no\.?|number)?\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{3,})/i.exec(x);if(lm&&!o.loan){o.loan=lm[1];continue}
+    const im=/^(mortgagee|loss payee|lender'?s loss payable|additional insured)$/i.exec(x);if(im){o.interest=im[1];continue}rest.push(x)}
+  let ci=-1;for(let i=rest.length-1;i>=0;i--){const m=/^(.+?),?\s+([A-Z]{2})\.?,?\s+(\d{5}(?:-\d{4})?)$/i.exec(rest[i]);if(m){ci=i;o.city=m[1].replace(/,$/,'').trim();o.state=m[2].toUpperCase();o.zip=m[3];break}}
+  const top=ci>=0?rest.slice(0,ci):rest;o.name=top[0]||'';let i=1;
+  if(top[i]&&!/\d|p\.?\s*o\.?\s*box/i.test(top[i])&&top.length>2){o.name2=top[i];i++}
+  o.address1=top[i]||'';o.address2=top.slice(i+1).join(', ');return o}
+async function chTake(t,imgs,label){chSay('Reading it…');let o=null,how='';
+  if(sample){try{o=await sample.json(`From ${imgs?'the attached picture':'the text below'}${label?` (a file named "${label}")`:''}, pull out the certificate holder / mortgagee / additional interest for an insurance certificate. Reply with only a JSON object with these string keys, leaving out anything not stated: name, name2 (a second name line such as "ISAOA/ATIMA" or "c/o ..." only if it's on its own line), address1, address2, city, state (2 letters), zip, loan (loan or account number), interest (one of "Mortgagee", "Loss payee", "Lender's loss payable", "Additional insured" if stated). Keep ISAOA/ATIMA with the name if it's written on the same line.${t?'\n"""\n'+t.slice(0,20000)+'\n"""':''}`,{modelTier:'quick',...(imgs?{images:imgs}:{})});how=' Claude read it.'}catch(e){o=null}}
+  if(!o||typeof o!=='object'){if(!t)return chSay('Reading pictures needs Claude, which isn’t available here. Paste the text instead.','err');o=chBasic(t)}
+  const S=k=>String(o[k]==null?'':o[k]).trim(),put=[['chName','name'],['chName2','name2'],['chAddr1','address1'],['chAddr2','address2'],['chCity','city'],['chState','state'],['chZip','zip']];let n=0;
+  if(!S('name')&&!S('address1')&&!S('loan'))return chSay('Couldn’t find a name or address in that.','err');
+  for(const [id,k] of put){$(id).value=k==='state'?S(k).toUpperCase().slice(0,2):S(k);if(S(k))n++}
+  if(S('loan')&&!$('e27Box').hidden){$('e27Loan').value=S('loan');n++}
+  const it=S('interest').toLowerCase(),opt=[...$('e27Int').options].find(x=>x.value.toLowerCase()===it);if(opt&&!$('e27Box').hidden){$('e27Int').value=opt.value;n++}
+  $('chPick').value='';chBtns();chSay(`Filled ${n} box${n===1?'':'es'}. Check them before you make it.${how}${S('loan')&&$('e27Box').hidden?` Loan number ${S('loan')} isn’t on an ACORD 25, so it wasn’t used.`:''}`,'ok')}
+$('chPaste').addEventListener('paste',()=>setTimeout(()=>{const t=$('chPaste').value.trim();if(t)chTake(t,null,'')},0));
+{const d=$('chDrop');d.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',async e=>{e.preventDefault();e.stopPropagation();d.classList.remove('over');const dt=e.dataTransfer,f=dt.files&&dt.files[0];
+    if(!f){const t=(dt.getData('text/plain')||'').trim();if(t){$('chPaste').value=t;chTake(t,null,'')}return}
+    try{if(/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name)){if(!sample||!sLimits||!sLimits.images)return chSay('Reading pictures needs Claude, which isn’t available here. Paste the text instead.','err');return chTake('',[f],f.name)}
+      const t=(await fileText(f)).trim();if(!t)return chSay(`${f.name} has no readable text (it may be a scan). Paste the text instead.`,'err');$('chPaste').value=t;chTake(t,null,f.name)}
+    catch(err){chSay(`${f.name}: ${err&&err.message||'couldn’t be read'}`,'err')}})}
 // AI = additional insured: adds the line to the description (once)
 $('chAI').onclick=()=>{const t='Certificate Holder is also additional insured.',d=$('chDesc'),v=d.value.trim();if(!v.includes(t))d.value=v?v+'\n'+t:t;d.focus()};
 $('certForm').onsubmit=async e=>{e.preventDefault();if(!certMode||!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');const b=$('certFormGo');b.disabled=true;
