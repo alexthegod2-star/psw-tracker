@@ -3619,7 +3619,7 @@ async function certFormOpen(mode,c,kind){kind=mode==='new'?kind||'25':certKind(c
   // ACORD 27 is one property policy: pick it with a radio, property lines first
   const prop=p=>/home|dwelling|property|earthquake|dic|bop|condo|renters|fire|flood/i.test(p.line||'')?0:1,first=k27?pols.map((p,i)=>i).sort((a,b)=>prop(pols[a])-prop(pols[b]))[0]:-1;
   $('certPols').innerHTML=pols.length?pols.map((p,i)=>`<label><input type="${k27?'radio':'checkbox'}" name="certPol" value="${i}"${!k27||i===first?' checked':''}> ${esc([p.line||'Policy',p.co,p.num,[p.eff,p.exp].filter(Boolean).join(' – ')].filter(Boolean).join(' · '))}</label>`).join(''):`<span class="small">No active policies on this client. The ${k27?an:'certificate'} will have the client only.</span>`;
-  $('certPolH').textContent=k27?'Policy on this '+an:'Policies on this certificate';$('certHoldH').textContent=k27?'Additional interest (mortgagee, loss payee…)':'Certificate holder';$('certDescH').textContent=k27?'Remarks':'Description of operations / locations / vehicles';$('chAI').hidden=k27;$('chIsaoa').hidden=kind!=='27';$('e27Box').hidden=!k27;
+  $('certPolH').textContent=k27?'Policy on this '+an:'Policies on this certificate';$('certHoldH').textContent=k27?'Additional interest (mortgagee, loss payee…)':'Certificate holder';$('certDescH').textContent=k27?'Remarks':'Description of operations / locations / vehicles';$('chAI').hidden=k27;$('chIsaoa').hidden=!k27;$('e27Box').hidden=!k27;
   CH_KEYS.forEach(([id])=>$(id).value='');E27_KEYS.forEach(([id])=>$(id).value='');$('e27Int').value='Mortgagee';chPickFill();
   if(k27&&mode==='new')e27Location(pols[first]);
   // copy brings the description along; edit brings the holder and description as they are on the cert
@@ -3644,7 +3644,7 @@ $('chDelList').onclick=async()=>{if(!editClient||$('chPick').value==='')return;i
   await putHolders(hs.filter((_,j)=>j!==i),null,`Removed ${h.chName} from the holder list.`)};
 const certFormClose=()=>{$('certForm').hidden=true;$('certNewBtns').hidden=!assets;certMode=null};
 $('certFormCancel').onclick=certFormClose;
-// ACORD 27: ISAOA/ATIMA (its successors and/or assigns, as their interests may appear) goes in Address line 2
+// ACORD 27 and 28: ISAOA/ATIMA (its successors and/or assigns, as their interests may appear) goes in Address line 2
 $('chIsaoa').onclick=()=>{$('chAddr2').value='ISAOA/ATIMA';$('chAddr2').focus()};
 // AI = additional insured: adds the line to the description (once)
 $('chAI').onclick=()=>{const t='Certificate Holder is also additional insured.',d=$('chDesc'),v=d.value.trim();if(!v.includes(t))d.value=v?v+'\n'+t:t;d.focus()};
