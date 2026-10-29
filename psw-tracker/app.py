@@ -1327,7 +1327,50 @@ async def mail_send(request: Request):
             m.logout()
     except Exception:
         copied = False
+    with db() as c:
+        mail_log_table(c)
+        c.execute("INSERT INTO mail_log(user_id,user_name,at,sender,to_,cc,subject,html,files,copied) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                  (u["id"], u["name"] or u["username"], time.time(), sender, ", ".join(to), ", ".join(cc), subject, html,
+                   json.dumps([n for n, _, _ in atts]), 1 if copied else 0))
     return {"ok": True, "sentCopy": copied}
+
+
+# ---------- Sent history: every email sent from the database (not the attachments themselves, just their names)
+def mail_log_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS mail_log(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, user_name TEXT NOT NULL DEFAULT '', "
+              "at REAL NOT NULL, sender TEXT NOT NULL DEFAULT '', to_ TEXT NOT NULL DEFAULT '', cc TEXT NOT NULL DEFAULT '', subject TEXT NOT NULL DEFAULT '', "
+              "html TEXT NOT NULL DEFAULT '', files TEXT NOT NULL DEFAULT '[]', copied INTEGER NOT NULL DEFAULT 0)")
+
+
+@app.get("/api/mail/history")
+def mail_history(request: Request, q: str = "", all: int = 0):
+    """your own sent emails, newest first; the owners can see everyone's"""
+    u = need_user(request)
+    every = bool(all) and u["username"] in PANEL_OWNERS and not bearer(request)
+    sql, args = "SELECT id,user_name,at,sender,to_,cc,subject,files,copied FROM mail_log WHERE 1=1", []
+    if not every:
+        sql += " AND user_id=?"
+        args.append(u["id"])
+    for w in str(q or "").lower().split()[:6]:
+        sql += " AND lower(to_||' '||cc||' '||subject||' '||files||' '||user_name) LIKE ?"
+        args.append("%" + w.replace("%", "").replace("_", "") + "%")
+    with db() as c:
+        mail_log_table(c)
+        rows = c.execute(sql + " ORDER BY at DESC LIMIT 500", args).fetchall()
+    return {"canAll": u["username"] in PANEL_OWNERS and not bearer(request),
+            "items": [{"id": r["id"], "by": r["user_name"], "at": r["at"], "from": r["sender"], "to": r["to_"], "cc": r["cc"],
+                       "subject": r["subject"], "files": json.loads(r["files"] or "[]"), "sentCopy": bool(r["copied"])} for r in rows]}
+
+
+@app.get("/api/mail/history/{mid}")
+def mail_history_one(mid: int, request: Request):
+    u = need_user(request)
+    with db() as c:
+        mail_log_table(c)
+        r = c.execute("SELECT user_id,html FROM mail_log WHERE id=?", (mid,)).fetchone()
+    if not r or (r["user_id"] != u["id"] and (u["username"] not in PANEL_OWNERS or bearer(request))):
+        err(404, "not_found")
+    return {"html": r["html"]}
 
 
 @app.get("/healthz")
