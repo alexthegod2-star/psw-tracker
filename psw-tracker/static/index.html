@@ -1868,6 +1868,9 @@ async function openEditor(f,opt){
         if(sheetKind(f.name)==='auto')anns.forEach(a=>{const m=/^f_owner_(first|last|dob)$/.exec(a.fieldName||''),el=m&&edInput(a.id);if(!el)return;let was=el.value;
           el.addEventListener('blur',()=>{const d=ed.fields.find(x=>x.name==='d1_'+m[1]),de=d&&edInput(d.id);if(de&&(!de.value.trim()||de.value===was)&&de.value!==el.value){de.value=el.value;ed.pdf.annotationStorage.setValue(d.id,{value:el.value})}was=el.value})});
         if(isQuoteSheet(f.name))al.querySelectorAll('select').forEach(typeSearch);
+        // quote sheets: VINs, sex, marital status and license state turn to capitals when you leave the box
+        if(isQuoteSheet(f.name))anns.forEach(a=>{if(!/(?:^|_)(?:vin|sex|mar|marital|dl_state)$/.test(a.fieldName||''))return;const el=edInput(a.id);if(!el||el.tagName==='SELECT')return;
+          el.addEventListener('blur',()=>{const x=el.value.toUpperCase();if(x!==el.value){el.value=x;ed.pdf.annotationStorage.setValue(a.id,{value:x})}})});
         if(/ personal home quote sheet\.pdf$/i.test(f.name)){homeCalc(al);homeSame(al)}
         // home: ticking ISAOA/ATIMA under a mortgagee types it into that mortgagee's Name line 2 (unticking takes it back out); a box ticked earlier fills in on open
         if(/ personal home quote sheet\.pdf$/i.test(f.name))['1','2'].forEach(n=>{const cb=anns.find(a=>a.fieldName===`mg${n}_isaoa`),tx=anns.find(a=>a.fieldName===`mg${n}_name2`),ce=cb&&edInput(cb.id),te=tx&&edInput(tx.id);if(!ce||!te)return;
@@ -2999,6 +3002,8 @@ const polRow=p=>{p=p||{};const tr=document.createElement('tr');
   for(const k of ['eff','exp','cdate'])tr.querySelector(`[data-p=${k}]`).value=fmtDate(p[k]||'');showStatus(tr.querySelector('[data-pstat]'),p.status);
   tr.querySelectorAll('input:not([type=hidden])').forEach(el=>{el.readOnly=true;el.tabIndex=-1;el.placeholder=''});tr.title='Click to open this policy';
   $('polRows').appendChild(tr)};
+// policy details: VINs, sex, marital status and license state in the driver/vehicle tables turn to capitals when you leave the box (like the quote sheets)
+$('ppExtra').addEventListener('focusout',e=>{const el=e.target;if(el.tagName!=='INPUT'||!/(?:^|_)(?:vin|sex|mar|marital|dl_state)$/.test(el.dataset.x||''))return;const x=el.value.toUpperCase();if(x!==el.value){el.value=x;el.dispatchEvent(new Event('input',{bubbles:true}))}});
 $('polAdd').onclick=()=>{let r=$('polRows').lastElementChild;if(!r||[...r.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim())){polRow();r=$('polRows').lastElementChild}openPolicy(r,true)}; // a blank row is reused
 // the policy line is display only: a click anywhere on it (except ✕) opens the policy pop-up
 $('polRows').addEventListener('click',e=>{if(e.target.closest('[data-prenew]')){renewPolicy(e.target.closest('tr'));return}const b=e.target.closest('[data-prm]');if(b){const tr=b.closest('tr'),ln=tr.querySelector('[data-p=line]');sureDel(`Remove this ${ln&&ln.value.trim()?ln.value.trim()+' policy':'policy'} from the client?`).then(y=>{if(y){tr.remove();renderClInv();reClFiles();savePolicies('Policy removed')}});return}const tr=e.target.closest('tr');if(!tr)return;
