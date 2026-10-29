@@ -3539,6 +3539,9 @@ let tpl27=null;
 async function acord27Tpl(){if(!tpl27){const r=await fetch('tpl27.pdf');if(!r.ok)throw new Error('ACORD 27 template missing');tpl27=new Uint8Array(await r.arrayBuffer())}return tpl27}
 // the additional interest takes the holder boxes; the description box is the 27's Remarks
 const CH27_KEYS=[['chName','AdditionalInterest_FullName_A'],['chName2',''],['chAddr1','AdditionalInterest_MailingAddress_LineOne_A'],['chAddr2','AdditionalInterest_MailingAddress_LineTwo_A'],['chCity','AdditionalInterest_MailingAddress_CityName_A'],['chState','AdditionalInterest_MailingAddress_StateOrProvinceCode_A'],['chZip','AdditionalInterest_MailingAddress_PostalCode_A'],['chDesc','EvidenceOfProperty_RemarkText_A']];
+// the 27's additional interest lines start a fifth of the way in and are squeezed together; spread them across the whole Name and Address box
+const CH27_BOX=[['AdditionalInterest_FullName_A',22,104,277],['AdditionalInterest_MailingAddress_LineOne_A',22,88,277],['AdditionalInterest_MailingAddress_LineTwo_A',22,72,277],
+  ['AdditionalInterest_MailingAddress_CityName_A',22,56,205],['AdditionalInterest_MailingAddress_StateOrProvinceCode_A',229,56,24],['AdditionalInterest_MailingAddress_PostalCode_A',255,56,44]];
 const E27_KEYS=[['e27Loan','AdditionalInterest_AccountNumberIdentifier_A'],['e27Other','AdditionalInterest_Interest_OtherDescription_A'],['e27Street','EvidenceOfProperty_PhysicalAddress_StreetLineOne_A'],['e27City','EvidenceOfProperty_PhysicalAddress_CityName_A'],['e27State','EvidenceOfProperty_PhysicalAddress_StateOrProvinceCode_A'],['e27Zip','EvidenceOfProperty_PhysicalAddress_PostalCode_A'],['e27Desc','EvidenceOfProperty_PropertyDescription_A']];
 const E27_INT={'Mortgagee':'AdditionalInterest_Interest_MortgageeIndicator_A','Loss payee':'AdditionalInterest_Interest_LossPayeeIndicator_A',"Lender's loss payable":'AdditionalInterest_Interest_LendersLossPayableIndicator_A','Additional insured':'AdditionalInterest_Interest_AdditionalInsuredIndicator_A','Other':'AdditionalInterest_Interest_OtherIndicator_A'};
 const e27Vals=()=>({...Object.fromEntries(E27_KEYS.map(([id])=>[id,$(id).value.trim()])),int:$('e27Int').value});
@@ -3567,7 +3570,7 @@ async function new27Bytes(i,hd,ex){await acordReady();const doc=await PDFLib.PDF
   const p=certPolicies()[i];
   if(p){T('Insurer_FullName_A',p.co);T('Policy_PolicyNumberIdentifier_A',p.num);T('Policy_EffectiveDate_A',p.eff);T('Policy_ExpirationDate_A',p.exp);
     const x=p.x||{},rows=COV27.filter(([k])=>amt(x[k])),L='ABCDEFGHIJ';
-    rows.slice(0,10).forEach(([k,l],j)=>{T('EvidenceOfProperty_CoverageDescription_'+L[j],l);T('EvidenceOfProperty_LimitAmount_'+L[j],amt(x[k]));if(!j)T('EvidenceOfProperty_DeductibleAmount_A',amt(x.deductible))})}
+    rows.slice(0,10).forEach(([k,l],j)=>{T('EvidenceOfProperty_CoverageDescription_'+L[j],l);T('EvidenceOfProperty_LimitAmount_'+L[j],'$'+amt(x[k]));if(!j&&amt(x.deductible))T('EvidenceOfProperty_DeductibleAmount_A','$'+amt(x.deductible))})}
   certHolderFill(form,hd,false,'27');e27Fill(form,ex,false);
   await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A');return doc.save()}
 /* ---------- ACORD 28 Evidence of Commercial Property Insurance (this form's boxes have short names, several hold more than one line) ---------- */
@@ -3592,9 +3595,9 @@ async function new28Bytes(i,hd,ex){await acordReady();const doc=await PDFLib.PDF
     Named:[nm+(g('clDba')?' DBA '+g('clDba'):''),...g('clAddress').split(/\n/).map(x=>x.trim()).filter(Boolean),cityLine(g('clCity'),g('clState'),g('clZip'))].filter(Boolean).join('\n')};
   const p=certPolicies()[i];
   if(p){const x=p.x||{};Object.assign(v,{Company:p.co||'',Type:p.line||'',Policy:p.num||'',Date3:p.eff||'',Date2:p.exp||''});
-    // building or business personal property: the policy's building limit, else its BPP; business income gets Yes and its limit
+    // building or business personal property: the policy's building limit, else its BPP; business income gets Yes and its limit (the form prints the $ before the coverage amount itself)
     const bl=amt(x.building||x.dwelling),bp=amt(x.bpp||x.contents);if(bl){v.Check2=true;v.Amount=bl}else if(bp){v.Check3=true;v.Amount=bp}if(bl&&bp)v.Evidence=`Business personal property: $${bp}`;
-    if(amt(x.deductible))v.Deductible=amt(x.deductible);if(amt(x.bi)){v.Check8=true;v.Check10=true;v.Limit1=amt(x.bi)}}
+    if(amt(x.deductible))v.Deductible='$'+amt(x.deductible);if(amt(x.bi)){v.Check8=true;v.Check10=true;v.Limit1='$'+amt(x.bi)}}
   fillBoxes(doc,Object.fromEntries(Object.entries(v).filter(([,x])=>x)),helv);
   if(v.Evidence&&!hd.chDesc)hd={...hd,chDesc:v.Evidence};await e28Fill(doc,hd,ex,true);
   await sigDraw(doc,'Producer_AuthorizedRepresentative_Signature_A',{x:308,y:49,width:280,height:20});return doc.save()}
@@ -3607,8 +3610,8 @@ const CH_KEYS=[['chName','CertificateHolder_FullName_A'],['chName2',''],['chAddr
 // the ACORD's holder lines are short (they start a third of the way in); stretch them across the whole Certificate Holder box, 10pt text
 const CH_BOX=[['CertificateHolder_FullName_A',22,111,280],['CertificateHolder_MailingAddress_LineOne_A',22,92,280],['CertificateHolder_MailingAddress_LineTwo_A',22,73,280],
   ['CertificateHolder_MailingAddress_CityName_A',22,54,208],['CertificateHolder_MailingAddress_StateOrProvinceCode_A',232,54,24],['CertificateHolder_MailingAddress_PostalCode_A',258,54,44]];
-function certHolderBox(form){CH_BOX.forEach(([k,x,y,w])=>{try{const f=form.getTextField(k);f.acroField.getWidgets().forEach(wd=>wd.setRectangle({x,y,width:w,height:19}));f.setFontSize(10)}catch(_){}})}
-function certHolderFill(form,hd,all,kind){const keys=kind==='27'?CH27_KEYS:CH_KEYS;if(kind!=='27')certHolderBox(form);const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
+function certHolderBox(form,box=CH_BOX){box.forEach(([k,x,y,w])=>{try{const f=form.getTextField(k);f.acroField.getWidgets().forEach(wd=>wd.setRectangle({x,y,width:w,height:box===CH_BOX?19:15}));f.setFontSize(10)}catch(_){}})}
+function certHolderFill(form,hd,all,kind){const keys=kind==='27'?CH27_KEYS:CH_KEYS;certHolderBox(form,kind==='27'?CH27_BOX:CH_BOX);const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
   keys.forEach(([id,k])=>{const v=m[id]||'';if(k&&(v||all))try{form.getTextField(k).setText(v)}catch(_){}});
   try{if(n2)form.doc.setSubject('psw-ch2:'+n2);else if(all&&/^psw-ch2:/.test(form.doc.getSubject()||''))form.doc.setSubject('')}catch(_){}}
 let certMode=null;
