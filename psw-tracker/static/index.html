@@ -164,7 +164,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .pg{position:relative;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);flex:none}
 .pg canvas,.pg img{display:block}
 .adding .pg{cursor:crosshair}
-.edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide.right{left:auto;right:16px}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}#edQs{width:420px;display:flex;gap:10px;align-items:stretch}#edQs>.drop{flex:1 1 0;min-width:0}.qsPaste{display:flex;flex-direction:column;gap:8px}.qsPaste textarea{flex:1;min-height:150px;width:100%;font:inherit;font-size:13px;resize:vertical}.ed.sideR .edb{padding-left:452px}@media (max-width:1720px){#edQs{width:220px;flex-direction:column}.ed.sideR .edb{padding-left:256px}}.ed.sideR .edb{padding-right:256px}
+.edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide.right{left:auto;right:16px}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}#edQs{width:420px;display:flex;gap:10px;align-items:stretch}#edQs>.drop{flex:1 1 0;min-width:0}.qsLead{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:6px;cursor:pointer}.qsLead input{margin:0;width:auto;flex:none}.qsPaste{display:flex;flex-direction:column;gap:8px}.qsPaste textarea{flex:1;min-height:150px;width:100%;font:inherit;font-size:13px;resize:vertical}.ed.sideR .edb{padding-left:452px}@media (max-width:1720px){#edQs{width:220px;flex-direction:column}.ed.sideR .edb{padding-left:256px}}.ed.sideR .edb{padding-right:256px}
 .tn{position:absolute;z-index:5;min-width:40px;padding:0 2px;color:#000;background:rgba(255,235,59,.35);border:1px dashed #b58900;font-family:Helvetica,Arial,sans-serif;line-height:1.15;white-space:pre;outline:none}
 .tn:focus{background:rgba(255,235,59,.6)}
 .edtxt{width:min(900px,100%);flex:1;min-height:60vh;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
@@ -370,7 +370,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="edb" id="edBody"></div>
   <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here, either the fillable PDF or a printed copy. Its answers go into this sheet; then hit Save to lead.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edDropIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edDropMsg" style="margin-top:8px"></div></div></div>
-  <div class="edSide" id="edQs" hidden><div class="drop" id="edQsDrop"><b>Fill this sheet from a file</b><p class="small" style="margin:6px 0 8px">Drop an application, email, ACORD, spreadsheet or picture here. What it says goes into this sheet's empty boxes; then hit Save to lead.</p>
+  <div class="edSide" id="edQs" hidden><div class="drop" id="edQsDrop"><b>Fill this sheet from a file</b><label class="qsLead"><input type="checkbox" id="edQsLead"> Also fill lead</label><p class="small" style="margin:6px 0 8px">Drop an application, email, ACORD, spreadsheet or picture here. What it says goes into this sheet's empty boxes; then hit Save to lead.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edQsIn" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><div class="msg small" id="edQsMsg" style="margin-top:8px"></div></div>
     <div class="drop qsPaste"><b>Or paste the text</b><textarea id="edQsText" placeholder="Paste an email, an application or the client’s details here"></textarea><button type="button" class="pri" id="edQsTextGo">Fill from text</button></div></div>
   <div class="edSide right" id="edSup" hidden><div class="drop" id="edSupDrop"><b>Fill a carrier form</b><p class="small" style="margin:6px 0 8px">Drop a fillable supplemental or application here. It's filled from this quote sheet and saved to the lead's Files as “com sup”.</p>
@@ -2068,8 +2068,10 @@ The customer is the business wanting insurance, not the agent, carrier or sender
       // a new sheet starts with today's EFF/EXP, so the file's dates replace those
       if(cur0&&!(k==='eff_date'&&cur0===today)&&!(k==='exp_date'&&cur0===yr)){if(cur0!==s)had.push(qsLabel(k));continue}keep[k]=k==='phone'?fmtPhone(s):s}
     const n=edPut(keep),kept=had.length?` Already filled, so left alone: ${had.slice(0,8).join(', ')}${had.length>8?'…':''}.`:'';
-    n?say(`Filled ${n} box${n===1?'':'es'} from ${f.name}. ${scan&&!imgs.length?'It was read from a scan, so check every box closely':'Check them'}, then hit Save to lead.${kept}${how}`,'ok')
-     :say(`Nothing new in ${f.name} for this sheet.${kept}${how}${raw&&!had.length?` Claude answered: ${raw.slice(0,300)}`:''}`,'err')}
+    // "Also fill lead" ticked: copy the sheet's client name, contact, phone, email, lead date and source into the lead and save it
+    let ld='';if($('edQsLead').checked){ld=await sheetToLead(sheetVals());if(!ld)ld=' Nothing on the sheet for the lead.'}
+    n?say(`Filled ${n} box${n===1?'':'es'} from ${f.name}. ${scan&&!imgs.length?'It was read from a scan, so check every box closely':'Check them'}, then hit Save to lead.${kept}${how}${ld}`,'ok')
+     :say(`Nothing new in ${f.name} for this sheet.${kept}${how}${ld}${raw&&!had.length?` Claude answered: ${raw.slice(0,300)}`:''}`,ld&&/saved the lead/.test(ld)?'ok':'err')}
   catch(e){say(`${f.name}: ${e.code?sampleErr(e.code):'couldn’t be read ('+(e.message||'error')+')'}`,'err')}}
 {const d=$('edQsDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)qsTake(f)});
