@@ -3727,8 +3727,20 @@ function mlFromLine(){const st=mailSt||{};$('mlFrom').innerHTML=st.connected?`Fr
 // o: {to, subject, body, files:[{id,name,on}] stored files, extra:[{name,type,get()}] made here (always attached), onSent()}
 // Review link (emails from the client screen): puts the Google review request in the subject and message, greeting the client by first name
 const REVIEW_URL='https://g.page/r/CXeqMouohJR_EAE/review';
-$('mlReview').onclick=()=>{const n=(mlCtx&&mlCtx.review&&mlCtx.review.name)||'';$('mlBody').value=`Hi${n?' '+n:''},\n\nThank you for your business! We truly appreciate the opportunity to serve you.\n\nIf you’re happy with our service, we’d appreciate a quick Google review. Your feedback means a lot to us!\n\nLeave a review here: ${REVIEW_URL}\n\nThanks again for choosing Pacific Southwest Insurance Services!`;$('mlSubj').value='Thank You for Your Business! Could You Leave Us a Review?';$('mlBody').focus()};
-async function composeMail(o){mlCtx=o;await mailStatus(true);$('mlTo').value=o.to||'';$('mlCc').value='';ccMark();$('mlSubj').value=o.subject||'';$('mlBody').value=o.body||'';$('mlReview').hidden=!o.review;$('mlSig').innerHTML=sigLoad(mailSt.sig);$('mlSigBox').open=!mailSt.sig;
+const REVIEW_BTN='[Review us on Google]';
+let mlReviewOn=false;
+$('mlReview').onclick=()=>{const n=(mlCtx&&mlCtx.review&&mlCtx.review.name)||'';$('mlBody').value=`Hi${n?' '+n:''},\n\nThank you for your business! We truly appreciate the opportunity to serve you. If you have a minute, a short Google review of Pacific Southwest Insurance Services would mean a lot to us, and it helps other families and businesses find us.\n\n${REVIEW_BTN}\n\nIf you’ve already left one, thank you, and please ignore this note.`;$('mlSubj').value='Thank You for Your Business! Could You Leave Us a Review?';mlReviewOn=true;mlSay('This goes out as the PSW review email: blue header, gold stars and a “Review us on Google” button that opens the review page.');$('mlBody').focus()};
+// the styled review email (PSW header bar, the note, stars + Google button, signature with the logo). The [Review us on Google] line becomes the button.
+function reviewHtml(body,sig){const gold='#d4a017',navy='#1f3864',url=esc(REVIEW_URL);
+  const btn=`<div style="text-align:center;margin:8px 0 22px"><a href="${url}" target="_blank" style="text-decoration:none;color:${gold};font-size:30px;letter-spacing:4px">&#9733;&#9733;&#9733;&#9733;&#9733;</a><br><a href="${url}" target="_blank" style="display:inline-block;margin-top:6px;background:${gold};color:${navy};font-weight:bold;font-size:17px;padding:6px 14px;text-decoration:none;border-radius:3px">Review us on Google</a></div>`;
+  const paras=body.trim().split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>p===REVIEW_BTN?btn:`<p style="margin:0 0 16px">${mlHtml(p)}</p>`).join('');
+  return `<div style="background:#f2f2f2;padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:680px;margin:0 auto;background:#ffffff;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.45;color:#222222">
+<tr><td style="background:${navy};padding:20px 34px;font-size:24px;font-weight:bold;letter-spacing:1px;color:#ffffff">PACIFIC SOUTHWEST <span style="color:${gold}">INSURANCE</span></td></tr>
+<tr><td style="padding:28px 34px 6px">${paras}</td></tr>
+<tr><td style="padding:10px 34px 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr>
+<td style="vertical-align:bottom;font-size:15px;color:#222222">Thank you,<br>${sig||'The PSW team'}<div style="margin-top:4px;font-size:13px;color:#666666">Pacific Southwest Insurance Services · (818)701-1033 · <a href="https://pswis.com/" target="_blank" style="color:#666666">pswis.com</a><br>CA License #0F41718</div></td>
+<td style="vertical-align:bottom;text-align:right;width:130px"><img src="${esc(location.origin)}/psw-logo.png" width="120" alt="Pacific Southwest Insurance Services" style="display:block;margin-left:auto;border:0"></td></tr></table></td></tr></table></div>`}
+async function composeMail(o){mlCtx=o;mlReviewOn=false;await mailStatus(true);$('mlTo').value=o.to||'';$('mlCc').value='';ccMark();$('mlSubj').value=o.subject||'';$('mlBody').value=o.body||'';$('mlReview').hidden=!o.review;$('mlSig').innerHTML=sigLoad(mailSt.sig);$('mlSigBox').open=!mailSt.sig;
   $('mlAtt').innerHTML=[...(o.extra||[]).map((f,i)=>`<label><input type="checkbox" data-mx="${i}"${f.on===false?'':' checked'}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`),
     ...(o.files||[]).map(f=>`<label><input type="checkbox" data-mb="${esc(f.id)}"${f.on?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`)].join('')||'<div class="small">No files to attach.</div>';
   $('mlPw').value='';mlFromLine();mlSay('');
@@ -3746,7 +3758,7 @@ $('mlPw').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();
 // change: show the connect box again (a different address, or a new password after changing it at Bluehost)
 $('mlFrom').addEventListener('click',e=>{if(e.target.id!=='mlChange')return;$('mlConn').hidden=false;$('mlAddr').value=mailSt.email||'';$('mlPw').focus()});
 // Open in Outlook instead: the old way (subject only, so Outlook adds its signature; the message is copied to paste in)
-$('mlOutlook').onclick=()=>{const to=$('mlTo').value.trim();$('mlOutlook').href=`mailto:${to}?subject=${encodeURIComponent($('mlSubj').value)}`;if($('mlBody').value.trim())copyText($('mlBody').value);mlClose()};
+$('mlOutlook').onclick=()=>{const to=$('mlTo').value.trim();$('mlOutlook').href=`mailto:${to}?subject=${encodeURIComponent($('mlSubj').value)}`;if($('mlBody').value.trim())copyText($('mlBody').value.replace(REVIEW_BTN,'Leave a review here: '+REVIEW_URL));mlClose()};
 // quick Cc buttons: click adds the person (separated by "; "), click again takes them off
 const CC_QUICK=[['Alex','alexk@pswinsurance.com'],['Patricia','patriciag@pswinsurance.com'],['Anna','anna.pswinsurance@gmail.com'],['Paul','paulm@pswinsurance.com'],['Service','service@pswinsurance.com']];
 const ccList=()=>$('mlCc').value.split(/[;,]/).map(x=>x.trim()).filter(Boolean);
@@ -3812,7 +3824,7 @@ $('mlSend').onclick=async()=>{const o=mlCtx;if(!o)return;const to=$('mlTo').valu
   try{const sig=sigNow();if(sig!==(mailSt.sig||'')){await fetch('/api/mail/signature',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({sig})});mailSt.sig=sig}
     const atts=[];for(const box of $('mlAtt').querySelectorAll('input:checked')){if(box.dataset.mb){const f=o.files.find(x=>x.id===box.dataset.mb);atts.push({blob:f.id,name:f.name})}
       else{const f=o.extra[+box.dataset.mx];atts.push({name:f.name,type:f.type,b64:await b64of(await f.get())})}}
-    const html=`<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${mlHtml($('mlBody').value)}${sig?'<br><br>'+sig:''}</div>`;
+    const body=$('mlBody').value,html=mlReviewOn&&body.includes(REVIEW_BTN)?reviewHtml(body,sig):`<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${mlHtml(body)}${sig?'<br><br>'+sig:''}</div>`;
     const r=await fetch('/api/mail/send',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,cc:$('mlCc').value.trim(),subject:$('mlSubj').value,html,attachments:atts})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){if(d.code==='mail_not_connected'){await mailStatus(true);mlFromLine()}mlSay(ML_ERR[d.code]||'Couldn’t send the email.','err');btn.disabled=!(mailSt&&mailSt.connected);return}
