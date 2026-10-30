@@ -49,6 +49,13 @@ if [ -s "$SRC/.resend-key" ]; then
     sed -i '/^RESEND_API_KEY=/d' "$APP/.env"; echo "RESEND_API_KEY=$KEY" >> "$APP/.env"; echo "== Email sending key set"
   else echo "!! The RESEND_API_KEY secret doesn't look like a Resend key (re_...), so it was not used"; fi
 fi
+# Texts: the deploy step sends the repo secret SIMPLETEXTING_API_KEY as .text-key; it replaces the key in .env
+if [ -s "$SRC/.text-key" ]; then
+  KEY="$(tr -d '[:space:]' < "$SRC/.text-key")"; rm -f "$SRC/.text-key"
+  if [[ "$KEY" =~ ^[A-Za-z0-9_.-]{16,}$ ]]; then
+    sed -i '/^SIMPLETEXTING_API_KEY=/d' "$APP/.env"; echo "SIMPLETEXTING_API_KEY=$KEY" >> "$APP/.env"; echo "== Texting key set"
+  else echo "!! The SIMPLETEXTING_API_KEY secret doesn't look like a SimpleTexting API token, so it was not used"; fi
+fi
 chown -R root:psw "$APP"; chmod 640 "$APP/.env"
 chown -R psw:psw "$DATA"; chmod 750 "$DATA"
 

@@ -138,6 +138,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 #taskBox{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;background:var(--taskbg)}#taskBox .row{justify-content:flex-end;margin-top:14px}#taskBox .grid{margin-top:8px}
 .msg{font-size:13px;margin-top:6px}
 .msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+.etRule{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:6px}.etRule.etHd{font-size:12px;color:var(--mute);font-weight:600;margin-bottom:2px}.etRule button{padding:4px 10px;font-size:12px}.etGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:10px}.etGrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}.etLog{width:100%;border-collapse:collapse;font-size:13px}.etLog td,.etLog th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}.etLog td:first-child{white-space:nowrap}@media(max-width:560px){.etGrid,.etRule{grid-template-columns:1fr}.etRule.etHd{display:none}}
 .confirm{display:none;background:var(--soft);border:1px solid var(--bad);border-radius:10px;padding:10px;margin-top:8px}
 .confirm.on{display:block}
 .drop{border:2px dashed var(--line);border-radius:12px;padding:12px;background:var(--card)}
@@ -193,7 +194,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="brand banner"><div><h1 class="sr-only">Pacific Southwest Insurance Services Database</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <div class="hdrbtns"><button class="pri" id="newBtn">+ New lead</button></div>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button type="button" class="tab" id="repBtn" title="Make a report of client policies">Report</button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button><button type="button" id="finBtn" hidden>Alex Finance Personal</button></div></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button type="button" class="tab" id="repBtn" title="Make a report of client policies">Report</button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button><button type="button" id="etBtn" hidden title="Get a text on your cell when certain emails arrive">Texts</button><button type="button" id="finBtn" hidden>Alex Finance Personal</button></div></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -552,6 +553,24 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div style="overflow-x:auto"><table class="btab repT" id="repT"></table></div>
   <div class="empty" id="repEmpty" hidden><b>No policies match</b>Change or clear the boxes above.</div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="pri" id="repCsv" type="button">Download for Excel</button><button id="repPrint" type="button">Print</button><button id="repClose" type="button">Close</button></div>
+</div></div>
+<div class="mbg" id="etDlg" role="dialog" aria-modal="true" aria-labelledby="etTitleH"><div class="mbox" style="width:min(720px,100%);max-height:90vh;overflow:auto">
+  <h3 id="etTitleH">Texts</h3>
+  <div class="small">When a new email in your inbox matches a rule below, you get a text on your cell from <b id="etFrom"></b>. The inbox is checked every couple of minutes.</div>
+  <div class="msg err" id="etWarn"></div>
+  <div class="mlConn" id="etConn" hidden><div class="small">Connect your email so the inbox can be checked (the same address and password Outlook uses).</div><div class="row"><input id="etAddr" type="email" placeholder="you@pswinsurance.com" autocomplete="off"><input id="etPw" type="password" placeholder="Email password" autocomplete="off"><button type="button" class="pri" id="etConnGo">Connect</button></div></div>
+  <div class="etGrid">
+    <label>Text my cell<input id="etPhone" inputmode="tel" placeholder="(###)###-####"></label>
+    <label>Texts are<select id="etOn"><option value="1">On</option><option value="0">Off</option></select></label>
+  </div>
+  <h4 style="margin:14px 0 4px">Text me when an email…</h4>
+  <div class="small" style="margin-bottom:6px">Fill in one or both boxes. Capitals don’t matter, and part of a name or address works (like <i>travelers.com</i> or <i>Paul</i>). If both are filled, the email has to match both.</div>
+  <div class="etRule etHd"><span>From contains</span><span>Subject contains</span><span></span></div>
+  <div id="etRules"></div>
+  <button type="button" id="etAdd">+ Add rule</button>
+  <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px"><span class="msg" id="etMsg"></span><div class="row"><button type="button" id="etTest">Send a test text</button><button class="pri" id="etSave" type="button">Save</button><button id="etClose" type="button">Close</button></div></div>
+  <div class="small" id="etChecked" style="margin-top:8px"></div>
+  <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Texts sent</summary><table class="etLog"><tbody id="etLogRows"></tbody></table></details>
 </div></div>
 <div class="mbg" id="finDlg" role="dialog" aria-modal="true" aria-labelledby="finTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="finTitleH" style="margin:0">Alex Finance Personal</h3><div class="row" style="align-items:center"><button type="button" id="finPrev" title="Previous year">&lsaquo;</button><b id="finYr" style="min-width:48px;text-align:center"></b><button type="button" id="finNext" title="Next year">&rsaquo;</button></div></div>
@@ -2715,6 +2734,45 @@ function renderMyTasks(){const el=$('myTasks');if(!myName){el.hidden=true;return
 $('myTasks').onclick=()=>{setView('tasks');const o=[...$('tfAssign').options].find(x=>x.value&&sameAgent(x.value,myName));if(o)$('tfAssign').value=o.value;$('tfStatus').value='open';renderTasks()};
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u)return;const nm=String(u.name||u.username||'').trim();
   myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets;canPay=!!u.pay;$('clPaySec').hidden=!canPay;isOwner=!!u.owner;canDelete=u.delete!==false}).catch(()=>{});
+
+/* ---------- Texts: a text to your cell when certain emails arrive (owner only; the server checks too) ---------- */
+{const ERR={bad_phone:'That cell number doesn’t look right. Use (###)###-####.',no_phone:'Add the cell number the texts go to.',no_rules:'Add at least one rule, or set Texts to Off.',
+   text_off:'Texting isn’t set up on the server yet (the SimpleTexting key is missing).',owner_only:'Only the owner can do this.',bad_login:'That email address and password didn’t work. Use the same ones Outlook uses.',
+   bad_from:'Use your own @pswinsurance.com email address.',imap_unreachable:'Couldn’t reach the email server. Try again in a minute.',mail_off:'Email isn’t set up on the server yet.'};
+ let st={};
+ const say=(t,ok)=>{$('etMsg').className='msg '+(ok?'ok':'err');$('etMsg').textContent=t||''};
+ const ruleRow=r=>{const d=document.createElement('div');d.className='etRule';d.innerHTML=`<input data-k="from" placeholder="Sender name or address" aria-label="From contains"><input data-k="subject" placeholder="Words in the subject" aria-label="Subject contains"><button type="button" class="danger" title="Remove this rule">Remove</button>`;
+   d.querySelector('[data-k=from]').value=r.from||'';d.querySelector('[data-k=subject]').value=r.subject||'';d.querySelector('button').onclick=()=>d.remove();$('etRules').appendChild(d)};
+ const rules=()=>[...$('etRules').querySelectorAll('.etRule')].map(d=>({from:d.querySelector('[data-k=from]').value.trim(),subject:d.querySelector('[data-k=subject]').value.trim()})).filter(r=>r.from||r.subject);
+ function paint(){$('etFrom').textContent=fmtPhone(st.fromPhone||'');
+   $('etWarn').textContent=st.configured?'':'Texting isn’t switched on at the server yet: the SimpleTexting API key still needs to be added. You can set up your rules now.';
+   $('etConn').hidden=!!st.mailConnected;if(!st.mailConnected&&!$('etAddr').value)$('etAddr').value=st.email||'';
+   $('etChecked').textContent=st.active?(st.error?'Problem on the last check: '+st.error:st.checked?'Inbox last checked '+fmtDT(new Date(st.checked*1000).toISOString())+'.':'The first check happens within a couple of minutes.'):'';
+   $('etChecked').className='small'+(st.active&&st.error?' msg err':'');
+   $('etLogRows').innerHTML=(st.log||[]).map(l=>`<tr><td>${esc(fmtDT(new Date(l.at*1000).toISOString()))}</td><td>${esc(l.sender)}${l.subject?': '+esc(l.subject):''}</td><td>${l.ok?'Sent':'<span class="msg err">'+esc(l.error||'Not sent')+'</span>'}</td></tr>`).join('')||'<tr><td class="small">No texts yet.</td></tr>'}
+ async function load(){const r=await fetch('/api/texts',{credentials:'same-origin'});if(!r.ok)throw 0;st=await r.json();
+   $('etPhone').value=fmtPhone(st.phone||'');$('etOn').value=st.active||!st.phone?'1':'0';$('etRules').innerHTML='';(st.rules.length?st.rules:[{}]).forEach(ruleRow);paint()}
+ const open=async()=>{say('');$('etDlg').classList.add('on');try{await load()}catch(_){say('Couldn’t load your text settings.')}};
+ const close=()=>$('etDlg').classList.remove('on');
+ $('etBtn').onclick=open;$('etClose').onclick=close;$('etDlg').addEventListener('click',e=>{if(e.target===$('etDlg'))close()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('etDlg').classList.contains('on')){e.stopImmediatePropagation();close()}},true);
+ $('etAdd').onclick=()=>{ruleRow({});$('etRules').lastChild.querySelector('input').focus()};
+ $('etPhone').addEventListener('blur',()=>$('etPhone').value=fmtPhone($('etPhone').value));
+ $('etSave').onclick=async()=>{const b=$('etSave');b.disabled=true;
+   try{const r=await fetch('/api/texts',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:$('etPhone').value,active:$('etOn').value==='1',rules:rules()})}),d=await r.json().catch(()=>({}));
+     if(!r.ok)return say(ERR[d.code]||'Couldn’t save.');await load();say($('etOn').value==='1'?'Saved. New emails that match will be texted to you.':'Saved. Texts are off.',true)}
+   catch(_){say('Couldn’t reach the server.')}finally{b.disabled=false}};
+ $('etTest').onclick=async()=>{const b=$('etTest');b.disabled=true;say('Sending…',true);
+   try{const r=await fetch('/api/texts/test',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:$('etPhone').value})}),d=await r.json().catch(()=>({}));
+     if(!r.ok)return say(d.detail||ERR[d.code]||'The test text didn’t go through.');say(`Test text sent to ${fmtPhone($('etPhone').value)}.`,true);load().catch(()=>{})}
+   catch(_){say('Couldn’t reach the server.')}finally{b.disabled=false}};
+ $('etConnGo').onclick=async()=>{const email=$('etAddr').value.trim(),password=$('etPw').value;if(!email||!password)return say('Type your email address and its password.');
+   const b=$('etConnGo');b.disabled=true;say('Checking your password…',true);
+   try{const r=await fetch('/api/mail/connect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}),d=await r.json().catch(()=>({}));
+     if(!r.ok)return say(ERR[d.code]||'Couldn’t connect your email.');$('etPw').value='';await load();say(`Connected ${d.email}.`,true)}
+   catch(_){say('Couldn’t reach the server.')}finally{b.disabled=false}};
+ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{$('etBtn').hidden=!(u&&u.owner)}).catch(()=>{});
+}
 
 /* ---------- admin panel (owner only; the server checks too) ---------- */
 {const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

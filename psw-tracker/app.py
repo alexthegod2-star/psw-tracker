@@ -132,6 +132,8 @@ app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 def _startup():
     init_db()
     binder_backfill()
+    import threading
+    threading.Thread(target=text_loop, name="texts", daemon=True).start()
 
 
 def err(status, code):
@@ -1371,6 +1373,224 @@ def mail_history_one(mid: int, request: Request):
     if not r or (r["user_id"] != u["id"] and (u["username"] not in PANEL_OWNERS or bearer(request))):
         err(404, "not_found")
     return {"html": r["html"]}
+
+
+# ---------- Texts: a text message to your cell when an email you care about arrives
+# The server checks each signed-up person's inbox (the same email login they connected for sending) every minute or two,
+# and when a new email matches one of their rules (sender or subject contains...), it texts them through SimpleTexting.
+# Needs SIMPLETEXTING_API_KEY in .env (sent by the deploy step from the repo secret of that name, like RESEND_API_KEY).
+TEXT_FROM = re.sub(r"\D", "", os.environ.get("PSW_TEXT_FROM", "8187011033"))[-10:]  # the office number, text-enabled in SimpleTexting
+TEXT_EVERY = max(30, int(os.environ.get("PSW_TEXT_EVERY", "90")))  # seconds between inbox checks
+TEXT_HOURLY = 30  # most texts per person per hour, so a flood of matching email can't use up the credits
+
+
+def text_on():
+    return bool(os.environ.get("SIMPLETEXTING_API_KEY", "").strip())
+
+
+def text_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS text_alerts(user_id TEXT PRIMARY KEY, active INTEGER NOT NULL DEFAULT 0, phone TEXT NOT NULL DEFAULT '', "
+              "rules TEXT NOT NULL DEFAULT '[]', uidvalidity TEXT NOT NULL DEFAULT '', last_uid INTEGER NOT NULL DEFAULT 0, "
+              "checked REAL NOT NULL DEFAULT 0, error TEXT NOT NULL DEFAULT '', updated REAL NOT NULL DEFAULT 0)")
+    c.execute("CREATE TABLE IF NOT EXISTS text_log(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, at REAL NOT NULL, "
+              "sender TEXT NOT NULL DEFAULT '', subject TEXT NOT NULL DEFAULT '', text TEXT NOT NULL DEFAULT '', ok INTEGER NOT NULL DEFAULT 0, "
+              "error TEXT NOT NULL DEFAULT '')")
+
+
+def phone10(v):
+    d = re.sub(r"\D", "", str(v or ""))
+    if len(d) == 11 and d.startswith("1"):
+        d = d[1:]
+    return d if len(d) == 10 else ""
+
+
+def clean_rules(v):
+    out = []
+    for r in (v if isinstance(v, list) else [])[:50]:
+        f, s = " ".join(str((r or {}).get("from") or "").split())[:120], " ".join(str((r or {}).get("subject") or "").split())[:200]
+        if f or s:
+            out.append({"from": f, "subject": s})
+    return out
+
+
+def rule_hit(rules, sender, subject):
+    """a rule matches when every box filled in on it is found in the email (capitals don't matter)"""
+    sender, subject = sender.lower(), subject.lower()
+    for r in rules:
+        if (not r["from"] or r["from"].lower() in sender) and (not r["subject"] or r["subject"].lower() in subject):
+            return r
+    return None
+
+
+def text_send(to, text):
+    """one text through SimpleTexting from the office number; returns '' or what went wrong"""
+    body = {"contactPhone": to, "accountPhone": TEXT_FROM, "mode": "AUTO", "text": text}
+    req = urllib.request.Request("https://api-app2.simpletexting.com/v2/api/messages", data=json.dumps(body).encode(), headers={
+        "authorization": "Bearer " + os.environ.get("SIMPLETEXTING_API_KEY", "").strip(), "content-type": "application/json",
+        "accept": "application/json", "user-agent": "psw-tracker"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            r.read()
+        return ""
+    except urllib.error.HTTPError as e:
+        try:
+            msg = json.loads(e.read() or b"{}").get("message") or ""
+        except Exception:
+            msg = ""
+        return f"SimpleTexting said {e.code}" + (f": {msg}" if msg else "")
+    except Exception:
+        return "Couldn't reach SimpleTexting"
+
+
+def mail_hdr(v):
+    from email.header import decode_header, make_header
+    try:
+        return " ".join(str(make_header(decode_header(v or ""))).split())
+    except Exception:
+        return " ".join(str(v or "").split())
+
+
+def text_check(row, acct):
+    """look at the new emails in one inbox; text the ones that match. Returns the error to show, or ''"""
+    import email
+    import imaplib
+    from email.utils import parseaddr
+    rules = json.loads(row["rules"] or "[]")
+    try:
+        m = imap_open(acct["email"], mail_box().decrypt(acct["refresh"].encode()).decode())
+    except imaplib.IMAP4.error:
+        return "Your email password didn't work. Connect your email again (it may have been changed)."
+    except Exception:
+        return "Couldn't reach the email server."
+    sent = []
+    try:
+        typ, st = m.status("INBOX", "(UIDNEXT UIDVALIDITY)")
+        s = (st[0].decode() if st and isinstance(st[0], bytes) else str(st[0] if st else ""))
+        nxt, val = re.search(r"UIDNEXT (\d+)", s), re.search(r"UIDVALIDITY (\d+)", s)
+        if typ != "OK" or not nxt or not val:
+            return "Couldn't read the inbox."
+        nxt, val = int(nxt.group(1)), val.group(1)
+        last = row["last_uid"]
+        if val != row["uidvalidity"]:  # first check (or the mailbox was rebuilt): start from now, don't text old mail
+            last = nxt - 1
+        elif nxt - 1 > last:
+            m.select("INBOX", readonly=True)
+            typ, data = m.uid("FETCH", f"{last + 1}:*", "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT)])")
+            got = []
+            for part in data or []:
+                if isinstance(part, tuple):
+                    u = re.search(rb"UID (\d+)", part[0])
+                    if u and int(u.group(1)) > last:
+                        got.append((int(u.group(1)), email.message_from_bytes(part[1])))
+            for uid, msg in sorted(got, key=lambda x: x[0])[-50:]:
+                last = max(last, uid)
+                frm, subject = mail_hdr(msg.get("From")), mail_hdr(msg.get("Subject"))
+                name, addr = parseaddr(frm)
+                if rule_hit(rules, frm, subject):
+                    sent.append((name or addr or frm, subject))
+            last = max(last, nxt - 1)
+    except Exception:
+        return "Couldn't read the inbox."
+    finally:
+        try:
+            m.logout()
+        except Exception:
+            pass
+    with db() as c:
+        c.execute("UPDATE text_alerts SET uidvalidity=?, last_uid=? WHERE user_id=?", (val, last, row["user_id"]))
+    problem = ""
+    for who, subject in sent:
+        with db() as c:
+            n = c.execute("SELECT count(*) FROM text_log WHERE user_id=? AND at>? AND ok=1", (row["user_id"], time.time() - 3600)).fetchone()[0]
+        text = f"PSW email from {who}: {subject or '(no subject)'}"
+        text = text if len(text) <= 300 else text[:299] + "…"
+        e = "Skipped: more than %d texts this hour" % TEXT_HOURLY if n >= TEXT_HOURLY else text_send(row["phone"], text)
+        problem = e or problem
+        with db() as c:
+            c.execute("INSERT INTO text_log(user_id,at,sender,subject,text,ok,error) VALUES(?,?,?,?,?,?,?)",
+                      (row["user_id"], time.time(), who, subject, text, 0 if e else 1, e))
+    return problem
+
+
+def text_round():
+    if not text_on():
+        return
+    with db() as c:
+        text_table(c)
+        mail_table(c)
+        rows = c.execute("SELECT t.*, a.email, a.refresh FROM text_alerts t JOIN users u ON u.id=t.user_id AND u.active=1 "
+                         "LEFT JOIN mail_accounts a ON a.user_id=t.user_id WHERE t.active=1 AND t.phone!='' AND t.rules!='[]'").fetchall()
+    for r in rows:
+        e = text_check(r, r) if r["email"] and r["refresh"] else "Connect your email first."
+        with db() as c:
+            c.execute("UPDATE text_alerts SET checked=?, error=? WHERE user_id=?", (time.time(), e, r["user_id"]))
+
+
+def text_loop():
+    while True:
+        try:
+            text_round()
+        except Exception:
+            pass
+        time.sleep(TEXT_EVERY)
+
+
+def need_texts(request: Request):
+    u = need_owner(request)  # texts use the office's SimpleTexting credits, so it's the owners' for now
+    return u
+
+
+@app.get("/api/texts")
+def texts_get(request: Request):
+    u = need_texts(request)
+    with db() as c:
+        text_table(c)
+        mail_table(c)
+        r = c.execute("SELECT * FROM text_alerts WHERE user_id=?", (u["id"],)).fetchone()
+        a = c.execute("SELECT email,refresh FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
+        log = c.execute("SELECT at,sender,subject,ok,error FROM text_log WHERE user_id=? ORDER BY at DESC LIMIT 30", (u["id"],)).fetchall()
+    return {"configured": text_on(), "mailConnected": bool(a and a["email"] and a["refresh"]), "email": (a["email"] if a else "") or u["email"] or "",
+            "domain": MAIL_DOMAIN, "fromPhone": TEXT_FROM, "every": TEXT_EVERY,
+            "active": bool(r and r["active"]), "phone": r["phone"] if r else "", "rules": json.loads(r["rules"]) if r else [],
+            "checked": r["checked"] if r else 0, "error": r["error"] if r else "", "log": [dict(x) for x in log]}
+
+
+@app.post("/api/texts")
+async def texts_save(request: Request):
+    u = need_texts(request)
+    b = await request.json()
+    phone, rules, on = phone10(b.get("phone")), clean_rules(b.get("rules")), bool(b.get("active"))
+    if b.get("phone") and not phone:
+        err(400, "bad_phone")
+    if on and not phone:
+        err(400, "no_phone")
+    if on and not rules:
+        err(400, "no_rules")
+    with db() as c:
+        text_table(c)
+        c.execute("INSERT INTO text_alerts(user_id,active,phone,rules,updated) VALUES(?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
+                  "active=excluded.active, phone=excluded.phone, rules=excluded.rules, updated=excluded.updated, error='', "
+                  "uidvalidity=CASE WHEN text_alerts.active=0 THEN '' ELSE text_alerts.uidvalidity END",  # turned on again: only email from now on
+                  (u["id"], 1 if on else 0, phone, json.dumps(rules), time.time()))
+    return {"ok": True}
+
+
+@app.post("/api/texts/test")
+async def texts_test(request: Request):
+    u = need_texts(request)
+    if not text_on():
+        err(404, "text_off")
+    phone = phone10((await request.json()).get("phone"))
+    if not phone:
+        err(400, "bad_phone")
+    e = text_send(phone, "Test from the PSW tracker: email texts are working.")
+    with db() as c:
+        text_table(c)
+        c.execute("INSERT INTO text_log(user_id,at,sender,subject,text,ok,error) VALUES(?,?,?,?,?,?,?)",
+                  (u["id"], time.time(), "Test text", "", "Test", 0 if e else 1, e))
+    if e:
+        return JSONResponse({"code": "text_failed", "detail": e}, status_code=502)
+    return {"ok": True}
 
 
 @app.get("/healthz")
