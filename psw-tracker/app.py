@@ -1434,26 +1434,48 @@ def sms_text(t):
     return t if len(t) <= 160 else t[:157].rstrip() + "..."
 
 
-def text_send(to, text):
-    """one text through SimpleTexting from the account's number (always a single text, one credit); returns '' or what went wrong"""
-    body = {"contactPhone": to, "mode": "SINGLE_SMS_STRICTLY", "text": sms_text(text)}
-    if TEXT_FROM:
-        body["accountPhone"] = TEXT_FROM
-    req = urllib.request.Request("https://api-app2.simpletexting.com/v2/api/messages", data=json.dumps(body).encode(), headers={
-        "authorization": "Bearer " + os.environ.get("SIMPLETEXTING_API_KEY", "").strip(), "content-type": "application/json",
+def st_post(url, data, ctype):
+    """one call to SimpleTexting; returns (HTTP status, JSON reply)"""
+    req = urllib.request.Request(url, data=data, headers={
+        "authorization": "Bearer " + os.environ.get("SIMPLETEXTING_API_KEY", "").strip(), "content-type": ctype,
         "accept": "application/json", "user-agent": "psw-tracker"})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
-            r.read()
-        return ""
+            code, raw = r.status, r.read()
     except urllib.error.HTTPError as e:
-        try:
-            msg = json.loads(e.read() or b"{}").get("message") or ""
-        except Exception:
-            msg = ""
-        return f"SimpleTexting said {e.code}" + (f": {msg}" if msg else "")
+        code, raw = e.code, e.read()
+    try:
+        return code, json.loads(raw or b"{}")
+    except Exception:
+        return code, {}
+
+
+def text_send(to, text):
+    """one text through SimpleTexting from the account's number (always a single text, one credit); returns '' or what went wrong.
+    Newer accounts get API v2; an account set up on the older v1 API (its token doesn't work on v2) is sent through v1 instead."""
+    text = sms_text(text)
+    body = {"contactPhone": to, "mode": "SINGLE_SMS_STRICTLY", "text": text}
+    if TEXT_FROM:
+        body["accountPhone"] = TEXT_FROM
+    try:
+        code, d = st_post("https://api-app2.simpletexting.com/v2/api/messages", json.dumps(body).encode(), "application/json")
+        if code < 300:
+            return ""
+        if code in (401, 403, 404):
+            f = {"phone": to, "message": text}
+            if TEXT_FROM:
+                f["accountPhone"] = TEXT_FROM
+            c1, d1 = st_post("https://app2.simpletexting.com/v1/send", urllib.parse.urlencode(f).encode(), "application/x-www-form-urlencoded")
+            if c1 < 300 and str(d1.get("code")) == "1":
+                return ""
+            if c1 < 300 or c1 not in (401, 403, 404):
+                code, d = c1, d1
     except Exception:
         return "Couldn't reach SimpleTexting"
+    msg = str(d.get("message") or "")[:200]
+    if code in (401, 403):
+        return "SimpleTexting turned down the API key (API access may still be waiting on their approval)" + (f": {msg}" if msg else "")
+    return (f"SimpleTexting said {code}" if code >= 300 else "SimpleTexting didn't send it") + (f": {msg}" if msg else "")
 
 
 def mail_hdr(v):
