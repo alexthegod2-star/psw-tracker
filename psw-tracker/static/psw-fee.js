@@ -853,6 +853,26 @@ function quotePricing(loc){
   }
   return {items:items.filter(i=>!i.sub),total,cols:T.amounts.length};
 }
+/* some quotes have the premium block typed over the page as a comment box (e.g. Preview's text box), which isn't page text; read its lines instead */
+function annotPricing(pdfDoc){
+  const {PDFName,PDFArray,PDFString,PDFHexString}=PDFLib;
+  for(const page of pdfDoc.getPages()){
+    const an=page.node.lookup(PDFName.of("Annots")); if(!(an instanceof PDFArray)) continue;
+    for(const ref of an.asArray()){
+      const d=pdfDoc.context.lookup(ref), c=d&&d.lookup&&d.lookup(PDFName.of("Contents"));
+      if(!(c instanceof PDFString||c instanceof PDFHexString)) continue;
+      const items=[]; let total=null;
+      for(const raw of c.decodeText().split(/[\r\n]+/)){
+        const m=raw.trim().match(/^(.*?)[\s:]*\$\s*(-?[\d,]+\.\d{2})$/); if(!m||!m[1].trim()) continue;
+        const label=m[1].replace(/[:\s]+$/,"").trim(), amt=toNum(m[2]);
+        if(/^total\b/i.test(label)){ total=amt; break; }
+        items.push({label,amt});
+      }
+      if(total!=null&&items.length) return {items,total,cols:1};
+    }
+  }
+  return null;
+}
 /* Helvetica can only draw Latin-1 letters */
 const pdfSafe=t=>String(t||"").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,"-").replace(/[^\x20-\x7E\xA0-\xFF]/g,"");
 async function combine(list,fee,label,opts){
@@ -866,13 +886,12 @@ async function combine(list,fee,label,opts){
     try{ pdfDoc=await PDFLib.PDFDocument.load(q.bytes); }catch(e){ throw new Error(nm+": couldn't open this PDF. If it's password-protected, save an unlocked copy and try again."); }
     if(opts.onFile) opts.onFile(nm);
     const {pages,usedOcr}=await readLines(q.bytes,opts.ocr,pdfDoc);
-    let locs=locateAll(pages), ai=null;
-    if(!locs.length && opts.ask){ if(opts.onAi) opts.onAi(nm); ai=await aiLocate(pages,opts.ask); locs=ai.locs; }
-    if(!locs.length) throw new Error(nm+": couldn't find the premium totals (a column of fees and taxes followed by a Total line).");
-    if(locs.some(L=>L.chain.some(f=>f.label.toLowerCase()===label.toLowerCase()))) throw new Error(nm+" already has a \""+label+"\" line. Use the original carrier PDF; the fee goes on the summary page once.");
-    const loc=locs.slice().sort((a,b)=>a.pageIndex-b.pageIndex||b.total.y-a.total.y)[0];
-    const pr=quotePricing(loc);
-    const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||(ai&&ai.insured)||"";
+    let locs=locateAll(pages), ai=null, pr=locs.length?null:annotPricing(pdfDoc);
+    if(!locs.length && !pr && opts.ask){ if(opts.onAi) opts.onAi(nm); ai=await aiLocate(pages,opts.ask); locs=ai.locs; }
+    if(!locs.length && !pr) throw new Error(nm+": couldn't find the premium totals (a column of fees and taxes followed by a Total line).");
+    if(pr?pr.items.some(i=>i.label.toLowerCase()===label.toLowerCase()):locs.some(L=>L.chain.some(f=>f.label.toLowerCase()===label.toLowerCase()))) throw new Error(nm+" already has a \""+label+"\" line. Use the original carrier PDF; the fee goes on the summary page once.");
+    if(!pr) pr=quotePricing(locs.slice().sort((a,b)=>a.pageIndex-b.pageIndex||b.total.y-a.total.y)[0]);
+    const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||findField(pages,/^INSURED:\s*(.+)$/i)||(ai&&ai.insured)||"";
     const lob=(q.label||"").trim()||guessLob(pages,pr.items)||("Quote "+(quotes.length+1));
     /* same clean-up as the fee tool: no carrier commission or net due lines, no quote initiation date */
     removeCommission(pdfDoc,pages);
