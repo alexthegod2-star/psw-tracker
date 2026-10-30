@@ -146,12 +146,17 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .lockBar span{flex:1}.lockBar button{padding:4px 12px;font-size:13px}
 .lockedWin .drop{opacity:.5}
 .lockedWin input:disabled,.lockedWin select:disabled,.lockedWin textarea:disabled{background:#eceff3;color:#4a4f57}
-.fileDrops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:8px;align-items:stretch}
-@media (max-width:800px){.fileDrops{grid-template-columns:1fr}}
-#feeRow{display:flex;flex-direction:column;gap:6px;padding:10px 12px}
-#feeRow input[type=file]{max-width:100%}
-#feeRow .feeAmt{display:flex;align-items:center;gap:6px;margin:0;font-weight:600}
-#feeRow .feeAmt input{width:110px;text-align:right}
+.fileDrops{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:8px;align-items:stretch}
+@media (max-width:1000px){.fileDrops{grid-template-columns:repeat(2,minmax(0,1fr))}#comboRow{grid-column:1/-1}}@media (max-width:800px){.fileDrops{grid-template-columns:1fr}}
+#feeRow,#comboRow{display:flex;flex-direction:column;gap:6px;padding:10px 12px;min-width:0}
+#feeRow input[type=file],#comboRow input[type=file]{max-width:100%}
+#feeRow .feeAmt,#comboRow .feeAmt{display:flex;align-items:center;gap:6px;margin:0;font-weight:600}
+#feeRow .feeAmt input,#comboRow .feeAmt input{width:110px;text-align:right}
+#comboList{list-style:none;margin:0;padding:0;display:grid;gap:4px}#comboList:empty{display:none}
+#comboList li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:3px 4px;align-items:center;min-width:0;font-size:13px;padding:4px 0;border-top:1px solid var(--line)}#comboList .cn{font-weight:700}
+#comboList input{grid-column:2/-1;min-width:0;padding:3px 6px;font-size:13px}#comboList .cf{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#comboList .cb{display:flex;gap:2px}#comboList button{padding:0 6px;font-size:12px;line-height:18px;border-radius:999px}#comboGo{align-self:flex-start}
+.fileDrops #upRow{flex-direction:column;align-items:flex-start;justify-content:flex-start}.fileDrops #upRow input[type=file]{flex:none!important;min-width:0;max-width:100%}
 .drop textarea{min-height:64px;border-style:solid}
 .drop label[hidden]{display:none!important}#keepWrap{display:flex}
 .drop .hint{font-size:13px;color:var(--mute);margin-bottom:8px}
@@ -355,8 +360,9 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
       <div class="fileDrops">
       <div class="drop row" id="upRow" style="padding:10px 12px"><span style="font-weight:600">Drop files here, or</span><input type="file" id="fileIn" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.txt,application/pdf,image/*" style="flex:1"><span class="small">PDF, images, CSV or text, up to 20 MB each</span></div>
       <div class="drop" id="feeRow"><span style="font-weight:600">Add PSW fee: drop the carrier quote PDF here, or</span><input type="file" id="feeIn" accept=".pdf,application/pdf"><label class="feeAmt" for="feeAmt">PSW Agency Fee <span>$</span><input id="feeAmt" value="200.00" inputmode="decimal"></label><span class="small">The quote with the fee added and totals updated is saved under Files as “… for ins.pdf”.</span></div>
+      <div class="drop" id="comboRow"><span style="font-weight:600">Combined quote: drop several carrier quote PDFs here, or</span><input type="file" id="comboIn" multiple accept=".pdf,application/pdf"><ol id="comboList"></ol><label class="feeAmt" for="comboFee">PSW Agency Fee <span>$</span><input id="comboFee" value="200.00" inputmode="decimal"></label><button type="button" id="comboGo" disabled>Make combined quote</button><span class="small">Page 1 lists each quote’s pricing in this order, then the fee and the total. The quotes follow. Saved under Files as “… combined for ins.pdf”.</span></div>
       </div>
-      <div class="msg" id="fileMsg"></div><div class="msg" id="feeMsg"></div>
+      <div class="msg" id="fileMsg"></div><div class="msg" id="feeMsg"></div><div class="msg" id="comboMsg"></div>
       <ul class="files" id="files"></ul>
     </div>
 
@@ -847,7 +853,7 @@ function openLead(l,keep){
   $('xDate').value=fmtDate($('xDate').value);
   if(!l)$('leadDate').value=todayISO();
   $('dTitle').textContent=l?([l.firstName,l.lastName].filter(Boolean).join(' ')||l.company||'Lead'):'New lead';
-  $('saveMsg').textContent='';$('logMsg').textContent='';$('fileMsg').textContent='';
+  $('saveMsg').textContent='';$('logMsg').textContent='';$('fileMsg').textContent='';if(!keep){$('comboMsg').textContent='';if(comboFiles.length){comboFiles=[];renderCombo()}}
   $('cAt').value=nowLocal();$('cNote').value='';fillMeta();
   pending=[];showKeep();$('dropText').value='';$('fillMsg').textContent='';
   const has=!!l;
@@ -1782,6 +1788,45 @@ $('feeIn').onchange=()=>{const f=$('feeIn').files[0];$('feeIn').value='';addPswF
 {const fz=$('feeRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fz.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
 fz.addEventListener('drop',e=>addPswFee((e.dataTransfer.files||[])[0]))}
+// Combined quote: several carrier quotes become one PDF with a PSW summary page first (each quote's pricing in list order, the PSW Agency Fee, the total), then the quotes
+var comboFiles=[];
+function renderCombo(){
+  const ul=$('comboList');ul.innerHTML='';
+  comboFiles.forEach((c,i)=>{const li=document.createElement('li');
+    li.innerHTML=`<span class="cn">${i+1}.</span><span class="cf"></span><span class="cb"><button type="button" data-mv="-1" title="Move up" aria-label="Move up">↑</button><button type="button" data-mv="1" title="Move down" aria-label="Move down">↓</button><button type="button" data-rm title="Remove" aria-label="Remove">×</button></span><input placeholder="Name on summary (auto)" aria-label="Name on the summary">`;
+    const inp=li.querySelector('input');inp.value=c.label;inp.oninput=()=>{c.label=inp.value};li.querySelector('.cf').textContent=c.file.name;li.querySelector('.cf').title=c.file.name;
+    li.querySelector('[data-mv="-1"]').disabled=i===0;li.querySelector('[data-mv="1"]').disabled=i===comboFiles.length-1;
+    li.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{const j=i+ +b.dataset.mv;[comboFiles[i],comboFiles[j]]=[comboFiles[j],comboFiles[i]];renderCombo()});
+    li.querySelector('[data-rm]').onclick=()=>{comboFiles.splice(i,1);renderCombo()};
+    ul.append(li)});
+  $('comboGo').disabled=!comboFiles.length}
+function addCombo(fs){
+  const m=$('comboMsg'),bad=fs.filter(f=>!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf');
+  fs.filter(f=>!bad.includes(f)).forEach(f=>comboFiles.push({file:f,label:''}));renderCombo();
+  if(bad.length){m.className='msg err';m.textContent=`${bad.map(f=>f.name).join(', ')} ${bad.length>1?'aren’t PDFs':'isn’t a PDF'}. Drop the carriers’ quote PDFs.`}else if(fs.length){m.className='msg';m.textContent=comboFiles.length>1?'Put the quotes in the order you want on the summary, then click Make combined quote.':'Add the other quotes, then click Make combined quote.'}}
+async function makeCombo(){
+  const m=$('comboMsg');if(!comboFiles.length)return;if(!assets){m.className='msg err';m.textContent='File storage isn’t available here.';return}
+  const v=String($('comboFee').value).trim(),fee=v?parseFloat(v.replace(/[^\d.]/g,'')):0;if(!(fee>=0)){m.className='msg err';m.textContent='Type the PSW Agency Fee amount (0 for none).';$('comboFee').focus();return}
+  if(!(await ensureSaved()))return;
+  $('comboGo').disabled=true;m.className='msg';m.textContent='Reading the quotes…';
+  try{await Promise.all([loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js'),loadJs(CDN+'pdf.js/3.11.174/pdf.min.js'),loadJs(CDN+'pako/2.1.0/pako.min.js')]);
+    pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';await loadJs('psw-fee.js?t='+Date.now());
+    const list=await Promise.all(comboFiles.map(async c=>({bytes:new Uint8Array(await c.file.arrayBuffer()),name:c.file.name,label:c.label.trim()})));
+    const r=await PSWFee.combine(list,fee,'PSW Agency Fee',{ask:sample?(q=>sample.json(q,{modelTier:'quick'})):null,onFile:n=>{m.textContent=`Reading ${n}…`},onAi:n=>{m.textContent=`This quote’s layout is new to the fee tool, so Claude is reading ${n}…`},
+      ocr:{start:()=>{m.textContent='A quote has text that can’t be copied, so the fee tool is reading the page images (this takes a little longer)…'},read:async cv=>(await (await tess()).recognize(cv)).data}});
+    const base=(r.insured||comboFiles[0].file.name.replace(/\.pdf$/i,'')).replace(/[\\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(),name=base+' combined for ins.pdf';
+    const ok=await uploadOne(new File([r.bytes],name,{type:'application/pdf'}));
+    if(ok!==true)return;
+    comboFiles=[];renderCombo();
+    m.className='msg ok';m.textContent=`Made the combined quote: ${r.quotes.map(q=>`${q.lob} ${bMoney(q.total)}`).join(', ')}${fee>0?`, PSW Agency Fee ${r.fee}`:''}, total ${r.total}. Saved as “${name}” under Files.`;
+    if(r.warn){const sp=document.createElement('span');sp.textContent=' '+r.warn;sp.style.color='var(--bad)';m.append(sp)}}
+  catch(err){m.className='msg err';m.textContent=`${err&&err.message?err.message:'Couldn’t make the combined quote.'}${sample?'':' Turning on Claude reading (the API key on the server) lets it read more carriers’ quotes.'}`}
+  finally{$('comboGo').disabled=!comboFiles.length}}
+$('comboIn').onchange=()=>{const fs=[...$('comboIn').files];$('comboIn').value='';addCombo(fs)};
+$('comboGo').onclick=makeCombo;
+{const fz=$('comboRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();fz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+fz.addEventListener('drop',e=>addCombo([...(e.dataTransfer.files||[])]))}
 // Some computers' PDF uploads are refused by file storage; then the PDF is stored as base64 text and decoded when read back
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function storeBytes(buf,type){
