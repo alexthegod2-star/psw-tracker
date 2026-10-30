@@ -3551,7 +3551,7 @@ async function acord25Tpl(){if(!tpl25){const r=await fetch('tpl25.pdf');if(!r.ok
 const certList=()=>(editClient&&editClient.certs)||[];
 function renderCerts(){const cs=certList(),n=cs.length;$('clCerts').textContent=n?`Certificates (${n})`:'Certificates';$('clCertNote').textContent=editClient?(n?'':'No certificates yet.'):'Save the client first to make certificates.';$('clCerts').disabled=!editClient;
   if(!$('certDlg').classList.contains('on'))return;$('certNewBtns').hidden=!assets||!$('certForm').hidden;
-  $('certList').innerHTML=n?[...cs].reverse().map(c=>`<li><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span class="sz">${esc(c.at?fmtDT(c.at):'')}</span><button class="pri" data-cert-open="${esc(c.id)}">Open</button>${assets?`<button data-cert-edit="${esc(c.id)}" title="Change the holder or description">Edit</button><button data-cert-copy="${esc(c.id)}">Copy cert</button>`:''}<a class="btn" href="#" data-cert-mail="${esc(c.id)}" title="New email to the client with this cert saved for you to drag in">Email cert to client</a><button data-cert-save="${esc(c.id)}">Save</button>${assets?`<button class="danger" data-cert-del="${esc(c.id)}">Delete</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No certificates yet. Click + New cert.</li>'}
+  $('certList').innerHTML=n?[...cs].reverse().map(c=>`<li><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span class="sz">${esc(c.at?fmtDT(c.at):'')}</span><button class="pri" data-cert-open="${esc(c.id)}">Open</button>${assets?`<button data-cert-edit="${esc(c.id)}" title="Change the holder or description">Edit</button><button data-cert-ren="${esc(c.id)}" title="Change this certificate's file name">Rename</button><button data-cert-copy="${esc(c.id)}">Copy cert</button>`:''}<a class="btn" href="#" data-cert-mail="${esc(c.id)}" title="New email to the client with this cert saved for you to drag in">Email cert to client</a><button data-cert-save="${esc(c.id)}">Save</button>${assets?`<button class="danger" data-cert-del="${esc(c.id)}">Delete</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No certificates yet. Click + New cert.</li>'}
 // file names keep only letters, numbers, spaces and dashes
 const fnClean=x=>String(x||'').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim();
 const certFileName=(holder,at,kind)=>{const nm=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()}).replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',d=new Date(at||Date.now());
@@ -3562,7 +3562,7 @@ const certKind=c=>!c?'25':c.kind||(/ EOCP( |\.pdf$)/.test(c.name||'')?'28':/ EOI
 async function putCerts(certs){await clientsCol.doc(editClient.id).update({certs});editClient.certs=certs;renderCerts()}
 // what the editor calls on Save: store the new bytes, swap them into the client's list and name the file after the holder
 const certSaver=async(blob,old)=>{if(isLocked('client'))throw new Error('this client is view-only right now');const buf=await blob.arrayBuffer(),r=await storeBytes(buf,blob.type),holder=await certHolder(buf),x=certList().find(c=>c.id===old.id)||old;
-  const nx={...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',holder,name:certFileName(holder,x.at,certKind(x)),editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})};
+  const nx={...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',holder,name:x.renamed?x.name:certFileName(holder,x.at,certKind(x)),editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})};
   const certs=certList().some(c=>c.id===old.id)?certList().map(c=>c.id===old.id?nx:c):[...certList(),nx];await putCerts(certs);try{await assets.delete(old.id)}catch(_){}return nx};
 async function addCert(bytes,kind){const r=await storeBytes(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'application/pdf'),at=new Date().toISOString(),holder=await certHolder(bytes);
   const c={id:r.id,type:'application/pdf',size:r.sizeBytes,enc:r.enc||'',at,holder,name:certFileName(holder,at,kind),...(kind==='27'||kind==='28'?{kind}:{}),...(me?{by:me}:{})};await putCerts([...certList(),c]);return c}
@@ -3753,12 +3753,15 @@ $('certNew27').onclick=()=>{if(!editClient)return;if(isLocked('client'))return t
 $('certNew28').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'28')};
 // picking another policy for a new ACORD 27 brings its property address
 $('certPols').addEventListener('change',e=>{if(certMode&&certMode.kind!=='25'&&certMode.mode==='new'&&e.target.type==='radio')e27Location(certPolicies()[+e.target.value])});
-$('certList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.certOpen||b.dataset.certEdit||b.dataset.certCopy||b.dataset.certSave||b.dataset.certDel,c=certList().find(x=>x.id===id);if(!c)return;
+$('certList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.certOpen||b.dataset.certEdit||b.dataset.certCopy||b.dataset.certSave||b.dataset.certDel||b.dataset.certRen,c=certList().find(x=>x.id===id);if(!c)return;
   try{if(b.dataset.certOpen)return void await openEditor(c,{save:certSaver});
     if(b.dataset.certSave){const blob=new Blob([await fileBytes(c)],{type:'application/pdf'});if(dl)await dl.save({filename:c.name,data:blob,mimeType:'application/pdf'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=c.name;a.click()}return}
     if(isLocked('client'))return toast('This client is view-only right now.');
     if(b.dataset.certCopy)return void await certFormOpen('copy',c);
     if(b.dataset.certEdit)return void await certFormOpen('edit',c);
+    // rename: .pdf stays on, and the name is kept when the cert is edited later
+    if(b.dataset.certRen){let n=fnClean((prompt('New certificate name:',c.name.replace(/\.pdf$/i,''))||'').replace(/\.pdf$/i,''));if(!n)return;n+='.pdf';if(n===c.name)return;
+      await putCerts(certList().map(x=>x.id===id?{...x,name:n,renamed:true}:x));return toast(`Renamed to ${n}`)}
     if(b.dataset.certDel){if(!(await sure(`Delete the certificate ${c.name}? This can’t be undone.`)))return;await putCerts(certList().filter(x=>x.id!==id));try{await assets.delete(id)}catch(_){}toast('Certificate deleted')}}
   catch(err){certSay(err&&err.code?errText(err):`${c.name}: ${err&&err.message||'something went wrong'}`,'err')}});
 // ---------- Send email from the database (through Resend, from the person's own @pswinsurance.com address, with a copy in
