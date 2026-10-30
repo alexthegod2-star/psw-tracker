@@ -1422,9 +1422,20 @@ def rule_hit(rules, sender, subject):
     return None
 
 
+def sms_text(t):
+    """one plain text message of at most 160 characters, so each text uses one SimpleTexting credit: accents, curly quotes,
+    emoji and the like would make the phone network count 70 characters a text, and [ ] { } ~ ^ | \\ count twice"""
+    import unicodedata
+    t = t.translate(str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"', "\u2013": "-", "\u2014": "-", "\u2026": "...",
+                                   "[": "(", "]": ")", "{": "(", "}": ")", "~": "-", "^": "", "|": "/", "`": "'", "\\": "/"}))
+    t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()
+    t = " ".join(t.split())
+    return t if len(t) <= 160 else t[:157].rstrip() + "..."
+
+
 def text_send(to, text):
-    """one text through SimpleTexting from the office number; returns '' or what went wrong"""
-    body = {"contactPhone": to, "accountPhone": TEXT_FROM, "mode": "AUTO", "text": text}
+    """one text through SimpleTexting from the office number (always a single text, one credit); returns '' or what went wrong"""
+    body = {"contactPhone": to, "accountPhone": TEXT_FROM, "mode": "SINGLE_SMS_STRICTLY", "text": sms_text(text)}
     req = urllib.request.Request("https://api-app2.simpletexting.com/v2/api/messages", data=json.dumps(body).encode(), headers={
         "authorization": "Bearer " + os.environ.get("SIMPLETEXTING_API_KEY", "").strip(), "content-type": "application/json",
         "accept": "application/json", "user-agent": "psw-tracker"})
@@ -1502,8 +1513,7 @@ def text_check(row, acct):
     for who, subject in sent:
         with db() as c:
             n = c.execute("SELECT count(*) FROM text_log WHERE user_id=? AND at>? AND ok=1", (row["user_id"], time.time() - 3600)).fetchone()[0]
-        text = f"PSW email from {who}: {subject or '(no subject)'}"
-        text = text if len(text) <= 300 else text[:299] + "…"
+        text = sms_text(f"Email from {who}: {subject or '(no subject)'}")
         e = "Skipped: more than %d texts this hour" % TEXT_HOURLY if n >= TEXT_HOURLY else text_send(row["phone"], text)
         problem = e or problem
         with db() as c:
