@@ -556,7 +556,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 </div></div>
 <div class="mbg" id="etDlg" role="dialog" aria-modal="true" aria-labelledby="etTitleH"><div class="mbox" style="width:min(720px,100%);max-height:90vh;overflow:auto">
   <h3 id="etTitleH">Texts</h3>
-  <div class="small">When a new email in your inbox matches a rule below, you get a text on your cell from <b id="etFrom"></b>. The inbox is checked every couple of minutes.</div>
+  <div class="small">When a new email in your inbox matches a rule below, you get a text on your cell from <span id="etFrom"></span>. The inbox is checked every couple of minutes.</div>
   <div class="msg err" id="etWarn"></div>
   <div class="mlConn" id="etConn" hidden><div class="small">Connect your email so the inbox can be checked (the same address and password Outlook uses).</div><div class="row"><input id="etAddr" type="email" placeholder="you@pswinsurance.com" autocomplete="off"><input id="etPw" type="password" placeholder="Email password" autocomplete="off"><button type="button" class="pri" id="etConnGo">Connect</button></div></div>
   <div class="etGrid">
@@ -2744,7 +2744,7 @@ fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).th
  const ruleRow=r=>{const d=document.createElement('div');d.className='etRule';d.innerHTML=`<input data-k="from" placeholder="Sender name or address" aria-label="From contains"><input data-k="subject" placeholder="Words in the subject" aria-label="Subject contains"><button type="button" class="danger" title="Remove this rule">Remove</button>`;
    d.querySelector('[data-k=from]').value=r.from||'';d.querySelector('[data-k=subject]').value=r.subject||'';d.querySelector('button').onclick=()=>d.remove();$('etRules').appendChild(d)};
  const rules=()=>[...$('etRules').querySelectorAll('.etRule')].map(d=>({from:d.querySelector('[data-k=from]').value.trim(),subject:d.querySelector('[data-k=subject]').value.trim()})).filter(r=>r.from||r.subject);
- function paint(){$('etFrom').textContent=fmtPhone(st.fromPhone||'');
+ function paint(){$('etFrom').innerHTML=st.fromPhone?'<b>'+esc(fmtPhone(st.fromPhone))+'</b>':'your SimpleTexting number';
    $('etWarn').textContent=st.configured?'':'Texting isn’t switched on at the server yet: the SimpleTexting API key still needs to be added. You can set up your rules now.';
    $('etConn').hidden=!!st.mailConnected;if(!st.mailConnected&&!$('etAddr').value)$('etAddr').value=st.email||'';
    $('etChecked').textContent=st.active?(st.error?'Problem on the last check: '+st.error:st.checked?'Inbox last checked '+fmtDT(new Date(st.checked*1000).toISOString())+'.':'The first check happens within a couple of minutes.'):'';

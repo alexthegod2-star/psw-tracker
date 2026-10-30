@@ -1377,9 +1377,10 @@ def mail_history_one(mid: int, request: Request):
 
 # ---------- Texts: a text message to your cell when an email you care about arrives
 # The server checks each signed-up person's inbox (the same email login they connected for sending) every minute or two,
-# and when a new email matches one of their rules (sender or subject contains...), it texts them through SimpleTexting.
+# and when a new email matches one of their rules (sender or subject contains...), it texts them through SimpleTexting
+# from the account's number (or PSW_TEXT_FROM in .env, when the account has more than one).
 # Needs SIMPLETEXTING_API_KEY in .env (sent by the deploy step from the repo secret of that name, like RESEND_API_KEY).
-TEXT_FROM = re.sub(r"\D", "", os.environ.get("PSW_TEXT_FROM", "8187011033"))[-10:]  # the office number, text-enabled in SimpleTexting
+TEXT_FROM = re.sub(r"\D", "", os.environ.get("PSW_TEXT_FROM", ""))[-10:]  # blank: the SimpleTexting account's own (primary) number
 TEXT_EVERY = max(30, int(os.environ.get("PSW_TEXT_EVERY", "90")))  # seconds between inbox checks
 TEXT_HOURLY = 30  # most texts per person per hour, so a flood of matching email can't use up the credits
 
@@ -1434,8 +1435,10 @@ def sms_text(t):
 
 
 def text_send(to, text):
-    """one text through SimpleTexting from the office number (always a single text, one credit); returns '' or what went wrong"""
-    body = {"contactPhone": to, "accountPhone": TEXT_FROM, "mode": "SINGLE_SMS_STRICTLY", "text": sms_text(text)}
+    """one text through SimpleTexting from the account's number (always a single text, one credit); returns '' or what went wrong"""
+    body = {"contactPhone": to, "mode": "SINGLE_SMS_STRICTLY", "text": sms_text(text)}
+    if TEXT_FROM:
+        body["accountPhone"] = TEXT_FROM
     req = urllib.request.Request("https://api-app2.simpletexting.com/v2/api/messages", data=json.dumps(body).encode(), headers={
         "authorization": "Bearer " + os.environ.get("SIMPLETEXTING_API_KEY", "").strip(), "content-type": "application/json",
         "accept": "application/json", "user-agent": "psw-tracker"})
