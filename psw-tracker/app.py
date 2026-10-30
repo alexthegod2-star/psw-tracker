@@ -1138,9 +1138,13 @@ def mail_table(c):
 
 
 def imap_open(email, pw):
+    """Log in to the mail server. A password with letters outside plain ASCII (é, ñ, curly quotes, ...) can't go through LOGIN, so it goes as AUTHENTICATE PLAIN in UTF-8."""
     import imaplib
     m = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT, timeout=20)
-    m.login(email, pw)
+    if pw.isascii() and email.isascii():
+        m.login(email, pw)
+    else:
+        m.authenticate("PLAIN", lambda _: ("\0" + email + "\0" + pw).encode("utf-8"))
     return m
 
 
@@ -1196,9 +1200,11 @@ async def mail_connect(request: Request):
     import imaplib
     try:
         m = imap_open(email, pw)
-    except imaplib.IMAP4.error:
-        err(400, "bad_login")
-    except Exception:
+    except imaplib.IMAP4.error as e:  # the mail server's own words go back too (wrong password, too many tries, access turned off, ...)
+        print(f"mail connect {email}: {IMAP_HOST} said {e}", flush=True)
+        return JSONResponse({"code": "bad_login", "said": str(e)[:200]}, status_code=400)
+    except Exception as e:
+        print(f"mail connect {email}: {IMAP_HOST} unreachable: {e!r}", flush=True)
         err(502, "imap_unreachable")
     try:
         box = imap_sent_box(m)
