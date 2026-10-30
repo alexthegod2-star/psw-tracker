@@ -714,7 +714,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <label class="small" style="display:flex;gap:6px;align-items:center;margin-top:8px;font-weight:400"><input type="checkbox" id="txLog" checked style="width:auto"> Log it as a Text in the contact log</label>
   <div class="small" id="txHow" style="margin-top:8px"></div>
   <div class="msg" id="txMsgOut"></div>
-  <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="txCancel">Close</button><button id="txCopyNum">Copy number</button><button id="txCopy">Copy message</button><a class="btn pri" id="txPhone" hidden>Open on phone</a><button class="pri" id="txWeb">Open Google Messages</button></div>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="txCancel">Close</button><button id="txCopyNum">Copy number</button><button id="txCopy">Copy message</button><a class="btn pri" id="txPhone" hidden>Open on phone</a><button class="pri" id="txWeb">Open Google Messages</button><button class="pri" id="txSend" hidden>Send text</button></div>
 </div></div>
 <div class="toast" id="toast"></div>
 
@@ -1631,10 +1631,18 @@ async function txLogIt(){if(txLogged||!$('txLog').checked||!cur)return;txLogged=
 $('textBtn').onclick=async()=>{if(!(await ensureSaved()))return;const ph=$('phone').value.trim();
   $('txTo').value=fmtPhone(ph);let d='';try{d=localStorage.getItem('psw-text-draft')||''}catch(_){}
   const first=$('firstName').value.trim();$('txMsg').value=d?d.replace(/^Hi [^,\n]*,/,`Hi ${first||'there'},`):`Hi ${first||'there'}, `;
-  $('txPhone').hidden=!isPhone;$('txWeb').hidden=isPhone;txLogged=false;txSetLink();$('txMsgOut').textContent='';
-  $('txHow').textContent=isPhone?'Open on phone starts a text with the number and message filled in.':'Open Google Messages copies the number and opens a new chat: paste it in To and press Enter, then click Copy message and paste it in the chat.';
+  const st=await textStatus();$('txSend').hidden=!st.configured;$('txSend').disabled=false;$('txPhone').hidden=!isPhone||st.configured;$('txWeb').hidden=isPhone||st.configured;txLogged=false;txSetLink();$('txMsgOut').textContent='';
+  $('txHow').textContent=st.configured?'Send text sends it from the office texting number (SimpleTexting). Replies come in the SimpleTexting inbox and app.':isPhone?'Open on phone starts a text with the number and message filled in.':'Open Google Messages copies the number and opens a new chat: paste it in To and press Enter, then click Copy message and paste it in the chat.';
   $('txDlg').classList.add('on');setTimeout(()=>$('txMsg').focus(),30)};
 ['txTo','txMsg'].forEach(id=>$(id).addEventListener('input',()=>{txSetLink();if(id==='txMsg')try{localStorage.setItem('psw-text-draft',$('txMsg').value)}catch(_){}}));
+// SimpleTexting: when the server has the key, Send text sends from the office number and logs it like the other ways
+let textSt=null;async function textStatus(){if(textSt)return textSt;try{const r=await fetch('/api/text/status',{credentials:'same-origin'});textSt=r.ok?await r.json():{configured:false}}catch(_){return {configured:false}}return textSt}
+const TX_ERR={bad_phone:'That phone number doesn’t look right. Use a 10-digit US number.',no_text:'Type a message first.',text_key_rejected:'SimpleTexting turned down the key. Check the SIMPLETEXTING_API_KEY secret.',text_unreachable:'Couldn’t reach SimpleTexting. Try again in a minute.',text_off:'Texting isn’t set up on the server yet.'};
+$('txSend').onclick=async()=>{const o=$('txMsgOut'),b=$('txSend');b.disabled=true;o.className='msg';o.textContent='Sending…';
+  try{const r=await fetch('/api/text/send',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({to:$('txTo').value,text:$('txMsg').value})}),j=await r.json().catch(()=>({}));
+    if(!r.ok){o.className='msg err';o.textContent=TX_ERR[j.code]||('The text wasn’t sent. '+(j.detail||''));b.disabled=false;return}
+    await txLogIt();try{localStorage.removeItem('psw-text-draft')}catch(_){}o.className='msg ok';o.textContent=`Sent to ${$('txTo').value}.${$('txLog').checked?' Logged as a Text in the contact log.':''}`}
+  catch(e){o.className='msg err';o.textContent=errText(e);b.disabled=false}};
 $('txCopyNum').onclick=()=>txCopy($('txTo').value.replace(/\D/g,''),'Number');
 $('txCopy').onclick=async()=>{if(await txCopy($('txMsg').value,'Message'))txLogIt()};
 $('txWeb').onclick=async()=>{await txCopy($('txTo').value.replace(/\D/g,''),'Number');window.open('https://messages.google.com/web/conversations/new','psw-gmessages');txLogIt()};

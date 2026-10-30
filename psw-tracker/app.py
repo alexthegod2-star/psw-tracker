@@ -1342,6 +1342,63 @@ def mail_log_table(c):
               "html TEXT NOT NULL DEFAULT '', files TEXT NOT NULL DEFAULT '[]', copied INTEGER NOT NULL DEFAULT 0)")
 
 
+# ---------- Texts from the database through SimpleTexting (the office's texting service; replies land in its own inbox and app).
+# Needs SIMPLETEXTING_API_KEY in .env (SimpleTexting: Settings > API). SIMPLETEXTING_PHONE picks the sending number when the account has more than one.
+TEXT_API = "https://api-app2.simpletexting.com/v2/api/messages"
+
+
+def text_on():
+    return bool(os.environ.get("SIMPLETEXTING_API_KEY", "").strip())
+
+
+def simpletexting_post(payload):
+    req = urllib.request.Request(TEXT_API, data=json.dumps(payload).encode(), headers={
+        "authorization": "Bearer " + os.environ.get("SIMPLETEXTING_API_KEY", "").strip(), "content-type": "application/json",
+        "accept": "application/json", "user-agent": "psw-tracker"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read() or b"{}")
+
+
+@app.get("/api/text/status")
+def text_status(request: Request):
+    need_user(request)
+    return {"configured": text_on()}
+
+
+@app.post("/api/text/send")
+async def text_send(request: Request):
+    need_user(request)
+    if not text_on():
+        err(404, "text_off")
+    b = await request.json()
+    d = re.sub(r"\D", "", str(b.get("to") or ""))
+    if len(d) == 11 and d[0] == "1":
+        d = d[1:]
+    if len(d) != 10:
+        err(400, "bad_phone")
+    text = str(b.get("text") or "").strip()[:1500]
+    if not text:
+        err(400, "no_text")
+    payload = {"contactPhone": d, "mode": "AUTO", "text": text}
+    acct = re.sub(r"\D", "", os.environ.get("SIMPLETEXTING_PHONE", ""))[-10:]
+    if acct:
+        payload["accountPhone"] = acct
+    try:
+        r = simpletexting_post(payload)
+    except urllib.error.HTTPError as e:
+        try:
+            msg = str(json.loads(e.read()).get("message", ""))[:300]
+        except Exception:
+            msg = ""
+        print("SimpleTexting send failed:", e.code, msg, flush=True)
+        if e.code in (401, 403):
+            err(502, "text_key_rejected")
+        return JSONResponse({"code": "text_failed", "detail": msg or f"SimpleTexting said {e.code}"}, status_code=502)
+    except (urllib.error.URLError, TimeoutError):
+        err(502, "text_unreachable")
+    return {"ok": True, "id": r.get("id", "")}
+
+
 @app.get("/api/mail/history")
 def mail_history(request: Request, q: str = "", all: int = 0):
     """your own sent emails, newest first; the owners can see everyone's"""
