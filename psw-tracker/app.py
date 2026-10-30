@@ -1202,7 +1202,9 @@ async def mail_connect(request: Request):
         m = imap_open(email, pw)
     except imaplib.IMAP4.error as e:  # the mail server's own words go back too (wrong password, too many tries, access turned off, ...)
         print(f"mail connect {email}: {IMAP_HOST} said {e}", flush=True)
-        return JSONResponse({"code": "bad_login", "said": str(e)[:200]}, status_code=400)
+        said = e.args[0] if e.args else ""
+        said = said.decode("utf-8", "replace") if isinstance(said, bytes) else str(said)  # the server's words come as bytes: b'[AUTHENTICATIONFAILED] ...'
+        return JSONResponse({"code": "bad_login", "said": said[:200]}, status_code=400)
     except Exception as e:
         print(f"mail connect {email}: {IMAP_HOST} unreachable: {e!r}", flush=True)
         err(502, "imap_unreachable")
