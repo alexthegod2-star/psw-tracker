@@ -391,7 +391,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div id="mhView" hidden><div class="row" style="justify-content:space-between;align-items:center;margin-top:12px"><div class="small" id="mhHead"></div><button type="button" id="mhResend" title="A new email to the same people, same subject">Email them again</button></div><iframe id="mhBody" sandbox="" title="Email"></iframe></div>
 </div></div>
 <div class="mbg" id="mlDlg" role="dialog" aria-modal="true" aria-labelledby="mlTitle" style="z-index:20"><div class="mbox" style="width:min(760px,96vw);max-height:92vh;overflow:auto">
-  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="mlTitle" style="margin:0">Send email</h3><span class="row" style="gap:10px;align-items:center"><span class="small" id="mlFrom"></span><button type="button" class="pri" id="mlHist" title="Emails sent from the database">Sent history</button></span></div>
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="mlTitle" style="margin:0">Send email</h3><span class="row" style="gap:10px;align-items:center"><span class="small" id="mlFrom"></span><button type="button" class="pri" id="mlHist" title="Emails sent from the database">Sent history</button><button type="button" id="mlCancelTop">Cancel</button></span></div>
   <div id="mlConn" class="mlConn" hidden><b>Connect your email once</b><span class="small">Your @pswinsurance.com address and its email password (the one Outlook uses). Emails go out from that address, and a copy goes in your Outlook Sent folder.</span>
     <div class="row"><input id="mlAddr" type="email" autocomplete="username" placeholder="you@pswinsurance.com"><span class="mlPwBox"><input id="mlPw" type="password" autocomplete="current-password" placeholder="Email password"><button type="button" id="mlPwEye" title="Show password" aria-label="Show password">👁</button></span><button type="button" class="pri" id="mlConnGo">Connect</button></div></div>
   <div class="mlGrid"><label>To<input id="mlTo" autocomplete="off" placeholder="name@example.com (more than one: separate with commas)"></label><label>Cc<input id="mlCc" autocomplete="off" placeholder="more than one: separate with ;"></label><div class="ccQuick" id="mlCcQuick"><span class="small">Cc:</span></div>
@@ -3794,7 +3794,7 @@ async function composeMail(o){mlCtx=o;await mailStatus(true);$('mlTo').value=o.t
   if(mlRelogin&&mailSt&&mailSt.connected){$('mlConn').hidden=false;$('mlAddr').value=mailSt.email||'';mlSay('Your email password changed. Type the new one (the one Outlook uses now) and click Connect.','err')}
   $('mlDlg').classList.add('on');setTimeout(()=>(o.to?$('mlBody'):$('mlTo')).focus(),30)}
 const mlClose=()=>{$('mlDlg').classList.remove('on');mlCtx=null};
-$('mlCancel').onclick=mlClose;
+$('mlCancel').onclick=$('mlCancelTop').onclick=mlClose;
 // connect: the server checks the address and password against the Bluehost mail server, then keeps the password (encrypted) for the Sent copy
 $('mlConnGo').onclick=async()=>{const email=$('mlAddr').value.trim(),password=$('mlPw').value;if(!email||!password){mlSay('Type your email address and its password.','err');return}
   const b=$('mlConnGo');b.disabled=true;mlSay('Checking your password…');
