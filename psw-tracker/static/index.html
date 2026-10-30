@@ -736,7 +736,7 @@ const fmtPhone=v=>{const t=String(v||''),m=t.match(/^(.*?)\s*(?:x|ext\.?|extensi
 const fmtDOB=v=>{const raw=String(v||'').trim();if(!raw)return '';let iso=typedISO(raw);if(!/^\d{4}-\d\d-\d\d$/.test(iso)){const d=raw.replace(/\D/g,'');if(d.length===8||d.length===6)iso=typedISO(d)}
   if(!/^\d{4}-\d\d-\d\d$/.test(iso))return raw;if(+iso.slice(0,4)>new Date().getFullYear())iso=(+iso.slice(0,4)-100)+iso.slice(4);return fmtDate(iso)};
 const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
-const toast=t=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)};
+const toast=(t,ms)=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',ms||2600)};
 const errText=e=>{const c=e&&e.code;return ({permission_denied:'You only have view access to this tracker.',too_large:'That file is too big (20 MB max).',unsupported_type:'That file type can’t be stored. Use PDF, an image, CSV or text.',rate_limited:'Too many changes at once, try again in a moment.',quota_or_state:'File storage is full.',not_granted:'This view can’t do that.'})[c]||('Something went wrong'+(c?` (${c})`:'')+'. Try again.')};
 
 let db=null,assets=null,dl=null,user=null,me=null;let binderOn=false,binCol=null,binder=[],editBin=null;
@@ -3779,6 +3779,7 @@ const ML_ERR={mail_not_connected:'Connect your email first (box at the top), the
   mail_unavailable:'Couldn’t reach the sending service just now. Try again in a minute.',mail_off:'Email from the database isn’t set up on the server yet.',not_found:'One of the attached files couldn’t be found.'};
 let mlCtx=null;
 const mlSay=(t,c)=>{const m=$('mlMsg');m.className='msg'+(c?' '+c:'');m.textContent=t||''};
+let mlRelogin=false; // the last send found the saved email password no longer works
 function mlFromLine(){const st=mailSt||{};$('mlFrom').innerHTML=st.connected?`From ${esc(st.email)} <button type="button" class="linkish" id="mlChange">change</button>`:'Email not connected';$('mlConn').hidden=!!st.connected;$('mlSend').disabled=!st.connected;if(!st.connected&&!$('mlAddr').value)$('mlAddr').value=/@/.test(st.email||'')&&st.email.toLowerCase().endsWith('@'+(st.domain||''))?st.email:''}
 // o: {to, subject, body, files:[{id,name,on}] stored files, extra:[{name,type,get()}] made here (always attached), onSent()}
 // Review link (emails from the client screen): puts the Google review request in the subject and message, greeting the client by first name
@@ -3788,6 +3789,7 @@ async function composeMail(o){mlCtx=o;await mailStatus(true);$('mlTo').value=o.t
   $('mlAtt').innerHTML=[...(o.extra||[]).map((f,i)=>`<label><input type="checkbox" data-mx="${i}"${f.on===false?'':' checked'}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`),
     ...(o.files||[]).map(f=>`<label><input type="checkbox" data-mb="${esc(f.id)}"${f.on?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`)].join('')||'<div class="small">No files to attach.</div>';
   $('mlPw').value='';$('mlPw').type='password';$('mlPwEye').classList.remove('on');mlFromLine();mlSay('');
+  if(mlRelogin&&mailSt&&mailSt.connected){$('mlConn').hidden=false;$('mlAddr').value=mailSt.email||'';mlSay('Your email password changed. Type the new one (the one Outlook uses now) and click Connect.','err')}
   $('mlDlg').classList.add('on');setTimeout(()=>(o.to?$('mlBody'):$('mlTo')).focus(),30)}
 const mlClose=()=>{$('mlDlg').classList.remove('on');mlCtx=null};
 $('mlCancel').onclick=mlClose;
@@ -3796,7 +3798,7 @@ $('mlConnGo').onclick=async()=>{const email=$('mlAddr').value.trim(),password=$(
   const b=$('mlConnGo');b.disabled=true;mlSay('Checking your password…');
   try{const r=await fetch('/api/mail/connect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}),d=await r.json().catch(()=>({}));
     if(!r.ok){mlSay((ML_ERR[d.code]||'Couldn’t connect your email.')+(d.said?` The mail server said: “${d.said}”`:''),'err');return}
-    $('mlPw').value='';await mailStatus(true);mlFromLine();mlSay(`Connected ${d.email}. You can send now.`,'ok')}
+    $('mlPw').value='';mlRelogin=false;await mailStatus(true);mlFromLine();mlSay(`Connected ${d.email}. You can send now.`,'ok')}
   catch(_){mlSay('Couldn’t reach the server.','err')}finally{b.disabled=false}};
 // the eye shows the password as typed, and hides it again
 $('mlPwEye').onclick=()=>{const p=$('mlPw'),show=p.type==='password';p.type=show?'text':'password';$('mlPwEye').title=$('mlPwEye').ariaLabel=show?'Hide password':'Show password';$('mlPwEye').classList.toggle('on',show);p.focus()};
@@ -3874,7 +3876,8 @@ $('mlSend').onclick=async()=>{const o=mlCtx;if(!o)return;const to=$('mlTo').valu
     const r=await fetch('/api/mail/send',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,cc:$('mlCc').value.trim(),subject:$('mlSubj').value,html,attachments:atts})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){if(d.code==='mail_not_connected'){await mailStatus(true);mlFromLine()}mlSay(ML_ERR[d.code]||'Couldn’t send the email.','err');btn.disabled=!(mailSt&&mailSt.connected);return}
-    mlClose();toast(d.sentCopy?`Email sent to ${to}.`:`Email sent to ${to}. It couldn’t be copied to your Outlook Sent folder this time.`);if(o.onSent)try{o.onSent()}catch(_){}}
+    if(d.relogin){mlRelogin=true;mlClose();toast(`Email sent to ${to}, but your email password has changed, so it isn’t in your Outlook Sent folder. Next time you open an email, type your new password in the box at the top.`,9000)}
+    else{mlClose();toast(d.sentCopy?`Email sent to ${to}.`:`Email sent to ${to}. It couldn’t be copied to your Outlook Sent folder this time.`)}if(o.onSent)try{o.onSent()}catch(_){}}
   catch(err){mlSay(err&&err.message?`Couldn’t send: ${err.message}`:'Couldn’t reach the server.','err');btn.disabled=false}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mhDlg').classList.contains('on')){e.stopImmediatePropagation();$('mhDlg').classList.remove('on');return}if(e.key==='Escape'&&$('mlDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();mlClose()}},true);
 // the client's copy: every box printed into the page (flattened), so it can't be edited

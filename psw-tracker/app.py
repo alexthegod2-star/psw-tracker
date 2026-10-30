@@ -1202,7 +1202,9 @@ async def mail_connect(request: Request):
         m = imap_open(email, pw)
     except imaplib.IMAP4.error as e:  # the mail server's own words go back too (wrong password, too many tries, access turned off, ...)
         print(f"mail connect {email}: {IMAP_HOST} said {e}", flush=True)
-        return JSONResponse({"code": "bad_login", "said": str(e)[:200]}, status_code=400)
+        said = e.args[0] if e.args else ""
+        said = said.decode("utf-8", "replace") if isinstance(said, bytes) else str(said)  # the server's words come as bytes: b'[AUTHENTICATIONFAILED] ...'
+        return JSONResponse({"code": "bad_login", "said": said[:200]}, status_code=400)
     except Exception as e:
         print(f"mail connect {email}: {IMAP_HOST} unreachable: {e!r}", flush=True)
         err(502, "imap_unreachable")
@@ -1322,15 +1324,17 @@ async def mail_send(request: Request):
     for n, t, d in atts:
         mt, _, st = (t if "/" in t else "application/octet-stream").partition("/")
         em.add_attachment(d, maintype=mt, subtype=st, filename=n)
-    copied = False
+    copied, relogin = False, False
+    import imaplib
     try:
-        import imaplib
         m = imap_open(acct["email"], mail_box().decrypt(acct["refresh"].encode()).decode())
         try:
             typ, _ = m.append(acct["sent_box"] or "INBOX.Sent", "\\Seen", imaplib.Time2Internaldate(time.time()), em.as_bytes(policy=SMTP))
             copied = typ == "OK"
         finally:
             m.logout()
+    except imaplib.IMAP4.error:  # the saved email password no longer works (changed in Bluehost): the page asks for the new one
+        relogin = True
     except Exception:
         copied = False
     with db() as c:
@@ -1338,7 +1342,7 @@ async def mail_send(request: Request):
         c.execute("INSERT INTO mail_log(user_id,user_name,at,sender,to_,cc,subject,html,files,copied) VALUES(?,?,?,?,?,?,?,?,?,?)",
                   (u["id"], u["name"] or u["username"], time.time(), sender, ", ".join(to), ", ".join(cc), subject, html,
                    json.dumps([n for n, _, _ in atts]), 1 if copied else 0))
-    return {"ok": True, "sentCopy": copied}
+    return {"ok": True, "sentCopy": copied, "relogin": relogin}
 
 
 # ---------- Sent history: every email sent from the database (not the attachments themselves, just their names)
