@@ -1,6 +1,7 @@
 /* PSW agency fee: adds a "PSW Agency Fee" line under a carrier quote's fees, updates every total, and puts the PSW header on page 1.
    Same engine as the "PSW Agency Fee – Quote Tool" artifact. Needs PDFLib, pdfjsLib and pako loaded first.
    PSWFee.add(bytes, fee, label, opts) -> {bytes, insured, quoteNo, oldTotal, newTotal, msg, warn} or throws Error(message).
+   PSWFee.combine([{bytes,name,label}], fee, label, opts) -> {bytes, insured, quotes, fee, total, warn}: a summary page 1, then the quotes.
    opts.ask: Claude fallback for new layouts. opts.ocr: {start(), read(canvas) -> tesseract data} for quotes whose text can't be copied. */
 (function(){
 const MONEY=/^\$?\s*[\d,]+\.\d{2}$/;
@@ -809,5 +810,126 @@ async function add(srcBytes,fee,label,opts){
   if(ai) warn=(warn?warn+" ":"")+"Claude picked the fee lines on this quote, so check the updated page before sending it.";
   return {bytes,insured,quoteNo,oldTotal:cols.map(c=>fmt(c.old)).join(" | "),newTotal:cols.map(c=>fmt(c.neu)).join(" | "),fee:fmt(fee),warn};
 }
-window.PSWFee={add};
+/* ---------- combined quote: a PSW summary page listing each quote's pricing, the agency fee and a grand total, then the quotes ---------- */
+const LOBS=[["Property",/\b(commercial property|property coverage|building coverage|business personal property|property quote|property)\b/ig],
+  ["General Liability",/\b(commercial general liability|general liability|cgl)\b/ig],["Liquor Liability",/\bliquor liability\b/ig],
+  ["Businessowners",/\b(businessowners?|business owners?|bop)\b/ig],["Workers Compensation",/\bworkers'? comp(ensation)?\b/ig],
+  ["Commercial Auto",/\b(commercial auto(mobile)?|business auto)\b/ig],["Umbrella",/\bumbrella\b/ig],["Excess Liability",/\bexcess liability\b/ig],
+  ["Inland Marine",/\binland marine\b/ig],["Builders Risk",/\bbuilders'? risk\b/ig],["Professional Liability",/\b(professional liability|errors (and|&) omissions|e&o)\b/ig],
+  ["Cyber",/\bcyber\b/ig],["Homeowners",/\bhomeowners?\b/ig],["Dwelling Fire",/\bdwelling fire\b/ig],["Flood",/\bflood\b/ig],["Earthquake",/\bearthquake\b/ig]];
+/* the line of business a quote is for: the premium line's own name first, else the one named most on the first pages */
+function guessLob(pages,items){
+  for(const it of items){ for(const [n,re] of LOBS){ re.lastIndex=0; if(re.test(it.label)) return n; } }
+  const text=pages.slice(0,2).flatMap(P=>P.lines.map(L=>L.text)).join("\n");
+  let best="",bn=0;
+  for(const [n,re] of LOBS){ const k=(text.match(re)||[]).length; if(k>bn){ bn=k; best=n; } }
+  return best;
+}
+const CARRIER=/insurance|underwriters|indemnity|assurance|casualty|specialty|lloyd|mutual|surplus/i;
+function guessCarrier(pages){
+  const f=findField(pages,/^(?:carrier|insurance company|insurer|company|writing company):?\s+(.+)$/i);
+  if(f) return f.replace(/\s{2,}.*$/,"");
+  const L=(pages[0]||{lines:[]}).lines.slice(0,12).find(l=>l.text.length<60&&CARRIER.test(l.text)&&!/pacific southwest|presented by|agency|broker/i.test(l.text)&&!l.amounts.length);
+  return L?L.text:"";
+}
+/* one quote's priced lines in the first amount column (top to bottom) and its final total, following a grand total under the first one */
+function quotePricing(loc){
+  const T=loc.total, col=T.amounts[0], cx=col.x+col.w/2;
+  const amtOf=l=>{ let best=null,bd=40; for(const b of l.amounts){ const d=Math.abs((b.x+b.w/2)-cx); if(d<bd){bd=d;best=b;} } return best; };
+  const clean=t=>String(t||"").replace(/[:\s]+$/,"").replace(/\s+/g," ").trim();
+  const items=[...loc.chain].sort((a,b)=>b.y-a.y).map(l=>{ const a=amtOf(l); return a?{label:clean(l.label),amt:toNum(a.str)}:null; }).filter(Boolean);
+  let total=toNum(col.str), totalLabel=clean(T.label);
+  const gaps=[]; for(let k=1;k<loc.chain.length;k++) gaps.push(Math.abs(loc.chain[k].y-loc.chain[k-1].y));
+  const pitch=gaps.length?gaps.sort((a,b)=>a-b)[Math.floor(gaps.length/2)]:12;
+  const more=[]; let prev=T.y;
+  for(const L of loc.lines.filter(l=>l.y<T.y-1).sort((a,b)=>b.y-a.y)){
+    if(prev-L.y>pitch*3) break;
+    if(!L.amounts.length){ if(!L.text||NOAMT.test(L.text)) continue; break; }
+    if(COMM.test(L.text)||NETDUE.test(L.text)) break;
+    const a=amtOf(L); if(!a) break;
+    if(/^total\b/i.test(L.label)){ if(more.length){ items.push({label:totalLabel+" (carrier subtotal)",amt:total,sub:true},...more); more.length=0; } total=toNum(a.str); totalLabel=clean(L.label); }
+    else more.push({label:clean(L.label),amt:toNum(a.str)});
+    prev=L.y;
+  }
+  return {items:items.filter(i=>!i.sub),total,cols:T.amounts.length};
+}
+/* Helvetica can only draw Latin-1 letters */
+const pdfSafe=t=>String(t||"").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,"-").replace(/[^\x20-\x7E\xA0-\xFF]/g,"");
+async function combine(list,fee,label,opts){
+  label=label||"PSW Agency Fee";opts=opts||{};
+  if(!list.length) throw new Error("Add at least one carrier quote PDF.");
+  if(!(fee>=0)) throw new Error("Type the PSW Agency Fee amount (0 for none).");
+  const quotes=[]; let warn=[];
+  for(const q of list){
+    const nm=q.name||"Quote";
+    let pdfDoc;
+    try{ pdfDoc=await PDFLib.PDFDocument.load(q.bytes); }catch(e){ throw new Error(nm+": couldn't open this PDF. If it's password-protected, save an unlocked copy and try again."); }
+    if(opts.onFile) opts.onFile(nm);
+    const {pages,usedOcr}=await readLines(q.bytes,opts.ocr,pdfDoc);
+    let locs=locateAll(pages), ai=null;
+    if(!locs.length && opts.ask){ if(opts.onAi) opts.onAi(nm); ai=await aiLocate(pages,opts.ask); locs=ai.locs; }
+    if(!locs.length) throw new Error(nm+": couldn't find the premium totals (a column of fees and taxes followed by a Total line).");
+    if(locs.some(L=>L.chain.some(f=>f.label.toLowerCase()===label.toLowerCase()))) throw new Error(nm+" already has a \""+label+"\" line. Use the original carrier PDF; the fee goes on the summary page once.");
+    const loc=locs.slice().sort((a,b)=>a.pageIndex-b.pageIndex||b.total.y-a.total.y)[0];
+    const pr=quotePricing(loc);
+    const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||(ai&&ai.insured)||"";
+    const lob=(q.label||"").trim()||guessLob(pages,pr.items)||("Quote "+(quotes.length+1));
+    /* same clean-up as the fee tool: no carrier commission or net due lines, no quote initiation date */
+    removeCommission(pdfDoc,pages);
+    const bounds=ag.on?pageBounds(pdfDoc,0):null;
+    removeInitDate(pdfDoc,pages);
+    /* PSW header above the carrier's header on the quote's first page; with no room there the summary page carries it */
+    let head="none";
+    if(bounds){ const pg=pdfDoc.getPage(0), H=pg.getHeight(), F=PDFLib.StandardFonts, need=HEAD_H-(H-bounds.hi);
+      const fR=await pdfDoc.embedFont(F.TimesRoman), fB=await pdfDoc.embedFont(F.TimesRomanBold);
+      if(need<=0){ await addAgencyHeader(pdfDoc,0,bounds.hi,H,fR,fB); head="top"; }
+      else if(bounds.lo-need>=18){ shiftPageDown(pdfDoc,0,need); await addAgencyHeader(pdfDoc,0,H-HEAD_H+need,H+need,fR,fB); head="pushed"; } }
+    if(pr.cols>1) warn.push(nm+" shows "+pr.cols+" price columns; the summary uses the first one ("+fmt(pr.total)+").");
+    if(usedOcr) warn.push(nm+"'s text had to be read from the page image, so check its prices on the summary.");
+    if(ai) warn.push("Claude picked the price lines on "+nm+", so check them on the summary.");
+    const sum=Math.round(pr.items.reduce((a,i)=>a+i.amt,0)*100)/100;
+    if(Math.abs(sum-pr.total)>0.01) warn.push(nm+"'s lines add up to "+fmt(sum)+", not its "+fmt(pr.total)+" total, so check the quote.");
+    quotes.push({name:nm,lob,carrier:guessCarrier(pages),insured,items:pr.items,total:pr.total,doc:pdfDoc,head});
+  }
+  const insured=(quotes.find(q=>q.insured)||{}).insured||"";
+  const grand=Math.round((quotes.reduce((a,q)=>a+q.total,0)+fee)*100)/100;
+
+  /* summary page */
+  const out=await PDFLib.PDFDocument.create(), F=PDFLib.StandardFonts;
+  const tR=await out.embedFont(F.TimesRoman), tB=await out.embedFont(F.TimesRomanBold), hR=await out.embedFont(F.Helvetica), hB=await out.embedFont(F.HelveticaBold);
+  const W=612, H=792, X0=60, X1=W-60, ink=PDFLib.rgb(0,0,0), grey=PDFLib.rgb(.38,.38,.38), band=PDFLib.rgb(.9,.93,.97), line=PDFLib.rgb(.6,.6,.6);
+  let page=out.addPage([W,H]);
+  let y=ag.on?await addAgencyHeader(out,0,H-HEAD_H-24,H-6,tR,tB)-26:H-60;
+  const center=(t,size,f,c)=>{ t=pdfSafe(t); const w=f.widthOfTextAtSize(t,size); page.drawText(t,{x:W/2-w/2,y,size,font:f,color:c||ink}); };
+  const fit=(t,size,f,max)=>{ t=pdfSafe(t); if(f.widthOfTextAtSize(t,size)<=max) return t; while(t.length>4&&f.widthOfTextAtSize(t+"...",size)>max) t=t.slice(0,-1); return t.trimEnd()+"..."; };
+  const row=(lbl,amt,o)=>{ o=o||{}; const size=o.size||10.5, f=o.bold?hB:hR, x=o.indent?X0+14:X0;
+    page.drawText(fit(lbl,size,f,X1-x-110),{x,y,size,font:f,color:o.grey?grey:ink});
+    if(amt!=null){ const s=fmt(amt), w=f.widthOfTextAtSize(s,size); page.drawText(s,{x:X1-w,y,size,font:f,color:ink}); } };
+  const room=need=>{ if(y-need>=60) return; page=out.addPage([W,H]); y=H-60; center("Quote Summary (continued)",12,hB); y-=26; };
+  y-=4; center("Insurance Quote Summary",18,hB); y-=20;
+  if(insured){ center("Prepared for "+insured,12,hR); y-=16; }
+  const d=new Date(); center("Date: "+String(d.getMonth()+1).padStart(2,"0")+"/"+String(d.getDate()).padStart(2,"0")+"/"+d.getFullYear(),10,hR,grey); y-=30;
+  quotes.forEach((q,k)=>{
+    room(30+q.items.length*16+24);
+    page.drawRectangle({x:X0-6,y:y-6,width:X1-X0+12,height:20,color:band});
+    row((k+1)+". "+q.lob+(q.carrier?"  -  "+q.carrier:""),null,{bold:true,size:11.5}); y-=22;
+    q.items.forEach(i=>{ room(16); row(i.label,i.amt,{indent:true}); y-=15; });
+    room(20); page.drawLine({start:{x:X1-110,y:y+10},end:{x:X1,y:y+10},thickness:.6,color:line});
+    row(q.lob+" total",q.total,{bold:true,indent:true}); y-=26;
+  });
+  room(70);
+  if(fee>0){ row(label,fee,{bold:true,size:11.5}); y-=22; }
+  page.drawLine({start:{x:X0,y:y+13},end:{x:X1,y:y+13},thickness:1.2,color:ink});
+  page.drawLine({start:{x:X0,y:y+10},end:{x:X1,y:y+10},thickness:.6,color:ink});
+  y-=4; row("Total",grand,{bold:true,size:13}); y-=34;
+  room(40);
+  const note=["The carrier quotes follow this page"+(quotes.length>1?", in the order listed above.":"."),"See each quote for its coverage, terms and conditions."];
+  note.forEach(t=>{ page.drawText(pdfSafe(t),{x:X0,y,size:9,font:hR,color:grey}); y-=12; });
+
+  /* then each quote */
+  for(const q of quotes){ const pgs=await out.copyPages(q.doc,q.doc.getPageIndices()); pgs.forEach(p=>out.addPage(p)); }
+  const bytes=await out.save();
+  return {bytes,insured,quotes:quotes.map(({doc,...q})=>q),fee:fmt(fee),total:fmt(grand),warn:warn.join(" ")};
+}
+window.PSWFee={add,combine};
 })();
