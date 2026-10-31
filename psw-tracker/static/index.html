@@ -2334,7 +2334,7 @@ async function saveEd(reopen){
 }
 $('edSave').onclick=async()=>{const b=$('edSave');b.disabled=true;const q=ed&&sheetKind(ed.f.name)?sheetVals():null;
   if(await saveEd(true)&&q){const t=await sheetToLead(q);if(t)edMsg('Saved to the lead.'+t+' You can keep editing.',/saved the lead/.test(t)?'ok':'err')}b.disabled=false};
-$('edDl').onclick=async()=>{if(!ed||!ed.bytes)return;try{const blob=await buildEdited();await dl.save({filename:ed.f.name,data:new Uint8Array(await blob.arrayBuffer())})}catch(e){if(e&&e.code!=='declined')edMsg(e.code?errText(e):'Couldn’t download.','err')}};
+$('edDl').onclick=async()=>{if(!ed||!ed.bytes)return;try{const blob=await buildEdited();let data=new Uint8Array(await blob.arrayBuffer());if(ed.save&&/pdf/i.test(blob.type||'')||ed.save&&/\.pdf$/i.test(ed.f.name||''))data=await flatPdf(data);await dl.save({filename:ed.f.name,data})}catch(e){if(e&&e.code!=='declined')edMsg(e.code?errText(e):'Couldn’t download.','err')}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed').classList.contains('on')&&!(e.target.classList&&e.target.classList.contains('tsIn'))){e.stopImmediatePropagation();$('edClose').click()}},true);
 
 
@@ -3866,7 +3866,7 @@ $('certNew23').onclick=()=>{if(!editClient)return;if(isLocked('client'))return t
 $('certPols').addEventListener('change',e=>{if(certMode&&certMode.kind!=='25'&&certMode.mode==='new'&&e.target.type==='radio'){const p=certPolicies()[+e.target.value];if(certMode.kind==='23')e23Policy(p);else e27Location(p)}});
 $('certList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!editClient)return;const id=b.dataset.certOpen||b.dataset.certEdit||b.dataset.certCopy||b.dataset.certSave||b.dataset.certDel||b.dataset.certRen||b.dataset.certTag,c=certList().find(x=>x.id===id);if(!c)return;
   try{if(b.dataset.certOpen)return void await openEditor(c,{save:certSaver});
-    if(b.dataset.certSave){const blob=new Blob([await fileBytes(c)],{type:'application/pdf'});if(dl)await dl.save({filename:c.name,data:blob,mimeType:'application/pdf'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=c.name;a.click()}return}
+    if(b.dataset.certSave){const blob=new Blob([await flatPdf(await fileBytes(c))],{type:'application/pdf'});if(dl)await dl.save({filename:c.name,data:blob,mimeType:'application/pdf'});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=c.name;a.click()}return}
     if(isLocked('client'))return toast('This client is view-only right now.');
     if(b.dataset.certCopy)return void await certFormOpen('copy',c);
     if(b.dataset.certEdit)return void await certFormOpen('edit',c);
@@ -4009,7 +4009,10 @@ $('mlSend').onclick=async()=>{const o=mlCtx;if(!o)return;const to=$('mlTo').valu
   catch(err){mlSay(err&&err.message?`Couldn’t send: ${err.message}`:'Couldn’t reach the server.','err');btn.disabled=false}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mhDlg').classList.contains('on')){e.stopImmediatePropagation();$('mhDlg').classList.remove('on');return}if(e.key==='Escape'&&$('mlDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();mlClose()}},true);
 // the client's copy: every box printed into the page (flattened), so it can't be edited
-async function flatPdf(bytes){await acordReady();const L=PDFLib,doc=await L.PDFDocument.load(bytes,{ignoreEncryption:true}),f=doc.getForm();try{f.updateFieldAppearances(await doc.embedFont(L.StandardFonts.Helvetica))}catch(_){}f.flatten();return doc.save()}
+async function flatPdf(bytes){await acordReady();const L=PDFLib,doc=await L.PDFDocument.load(bytes,{ignoreEncryption:true}),f=doc.getForm();try{f.updateFieldAppearances(await doc.embedFont(L.StandardFonts.Helvetica))}catch(_){}f.flatten();
+  // drop page links to boxes the flatten removed, so nothing clickable is left behind
+  for(const pg of doc.getPages()){const an=pg.node.Annots();if(!an)continue;for(let i=an.size()-1;i>=0;i--){const o=an.get(i),x=o instanceof L.PDFRef?doc.context.lookup(o):o;if(!x||(x instanceof L.PDFDict&&x.get(L.PDFName.of('Subtype'))===L.PDFName.of('Widget')))an.remove(i)}}
+  return doc.save()}
 // Email customer (client screen): the Send email window to the client's emails, with the client's files and certificates to tick
 const clMailTo=()=>[$('clEmail').value.trim(),$('clEmail2').value.trim()].filter(Boolean).join('; ');
 const clMailNote=()=>{const to=clMailTo();$('clMailNote').textContent=to?`To ${to}`:'Add the client’s email (Primary email box) to send.'};
