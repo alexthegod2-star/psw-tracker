@@ -429,7 +429,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row"><button class="danger" id="tDel" style="margin-right:auto">Delete task</button><button id="tCancel">Cancel</button><button class="pri" id="tSave">Save task</button></div>
 </div></div>
 <div class="mbg" id="clientDlg" role="dialog" aria-modal="true" aria-labelledby="clientTitleH"><div class="mbox" id="clientBox">
-  <div class="row" style="align-items:center"><h3 id="clientTitleH" style="margin:0 auto 0 0">New client</h3><button id="clCancelTop">Cancel</button><button class="pri" id="clSaveTop">Save client</button></div>
+  <div class="row" style="align-items:center"><h3 id="clientTitleH" style="margin:0 auto 0 0">New client</h3><button id="clCancelTop">Cancel</button><button class="pri" id="clSaveStayTop" title="Saves the client and keeps this page open">Save client</button><button class="pri" id="clSaveTop">Save/close client</button></div>
   <div class="lockBar" id="clLockBar" hidden><span></span><button type="button" class="lockTake" hidden>Unlock and edit</button></div>
   <div class="clLay">
     <div class="clMain">
@@ -485,7 +485,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <button class="pri" id="polAdd" style="margin-bottom:8px">+ Add policy</button>
   <div class="tablewrap" style="max-height:none"><table class="poltab"><thead><tr><th>Status</th><th>Line of business</th><th>General Agent</th><th>Company</th><th>Policy #</th><th>Eff date</th><th>Exp date</th><th>Premium</th><th>Tag/Note</th><th></th></tr></thead><tbody id="polRows"></tbody></table></div>
   <div class="msg" id="clientMsg"></div>
-  <div class="row"><button class="danger" id="clDel" style="margin-right:auto">Delete client</button><button id="clCancel">Cancel</button><button class="pri" id="clSave">Save client</button></div>
+  <div class="row"><button class="danger" id="clDel" style="margin-right:auto">Delete client</button><button id="clCancel">Cancel</button><button class="pri" id="clSaveStay" title="Saves the client and keeps this page open">Save client</button><button class="pri" id="clSave">Save/close client</button></div>
 </div></div>
 <div class="mbg" id="coDlg" role="dialog" aria-modal="true" aria-labelledby="coTitleH"><div class="mbox" id="coBox" style="width:min(1300px,98vw)">
   <div class="small" id="coKind" style="font-weight:600"></div><div style="display:flex;gap:10px;align-items:center;margin:2px 0 10px"><h3 id="coTitleH" style="margin:0"></h3><button type="button" id="coRename">Edit name</button></div>
@@ -3302,7 +3302,7 @@ function clStaleCheck(){if(!editClient||!$('clientDlg').classList.contains('on')
   if((!clDirty||isLocked('client'))&&!['polDlg','noteDlg','sureDlg'].some(id=>$(id).classList.contains('on'))){const sc=$('clientBox').scrollTop;openClient(fr,null,true);$('clientBox').scrollTop=sc;toast('Client updated with changes saved somewhere else');return}
   const m=$('clientMsg');m.className='msg err';m.textContent='This client was just changed in another tab or by someone else. Close and reopen it to see those changes before you save.'}
 $('clientDlg').addEventListener('input',()=>{clDirty=true});$('clientDlg').addEventListener('change',()=>{clDirty=true});
-$('clientDlg').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!/^(clCancel|clCancelTop|clSave|clSaveTop|clAddNote)$/.test(b.id)&&!b.closest('#clNoteLog')&&!b.matches('[data-open],[data-save],[data-dl]'))clDirty=true});
+$('clientDlg').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!/^(clCancel|clCancelTop|clSave|clSaveTop|clSaveStay|clSaveStayTop|clAddNote)$/.test(b.id)&&!b.closest('#clNoteLog')&&!b.matches('[data-open],[data-save],[data-dl]'))clDirty=true});
 $('polRows').addEventListener('click',()=>{clDirty=true}); // opening a policy may change it
 // "same" in Location address copies the mailing address, city, state and zip
 $('clLocation').addEventListener('change',()=>{if(/^\s*same(\s+as\s+mailing)?\s*$/i.test($('clLocation').value))[['clAddress','clLocation'],['clCity','clLocCity'],['clState','clLocState'],['clZip','clLocZip']].forEach(([f,t])=>{$(t).value=$(f).value})});
@@ -3362,10 +3362,13 @@ $('noteSave').onclick=async()=>{const t=$('noteText').value.trim();if(!t){$('not
       if(!same&&Array.isArray(fr.noteLog)){clNoteLog=apply([...fr.noteLog]);renderClNotes()} // notes saved elsewhere are kept, this one is added to them
       await clientsCol.doc(editClient.id).update({noteLog:clNoteLog,notes:'',rev});if(same)clBaseRev=rev;editClient.notes='';editClient.noteLog=[...clNoteLog];toast('Note saved')}catch(e){toast(errText(e))}}
   else toast('Note added. Hit Save client to keep it.')};
-$('clCancel').onclick=closeClient;$('clCancelTop').onclick=()=>$('clCancel').click();$('clSaveTop').onclick=()=>$('clSave').click(); // top-right copies of the bottom buttons
+$('clCancel').onclick=closeClient;$('clCancelTop').onclick=()=>$('clCancel').click();$('clSaveTop').onclick=()=>$('clSave').click();$('clSaveStayTop').onclick=()=>$('clSaveStay').click(); // top-right copies of the bottom buttons
 $('clientDlg').addEventListener('click',e=>{if(e.target===$('clientDlg'))closeClient()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('invDlg').classList.contains('on')){e.stopImmediatePropagation();closeInv()}else if($('polDlg').classList.contains('on')){e.stopImmediatePropagation();closePolicy(false)}else if($('clientDlg').classList.contains('on')){e.stopImmediatePropagation();closeClient()}},true);
-$('clSave').onclick=async()=>{const m=$('clientMsg');
+// Save/close client saves and closes; Save client (stay) saves and keeps the page open
+let clStay=false;
+$('clSaveStay').onclick=()=>{if($('clSave').disabled)return;clStay=true;try{$('clSave').onclick()}finally{clStay=false}};
+$('clSave').onclick=async()=>{const m=$('clientMsg'),stay=clStay;
   const data={company:$('clCompany').value.trim(),dba:$('clDba').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),preferredName:$('clPref').value.trim(),dob:$('clDob').value.trim(),phone:fmtClPhone($('clPhone').value),email:$('clEmail').value.trim(),phone2:fmtClPhone($('clPhone2').value),email2:$('clEmail2').value.trim(),
     address:$('clAddress').value.trim(),location:$('clLocation').value.trim(),agent:$('clAgent').value,busType:$('clBusType').value,workPhone:fmtClPhone($('clWork').value),relationship:$('clRel').value.trim(),
     city:$('clCity').value.trim(),state:$('clState').value.trim(),zip:$('clZip').value.trim(),locCity:$('clLocCity').value.trim(),locState:$('clLocState').value.trim(),locZip:$('clLocZip').value.trim(),status:$('clStatus').value,leadSource:$('clSource').value.trim(),people:readPeople(),leadId:$('clLead').value,notes:'',genNotes:$('clGenNotes').value.trim(),noteLog:clNoteLog};if(canPay)data.payInfo=$('clPayInfo').value.trim();
@@ -3379,8 +3382,10 @@ $('clSave').onclick=async()=>{const m=$('clientMsg');
     if(fr&&(fr.rev||0)!==clBaseRev&&!(await sure('This client was changed in another tab or by someone else after you opened it. Saving now replaces those changes with what’s on your screen. Save anyway?'))){
       $('clSave').disabled=false;m.className='msg err';m.textContent='Not saved. Close and reopen this client to see the latest, then make your change again.';return}
     data.rev=((fr&&fr.rev)||0)+1}
-  try{if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;if(clPending.length)data.files=clPending;await clientsCol.add(data)}
-    clPending=[];closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
+  try{let ref=null;if(editClient)await clientsCol.doc(editClient.id).update(data);else{data.createdAt=new Date().toISOString();if(me)data.createdBy=me;if(clPending.length)data.files=clPending;ref=await clientsCol.add(data)}
+    clPending=[];
+    if(stay){if(editClient){editClient={...editClient,...data};clBaseRev=data.rev||0;clDirty=false}else if(ref&&ref.id)openClient({id:ref.id,...data},null,true);$('clSave').disabled=false;m.className='msg ok';m.textContent='Saved.';toast('Client saved');return}
+    closeClient();toast('Client saved')}catch(e){m.className='msg err';m.textContent=errText(e);$('clSave').disabled=false}};
 $('clDel').onclick=async()=>{if(!editClient)return;{const nm=editClient.company||[editClient.firstName,editClient.lastName].filter(Boolean).join(' ')||'this client';if(!(await sureDel(`Delete ${nm}, their policies and their files for everyone? This can’t be undone.`)))return}
   try{const gone=editClient.files||[];await clientsCol.doc(editClient.id).delete();if(assets)for(const f of gone){try{await assets.delete(f.id)}catch(_){}}closeClient();toast('Client deleted')}catch(e){$('clientMsg').className='msg err';$('clientMsg').textContent=errText(e)}};
 // client files: copies made from a lead's files (their own stored copies, so removing the lead's file leaves the client's)
