@@ -3393,6 +3393,7 @@ async function clFillFrom(t,name,img){const m=$('clReadMsg'),from=name?`from ${n
   if(!sample){const n=clApply(clBasic(t));m.className=n?'msg ok':'msg err';m.textContent=done(n)+' (Basic mode: Claude isn’t turned on, so only email and phone are found.)';return n}
   const prompt=`You are filling in an insurance agency's client record from ${img?`the attached picture${img.length>1?'s':''}`:'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be an application, quote, dec page, email or signature).
 Reply with only a JSON object with these keys: ${Object.entries(CL_FILL).map(([k,[,l]])=>k+' = '+l).join('; ')}.
+The client is the named insured (or applicant). Their address may be labeled mailing address, insured address, named insured and address, or applicant address; when the document gives only one address for them (even if it's labeled location, premises or property), put it in the mailing address keys.
 Use "" for anything not stated; never guess. Phone numbers and dates as written.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('clReadIn').disabled=$('clPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
   let n=0;try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});n=o&&typeof o==='object'?clApply(o):0;m.className=n?'msg ok':'msg err';m.textContent=done(n)}
@@ -3480,9 +3481,11 @@ async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=
   if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value); // keep the document with the policy too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
   try{r=await readScan(f,isImg,x=>m.textContent=x)}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
-  if(!isImg){const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;await ppAlsoClient(r.t,f.name,r.imgs.length?r.imgs:null);return}}
+  // a fillable PDF's typed-in boxes aren't in its page text, so the client fill gets them too ("Insured address: 123 Main St")
+  const boxes=Object.entries(lastFields).filter(([,v])=>String(v??'').trim()&&!/^(off|false)$/i.test(String(v))).map(([k,v])=>`${k.replace(/^[fx]_/,'').replace(/_/g,' ')}: ${v}`).join('\n'),ct=[r.t,boxes&&'Form boxes:\n'+boxes].filter(Boolean).join('\n\n');
+  if(!isImg){const sh=ppFromAnySheet(lastFields);if(sh){const n=ppApply(sh.o);lastFields={};m.className='msg ok';m.textContent=`${sh.kind} quote sheet read: filled ${n} box${n===1?'':'es'}. Check them, then Done.`;await ppAlsoClient(ct,f.name,r.imgs.length?r.imgs:null);return}}
   lastFields={};if(!r.t&&!r.imgs.length){m.className='msg err';m.textContent=`No words could be read in ${f.name}.`;return}
-  await ppFillFrom(r.t,f.name,r.imgs.length?r.imgs:null);await ppAlsoClient(r.t,f.name,r.imgs.length?r.imgs:null)}
+  await ppFillFrom(r.t,f.name,r.imgs.length?r.imgs:null);await ppAlsoClient(ct,f.name,r.imgs.length?r.imgs:null)}
 // "Also fill client": the same document fills the client's empty boxes too (the client screen is open under the policy)
 async function ppAlsoClient(t,name,img){if(!$('ppAlsoCl').checked||(!t&&!img))return;const m=$('ppReadMsg'),base=m.textContent;m.textContent=base+' Now filling the client…';
   const n=await clFillFrom(t,name,img);m.textContent=base+(n<0?' The client is view-only, so it wasn’t filled.':n?` Also filled ${n} empty client box${n===1?'':'es'}; Save client keeps them.`:' Nothing new for the client.')}
