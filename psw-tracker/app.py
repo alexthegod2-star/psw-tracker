@@ -41,6 +41,7 @@ load_env()
 DATA = Path(os.environ.get("PSW_DATA", "/var/lib/psw-tracker"))
 # who gets Payment Yes when that column is first added (by user name or first name); Admin changes it after that
 PAY_PEOPLE = {x.strip().lower() for x in os.environ.get("PSW_PAYMENT_PEOPLE", "alex,anna,patricia").split(",") if x.strip()}
+UNLOCK_PEOPLE = {x.strip().lower() for x in os.environ.get("PSW_UNLOCK_PEOPLE", "patricia").split(",") if x.strip()}  # Admin's Unlock starts on for these
 DB_PATH = DATA / "tracker.db"
 BLOBS = DATA / "blobs"
 MODULES = {m.strip() for m in os.environ.get("PSW_MODULES", "tracker").split(",") if m.strip()}
@@ -97,6 +98,12 @@ def init_db():
                 first = (r["name"] or "").split()[:1]
                 if r["username"].lower() in PAY_PEOPLE or (first and first[0].lower() in PAY_PEOPLE):
                     c.execute("UPDATE users SET payment=1 WHERE id=?", (r["id"],))
+        if "can_unlock" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Unlock Yes/No: can take over a lead or client someone else has open
+            c.execute("ALTER TABLE users ADD COLUMN can_unlock INTEGER NOT NULL DEFAULT 0")
+            for r in c.execute("SELECT id,username,name FROM users").fetchall():
+                first = (r["name"] or "").split()[:1]
+                if r["username"].lower() in UNLOCK_PEOPLE or (first and first[0].lower() in UNLOCK_PEOPLE):
+                    c.execute("UPDATE users SET can_unlock=1 WHERE id=?", (r["id"],))
         if "sig" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Signature: picture stamped on ACORDs this person makes
             c.execute("ALTER TABLE users ADD COLUMN sig TEXT NOT NULL DEFAULT ''")
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
@@ -286,7 +293,7 @@ def me(request: Request):
     u = need_user(request)
     return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
             "binder": u["username"] in BINDER_OWNERS and not bearer(request),
-            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u), "pay": can_pay(u)}
+            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u), "pay": can_pay(u), "unlock": can_unlock(u) and not bearer(request)}
 
 
 @app.get("/api/auth/profiles")
@@ -336,7 +343,7 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment,can_unlock,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
@@ -413,6 +420,18 @@ async def admin_set_secrets(username: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/api/admin/users/{username}/unlock")
+async def admin_set_unlock(username: str, request: Request):
+    """Unlock Yes or No: whether this person can take over a lead or client someone else has open."""
+    need_owner(request)
+    on = bool((await request.json()).get("unlock"))
+    with db() as c:
+        n = c.execute("UPDATE users SET can_unlock=? WHERE username=?", (1 if on else 0, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
 @app.post("/api/admin/users/{username}/payment")
 async def admin_set_payment(username: str, request: Request):
     """Payment Yes or No: whether this person sees and edits clients' Payment info."""
@@ -478,6 +497,11 @@ PAY_KEYS = ("payInfo",)
 
 def can_pay(u):
     return u["username"] in PANEL_OWNERS or bool(u["payment"])
+
+
+def can_unlock(u):
+    """Admin's Unlock: may take over a lead or client someone else has open (owners always can)"""
+    return u["username"] in PANEL_OWNERS or bool(u["can_unlock"])
 
 
 def hidden_keys(u, col):
@@ -775,11 +799,11 @@ def lock_args(body):
 
 @app.post("/api/tracker/lock")
 async def lock_take(request: Request):
-    """Take or renew the lock. force (owners only) takes it from whoever has it."""
+    """Take or renew the lock. force (owners, and people set to Yes under Unlock in Admin) takes it from whoever has it."""
     need_module("tracker"); u = need_user(request)
     body = await request.json()
     path, tab = lock_args(body)
-    force = bool(body.get("force")) and u["username"] in PANEL_OWNERS and not bearer(request)
+    force = bool(body.get("force")) and can_unlock(u) and not bearer(request)
     now = time.time()
     with db() as c:
         r = c.execute("SELECT * FROM locks WHERE path=?", (path,)).fetchone()
@@ -1140,9 +1164,13 @@ def mail_table(c):
 
 
 def imap_open(email, pw):
+    """Log in to the mail server. A password with letters outside plain ASCII (é, ñ, curly quotes, ...) can't go through LOGIN, so it goes as AUTHENTICATE PLAIN in UTF-8."""
     import imaplib
     m = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT, timeout=20)
-    m.login(email, pw)
+    if pw.isascii() and email.isascii():
+        m.login(email, pw)
+    else:
+        m.authenticate("PLAIN", lambda _: ("\0" + email + "\0" + pw).encode("utf-8"))
     return m
 
 
@@ -1198,9 +1226,13 @@ async def mail_connect(request: Request):
     import imaplib
     try:
         m = imap_open(email, pw)
-    except imaplib.IMAP4.error:
-        err(400, "bad_login")
-    except Exception:
+    except imaplib.IMAP4.error as e:  # the mail server's own words go back too (wrong password, too many tries, access turned off, ...)
+        print(f"mail connect {email}: {IMAP_HOST} said {e}", flush=True)
+        said = e.args[0] if e.args else ""
+        said = said.decode("utf-8", "replace") if isinstance(said, bytes) else str(said)  # the server's words come as bytes: b'[AUTHENTICATIONFAILED] ...'
+        return JSONResponse({"code": "bad_login", "said": said[:200]}, status_code=400)
+    except Exception as e:
+        print(f"mail connect {email}: {IMAP_HOST} unreachable: {e!r}", flush=True)
         err(502, "imap_unreachable")
     try:
         box = imap_sent_box(m)
@@ -1318,15 +1350,17 @@ async def mail_send(request: Request):
     for n, t, d in atts:
         mt, _, st = (t if "/" in t else "application/octet-stream").partition("/")
         em.add_attachment(d, maintype=mt, subtype=st, filename=n)
-    copied = False
+    copied, relogin = False, False
+    import imaplib
     try:
-        import imaplib
         m = imap_open(acct["email"], mail_box().decrypt(acct["refresh"].encode()).decode())
         try:
             typ, _ = m.append(acct["sent_box"] or "INBOX.Sent", "\\Seen", imaplib.Time2Internaldate(time.time()), em.as_bytes(policy=SMTP))
             copied = typ == "OK"
         finally:
             m.logout()
+    except imaplib.IMAP4.error:  # the saved email password no longer works (changed in Bluehost): the page asks for the new one
+        relogin = True
     except Exception:
         copied = False
     with db() as c:
@@ -1334,7 +1368,7 @@ async def mail_send(request: Request):
         c.execute("INSERT INTO mail_log(user_id,user_name,at,sender,to_,cc,subject,html,files,copied) VALUES(?,?,?,?,?,?,?,?,?,?)",
                   (u["id"], u["name"] or u["username"], time.time(), sender, ", ".join(to), ", ".join(cc), subject, html,
                    json.dumps([n for n, _, _ in atts]), 1 if copied else 0))
-    return {"ok": True, "sentCopy": copied}
+    return {"ok": True, "sentCopy": copied, "relogin": relogin}
 
 
 # ---------- Sent history: every email sent from the database (not the attachments themselves, just their names)
