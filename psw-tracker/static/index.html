@@ -3570,7 +3570,10 @@ const certHolder=async bytes=>{try{const d=await PDFLib.PDFDocument.load(bytes,{
 const certKind=c=>!c?'25':c.kind||(/ EOCP( |\.pdf$)/.test(c.name||'')?'28':/ EOI( |\.pdf$)/.test(c.name||'')?'27':'25');
 async function putCerts(certs){await clientsCol.doc(editClient.id).update({certs});editClient.certs=certs;renderCerts()}
 // what the editor calls on Save: store the new bytes, swap them into the client's list and name the file after the holder
-const certSaver=async(blob,old)=>{if(isLocked('client'))throw new Error('this client is view-only right now');const buf=await blob.arrayBuffer(),r=await storeBytes(buf,blob.type),holder=await certHolder(buf),x=certList().find(c=>c.id===old.id)||old;
+const certSaver=async(blob,old)=>{if(isLocked('client'))throw new Error('this client is view-only right now');const x=certList().find(c=>c.id===old.id)||old;let buf=await blob.arrayBuffer();
+  // a description edited in the cert editor gets refit to its box too
+  if(certKind(x)==='25')try{await acordReady();const d=await PDFLib.PDFDocument.load(buf,{ignoreEncryption:true});certDescFit(d.getForm());const u=await d.save();buf=u.buffer.slice(u.byteOffset,u.byteOffset+u.byteLength)}catch(_){}
+  const r=await storeBytes(buf,blob.type),holder=await certHolder(buf);
   const nx={...x,id:r.id,type:blob.type,size:r.sizeBytes,enc:r.enc||'',holder,name:x.renamed?x.name:certFileName(holder,x.at,certKind(x)),editedAt:new Date().toISOString(),...(me?{editedBy:me}:{})};
   const certs=certList().some(c=>c.id===old.id)?certList().map(c=>c.id===old.id?nx:c):[...certList(),nx];await putCerts(certs);try{await assets.delete(old.id)}catch(_){}return nx};
 // a copied cert's name: the original's name plus " copy", then " copy 2", " copy 3", ... when that name is taken
@@ -3690,7 +3693,12 @@ const CH_BOX=[['CertificateHolder_FullName_A',22,111,280],['CertificateHolder_Ma
 function certHolderBox(form,box=CH_BOX){box.forEach(([k,x,y,w])=>{try{const f=form.getTextField(k);f.acroField.getWidgets().forEach(wd=>wd.setRectangle({x,y,width:w,height:box===CH_BOX?19:15}));f.setFontSize(10)}catch(_){}})}
 function certHolderFill(form,hd,all,kind){const keys=kind==='27'?CH27_KEYS:CH_KEYS;certHolderBox(form,kind==='27'?CH27_BOX:CH_BOX);const m={...hd},n2=String(hd.chName2||'').trim();if(n2){m.chAddr2=[hd.chAddr1,hd.chAddr2].map(x=>String(x||'').trim()).filter(Boolean).join(', ');m.chAddr1=n2}
   keys.forEach(([id,k])=>{const v=m[id]||'';if(k&&(v||all))try{form.getTextField(k).setText(v)}catch(_){}});
+  if(kind!=='27')certDescFit(form);
   try{if(n2)form.doc.setSubject('psw-ch2:'+n2);else if(all&&/^psw-ch2:/.test(form.doc.getSubject()||''))form.doc.setSubject('')}catch(_){}}
+// ACORD 25 description: 8pt like the form, smaller (down to 4pt) when that's what it takes for all of it to fit the box
+function certDescFit(form){try{const f=form.getTextField('CertificateOfLiabilityInsurance_ACORDForm_RemarkText_A'),t=f.getText()||'',r=f.acroField.getWidgets()[0].getRectangle(),font=form.getDefaultFont(),W=r.width-6,H=r.height-4;
+  const lines=s=>t.split('\n').reduce((n,p)=>{let ln='',k=1;for(const w of p.split(/\s+/).filter(Boolean)){const x=ln?ln+' '+w:w;if(ln&&font.widthOfTextAtSize(x,s)>W){k++;ln=w}else ln=x}return n+k},0);
+  let s=8;while(s>4&&lines(s)*font.heightAtSize(s)*1.2>H)s-=0.25;f.setFontSize(s)}catch(_){}}
 let certMode=null;
 async function certFormOpen(mode,c,kind){kind=mode==='new'?kind||'25':certKind(c);const k27=kind!=='25',an='ACORD '+kind;certMode={mode,c,kind};certSay('');const pols=certPolicies();$('certPolBox').hidden=mode!=='new';
   // ACORD 27 is one property policy: pick it with a radio, property lines first
