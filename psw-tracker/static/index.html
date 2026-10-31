@@ -3728,6 +3728,8 @@ async function e23Fill(doc,hd,ex,keepDate){const form=doc.getForm(),helv=await d
   const ai=[hd.chName,hd.chName2,hd.chAddr1,hd.chAddr2,cityLine(hd.chCity,hd.chState,hd.chZip)].map(x=>String(x||'').trim()).filter(Boolean),[r1,r2]=e23Wrap(hd.chDesc,helv),lp=ex.int==='Loss payee'||ex.int==="Lender's loss payable";
   const v={AI1:ai[0],AI2:ai[1],AI3:ai[2],AI4:ai[3],AI5:ai[4],Loan:ex.e27Loan,AI_OtherInterest:ex.int==='Other'?ex.e27Other:'',Year:ex.e23Year,Make:ex.e23Make,Model:ex.e23Model,Body:ex.e23Body,VIN:ex.e23Vin,Value:String(ex.e23Value||'').replace(/^\$\s*/,''),Description:ex.e23Desc,Serial:ex.e23Serial,Remarks1:r1,Remarks2:r2};
   for(const k of E23_BOXES)try{form.getTextField(k).setText('')}catch(_){}
+  // policy numbers sit at the same height as the dates (ACORD 23s made before this had them at the top of the row)
+  for(const k of ['Liab','GL','Coll','Comp','Eq','Oth'])try{const f=form.getTextField(k+'_Policy');if(f.isMultiline()){const t=f.getText()||'';f.disableMultiline();f.setText(t);f.setFontSize(10)}}catch(_){}
   // a loss payee or lender's loss payable gets Y in the Loss Payee column of the physical damage rows the policy has
   if(lp){for(const k of ['Coll','Comp'])try{if(form.getTextField(k+'_Policy').getText())v[k+'_LP']='Y'}catch(_){}}
   fillBoxes(doc,Object.fromEntries(Object.entries(v).filter(([,x])=>x)),helv);
