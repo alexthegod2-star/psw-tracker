@@ -579,7 +579,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="admClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="polDlg" role="dialog" aria-modal="true" aria-labelledby="polTitleH"><div class="mbox" id="polBox">
-  <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppDoneTop">Save</button></div>
+  <div class="row" style="align-items:center"><h3 id="polTitleH" style="margin:0 auto 0 0">Policy</h3><button id="ppCancelTop">Cancel</button><button class="pri" id="ppSaveStayTop" title="Saves the policy and keeps this window open">Save policy</button><button class="pri" id="ppDoneTop">Save/close policy</button></div>
   <div class="ppLay">
   <div class="ppCol">
     <section class="ppCard ppInfo">
@@ -637,7 +637,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
   </aside>
   <div id="ppExtraWrap" hidden><div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><h4 id="ppExtraH" style="margin:0"></h4><button type="button" class="pri" id="bopLoc" hidden>+ Add location</button><button type="button" class="pri" id="glStd" hidden title="Each occurrence $1,000,000, Damage to rented $100,000, Med exp $5,000, Personal &amp; adv $1,000,000, Aggregate $2,000,000, Products $1,000,000">Standard 1M/2M</button></div><div class="grid" id="ppExtra"></div></div></div>
   <div class="small" style="margin-top:8px">Changes are kept when you click Done and saved with Save client.</div>
-  <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppDone">Save</button></div>
+  <div class="row"><button class="danger" id="ppDel" style="margin-right:auto">Remove policy</button><button id="ppCancel">Cancel</button><button class="pri" id="ppSaveStay" title="Saves the policy and keeps this window open">Save policy</button><button class="pri" id="ppDone">Save/close policy</button></div>
 </div></div>
 <div class="mbg" id="invDlg" role="dialog" aria-modal="true" aria-labelledby="invTitleH" style="z-index:12"><div class="mbox" style="width:min(520px,96vw);max-height:90vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px"><h3 id="invTitleH" style="margin:0">Invoice</h3><button type="button" class="pri" id="ppInvPrint">Print invoice</button></div>
@@ -3180,13 +3180,16 @@ async function savePolicies(msg){if(!editClient)return toast('Policy added. Hit 
     if(!same){const mine=new Map(pols.map(p=>[p.pid,p]));out=(fr.policies||[]).map(p=>mine.get(p.pid)||p);for(const p of pols)if(!out.some(o=>o.pid===p.pid))out.push(p)}
     await clientsCol.doc(editClient.id).update({policies:out,rev});if(same)clBaseRev=rev;editClient.policies=out;toast(msg||'Policy saved')}catch(e){toast(errText(e))}}
 function closePolicy(keep){if(polTr&&polNew&&!keep&&![...polTr.querySelectorAll('[data-p]:not([data-p=pid])')].some(x=>x.value.trim()))polTr.remove();$('polDlg').classList.remove('on');polTr=null}
+// Save/close policy saves and closes; Save policy (stay) saves and keeps the window open
+let ppStay=false;
+$('ppSaveStay').onclick=()=>{ppStay=true;try{$('ppDone').onclick()}finally{ppStay=false}};
 $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#polBox [data-pp=${k}]`).value.trim();
   for(const k of PP){let v=g(k);if(k==='state'&&/^[a-z]{2}$/i.test(v))v=v.toUpperCase();if((k==='eff'||k==='exp'||k==='cdate')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
   const ex={};$('ppExtra').querySelectorAll('[data-x]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.x]=v});
   $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee||ex.other1||ex.other2)ex.total=$('ppTotal').value;{const t=$('ppTerm').value,u=$('ppUser').value.trim(),o1=$('ppOther1L').value.trim(),o2=$('ppOther2L').value.trim();if(t&&t!=='12')ex.term=t;if(u)ex.enteredBy=u;if(o1)ex.other1Label=o1;if(o2)ex.other2Label=o2;{const c=bPct($('ppCom').value.trim());if(c!=null)ex.comPct=c+'%'}}
   $('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.inv]=v});
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';showStatus(polTr.querySelector('[data-pstat]'),g('status'));
-  closePolicy(true);renderClInv();reClFiles();savePolicies()};
+  if(ppStay)polNew=false;else closePolicy(true);renderClInv();reClFiles();savePolicies()};
 // Total = premium + every fee box, kept up to date as you type
 function ppTotal(){const els=[$('ppPremium'),...$('ppFees').querySelectorAll('[data-f]')],ns=els.map(el=>bNum(el.value)).filter(n=>n!=null);$('ppTotal').value=ns.length?bMoney(Math.round(ns.reduce((a,b)=>a+b,0)*100)/100):'';$('ppInvAmt').placeholder=$('ppTotal').value?`${$('ppTotal').value} (Total)`:'Same as Total'}
 $('ppFees').addEventListener('input',e=>{if(e.target.id!=='ppCom')ppTotal();ppComAmt()});
@@ -3207,7 +3210,7 @@ async function renewPolicy(tr){const g=k=>tr.querySelector(`[data-p=${k}]`).valu
   openPolicy($('polRows').lastElementChild,false);toast('Renewal made. Add the new premium and fees, then Save client.')}
 $('ppEff').addEventListener('input',()=>setTimeout(()=>{if($('ppEff').value.length===10)ppAutoExp()},0));$('ppEff').addEventListener('change',ppAutoExp);$('ppTerm').addEventListener('change',ppAutoExp);$('ppFees').addEventListener('focusout',e=>{if(e.target.dataset.f&&e.target.value.trim()){const n=bNum(e.target.value);if(n!=null)e.target.value=bMoney(n)}});
 $('ppStatusBtn').onclick=()=>{$('ppStatus').value=nextStatus($('ppStatus').value);showStatus($('ppStatusBtn'),$('ppStatus').value)};
-$('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click(); // top-right copies of the bottom buttons
+$('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click();$('ppSaveStayTop').onclick=()=>$('ppSaveStay').click(); // top-right copies of the bottom buttons
 
 $('ppDel').onclick=async()=>{if(!(await sureDel('Remove this policy from the client?')))return;if(polTr)polTr.remove();polTr=null;closePolicy(true);reClFiles();savePolicies('Policy removed')};
 $('polDlg').addEventListener('click',e=>{if(e.target===$('polDlg'))closePolicy(false)});
