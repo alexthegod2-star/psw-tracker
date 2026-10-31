@@ -3394,6 +3394,7 @@ async function clFillFrom(t,name,img){const m=$('clReadMsg'),from=name?`from ${n
   const prompt=`You are filling in an insurance agency's client record from ${img?`the attached picture${img.length>1?'s':''}`:'the document below'} (${name?`file "${name}"`:'text pasted by the agent'}; it may be an application, quote, dec page, email or signature).
 Reply with only a JSON object with these keys: ${Object.entries(CL_FILL).map(([k,[,l]])=>k+' = '+l).join('; ')}.
 The client is the named insured (or applicant). Their address may be labeled mailing address, insured address, named insured and address, or applicant address; when the document gives only one address for them (even if it's labeled location, premises or property), put it in the mailing address keys.
+On a declarations page the insured's name and address are often an unlabeled block near the top left: a name line, then the street, then "City, ST ZIP". The insurance company's, agent's and claims offices' addresses and phone numbers are never the client's.
 Use "" for anything not stated; never guess. Phone numbers and dates as written.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('clReadIn').disabled=$('clPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
   let n=0;try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});n=o&&typeof o==='object'?clApply(o):0;m.className=n?'msg ok':'msg err';m.textContent=done(n)}
