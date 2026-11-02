@@ -1387,6 +1387,21 @@ MAIL_DOMAIN = os.environ.get("PSW_MAIL_DOMAIN", "pswinsurance.com").strip().lowe
 IMAP_HOST = os.environ.get("PSW_IMAP_HOST", "imap.titan.email").strip()  # PSW mail is Titan (Outlook: Incoming mail server)
 IMAP_PORT = int(os.environ.get("PSW_IMAP_PORT", "993"))
 EMAIL_RE = re.compile(r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
+# Someone who only uses Gmail connects their Gmail address with a Gmail app password: their emails go out as
+# firstname@pswinsurance.com (Resend can only send from our own domain), replies go to their Gmail, and the copy goes in Gmail's Sent.
+GMAIL_DOMAINS = ("gmail.com", "googlemail.com")
+
+
+def is_gmail(email):
+    return email.rsplit("@", 1)[-1].lower() in GMAIL_DOMAINS
+
+
+def send_as(u, email):
+    """the address an email goes out from: their own @pswinsurance.com, or for a Gmail user firstname@pswinsurance.com"""
+    if not is_gmail(email):
+        return email
+    first = re.sub(r"[^a-z]", "", (str(u["name"] or "").split() or [""])[0].lower()) or re.sub(r"[^a-z]", "", email.split("@")[0].split(".")[0].lower())
+    return f"{first or 'info'}@{MAIL_DOMAIN}"
 
 
 def mail_on():
@@ -1413,7 +1428,7 @@ def mail_table(c):
 def imap_open(email, pw):
     """Log in to the mail server. A password with letters outside plain ASCII (é, ñ, curly quotes, ...) can't go through LOGIN, so it goes as AUTHENTICATE PLAIN in UTF-8."""
     import imaplib
-    m = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT, timeout=20)
+    m = imaplib.IMAP4_SSL("imap.gmail.com" if is_gmail(email) else IMAP_HOST, IMAP_PORT, timeout=20)
     if pw.isascii() and email.isascii():
         m.login(email, pw)
     else:
@@ -1455,8 +1470,9 @@ def mail_status(request: Request):
     with db() as c:
         mail_table(c)
         r = c.execute("SELECT email,refresh,sig FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
+    email = (r["email"] if r else "") or u["email"] or ""
     return {"configured": mail_on(), "connected": bool(mail_on() and r and r["email"] and r["refresh"]),
-            "email": (r["email"] if r else "") or u["email"] or "", "sig": r["sig"] if r else "", "domain": MAIL_DOMAIN}
+            "email": email, "sendAs": send_as(u, email) if email else "", "sig": r["sig"] if r else "", "domain": MAIL_DOMAIN}
 
 
 @app.post("/api/mail/connect")
@@ -1466,7 +1482,9 @@ async def mail_connect(request: Request):
         err(404, "mail_off")
     b = await request.json()
     email, pw = str(b.get("email") or "").strip().lower(), str(b.get("password") or "")
-    if not EMAIL_RE.match(email) or not email.endswith("@" + MAIL_DOMAIN):
+    if is_gmail(email):
+        pw = re.sub(r"\s+", "", pw)  # Google shows app passwords in groups of four
+    if not EMAIL_RE.match(email) or not (email.endswith("@" + MAIL_DOMAIN) or is_gmail(email)):
         err(400, "bad_from")
     if not pw:
         err(400, "bad_login")
@@ -1563,7 +1581,8 @@ async def mail_send(request: Request):
         acct = c.execute("SELECT email,refresh,sent_box FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
     if not acct or not acct["email"] or not acct["refresh"]:
         err(409, "mail_not_connected")
-    sender = f'{u["name"]} <{acct["email"]}>' if u["name"] else acct["email"]
+    frm = send_as(u, acct["email"])
+    sender = f'{u["name"]} <{frm}>' if u["name"] else frm
     subject, html = str(b.get("subject") or "")[:250], str(b.get("html") or "")[:200000]
     payload = {"from": sender, "to": to, "subject": subject, "html": html, "reply_to": acct["email"],
                "attachments": [{"filename": n, "content": base64.b64encode(d).decode(), "content_type": t} for n, t, d in atts]}
