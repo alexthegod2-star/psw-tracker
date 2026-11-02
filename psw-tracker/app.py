@@ -1397,6 +1397,10 @@ def text_table(c):
     c.execute("CREATE TABLE IF NOT EXISTS text_log(id INTEGER PRIMARY KEY AUTOINCREMENT, at REAL NOT NULL, dir TEXT NOT NULL, "
               "phone TEXT NOT NULL, text TEXT NOT NULL DEFAULT '', by_name TEXT NOT NULL DEFAULT '', ext_id TEXT NOT NULL DEFAULT '')")
     c.execute("CREATE INDEX IF NOT EXISTS text_log_phone ON text_log(phone, at)")
+    have = {r[1] for r in c.execute("PRAGMA table_info(text_log)")}
+    for col, kind in (("by_user", "TEXT NOT NULL DEFAULT ''"), ("to_user", "TEXT NOT NULL DEFAULT ''"), ("to_name", "TEXT NOT NULL DEFAULT ''"), ("reply_to", "INTEGER")):
+        if col not in have:  # who sent a text, and for a reply: whose text it answers
+            c.execute(f"ALTER TABLE text_log ADD COLUMN {col} {kind}")
 
 
 def phone10(v):
@@ -1433,6 +1437,24 @@ def text_history(request: Request, phones: str = ""):
         text_table(c)
         rows = c.execute(f"SELECT at,dir,phone,text,by_name FROM text_log WHERE phone IN ({','.join('?' * len(ps))}) ORDER BY at DESC LIMIT 300", ps).fetchall()
     return JSONResponse({"items": [dict(r) for r in rows][::-1]}, headers=NO_STORE)
+
+
+@app.get("/api/text/inbox")
+def text_inbox(request: Request, mine: int = 0, q: str = "", since: float = 0):
+    """incoming texts, newest first; mine=1: only replies to texts this person sent"""
+    u = need_user(request)
+    sql, args = ("SELECT i.id,i.at,i.phone,i.text,i.to_name,i.to_user,o.text AS re_text,o.at AS re_at FROM text_log i "
+                 "LEFT JOIN text_log o ON o.id=i.reply_to WHERE i.dir='in' AND i.at>?"), [float(since or 0)]
+    if mine:
+        sql += " AND i.to_user=?"
+        args.append(u["id"])
+    for w in str(q or "").lower().split()[:6]:
+        sql += " AND lower(i.text||' '||i.phone||' '||i.to_name) LIKE ?"
+        args.append("%" + w.replace("%", "").replace("_", "") + "%")
+    with db() as c:
+        text_table(c)
+        rows = c.execute(sql + " ORDER BY i.at DESC LIMIT 500", args).fetchall()
+    return JSONResponse({"items": [{**dict(r), "mine": r["to_user"] == u["id"]} for r in rows], "me": u["id"]}, headers=NO_STORE)
 
 
 def _hook_find(o, keys):
@@ -1474,7 +1496,9 @@ async def text_hook(token: str, request: Request):
         text_table(c)
         if mid and c.execute("SELECT 1 FROM text_log WHERE ext_id=? AND dir='in'", (mid,)).fetchone():
             return {"ok": True}
-        c.execute("INSERT INTO text_log(at,dir,phone,text,ext_id) VALUES(?,?,?,?,?)", (time.time(), "in", ph, text, mid))
+        last = c.execute("SELECT id,by_user,by_name FROM text_log WHERE phone=? AND dir='out' ORDER BY at DESC LIMIT 1", (ph,)).fetchone()  # the text it answers
+        c.execute("INSERT INTO text_log(at,dir,phone,text,ext_id,to_user,to_name,reply_to) VALUES(?,?,?,?,?,?,?,?)",
+                  (time.time(), "in", ph, text, mid, last["by_user"] if last else "", last["by_name"] if last else "", last["id"] if last else None))
     return {"ok": True}
 
 
@@ -1511,8 +1535,8 @@ async def text_send(request: Request):
         err(502, "text_unreachable")
     with db() as c:
         text_table(c)
-        c.execute("INSERT INTO text_log(at,dir,phone,text,by_name,ext_id) VALUES(?,?,?,?,?,?)",
-                  (time.time(), "out", d, text, u["name"] or u["username"], str(r.get("id", ""))[:80]))
+        c.execute("INSERT INTO text_log(at,dir,phone,text,by_name,ext_id,by_user) VALUES(?,?,?,?,?,?,?)",
+                  (time.time(), "out", d, text, u["name"] or u["username"], str(r.get("id", ""))[:80], u["id"]))
     return {"ok": True, "id": r.get("id", "")}
 
 
