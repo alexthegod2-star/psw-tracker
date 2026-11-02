@@ -1764,14 +1764,21 @@ def _hook_find(o, keys):
     return ""
 
 
-@app.post("/api/text/hook/{token}")
+@app.api_route("/api/text/hook/{token}", methods=["GET", "POST"])
 async def text_hook(token: str, request: Request):
-    """incoming texts: SimpleTexting calls this address (set under Integrations > API & Webhooks) for each reply"""
+    """incoming texts: SimpleTexting calls this address for each reply. The newer webhooks POST JSON; the older
+    "SMS forwarding" webhook (Settings > API > Webhooks) sends from/to/text as a GET query or a form post"""
     if not text_on() or not hmac.compare_digest(token, text_hook_token()):
         err(404, "not_found")
-    try:
-        b = await request.json()
-    except Exception:
+    b = dict(request.query_params)
+    if request.method == "POST":
+        raw = await request.body()
+        try:
+            j = json.loads(raw or b"{}")
+            b = j if isinstance(j, dict) else {"items": j}
+        except Exception:
+            b.update(urllib.parse.parse_qsl(raw.decode("utf-8", "replace")))
+    if not b:
         return {"ok": True}
     kind = _hook_find(b, ("type", "event", "trigger")).upper()
     if kind and "INCOMING" not in kind:
