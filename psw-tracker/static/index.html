@@ -4247,7 +4247,7 @@ async function shrinkCall(bytes,level){const r=await fetch('/api/pdf/shrink?leve
   if(!r.ok){let j={};try{j=await r.json()}catch(_){}const c=String(j.code||j.detail||r.status);throw new Error(SH_ERR[c]||c)}
   return {bytes:new Uint8Array(await r.arrayBuffer()),before:+r.headers.get('X-Before')||0,after:+r.headers.get('X-After')||0,shrunk:r.headers.get('X-Shrunk')==='1'}}
 const SH_MIN=100*1024; // smaller files aren't worth it
-const shrinkBits=f=>assets&&isPdfFile(f)&&(f.size||0)>=SH_MIN&&!/ - signed\.pdf$/i.test(f.name||'')?`<button data-shrink="${esc(f.id)}" title="Make this PDF smaller (pictures at 150 dpi)">Shrink</button>`:'';
+const shrinkBits=f=>assets&&isPdfFile(f)&&(f.size||0)>=SH_MIN&&!/( - signed| reduced)\.pdf$/i.test(f.name||'')?`<button data-shrink="${esc(f.id)}" title="Make a smaller copy of this PDF (pictures at 150 dpi), saved as “… reduced.pdf”">Shrink</button>`:'';
 let shBusy=false;
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-shrink]');if(!b)return;const box=b.closest('#files,#clFiles,#ppFiles');if(!box)return;e.stopPropagation();
   const kind=box.id==='files'?'lead':'client';if(isLocked(kind))return toast('This '+kind+' is view-only right now.');if(shBusy)return toast('Still shrinking the last file…');
@@ -4255,15 +4255,13 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
   shBusy=true;b.disabled=true;b.textContent='Shrinking…';
   try{const res=await shrinkCall(await fileBytes(f),'normal');
     if(!res.shrunk){toast(`${f.name} is already about as small as it can get (${fmtSize(res.before)}). Nothing changed.`,6000);return}
-    const pct=Math.round(100-res.after*100/res.before);
-    if(!(await sure(`Shrink ${f.name} from ${fmtSize(res.before)} to ${fmtSize(res.after)} (${pct}% smaller)? Pictures and scans get a little less sharp; text stays the same. Yes replaces the file, No keeps the original.`)))return;
+    // the original stays; the smaller copy goes in next to it as "<name> reduced.pdf"
     if(isLocked(kind))return toast('This '+kind+' is view-only right now.');
-    const r=await storeBytes(res.bytes.buffer.slice(res.bytes.byteOffset,res.bytes.byteOffset+res.bytes.byteLength),'application/pdf'),now=new Date().toISOString();
-    const swap=x=>x.id===f.id?{...x,id:r.id,type:'application/pdf',size:r.sizeBytes||res.after,enc:r.enc||'',editedAt:now,...(me?{editedBy:me}:{})}:x;
-    const files=list().map(swap);if(!files.some(x=>x.id===r.id)){try{await assets.delete(r.id)}catch(_){}return toast('That file was removed while it was shrinking. Nothing changed.',6000)}
+    const r=await storeBytes(res.bytes.buffer.slice(res.bytes.byteOffset,res.bytes.byteOffset+res.bytes.byteLength),'application/pdf'),pct=Math.round(100-res.after*100/res.before);
+    const name=f.name.replace(/\.pdf$/i,'')+' reduced.pdf',entry={id:r.id,name,type:'application/pdf',size:r.sizeBytes||res.after,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{}),...(f.pid?{pid:f.pid}:{})};
+    const now=list(),at=now.findIndex(x=>x.id===f.id),files=at<0?[...now,entry]:[...now.slice(0,at+1),entry,...now.slice(at+1)];
     if(kind==='lead'){await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles()}else await putClFiles(files);
-    try{await assets.delete(f.id)}catch(_){}
-    toast(`${f.name} is now ${fmtSize(res.after)} (was ${fmtSize(res.before)}).`,5000)}
+    toast(`Added ${name}: ${fmtSize(res.after)} (${pct}% smaller than ${fmtSize(res.before)}). The original is still there.`,6000)}
   catch(err){toast('Couldn’t shrink it: '+(err&&err.code?errText(err):err.message),7000)}
   finally{shBusy=false;if(b.isConnected){b.disabled=false;b.textContent='Shrink'}}},true);
 // the main-page tool: drop any PDF, pick the quality, download the smaller copy
@@ -4274,7 +4272,7 @@ async function shRun(){if(!shSrc)return;const lv=(document.querySelector('input[
   shMsg(`Shrinking ${src.name} (${fmtSize(src.bytes.length)})…`);document.querySelectorAll('input[name=shLv]').forEach(x=>x.disabled=true);
   try{const res=await shrinkCall(src.bytes,lv);if(shSrc!==src)return;
     if(!res.shrunk)return shMsg(`${src.name} is already about as small as it can get at this setting (${fmtSize(res.before)}).`,'ok');
-    shOut={name:src.name.replace(/\.pdf$/i,'')+' - small.pdf',bytes:res.bytes};
+    shOut={name:src.name.replace(/\.pdf$/i,'')+' reduced.pdf',bytes:res.bytes};
     shMsg(`${fmtSize(res.before)} → ${fmtSize(res.after)} (${Math.round(100-res.after*100/res.before)}% smaller).`,'ok');$('shSave').hidden=false}
   catch(err){shMsg('Couldn’t shrink it: '+err.message,'err')}
   finally{document.querySelectorAll('input[name=shLv]').forEach(x=>x.disabled=false)}}
