@@ -3802,7 +3802,7 @@ async function openSign(f,kind){
   const v=kind==='lead'?{n:[cur.firstName,cur.lastName].filter(Boolean).join(' ')||cur.company||'',e:cur.email||''}:{n:[$('clFirst').value.trim(),$('clLast').value.trim()].filter(Boolean).join(' ')||$('clCompany').value.trim(),e:$('clEmail').value.trim()};
   sg={f,kind,path:signPathNow(kind),tabs:[],tool:'',pages:[],docs:[],err:''};
   $('sgName').textContent=f.name;$('sgN1').value=v.n;$('sgE1').value=v.e;$('sgN2').value='';$('sgE2').value='';$('sg2').hidden=true;$('sgAdd2').hidden=false;$('sgWho').hidden=true;
-  $('sgSubj').value=('Please sign: '+f.name.replace(/\.pdf$/i,'')).slice(0,100);
+  $('sgSubj').value=((v.n?v.n+' ':'')+'binding docs').slice(0,100);
   $('sgMsgT').value=`Hi ${(v.n.split(/\s+/)[0])||'there'},\n\nPlease review and sign the attached document. Let us know if you have any questions.\n\nPacific Southwest Insurance Services\n(818) 701-1033`;
   $('sgTest').hidden=!st.test;$('sgSend').disabled=!st.ready;$('sgBody').innerHTML='';
   document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.classList.remove('on'));
@@ -3815,8 +3815,7 @@ async function openSign(f,kind){
   catch(e){sgMsg('Couldn’t open this PDF: '+errText(e),true)}}
 $('sgCancel').onclick=sgClose;
 $('sgDocs').addEventListener('change',async e=>{if(e.target.id!=='sgMore'||!sg)return;const f=sgFileList().find(x=>x.id===e.target.value);if(!f)return;e.target.disabled=true;sgMsg('Adding '+f.name+'…');
-  try{const n=await sgAddDoc(f);if(!sg.err)sgMsg(n?`Added ${f.name}: found ${n} place${n>1?'s':''} to sign. Its pages are below the first file.`:`Added ${f.name}. No place to sign was found in it; add boxes on its pages if it needs a signature.`);
-    if(sg.docs.length===2&&/^Please sign: /.test($('sgSubj').value))$('sgSubj').value=('Please sign: '+sg.docs[0].f.name.replace(/\.pdf$/i,'')+' and more').slice(0,100)}
+  try{const n=await sgAddDoc(f);if(!sg.err)sgMsg(n?`Added ${f.name}: found ${n} place${n>1?'s':''} to sign. Its pages are below the first file.`:`Added ${f.name}. No place to sign was found in it; add boxes on its pages if it needs a signature.`);}
   catch(err){sgMsg('Couldn’t add '+f.name+': '+errText(err),true);const i=sg.docs.findIndex(d=>d.f===f);if(i>0)sgDropDoc(i)}});
 $('sgDocs').addEventListener('click',e=>{const b=e.target.closest('[data-sgdrop]');if(b&&sg)sgDropDoc(+b.dataset.sgdrop)});
 $('sgAdd2').onclick=()=>{$('sg2').hidden=false;$('sgAdd2').hidden=true;$('sgWho').hidden=false;$('sgN2').focus();sgDraw()};
