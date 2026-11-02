@@ -1642,15 +1642,118 @@ def simpletexting_post(payload):
         return json.loads(r.read() or b"{}")
 
 
+def text_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS text_log(id INTEGER PRIMARY KEY AUTOINCREMENT, at REAL NOT NULL, dir TEXT NOT NULL, "
+              "phone TEXT NOT NULL, text TEXT NOT NULL DEFAULT '', by_name TEXT NOT NULL DEFAULT '', ext_id TEXT NOT NULL DEFAULT '')")
+    c.execute("CREATE INDEX IF NOT EXISTS text_log_phone ON text_log(phone, at)")
+    have = {r[1] for r in c.execute("PRAGMA table_info(text_log)")}
+    for col, kind in (("by_user", "TEXT NOT NULL DEFAULT ''"), ("to_user", "TEXT NOT NULL DEFAULT ''"), ("to_name", "TEXT NOT NULL DEFAULT ''"), ("reply_to", "INTEGER")):
+        if col not in have:  # who sent a text, and for a reply: whose text it answers
+            c.execute(f"ALTER TABLE text_log ADD COLUMN {col} {kind}")
+
+
+def phone10(v):
+    d = re.sub(r"\D", "", str(v or ""))
+    if len(d) == 11 and d[0] == "1":
+        d = d[1:]
+    return d if len(d) == 10 else ""
+
+
+def text_hook_token():
+    """the secret part of the incoming-text webhook address, made once and kept on the server"""
+    f = DATA / "text-hook.key"
+    if not f.exists():
+        f.write_text(secrets.token_urlsafe(24))
+    return f.read_text().strip()
+
+
 @app.get("/api/text/status")
 def text_status(request: Request):
+    u = need_user(request)
+    out = {"configured": text_on()}
+    if text_on() and u["username"] in PANEL_OWNERS:
+        out["hookUrl"] = str(request.base_url).rstrip("/").replace("http://", "https://") + "/api/text/hook/" + text_hook_token()
+    return out
+
+
+@app.get("/api/text/history")
+def text_history(request: Request, phones: str = ""):
     need_user(request)
-    return {"configured": text_on()}
+    ps = [x for x in {phone10(p) for p in phones.split(",")} if x][:4]
+    if not ps:
+        return {"items": []}
+    with db() as c:
+        text_table(c)
+        rows = c.execute(f"SELECT at,dir,phone,text,by_name FROM text_log WHERE phone IN ({','.join('?' * len(ps))}) ORDER BY at DESC LIMIT 300", ps).fetchall()
+    return JSONResponse({"items": [dict(r) for r in rows][::-1]}, headers=NO_STORE)
+
+
+@app.get("/api/text/inbox")
+def text_inbox(request: Request, mine: int = 0, q: str = "", since: float = 0):
+    """incoming texts, newest first; mine=1: only replies to texts this person sent"""
+    u = need_user(request)
+    sql, args = ("SELECT i.id,i.at,i.phone,i.text,i.to_name,i.to_user,o.text AS re_text,o.at AS re_at FROM text_log i "
+                 "LEFT JOIN text_log o ON o.id=i.reply_to WHERE i.dir='in' AND i.at>?"), [float(since or 0)]
+    if mine:
+        sql += " AND i.to_user=?"
+        args.append(u["id"])
+    for w in str(q or "").lower().split()[:6]:
+        sql += " AND lower(i.text||' '||i.phone||' '||i.to_name) LIKE ?"
+        args.append("%" + w.replace("%", "").replace("_", "") + "%")
+    with db() as c:
+        text_table(c)
+        rows = c.execute(sql + " ORDER BY i.at DESC LIMIT 500", args).fetchall()
+    return JSONResponse({"items": [{**dict(r), "mine": r["to_user"] == u["id"]} for r in rows], "me": u["id"]}, headers=NO_STORE)
+
+
+def _hook_find(o, keys):
+    """SimpleTexting's webhook body nests the message; look for the first matching key anywhere in it"""
+    if isinstance(o, dict):
+        for k in keys:
+            if k in o and isinstance(o[k], (str, int)) and str(o[k]).strip():
+                return str(o[k])
+        for v in o.values():
+            r = _hook_find(v, keys)
+            if r:
+                return r
+    elif isinstance(o, list):
+        for v in o:
+            r = _hook_find(v, keys)
+            if r:
+                return r
+    return ""
+
+
+@app.post("/api/text/hook/{token}")
+async def text_hook(token: str, request: Request):
+    """incoming texts: SimpleTexting calls this address (set under Integrations > API & Webhooks) for each reply"""
+    if not text_on() or not hmac.compare_digest(token, text_hook_token()):
+        err(404, "not_found")
+    try:
+        b = await request.json()
+    except Exception:
+        return {"ok": True}
+    kind = _hook_find(b, ("type", "event", "trigger")).upper()
+    if kind and "INCOMING" not in kind:
+        return {"ok": True}
+    ph = phone10(_hook_find(b, ("contactPhone", "from", "phone", "contact_phone")))
+    text = _hook_find(b, ("text", "message", "body"))[:4000]
+    if not ph or not text:
+        return {"ok": True}
+    mid = _hook_find(b, ("messageId", "id"))[:80]
+    with db() as c:
+        text_table(c)
+        if mid and c.execute("SELECT 1 FROM text_log WHERE ext_id=? AND dir='in'", (mid,)).fetchone():
+            return {"ok": True}
+        last = c.execute("SELECT id,by_user,by_name FROM text_log WHERE phone=? AND dir='out' ORDER BY at DESC LIMIT 1", (ph,)).fetchone()  # the text it answers
+        c.execute("INSERT INTO text_log(at,dir,phone,text,ext_id,to_user,to_name,reply_to) VALUES(?,?,?,?,?,?,?,?)",
+                  (time.time(), "in", ph, text, mid, last["by_user"] if last else "", last["by_name"] if last else "", last["id"] if last else None))
+    return {"ok": True}
 
 
 @app.post("/api/text/send")
 async def text_send(request: Request):
-    need_user(request)
+    u = need_user(request)
     if not text_on():
         err(404, "text_off")
     b = await request.json()
@@ -1679,6 +1782,10 @@ async def text_send(request: Request):
         return JSONResponse({"code": "text_failed", "detail": msg or f"SimpleTexting said {e.code}"}, status_code=502)
     except (urllib.error.URLError, TimeoutError):
         err(502, "text_unreachable")
+    with db() as c:
+        text_table(c)
+        c.execute("INSERT INTO text_log(at,dir,phone,text,by_name,ext_id,by_user) VALUES(?,?,?,?,?,?,?)",
+                  (time.time(), "out", d, text, u["name"] or u["username"], str(r.get("id", ""))[:80], u["id"]))
     return {"ok": True, "id": r.get("id", "")}
 
 
