@@ -2293,6 +2293,20 @@ def st_post(url, data, ctype):
         return code, {}
 
 
+def alert_sends(phones, text):
+    """the same text to each saved cell (Alex and a second person); returns '' or what went wrong"""
+    errs = []
+    for ph in [p for p in str(phones or "").split(",") if p][:2]:
+        e = alert_send(ph, text)
+        if e:
+            errs.append(f"{fmt10(ph)}: {e}")
+    return "; ".join(errs)
+
+
+def fmt10(d):
+    return f"({d[:3]}){d[3:6]}-{d[6:]}" if len(d) == 10 else d
+
+
 def alert_send(to, text):
     """one text through SimpleTexting from the account's number (always a single text, one credit); returns '' or what went wrong.
     Newer accounts get API v2; an account set up on the older v1 API (its token doesn't work on v2) is sent through v1 instead."""
@@ -2382,7 +2396,7 @@ def text_check(row, acct):
         with db() as c:
             n = c.execute("SELECT count(*) FROM text_alert_log WHERE user_id=? AND at>? AND ok=1", (row["user_id"], time.time() - 3600)).fetchone()[0]
         text = sms_text(f"Email from {who}: {subject or '(no subject)'}")
-        e = "Skipped: more than %d texts this hour" % TEXT_HOURLY if n >= TEXT_HOURLY else alert_send(row["phone"], text)
+        e = "Skipped: more than %d texts this hour" % TEXT_HOURLY if n >= TEXT_HOURLY else alert_sends(row["phone"], text)
         problem = e or problem
         with db() as c:
             c.execute("INSERT INTO text_alert_log(user_id,at,sender,subject,text,ok,error) VALUES(?,?,?,?,?,?,?)",
@@ -2429,7 +2443,7 @@ def texts_get(request: Request):
         log = c.execute("SELECT at,sender,subject,ok,error FROM text_alert_log WHERE user_id=? ORDER BY at DESC LIMIT 30", (u["id"],)).fetchall()
     return {"configured": text_on(), "mailConnected": bool(a and a["email"] and a["refresh"]), "email": (a["email"] if a else "") or u["email"] or "",
             "domain": MAIL_DOMAIN, "fromPhone": TEXT_FROM, "every": TEXT_EVERY,
-            "active": bool(r and r["active"]), "phone": r["phone"] if r else "", "rules": json.loads(r["rules"]) if r else [],
+            "active": bool(r and r["active"]), "phone": (r["phone"] if r else "").split(",")[0], "phone2": ((r["phone"] if r else "").split(",") + [""])[1], "rules": json.loads(r["rules"]) if r else [],
             "checked": r["checked"] if r else 0, "error": r["error"] if r else "", "log": [dict(x) for x in log]}
 
 
@@ -2437,9 +2451,11 @@ def texts_get(request: Request):
 async def texts_save(request: Request):
     u = need_texts(request)
     b = await request.json()
-    phone, rules, on = phone10(b.get("phone")), clean_rules(b.get("rules")), bool(b.get("active"))
-    if b.get("phone") and not phone:
+    phone, phone2, rules, on = phone10(b.get("phone")), phone10(b.get("phone2")), clean_rules(b.get("rules")), bool(b.get("active"))
+    if (b.get("phone") and not phone) or (b.get("phone2") and not phone2):
         err(400, "bad_phone")
+    if phone2 and not phone:
+        phone, phone2 = phone2, ""
     if on and not phone:
         err(400, "no_phone")
     if on and not rules:
@@ -2449,7 +2465,7 @@ async def texts_save(request: Request):
         c.execute("INSERT INTO text_alerts(user_id,active,phone,rules,updated) VALUES(?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
                   "active=excluded.active, phone=excluded.phone, rules=excluded.rules, updated=excluded.updated, error='', "
                   "uidvalidity=CASE WHEN text_alerts.active=0 THEN '' ELSE text_alerts.uidvalidity END",  # turned on again: only email from now on
-                  (u["id"], 1 if on else 0, phone, json.dumps(rules), time.time()))
+                  (u["id"], 1 if on else 0, ",".join(x for x in dict.fromkeys([phone, phone2]) if x), json.dumps(rules), time.time()))
     return {"ok": True}
 
 
@@ -2458,10 +2474,11 @@ async def texts_test(request: Request):
     u = need_texts(request)
     if not text_on():
         err(404, "text_off")
-    phone = phone10((await request.json()).get("phone"))
-    if not phone:
+    b = await request.json()
+    phone = ",".join(x for x in dict.fromkeys([phone10(b.get("phone")), phone10(b.get("phone2"))]) if x)
+    if not phone or (b.get("phone2") and not phone10(b.get("phone2"))):
         err(400, "bad_phone")
-    e = alert_send(phone, "Test from the PSW tracker: email texts are working.")
+    e = alert_sends(phone, "Test from the PSW tracker: email texts are working.")
     with db() as c:
         alert_table(c)
         c.execute("INSERT INTO text_alert_log(user_id,at,sender,subject,text,ok,error) VALUES(?,?,?,?,?,?,?)",
