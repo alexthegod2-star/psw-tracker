@@ -185,6 +185,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .annotationLayer .choiceWidgetAnnotation select.tsSel{visibility:hidden}.annotationLayer .choiceWidgetAnnotation .tsIn{position:absolute;inset:0;background:rgba(0,54,255,.10);border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px}.annotationLayer .choiceWidgetAnnotation .tsIn:focus{background:rgba(0,54,255,.04);border-color:#1f5fbf;outline:none}.annotationLayer .calcBtn{position:absolute;right:2px;top:50%;transform:translateY(-50%);padding:1px 8px;font-size:11px;line-height:1.3;border-radius:999px;background:var(--acc);color:var(--acc-ink);border:0;font-weight:600;cursor:pointer;z-index:2}
 .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{width:100%;height:100%;margin:0;accent-color:#1f5fbf}
 .annotationLayer .popupAnnotation,.annotationLayer .popupTriggerArea{display:none}
+.sgTop{flex-direction:column;align-items:stretch}#sg2[hidden],#sgWho[hidden],#sgTest[hidden],#sgAdd2[hidden]{display:none}.sgPeople{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.sgPeople label,.sgTop label{display:flex;flex-direction:column;font-size:13px;gap:2px;flex:1 1 200px}.sgTop textarea{font:inherit;resize:vertical}.sgTools button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}#sgWho label{display:inline-flex;gap:4px;align-items:center}#sgWho input{width:auto}
+.sgBox{position:absolute;z-index:4;box-sizing:border-box;border:2px solid #b58900;background:rgba(255,235,59,.6);color:#000;font:600 11px/1.1 Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;cursor:move;user-select:none;touch-action:none;border-radius:3px;overflow:visible}.sgBox.thin{font-size:9px;border-width:1px}.sgBox.s1{border-color:#1f5fbf;background:rgba(120,170,255,.55)}
+.sgBox .x{position:absolute;top:-9px;right:-9px;width:18px;height:18px;min-height:0;border-radius:50%;background:#c00;color:#fff;font:700 12px/18px Arial,sans-serif;text-align:center;cursor:pointer;padding:0;border:0}
+.sgBadge{font-size:12px;padding:1px 8px;border-radius:999px;background:#fff3cd;color:#7a5a00;border:1px solid #f0d27a;cursor:pointer;white-space:nowrap}.sgBadge.ok{background:#e6f4ea;color:#1e6b34;border-color:#a6d8b4;cursor:default}.sgBadge.bad{background:#fdeaea;color:#a12020;border-color:#f0b8b8;cursor:default}.sgVoid{font-size:12px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
 </style>
 
@@ -383,6 +387,18 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
     <div class="drop qsPaste"><b>Or paste the text</b><label class="qsLead"><input type="checkbox" id="edQsLead2"> Also fill lead</label><textarea id="edQsText" placeholder="Paste an email, an application or the client’s details here. It fills the sheet as soon as you paste."></textarea></div></div>
   <div class="edSide right" id="edSup" hidden><div class="drop" id="edSupDrop"><b>Fill a carrier form</b><p class="small" style="margin:6px 0 8px">Drop a fillable supplemental or application here. It's filled from this quote sheet and saved to the lead's Files as “com sup”.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edSupIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edSupMsg" style="margin-top:8px"></div></div></div>
+</div>
+<div class="ed" id="sg" aria-hidden="true" style="z-index:25">
+  <div class="edh"><span class="nm" id="sgName"></span><span class="small" id="sgTest" hidden style="color:#b45309">DocuSign test account: these are practice emails, not real signatures.</span><button type="button" id="sgCancel">Cancel</button><button type="button" class="pri" id="sgSend">Send to DocuSign</button></div>
+  <div class="edh sgTop">
+    <div class="sgPeople"><label>Signer name<input id="sgN1" autocomplete="off"></label><label>Signer email<input id="sgE1" type="email" autocomplete="off"></label><button type="button" id="sgAdd2" title="Someone else signs too, like a co-owner or spouse">+ Second signer</button>
+      <span id="sg2" hidden class="sgPeople"><label>Second signer name<input id="sgN2" autocomplete="off"></label><label>Second signer email<input id="sgE2" type="email" autocomplete="off"></label><button type="button" id="sgRm2" title="No second signer">Remove</button></span></div>
+    <div class="sgPeople"><label style="flex:1 1 260px">Email subject<input id="sgSubj" maxlength="100"></label><label style="flex:2 1 360px">Message<textarea id="sgMsgT" rows="2"></textarea></label></div>
+  </div>
+  <div class="edh sgTools"><span class="small">Add a box, then click on the page:</span><button type="button" data-sgt="sign">Sign here</button><button type="button" data-sgt="initial">Initials</button><button type="button" data-sgt="date">Date signed</button><button type="button" data-sgt="name">Printed name</button>
+    <span id="sgWho" hidden class="small">For: <label><input type="radio" name="sgWho" value="0" checked> <span id="sgW1">Signer 1</span></label> <label><input type="radio" name="sgWho" value="1"> <span id="sgW2">Signer 2</span></label></span>
+    <span class="edmsg" id="sgInfo"></span></div>
+  <div class="edb" id="sgBody"></div>
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="mhDlg" role="dialog" aria-modal="true" aria-labelledby="mhTitle" style="z-index:21"><div class="mbox" style="width:min(1100px,96vw);max-height:92vh;overflow:auto">
@@ -1767,10 +1783,10 @@ $('mailBtns').addEventListener('click',async e=>{
 /* ---------- files ---------- */
 const EXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',csv:'text/csv',txt:'text/plain'};
 function renderFiles(){
-  renderMail();
+  renderMail();signEnsure('lead');
   const fs=(cur&&cur.files)||[];
   warmFiles(fs);
-  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${signBits(f,'lead')}${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
 async function addFiles(list){
   if(!list.length||!assets)return;if(!(await ensureSaved()))return;
@@ -3461,7 +3477,7 @@ $('clFileAdd').onclick=()=>$('clFileIn').click();$('clFileIn').onchange=()=>{con
 // policy files: dropped in the policy pop-up, stored with the client (tagged to the policy) so they show in both places
 const clFileList=()=>editClient?(editClient.files||[]):clPending;
 function renderPpFiles(){const pid=polTr&&polTr.querySelector('[data-p=pid]').value,fs=clFileList().filter(f=>pid&&f.pid===pid).reverse();$('ppUpRow').hidden=!assets;$('ppFileAdd').hidden=!assets;
-  $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button>${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-prmf="${esc(f.id)}">Remove</button>`:''}</li>`).join('')||'<li class="small" style="border:none;padding:0">No files for this policy yet.</li>'}
+  $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button>${signBits(f,'client')}${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-prmf="${esc(f.id)}">Remove</button>`:''}</li>`).join('')||'<li class="small" style="border:none;padding:0">No files for this policy yet.</li>'}
 $('ppFileAdd').onclick=()=>$('ppFileIn').click();$('ppFileIn').onchange=()=>{const list=[...$('ppFileIn').files];$('ppFileIn').value='';if(polTr){addClientFiles(list,polTr.querySelector('[data-p=pid]').value);list.forEach(ppSheetFill)}};
 /* ---------- policy pop-up: drop a quote sheet, dec page or binder to fill the policy ---------- */
 // our own personal auto quote sheet is read straight from its form boxes; anything else goes to Claude (when the server has it turned on)
@@ -3568,10 +3584,10 @@ $('ppFiles').addEventListener('click',async e=>{const b=e.target.closest('button
     if(b.dataset.psave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
     else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
   catch(err){$('ppMsg').className='msg err';$('ppMsg').textContent=`${f.name}: ${errText(err)}`}});
-function renderClFiles(c){const fs=[...((c&&c.files)||[])].reverse();$('clUpRow').hidden=!assets;$('clFileAdd').hidden=!assets;
+function renderClFiles(c){const fs=[...((c&&c.files)||[])].reverse();signEnsure('client');$('clUpRow').hidden=!assets;$('clFileAdd').hidden=!assets;
   const pols=[...$('polRows').rows].map(t=>{const v=k=>t.querySelector(`[data-p=${k}]`).value.trim();return['line','number','carrier','company'].some(v)&&{pid:v('pid'),name:[v('line')||'Policy',v('number'),v('eff')].filter(Boolean).join(' · ')}}).filter(Boolean);
   const pick=f=>`<select class="clPolPick" data-clpol="${esc(f.id)}" title="Which policy this file belongs to"><option value="">${f.pid&&pols.some(p=>p.pid===f.pid)?'No policy (client only)':'Assign to policy…'}</option>${pols.map(p=>`<option value="${esc(p.pid)}"${p.pid===f.pid?' selected':''}>${esc(p.name)}</option>`).join('')}</select>`;
-  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}${pols.length?pick(f):''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use + Add file or drop them above, or add them in a policy.</li>'}
+  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${signBits(f,'client')}${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}${pols.length?pick(f):''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use + Add file or drop them above, or add them in a policy.</li>'}
 const reClFiles=()=>renderClFiles(editClient||{files:clPending});
 // a client file's list changed: save it (or keep it pending on a new client) and redraw both lists
 async function putClFiles(files){if(editClient){await clientsCol.doc(editClient.id).update({files});editClient.files=files}else clPending.splice(0,clPending.length,...files);reClFiles();if(polTr)renderPpFiles()}
@@ -3591,6 +3607,151 @@ $('clFiles').addEventListener('click',async e=>{const b=e.target.closest('button
     if(b.dataset.clsave){if(dl)await dl.save({filename:f.name,data:blob,mimeType:f.type});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.name;a.click()}}
     else{const u=URL.createObjectURL(blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}}
   catch(err){$('clientMsg').className='msg err';$('clientMsg').textContent=`${f.name}: ${errText(err)}`}});
+/* ---------- Send for signature (DocuSign): Sign on a PDF opens a screen with the pages; the signature and date boxes are put where the
+   form asks the client to sign, and can be moved, added or removed before it goes. The signed copy comes back into the same files. ---------- */
+let signSt=null;
+async function signStatus(force){if(signSt&&!force)return signSt;try{const r=await fetch('/api/sign/status',{credentials:'same-origin'});signSt=r.ok?await r.json():{configured:false}}catch(_){signSt={configured:false}}return signSt}
+signStatus().then(st=>{if(st.configured)signRedraw('lead'),signRedraw('client')});
+const signDocs=new Map(); // 'leads/ID' or 'clients/ID' -> {at, items, busy}
+const isPdfFile=f=>/pdf/.test(f.type||'')||/\.pdf$/i.test(f.name||'');
+const signPathNow=kind=>kind==='lead'?(cur&&cur.id?'leads/'+cur.id:''):(editClient&&editClient.id?'clients/'+editClient.id:'');
+const signItems=path=>(signDocs.get(path)||{items:[]}).items;
+const SG_FINAL=['completed','declined','voided'];
+const SG_TXT={created:'Not sent yet',sent:'Out for signature',delivered:'Opened, not signed yet',signed:'Signed',completed:'Signed ✓',declined:'Declined',voided:'Cancelled'};
+function signRedraw(kind){try{if(kind==='lead'){if(cur)renderFiles()}else if(editClient){reClFiles();if(polTr)renderPpFiles()}}catch(_){}}
+function signEnsure(kind){const path=signPathNow(kind);if(!path||!signSt||!signSt.configured)return;const d=signDocs.get(path);if(d&&(d.busy||Date.now()-d.at<60000))return;signLoad(path,kind)}
+async function signLoad(path,kind,now){const d=signDocs.get(path)||{items:[],at:0};d.busy=true;signDocs.set(path,d);
+  try{const r=await fetch('/api/sign/list?path='+encodeURIComponent(path)+(now?'&now=1':''),{credentials:'same-origin'});if(r.ok){const j=await r.json();d.items=j.items||[];d.problem=j.problem}}catch(_){}
+  d.at=Date.now();d.busy=false;await signAttach(path,kind);if(path===signPathNow(kind))signRedraw(kind);return d}
+// a signed copy that isn't in the files yet goes in now (the server lets only one open screen do it, so it isn't added twice)
+async function signAttach(path,kind){if(!assets)return;
+  for(const it of signItems(path)){if(!it.signed||it.attached)continue;if(path!==signPathNow(kind)||isLocked(kind))return;
+    const post=b=>fetch(`/api/sign/${encodeURIComponent(it.id)}/attached`,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(b)});
+    let j={};try{const r=await post({});j=r.ok?await r.json():{}}catch(_){}
+    if(!j.claimed){it.attached=true;continue}
+    const was=(kind==='lead'?(cur.files||[]):clFileList()).find(x=>x.id===it.fileId),pid=was?was.pid:it.pid;
+    const name=it.fileName.replace(/\.pdf$/i,'')+' - signed.pdf',entry={id:it.signed.id,name,type:'application/pdf',size:it.signed.size,at:new Date().toISOString(),...(me?{by:me}:{}),...(pid?{pid}:{})};
+    try{if(kind==='lead'){const fresh=leads.find(l=>l.id===cur.id)||cur,files=[...(fresh.files||[]),entry];await leadsCol.doc(cur.id).update({files});cur.files=files}
+      else await putClFiles([...clFileList(),entry]);
+      it.attached=true;toast(`${name} came back from DocuSign and was added to the files.`,5000)}
+    catch(e){try{await post({undo:true})}catch(_){}}}}
+function signBits(f,kind){if(!signSt||!signSt.configured||!isPdfFile(f))return '';const path=signPathNow(kind);if(!path)return '';
+  const its=signItems(path).filter(x=>x.fileId===f.id),it=its[its.length-1];let s='';
+  if(it){const fin=SG_FINAL.includes(it.status),cls=it.status==='completed'?' ok':fin?' bad':'',t=SG_TXT[it.status]||it.status;
+    s=`<span class="sgBadge${cls}" data-sgck="${esc(it.id)}" title="${esc(`${t}. Sent to ${it.signers.map(x=>`${x.name} (${x.email})`).join(' and ')} by ${it.sentBy}, ${fmtDT(new Date(it.sentAt*1000).toISOString())}.${fin?'':' Click to check now.'}`)}">${esc(t)}</span>${!fin&&assets?`<button class="linkish sgVoid" data-sgvoid="${esc(it.id)}" title="Cancel this signature request">Cancel</button>`:''}`}
+  return (assets?`<button data-sign="${esc(f.id)}" title="Send this PDF to be signed with DocuSign">Sign</button>`:'')+s}
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sign],[data-sgck],[data-sgvoid]');if(!b)return;const box=b.closest('#files,#clFiles,#ppFiles');if(!box)return;
+  e.stopPropagation();const kind=box.id==='files'?'lead':'client',path=signPathNow(kind);if(!path)return;
+  if(b.dataset.sign){const f=(kind==='lead'?(cur.files||[]):clFileList()).find(x=>x.id===b.dataset.sign);if(f)openSign(f,kind);return}
+  if(b.dataset.sgck){const it=signItems(path).find(x=>x.id===b.dataset.sgck);if(it&&SG_FINAL.includes(it.status))return;toast('Checking DocuSign…');const d=await signLoad(path,kind,true),n=d.items.find(x=>x.id===b.dataset.sgck);
+    toast(d.problem?'DocuSign didn’t answer: '+(d.problem.detail||d.problem.code):n?(SG_TXT[n.status]||n.status):'');return}
+  if(b.dataset.sgvoid){if(!(await sure('Cancel this signature request? The link DocuSign emailed stops working. This can’t be undone.')))return;
+    try{const r=await fetch(`/api/sign/${encodeURIComponent(b.dataset.sgvoid)}/void`,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:'{}'});const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.detail||j.code||r.status);toast('Signature request cancelled.')}catch(err){toast('Couldn’t cancel it: '+err.message,6000)}
+    signLoad(path,kind,true)}},true);
+
+// where a form asks the client to sign: "Applicant's Signature", "Signature of Insured", "Signature:" ... (not the producer's or agent's line)
+const SG_SIG=/^(?:x\s*)?(?:(?:(?:first\s+)?named\s+insured|applicant|insured|owner|policy\s*holder|customer|client|borrower|lessee|signer|member|principal|officer|authorized\s+signer|account\s*holder|cardholder)['’]?s?\s*)?signature(?:\s+of\s+(?:the\s+)?(?:(?:first\s+)?named\s+insured|applicant|insured|owner|policy\s*holder|principal|officer|cardholder|account\s*holder))?\s*[:_\-\s]*$/i;
+const SG_NOT=/producer|agent|broker|representative|witness|underwriter|notary|insurer|company|countersign|licensee|spouse/i;
+const SG_DATE=/^date(?:\s+signed)?\s*[:_\-\s]*$/i;
+// the page's drawn horizontal lines (signature lines, box edges), in the same top-down points as the text
+async function sgLines(page,vp){const ops=await page.getOperatorList(),O=pdfjsLib.OPS,U=pdfjsLib.Util,out=[],st=[];let ctm=[1,0,0,1,0,0];
+  const add=(m,ax,ay,bx,by)=>{const p=U.applyTransform([ax,ay],m),q=U.applyTransform([bx,by],m);if(Math.abs(p[1]-q[1])<2.5&&Math.abs(p[0]-q[0])>40)out.push({x1:Math.min(p[0],q[0]),x2:Math.max(p[0],q[0]),y:(p[1]+q[1])/2})};
+  for(let i=0;i<ops.fnArray.length;i++){const fn=ops.fnArray[i],a=ops.argsArray[i];
+    if(fn===O.save)st.push(ctm.slice());else if(fn===O.restore)ctm=st.pop()||[1,0,0,1,0,0];else if(fn===O.transform)ctm=U.transform(ctm,a);
+    else if(fn===O.constructPath){const m=U.transform(vp.transform,ctm),[sub,c]=a;let k=0,cx=0,cy=0;
+      for(const op of sub){if(op===O.rectangle){const[x,y,w,h]=c.slice(k,k+4);k+=4;if(Math.abs(h)<2.5)add(m,x,y+h/2,x+w,y+h/2);else if(Math.abs(w)>40){add(m,x,y,x+w,y);add(m,x,y+h,x+w,y+h)}}
+        else if(op===O.moveTo){[cx,cy]=c.slice(k,k+2);k+=2}else if(op===O.lineTo){const[x,y]=c.slice(k,k+2);k+=2;add(m,cx,cy,x,y);cx=x;cy=y}
+        else if(op===O.curveTo)k+=6;else if(op===O.curveTo2||op===O.curveTo3)k+=4}}}
+  return out}
+async function signGuess(pdf){const out=[];
+  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),vp=page.getViewport({scale:1}),tc=await page.getTextContent();let lines=[];try{lines=await sgLines(page,vp)}catch(_){}
+    const items=tc.items.filter(it=>it.str&&it.str.trim()).map(it=>{const t=pdfjsLib.Util.transform(vp.transform,it.transform),h=Math.hypot(t[2],t[3])||8;return {s:it.str.trim(),x:t[4],y:t[5],h,w:it.width||it.str.length*h*.5}});
+    // "Signature: ____" (a line to the right) -> on that line; a caption under a signature line with room above it -> above the line; a label at the top of a box (ACORD) -> under the label
+    const spot=(it,kind)=>{const[w,h]=SG_SZ[kind];
+      if(/[:]\s*$/.test(it.s)||/_{3,}\s*$/.test(it.s))return {x:it.x+it.w+6,y:it.y-h+2};
+      const ul=items.find(o=>o!==it&&/^_{4,}$/.test(o.s)&&Math.abs(o.y-it.y)<3&&o.x>=it.x+it.w-4);if(ul)return {x:ul.x+4,y:it.y-h+2};
+      const rl=lines.find(l=>Math.abs(l.y-it.y)<4&&l.x1>=it.x+it.w-4&&l.x1-(it.x+it.w)<40);if(rl)return {x:rl.x1+4,y:rl.y-h};
+      const top=it.y-it.h,ab=lines.filter(l=>l.y<=top+2&&l.y>=top-8&&l.x1<=it.x+8&&l.x2>=it.x+30).sort((a,b)=>b.y-a.y)[0];
+      if(ab&&it.h>=7){const roomy=!lines.some(l=>l!==ab&&l.y<ab.y-1&&l.y>ab.y-40&&l.x2>it.x&&l.x1<it.x+w)&&!items.some(o=>o!==it&&o.y<ab.y-1&&o.y>ab.y-34&&o.x<it.x+w&&o.x+o.w>it.x);
+        if(roomy)return {x:it.x,y:ab.y-h-1,how:'line'}}
+      return {x:it.x,y:it.y+3,how:'under'}};
+    for(const it of items){if(it.s.length>70||!SG_SIG.test(it.s)||SG_NOT.test(it.s))continue;
+      const at=spot(it,'sign');if(at.how==='under'&&/^signature$/i.test(it.s))continue; // a bare SIGNATURE heading, not a place to sign
+      delete at.how;if(out.some(o=>o.page===p-1&&Math.abs(o.x-at.x)<20&&Math.abs(o.y-at.y)<20))continue;
+      out.push({type:'sign',signer:0,page:p-1,...at});
+      // the date that goes with it: on the same line, to the right
+      const d=items.filter(o=>SG_DATE.test(o.s)&&Math.abs(o.y-it.y)<4&&o.x>it.x&&o.x-it.x<420).sort((a,b)=>a.x-b.x)[0];
+      if(d){const{how,...dt}=spot(d,'date');out.push({type:'date',signer:0,page:p-1,...dt})}}}
+  return out}
+const SG_SZ={sign:[110,26],initial:[46,30],date:[80,14],name:[140,14]},SG_LBL={sign:'Sign here',initial:'Initials',date:'Date signed',name:'Printed name'};
+let sg=null;
+const sgMsg=(t,bad)=>{$('sgInfo').textContent=t||'';$('sgInfo').style.color=bad?'#a12020':''};
+function sgTwo(){return !$('sg2').hidden}
+function sgClose(){$('sg').classList.remove('on','adding');$('sg').setAttribute('aria-hidden','true');$('sgBody').innerHTML='';if(sg&&sg.pdf)sg.pdf.destroy();sg=null}
+function sgDraw(){if(!sg)return;sg.pages.forEach(p=>p.wrap.querySelectorAll('.sgBox').forEach(x=>x.remove()));
+  const two=sgTwo(),nm=i=>($(i?'sgN2':'sgN1').value.trim()||`Signer ${i+1}`).split(/\s+/)[0];
+  sg.tabs.forEach((t,i)=>{const p=sg.pages[t.page];if(!p)return;const[w,h]=SG_SZ[t.type],el=document.createElement('div');
+    el.className='sgBox s'+t.signer+(t.type==='date'||t.type==='name'?' thin':'');el.dataset.i=i;
+    el.style.cssText=`left:${t.x*p.sc}px;top:${t.y*p.sc}px;width:${w*p.sc}px;height:${h*p.sc}px`;
+    el.innerHTML=`<span>${esc(SG_LBL[t.type])}${two?' · '+esc(nm(t.signer)):''}</span><button type="button" class="x" data-sgx="${i}" title="Remove this box" aria-label="Remove this box">×</button>`;
+    el.title=two?'Drag to move. Click to switch who signs here.':'Drag to move.';p.wrap.appendChild(el)});
+  const n=sg.tabs.filter(t=>t.type==='sign').length;
+  if(!sg.err)sgMsg(n?`${n} signature box${n>1?'es':''}. Drag a box to move it, or use the buttons above to add more.`:'No signature box yet. Click “Sign here”, then click on the page where the client signs.')}
+async function openSign(f,kind){
+  const st=await signStatus(true);if(!st.configured)return toast('DocuSign isn’t set up yet.');
+  const v=kind==='lead'?{n:[cur.firstName,cur.lastName].filter(Boolean).join(' ')||cur.company||'',e:cur.email||''}:{n:[$('clFirst').value.trim(),$('clLast').value.trim()].filter(Boolean).join(' ')||$('clCompany').value.trim(),e:$('clEmail').value.trim()};
+  sg={f,kind,path:signPathNow(kind),tabs:[],tool:'',pages:[],err:''};
+  $('sgName').textContent=f.name;$('sgN1').value=v.n;$('sgE1').value=v.e;$('sgN2').value='';$('sgE2').value='';$('sg2').hidden=true;$('sgAdd2').hidden=false;$('sgWho').hidden=true;
+  $('sgSubj').value=('Please sign: '+f.name.replace(/\.pdf$/i,'')).slice(0,100);
+  $('sgMsgT').value=`Hi ${(v.n.split(/\s+/)[0])||'there'},\n\nPlease review and sign the attached document. Let us know if you have any questions.\n\nPacific Southwest Insurance Services\n(818) 701-1033`;
+  $('sgTest').hidden=!st.test;$('sgSend').disabled=!st.ready;$('sgBody').innerHTML='';
+  document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.classList.remove('on'));
+  $('sg').classList.add('on');$('sg').setAttribute('aria-hidden','false');
+  if(!st.ready){sg.err=1;if(st.consentUrl){$('sgInfo').innerHTML='DocuSign needs a one-time OK first. <a href="'+esc(st.consentUrl)+'" target="_blank" rel="noopener">Allow DocuSign access</a> (sign in as the DocuSign account owner and click Allow), then close this screen and press Sign again.';$('sgInfo').style.color='#a12020'}
+    else sgMsg('DocuSign sign-in didn’t work: '+(st.detail||st.code)+'. The DocuSign settings on the server need checking.',true)}
+  else sgMsg('Opening…');
+  try{sg.bytes=await fileBytes(f);await loadPdfJs();sg.pdf=await pdfjsLib.getDocument({data:sg.bytes.slice(),...PDF_FONTS}).promise;
+    const W=Math.min(900,$('sgBody').clientWidth-32);
+    for(let i=1;i<=sg.pdf.numPages;i++){const page=await sg.pdf.getPage(i),base=page.getViewport({scale:1}),sc=W/base.width,vp=page.getViewport({scale:sc});
+      const wrap=document.createElement('div');wrap.className='pg';wrap.style.width=vp.width+'px';wrap.style.height=vp.height+'px';wrap.dataset.page=i-1;
+      const cv=document.createElement('canvas'),dpr=window.devicePixelRatio||1;cv.width=Math.floor(vp.width*dpr);cv.height=Math.floor(vp.height*dpr);cv.style.width=vp.width+'px';cv.style.height=vp.height+'px';
+      wrap.appendChild(cv);$('sgBody').appendChild(wrap);sg.pages.push({wrap,sc,w:base.width,h:base.height});
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null,annotationMode:pdfjsLib.AnnotationMode.ENABLE_FORMS}).promise}
+    sg.tabs=await signGuess(sg.pdf);sgDraw();
+    if(sg.tabs.length&&!sg.err)sgMsg(`Found ${sg.tabs.filter(t=>t.type==='sign').length} place${sg.tabs.filter(t=>t.type==='sign').length>1?'s':''} to sign. Check the yellow boxes, drag to adjust, then press Send to DocuSign.`)}
+  catch(e){sgMsg('Couldn’t open this PDF: '+errText(e),true)}}
+$('sgCancel').onclick=sgClose;
+$('sgAdd2').onclick=()=>{$('sg2').hidden=false;$('sgAdd2').hidden=true;$('sgWho').hidden=false;$('sgN2').focus();sgDraw()};
+$('sgRm2').onclick=()=>{$('sg2').hidden=true;$('sgAdd2').hidden=false;$('sgWho').hidden=true;document.querySelector('#sgWho input[value="0"]').checked=true;if(sg){sg.tabs=sg.tabs.filter(t=>t.signer!==1);sgDraw()}};
+['sgN1','sgN2'].forEach(i=>$(i).addEventListener('input',()=>{$(i==='sgN1'?'sgW1':'sgW2').textContent=$(i).value.trim()||(i==='sgN1'?'Signer 1':'Signer 2');if(sgTwo())sgDraw()}));
+document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.onclick=()=>{if(!sg)return;const on=sg.tool!==b.dataset.sgt;sg.tool=on?b.dataset.sgt:'';document.querySelectorAll('#sg [data-sgt]').forEach(x=>x.classList.toggle('on',x===b&&on));$('sg').classList.toggle('adding',on);if(on){sg.err=0;sgMsg('Now click on the page where it goes.')}});
+// add a box where the page is clicked; drag a box to move it; click a box to switch signer (with two signers); × removes it
+$('sgBody').addEventListener('click',e=>{if(!sg)return;const x=e.target.closest('[data-sgx]');if(x){sg.tabs.splice(+x.dataset.sgx,1);sgDraw();return}
+  if(!sg.tool||e.target.closest('.sgBox'))return;const wrap=e.target.closest('.pg');if(!wrap)return;const p=sg.pages[+wrap.dataset.page],r=wrap.getBoundingClientRect(),[w,h]=SG_SZ[sg.tool];
+  const who=sgTwo()?+(document.querySelector('#sgWho input:checked')||{value:0}).value:0;
+  sg.tabs.push({type:sg.tool,signer:who,page:+wrap.dataset.page,x:Math.max(0,Math.min(p.w-w,(e.clientX-r.left)/p.sc-w/2)),y:Math.max(0,Math.min(p.h-h,(e.clientY-r.top)/p.sc-h/2))});
+  sg.tool='';document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.classList.remove('on'));$('sg').classList.remove('adding');sgDraw()});
+$('sgBody').addEventListener('pointerdown',e=>{const el=e.target.closest('.sgBox');if(!el||e.target.closest('[data-sgx]')||!sg)return;e.preventDefault();
+  const t=sg.tabs[+el.dataset.i],p=sg.pages[t.page],sx=e.clientX,sy=e.clientY,ox=t.x,oy=t.y,[w,h]=SG_SZ[t.type];let moved=false;el.setPointerCapture(e.pointerId);
+  const mv=ev=>{const dx=(ev.clientX-sx)/p.sc,dy=(ev.clientY-sy)/p.sc;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;t.x=Math.max(0,Math.min(p.w-w,ox+dx));t.y=Math.max(0,Math.min(p.h-h,oy+dy));el.style.left=t.x*p.sc+'px';el.style.top=t.y*p.sc+'px'};
+  const up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);if(!moved&&sgTwo()){t.signer=t.signer?0:1;sgDraw()}};
+  el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)});
+const u8b64=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)};
+$('sgSend').onclick=async()=>{if(!sg||$('sgSend').disabled)return;sg.err=0;
+  const ok=e=>/^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$/.test(e),signers=[{name:$('sgN1').value.trim(),email:$('sgE1').value.trim()}];
+  if(sgTwo())signers.push({name:$('sgN2').value.trim(),email:$('sgE2').value.trim()});
+  for(const[i,s]of signers.entries()){if(!s.name)return sgMsg(`Type the ${i?'second ':''}signer’s name.`,true);if(!ok(s.email))return sgMsg(`Type a good email for ${s.name}.`,true);
+    if(!sg.tabs.some(t=>t.signer===i&&t.type==='sign'))return sgMsg(`${s.name} has no “Sign here” box yet.`,true)}
+  $('sgSend').disabled=true;sgMsg('Sending to DocuSign…');
+  try{let pdf;try{pdf=await flatPdf(sg.bytes.slice())}catch(_){pdf=sg.bytes} // filled-in boxes become part of the page, so DocuSign shows them as typed
+    const r=await fetch('/api/sign/send',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({path:sg.path,fileId:sg.f.id,fileName:sg.f.name,pid:sg.f.pid||'',pdf:u8b64(new Uint8Array(pdf)),signers,
+      subject:$('sgSubj').value.trim(),message:$('sgMsgT').value.trim(),tabs:sg.tabs.map(t=>({type:t.type,signer:t.signer,page:t.page+1,x:Math.round(t.x),y:Math.round(t.y)}))})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){const why={no_sign_box:'Every signer needs a “Sign here” box.',bad_signer:'Check the signer names and emails.',consent:'DocuSign needs a one-time OK first. Close this screen and press Sign again for the link.',bad_pdf:'This file isn’t a PDF DocuSign can take.',sign_off:'DocuSign isn’t set up yet.'}[j.code];
+      throw new Error(why||('DocuSign said: '+(j.detail||j.code||r.status)))}
+    const{path,kind}=sg;sgClose();toast(`Sent. ${signers.map(s=>s.name).join(' and ')} will get an email from DocuSign to sign.`,5000);signLoad(path,kind,true)}
+  catch(e){sgMsg(e.message,true);$('sgSend').disabled=false}};
 /* ---------- client certificates (ACORD 25) ---------- */
 let tpl25=null;
 async function acord25Tpl(){if(!tpl25){const r=await fetch('tpl25.pdf');if(!r.ok)throw new Error('ACORD 25 template missing');tpl25=new Uint8Array(await r.arrayBuffer())}return tpl25}
