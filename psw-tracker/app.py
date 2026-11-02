@@ -2130,6 +2130,52 @@ async def sign_void(request: Request, eid: str):
     return {"ok": True, "status": "voided"}
 
 
+# ---------- Shrink PDF: Ghostscript rewrites it with pictures at 150 dpi (normal), 72 dpi (small) or in grayscale ----------
+SHRINK_MAX = 25 * 1024 * 1024  # the web server (Caddy) takes 25 MB at most
+SHRINK_LEVELS = {"normal": ["-dPDFSETTINGS=/ebook"], "small": ["-dPDFSETTINGS=/screen"],
+                 "gray": ["-dPDFSETTINGS=/ebook", "-sColorConversionStrategy=Gray", "-dProcessColorModel=/DeviceGray"]}
+
+
+def shrink_pdf(data: bytes, level: str) -> bytes:
+    import shutil
+    import subprocess
+    import tempfile
+    gs = shutil.which("gs")
+    if not gs:
+        err(501, "shrink_off")
+    with tempfile.TemporaryDirectory() as d:
+        src, out = Path(d) / "in.pdf", Path(d) / "out.pdf"
+        src.write_bytes(data)
+        try:
+            r = subprocess.run([gs, "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.5", *SHRINK_LEVELS[level], "-dNOPAUSE", "-dQUIET", "-dBATCH",
+                                "-dSAFER", "-dDetectDuplicateImages=true", "-dCompressFonts=true", "-dPrinted=false", f"-sOutputFile={out}", str(src)],
+                               capture_output=True, timeout=240)
+        except subprocess.TimeoutExpired:
+            err(504, "shrink_slow")
+        if r.returncode != 0 or not out.exists() or out.stat().st_size < 100:
+            print("shrink failed:", r.returncode, r.stderr[-500:], flush=True)
+            err(422, "shrink_failed")
+        return out.read_bytes()
+
+
+@app.post("/api/pdf/shrink")
+async def pdf_shrink(request: Request, level: str = "normal"):
+    """the PDF in the body comes back smaller (or unchanged when it can't get smaller); X-Before / X-After give the sizes"""
+    need_module("tracker"); need_user(request)
+    if level not in SHRINK_LEVELS:
+        err(400, "bad_level")
+    data = await request.body()
+    if len(data) > SHRINK_MAX:
+        err(413, "too_large")
+    if not data.startswith(b"%PDF"):
+        err(400, "bad_pdf")
+    from starlette.concurrency import run_in_threadpool
+    out = await run_in_threadpool(shrink_pdf, data, level)
+    same = len(out) >= len(data) * 0.97
+    return Response(data if same else out, media_type="application/pdf",
+                    headers={"X-Before": str(len(data)), "X-After": str(len(data) if same else len(out)), "X-Shrunk": "0" if same else "1", "Cache-Control": "no-store"})
+
+
 @app.get("/healthz")
 def health():
     return Response("ok")

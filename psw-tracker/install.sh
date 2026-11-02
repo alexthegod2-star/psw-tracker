@@ -12,7 +12,7 @@ HOST="${PSW_HOST:-${IP//./-}.sslip.io}"
 echo "== Installing packages"
 # wait for the server's automatic security updates to let go of apt instead of failing the deploy
 apt-get -o DPkg::Lock::Timeout=600 update -qq
-DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y -qq python3-venv sqlite3 caddy >/dev/null
+DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y -qq python3-venv sqlite3 caddy ghostscript >/dev/null
 
 echo "== App user and folders"
 id psw >/dev/null 2>&1 || useradd --system --home-dir "$DATA" --shell /usr/sbin/nologin psw

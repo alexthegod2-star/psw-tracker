@@ -198,7 +198,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
     <div class="brand banner"><div><h1 class="sr-only">Pacific Southwest Insurance Services Database</h1><div class="sub" id="count">Loading leads…</div></div></div>
     <div class="hdrbtns"><button class="pri" id="newBtn">+ New lead</button></div>
   </header>
-  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button type="button" class="tab" id="repBtn" title="Make a report of client policies">Report</button><button type="button" class="tab" id="txInBtn" hidden title="Texts clients and leads sent back"><span class="txDot" id="txInDot" title="No new replies to your texts"></span>Texts</button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button><button type="button" id="finBtn" hidden>Alex Finance Personal</button></div></nav>
+  <nav class="tabs" role="tablist"><button class="tab on" data-view="leads" role="tab">Leads</button><button class="tab" data-view="tasks" role="tab">Tasks <span class="chip" id="taskCount">0</span></button><button class="tab" data-view="clients" role="tab">PSW Clients <span class="chip" id="clientCount">0</span></button><button type="button" class="tab" id="repBtn" title="Make a report of client policies">Report</button><button type="button" class="tab" id="shBtn" title="Make a PDF file smaller">Shrink PDF</button><button type="button" class="tab" id="txInBtn" hidden title="Texts clients and leads sent back"><span class="txDot" id="txInDot" title="No new replies to your texts"></span>Texts</button><button class="tab" data-view="binder" role="tab" id="binderTab" hidden>My binder</button><button type="button" class="mytasks" id="myTasks" title="Show my open tasks" hidden></button><div class="hdrrow"><button type="button" id="coInfoBtn">Company info</button><button type="button" id="gaInfoBtn">GA info</button><button type="button" id="adminBtn" hidden>Admin</button><button type="button" id="finBtn" hidden>Alex Finance Personal</button></div></nav>
   <div id="leadsView">
   <div class="bar">
     <input id="q" type="search" placeholder="Search name, company, phone, email">
@@ -404,6 +404,18 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div class="edb" id="sgBody"></div>
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
+<div class="mbg" id="shDlg" role="dialog" aria-modal="true" aria-labelledby="shTitle" style="z-index:21"><div class="mbox" style="width:min(620px,96vw)">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="shTitle" style="margin:0">Shrink a PDF</h3><button type="button" id="shClose">Close</button></div>
+  <label class="drop" id="shDrop" style="display:block;text-align:center;margin:12px 0;cursor:pointer;padding:22px 12px">Drop a PDF here, or click to choose one<input type="file" id="shFile" accept="application/pdf,.pdf" hidden></label>
+  <div id="shLevels" style="display:flex;flex-direction:column;gap:6px">
+    <label style="display:flex;gap:8px;align-items:baseline"><input type="radio" name="shLv" value="normal" checked style="width:auto"><span><b>Normal</b> <span class="small">pictures at 150 dpi, in color. Good for email and printing.</span></span></label>
+    <label style="display:flex;gap:8px;align-items:baseline"><input type="radio" name="shLv" value="small" style="width:auto"><span><b>Smallest</b> <span class="small">pictures at 72 dpi. Fine on screen, rough when printed.</span></span></label>
+    <label style="display:flex;gap:8px;align-items:baseline"><input type="radio" name="shLv" value="gray" style="width:auto"><span><b>Black and white</b> <span class="small">grayscale at 150 dpi. For scans where color doesn’t matter.</span></span></label>
+  </div>
+  <p class="msg" id="shMsg" style="margin:12px 0 0"></p>
+  <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="pri" id="shSave" hidden>Download the smaller PDF</button></div>
+  <p class="small" style="margin:10px 0 0">Text stays sharp and searchable. Only pictures and scans get smaller. Your original file isn’t changed.</p>
+</div></div>
 <div class="mbg" id="tiDlg" role="dialog" aria-modal="true" aria-labelledby="tiTitle" style="z-index:21"><div class="mbox" style="width:min(1100px,96vw);max-height:92vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="tiTitle" style="margin:0">Incoming texts</h3><button type="button" id="tiClose">Close</button></div>
   <div class="row" style="gap:10px;align-items:center;margin:10px 0"><select id="tiMine" style="width:auto"><option value="1">Replies to my texts</option><option value="0">All incoming texts</option></select><input id="tiQ" placeholder="Search the message, number or who it replied to" style="flex:1 1 260px"><span class="small" id="tiCount"></span></div>
@@ -1860,7 +1872,7 @@ function renderFiles(){
   renderMail();signEnsure('lead');
   const fs=(cur&&cur.files)||[];
   warmFiles(fs);
-  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${signBits(f,'lead')}${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-open="${esc(f.id)}">Open / edit</button>${signBits(f,'lead')}${shrinkBits(f)}${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
 async function addFiles(list){
   if(!list.length||!assets)return;if(!(await ensureSaved()))return;
@@ -3551,7 +3563,7 @@ $('clFileAdd').onclick=()=>$('clFileIn').click();$('clFileIn').onchange=()=>{con
 // policy files: dropped in the policy pop-up, stored with the client (tagged to the policy) so they show in both places
 const clFileList=()=>editClient?(editClient.files||[]):clPending;
 function renderPpFiles(){const pid=polTr&&polTr.querySelector('[data-p=pid]').value,fs=clFileList().filter(f=>pid&&f.pid===pid).reverse();$('ppUpRow').hidden=!assets;$('ppFileAdd').hidden=!assets;
-  $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button>${signBits(f,'client')}${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-prmf="${esc(f.id)}">Remove</button>`:''}</li>`).join('')||'<li class="small" style="border:none;padding:0">No files for this policy yet.</li>'}
+  $('ppFiles').innerHTML=fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-popen="${esc(f.id)}">Open</button><button data-psave="${esc(f.id)}">Save</button>${signBits(f,'client')}${shrinkBits(f)}${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-prmf="${esc(f.id)}">Remove</button>`:''}</li>`).join('')||'<li class="small" style="border:none;padding:0">No files for this policy yet.</li>'}
 $('ppFileAdd').onclick=()=>$('ppFileIn').click();$('ppFileIn').onchange=()=>{const list=[...$('ppFileIn').files];$('ppFileIn').value='';if(polTr){addClientFiles(list,polTr.querySelector('[data-p=pid]').value);list.forEach(ppSheetFill)}};
 /* ---------- policy pop-up: drop a quote sheet, dec page or binder to fill the policy ---------- */
 // our own personal auto quote sheet is read straight from its form boxes; anything else goes to Claude (when the server has it turned on)
@@ -3661,7 +3673,7 @@ $('ppFiles').addEventListener('click',async e=>{const b=e.target.closest('button
 function renderClFiles(c){const fs=[...((c&&c.files)||[])].reverse();signEnsure('client');$('clUpRow').hidden=!assets;$('clFileAdd').hidden=!assets;
   const pols=[...$('polRows').rows].map(t=>{const v=k=>t.querySelector(`[data-p=${k}]`).value.trim();return['line','number','carrier','company'].some(v)&&{pid:v('pid'),name:[v('line')||'Policy',v('number'),v('eff')].filter(Boolean).join(' · ')}}).filter(Boolean);
   const pick=f=>`<select class="clPolPick" data-clpol="${esc(f.id)}" title="Which policy this file belongs to"><option value="">${f.pid&&pols.some(p=>p.pid===f.pid)?'No policy (client only)':'Assign to policy…'}</option>${pols.map(p=>`<option value="${esc(p.pid)}"${p.pid===f.pid?' selected':''}>${esc(p.name)}</option>`).join('')}</select>`;
-  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${signBits(f,'client')}${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}${pols.length?pick(f):''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use + Add file or drop them above, or add them in a policy.</li>'}
+  $('clFiles').innerHTML=fs.length?fs.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><span class="fbrk"></span><button class="pri" data-clopen="${esc(f.id)}">Open</button><button data-clsave="${esc(f.id)}">Save</button>${signBits(f,'client')}${shrinkBits(f)}${assets?`<button data-clren="${esc(f.id)}">Rename</button>`:''}${assets?`<button class="danger" data-clrm="${esc(f.id)}">Remove</button>`:''}${pols.length?pick(f):''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files yet. Use + Add file or drop them above, or add them in a policy.</li>'}
 const reClFiles=()=>renderClFiles(editClient||{files:clPending});
 // a client file's list changed: save it (or keep it pending on a new client) and redraw both lists
 async function putClFiles(files){if(editClient){await clientsCol.doc(editClient.id).update({files});editClient.files=files}else clPending.splice(0,clPending.length,...files);reClFiles();if(polTr)renderPpFiles()}
@@ -4229,6 +4241,54 @@ function tiBadge(n){const d=$('txInDot');d.classList.toggle('on',!!n);d.title=n?
 async function tiPoll(){if(!$('txInBtn')||$('txInBtn').hidden||$('tiDlg').classList.contains('on'))return;
   try{const r=await fetch(`/api/text/inbox?mine=1&since=${tiSeen()}`,{credentials:'same-origin'});if(r.ok)tiBadge(((await r.json()).items||[]).length)}catch(_){}}
 textStatus().then(st=>{if(!st||!st.configured)return;$('txInBtn').hidden=false;tiPoll();setInterval(tiPoll,120000)});
+/* ---------- Shrink PDF: the server rewrites the PDF with smaller pictures (Ghostscript) ---------- */
+const SH_ERR={shrink_off:'the PDF shrinker isn’t installed on the server yet',shrink_slow:'the file took too long to shrink',shrink_failed:'this PDF couldn’t be read to shrink it',too_large:'the file is too big (25 MB most)',bad_pdf:'that isn’t a PDF file','413':'the file is too big (25 MB most)'};
+async function shrinkCall(bytes,level){const r=await fetch('/api/pdf/shrink?level='+encodeURIComponent(level||'normal'),{method:'POST',credentials:'same-origin',headers:{'content-type':'application/pdf'},body:bytes});
+  if(!r.ok){let j={};try{j=await r.json()}catch(_){}const c=String(j.code||j.detail||r.status);throw new Error(SH_ERR[c]||c)}
+  return {bytes:new Uint8Array(await r.arrayBuffer()),before:+r.headers.get('X-Before')||0,after:+r.headers.get('X-After')||0,shrunk:r.headers.get('X-Shrunk')==='1'}}
+const SH_MIN=100*1024; // smaller files aren't worth it
+const shrinkBits=f=>assets&&isPdfFile(f)&&(f.size||0)>=SH_MIN&&!/ - signed\.pdf$/i.test(f.name||'')?`<button data-shrink="${esc(f.id)}" title="Make this PDF smaller (pictures at 150 dpi)">Shrink</button>`:'';
+let shBusy=false;
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-shrink]');if(!b)return;const box=b.closest('#files,#clFiles,#ppFiles');if(!box)return;e.stopPropagation();
+  const kind=box.id==='files'?'lead':'client';if(isLocked(kind))return toast('This '+kind+' is view-only right now.');if(shBusy)return toast('Still shrinking the last file…');
+  const list=()=>kind==='lead'?((leads.find(l=>l.id===cur.id)||cur).files||[]):clFileList(),f=list().find(x=>x.id===b.dataset.shrink);if(!f)return;
+  shBusy=true;b.disabled=true;b.textContent='Shrinking…';
+  try{const res=await shrinkCall(await fileBytes(f),'normal');
+    if(!res.shrunk){toast(`${f.name} is already about as small as it can get (${fmtSize(res.before)}). Nothing changed.`,6000);return}
+    const pct=Math.round(100-res.after*100/res.before);
+    if(!(await sure(`Shrink ${f.name} from ${fmtSize(res.before)} to ${fmtSize(res.after)} (${pct}% smaller)? Pictures and scans get a little less sharp; text stays the same. Yes replaces the file, No keeps the original.`)))return;
+    if(isLocked(kind))return toast('This '+kind+' is view-only right now.');
+    const r=await storeBytes(res.bytes.buffer.slice(res.bytes.byteOffset,res.bytes.byteOffset+res.bytes.byteLength),'application/pdf'),now=new Date().toISOString();
+    const swap=x=>x.id===f.id?{...x,id:r.id,type:'application/pdf',size:r.sizeBytes||res.after,enc:r.enc||'',editedAt:now,...(me?{editedBy:me}:{})}:x;
+    const files=list().map(swap);if(!files.some(x=>x.id===r.id)){try{await assets.delete(r.id)}catch(_){}return toast('That file was removed while it was shrinking. Nothing changed.',6000)}
+    if(kind==='lead'){await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles()}else await putClFiles(files);
+    try{await assets.delete(f.id)}catch(_){}
+    toast(`${f.name} is now ${fmtSize(res.after)} (was ${fmtSize(res.before)}).`,5000)}
+  catch(err){toast('Couldn’t shrink it: '+(err&&err.code?errText(err):err.message),7000)}
+  finally{shBusy=false;if(b.isConnected){b.disabled=false;b.textContent='Shrink'}}},true);
+// the main-page tool: drop any PDF, pick the quality, download the smaller copy
+let shSrc=null,shOut=null;
+const shMsg=(t,c)=>{$('shMsg').className='msg'+(c?' '+c:'');$('shMsg').textContent=t};
+async function shRun(){if(!shSrc)return;const lv=(document.querySelector('input[name=shLv]:checked')||{}).value||'normal',src=shSrc;$('shSave').hidden=true;shOut=null;
+  if(src.bytes.length>25*1024*1024)return shMsg(`${src.name} is ${fmtSize(src.bytes.length)}. The most it can take is 25 MB.`,'err');
+  shMsg(`Shrinking ${src.name} (${fmtSize(src.bytes.length)})…`);document.querySelectorAll('input[name=shLv]').forEach(x=>x.disabled=true);
+  try{const res=await shrinkCall(src.bytes,lv);if(shSrc!==src)return;
+    if(!res.shrunk)return shMsg(`${src.name} is already about as small as it can get at this setting (${fmtSize(res.before)}).`,'ok');
+    shOut={name:src.name.replace(/\.pdf$/i,'')+' - small.pdf',bytes:res.bytes};
+    shMsg(`${fmtSize(res.before)} → ${fmtSize(res.after)} (${Math.round(100-res.after*100/res.before)}% smaller).`,'ok');$('shSave').hidden=false}
+  catch(err){shMsg('Couldn’t shrink it: '+err.message,'err')}
+  finally{document.querySelectorAll('input[name=shLv]').forEach(x=>x.disabled=false)}}
+async function shPick(file){if(!file)return;if(!/pdf/i.test(file.type||'')&&!/\.pdf$/i.test(file.name||''))return shMsg(`${file.name} isn’t a PDF.`,'err');
+  try{shSrc={name:file.name,bytes:new Uint8Array(await file.arrayBuffer())}}catch(_){return shMsg(`Couldn’t read ${file.name}.`,'err')}shRun()}
+$('shBtn').onclick=()=>{shSrc=shOut=null;$('shSave').hidden=true;shMsg('');$('shFile').value='';$('shDlg').classList.add('on')};
+$('shClose').onclick=()=>{$('shDlg').classList.remove('on');shSrc=shOut=null};
+$('shFile').onchange=e=>shPick(e.target.files[0]);
+$('shLevels').addEventListener('change',shRun);
+['dragover','dragenter'].forEach(t=>$('shDrop').addEventListener(t,e=>{e.preventDefault();$('shDrop').classList.add('over')}));
+$('shDrop').addEventListener('dragleave',()=>$('shDrop').classList.remove('over'));
+$('shDrop').addEventListener('drop',e=>{e.preventDefault();$('shDrop').classList.remove('over');shPick((e.dataTransfer.files||[])[0])});
+$('shSave').onclick=async()=>{if(!shOut)return;try{if(dl)await dl.save({filename:shOut.name,data:shOut.bytes});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([shOut.bytes],{type:'application/pdf'}));a.download=shOut.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}}
+  catch(err){if(!err||err.code!=='declined')shMsg('Couldn’t save it: '+(err&&err.message||''),'err')}};
 $('txInBtn').onclick=tiOpen;$('tiClose').onclick=()=>$('tiDlg').classList.remove('on');
 $('tiDlg').addEventListener('click',e=>{if(e.target===$('tiDlg'))$('tiDlg').classList.remove('on')});
 $('tiQ').addEventListener('input',()=>{clearTimeout(tiT);tiT=setTimeout(tiLoad,300)});$('tiMine').onchange=tiLoad;
