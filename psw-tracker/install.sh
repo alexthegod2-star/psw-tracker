@@ -56,6 +56,13 @@ if [ -s "$SRC/.text-key" ]; then
     sed -i '/^SIMPLETEXTING_API_KEY=/d' "$APP/.env"; echo "SIMPLETEXTING_API_KEY=$KEY" >> "$APP/.env"; echo "== Texting key set"
   else echo "!! The SIMPLETEXTING_API_KEY secret doesn't look like a SimpleTexting API token, so it was not used"; fi
 fi
+# Telegram: the deploy step sends the repo secret TELEGRAM_BOT_TOKEN as .tg-key; it replaces the token in .env
+if [ -s "$SRC/.tg-key" ]; then
+  KEY="$(tr -d '[:space:]' < "$SRC/.tg-key")"; rm -f "$SRC/.tg-key"
+  if [[ "$KEY" =~ ^[0-9]{5,}:[A-Za-z0-9_-]{30,}$ ]]; then
+    sed -i '/^TELEGRAM_BOT_TOKEN=/d' "$APP/.env"; echo "TELEGRAM_BOT_TOKEN=$KEY" >> "$APP/.env"; echo "== Telegram bot token set"
+  else echo "!! The TELEGRAM_BOT_TOKEN secret doesn't look like a Telegram bot token (123456:ABC...), so it was not used"; fi
+fi
 chown -R root:psw "$APP"; chmod 640 "$APP/.env"
 chown -R psw:psw "$DATA"; chmod 750 "$DATA"
 

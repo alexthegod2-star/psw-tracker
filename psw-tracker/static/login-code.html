@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PSW Tracker sign-in code</title>
+<style>
+  :root{--bg:#e3eefb;--panel:#fff;--ink:#16263a;--muted:#5b6b80;--line:#c5d3e4;--accent:#1f5fa8}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px 24px;width:100%;max-width:340px;display:grid;gap:14px;box-shadow:0 6px 24px rgba(20,50,90,.08)}
+  form{display:grid;gap:14px;margin:0}
+  .top{display:flex;align-items:center;gap:10px}
+  .top img{height:40px}
+  h1{font-size:18px;margin:0}
+  p{margin:0;font-size:14px;color:var(--muted)}
+  label{display:grid;gap:5px;font-size:13px;color:var(--muted)}
+  input{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:22px;letter-spacing:6px;text-align:center}
+  input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  button{font:inherit;font-weight:600;padding:10px;border:0;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer}
+  button.link{background:none;color:var(--accent);padding:0;font-weight:500;text-decoration:underline}
+  .bad{color:#b42318;font-size:13px}.ok{color:#18794e;font-size:13px}
+  a{color:var(--accent);font-size:13px}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="top"><img src="/psw-logo.png" alt="" onerror="this.remove()"><h1>PSW Lead &amp; Task Tracker</h1></div>
+  <p id="to">We sent a 6-digit sign-in code to your phone.</p>
+  <p class="bad" id="bad" hidden></p>
+  <p class="bad" id="sms" hidden>Couldn’t send a new code. Try again in a minute.</p>
+  <p class="bad" id="wait" hidden>Wait 30 seconds before asking for another code.</p>
+  <p class="ok" id="sent" hidden>New code sent.</p>
+  <form method="post" action="/login/code">
+    <input type="hidden" name="t" class="t">
+    <label>Sign-in code<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9 ]*" required autofocus></label>
+    <button type="submit">Sign in</button>
+  </form>
+  <form method="post" action="/login/code/resend"><input type="hidden" name="t" class="t"><button type="submit" class="link">Send me a new code</button></form>
+  <a href="/login">Back to sign in</a>
+</div>
+<script>
+const q=new URLSearchParams(location.search),t=q.get('t')||'';document.querySelectorAll('.t').forEach(x=>x.value=t);
+const b=q.get('bad');if(b){const e=document.getElementById('bad');e.textContent=`That code isn’t right. ${b} ${b==='1'?'try':'tries'} left.`;e.hidden=false}
+for(const k of ['sms','wait','sent'])if(q.get(k))document.getElementById(k).hidden=false;
+fetch('/api/auth/code?t='+encodeURIComponent(t)).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.to)document.getElementById('to').textContent=`We sent a 6-digit sign-in code to ${d.to}. It expires in 10 minutes.`}).catch(()=>{});
+</script>
+</body>
+</html>
