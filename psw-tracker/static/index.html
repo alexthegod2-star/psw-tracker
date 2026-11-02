@@ -4254,11 +4254,13 @@ async function tiLoad(){const q=$('tiQ').value.trim(),mine=$('tiMine').value==='
   const seen=+($('tiDlg').dataset.seen||0);
   $('tiCount').textContent=`${tiItems.length} text${tiItems.length===1?'':'s'}${tiItems.length>=500?' (newest 500)':''}`;
   $('tiRows').innerHTML=tiItems.map((m,i)=>{const w=tiWho(m.phone);return `<tr data-ti="${i}"${m.at>seen?' class="new"':''}><td>${esc(mhWhen(m.at))}</td><td><b>${esc(w?w.name:'Unknown number')}</b><div class="small">${esc(fmtPhone(m.phone))}${w?' · '+(w.kind==='client'?'client':'lead'):''}</div></td><td>${esc(m.text)}</td><td>${m.to_name?`${esc(m.to_name)}${m.re_text?`<div class="small" title="${esc(m.re_text)}">“${esc(m.re_text.length>70?m.re_text.slice(0,70)+'…':m.re_text)}”</div>`:''}`:'<span class="small">No text sent from the database</span>'}</td></tr>`}).join('')||'<tr><td colspan="4" class="small">No incoming texts yet.</td></tr>'}
-async function tiOpen(){$('tiDlg').dataset.seen=tiSeen();$('tiDlg').classList.add('on');textStatus().then(st=>{$('tiHook').hidden=!(st&&st.hookUrl);$('tiHookUrl').value=(st&&st.hookUrl)||''}).catch(()=>{});await tiLoad();try{localStorage.setItem(tiSeenKey(),String(Date.now()/1000))}catch(_){}tiBadge(0)}
-function tiBadge(n){const d=$('txInDot');d.classList.toggle('on',!!n);d.title=n?`${n} new repl${n===1?'y':'ies'} to your texts`:'No new replies to your texts'}
+let tiOpened=false;async function tiOpen(){if(!tiOpened&&isOwner)$('tiMine').value='0';tiOpened=true; // the owners start on All incoming texts
+  $('tiDlg').dataset.seen=tiSeen();$('tiDlg').classList.add('on');textStatus().then(st=>{$('tiHook').hidden=!(st&&st.hookUrl);$('tiHookUrl').value=(st&&st.hookUrl)||''}).catch(()=>{});await tiLoad();try{localStorage.setItem(tiSeenKey(),String(Date.now()/1000))}catch(_){}tiBadge(0)}
+function tiBadge(n){const d=$('txInDot');d.classList.toggle('on',!!n);d.title=n?`${n} new text${n===1?'':'s'} for you`:'No new texts for you'}
 async function tiPoll(){if(!$('txInBtn')||$('txInBtn').hidden||$('tiDlg').classList.contains('on'))return;
-  try{const r=await fetch(`/api/text/inbox?mine=1&since=${tiSeen()}`,{credentials:'same-origin'});if(r.ok)tiBadge(((await r.json()).items||[]).length)}catch(_){}}
-textStatus().then(st=>{if(!st||!st.configured)return;$('txInBtn').hidden=false;tiPoll();setInterval(tiPoll,120000)});
+  // green for a new reply to one of your texts; the owners also get green for a new text that isn't a reply to anyone's text
+  try{const r=await fetch(`/api/text/inbox?since=${tiSeen()}`,{credentials:'same-origin'});if(r.ok)tiBadge(((await r.json()).items||[]).filter(x=>x.mine||(isOwner&&!x.to_user)).length)}catch(_){}}
+textStatus().then(st=>{if(!st||!st.configured)return;$('txInBtn').hidden=false;tiPoll();setInterval(tiPoll,30000)});
 /* ---------- Shrink PDF: the server rewrites the PDF with smaller pictures (Ghostscript) ---------- */
 const SH_ERR={shrink_off:'the PDF shrinker isn’t installed on the server yet',shrink_slow:'the file took too long to shrink',shrink_failed:'this PDF couldn’t be read to shrink it',too_large:'the file is too big (25 MB most)',bad_pdf:'that isn’t a PDF file','413':'the file is too big (25 MB most)'};
 async function shrinkCall(bytes,level){const r=await fetch('/api/pdf/shrink?level='+encodeURIComponent(level||'normal'),{method:'POST',credentials:'same-origin',headers:{'content-type':'application/pdf'},body:bytes});
