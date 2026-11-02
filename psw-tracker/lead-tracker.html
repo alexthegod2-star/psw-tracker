@@ -188,7 +188,19 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .sgTop{flex-direction:column;align-items:stretch}#sg2[hidden],#sgWho[hidden],#sgTest[hidden],#sgAdd2[hidden]{display:none}.sgPeople{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.sgPeople label,.sgTop label{display:flex;flex-direction:column;font-size:13px;gap:2px;flex:1 1 200px}.sgTop textarea{font:inherit;resize:vertical}.sgTools button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}#sgWho label{display:inline-flex;gap:4px;align-items:center}#sgWho input{width:auto}
 .sgBox{position:absolute;z-index:4;box-sizing:border-box;border:2px solid #b58900;background:rgba(255,235,59,.6);color:#000;font:600 11px/1.1 Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;cursor:move;user-select:none;touch-action:none;border-radius:3px;overflow:visible}.sgBox.thin{font-size:9px;border-width:1px}.sgBox.s1{border-color:#1f5fbf;background:rgba(120,170,255,.55)}
 .sgBox .x{position:absolute;top:-9px;right:-9px;width:18px;height:18px;min-height:0;border-radius:50%;background:#c00;color:#fff;font:700 12px/18px Arial,sans-serif;text-align:center;cursor:pointer;padding:0;border:0}
-button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:600}button.signBtn:hover{background:#25843a;border-color:#25843a}#sgDocs:empty{display:none}#sg .edh{background:#e6f4e8;border-bottom-color:#c5e3ca}.sgTop>.sgPeople:last-child{flex-wrap:nowrap}#sg .edh input,#sg .edh textarea,#sg .edh select{background:#fff}.sgFiles{gap:8px;padding-top:6px;padding-bottom:6px}.sgDoc{position:relative;font-size:13px;padding:3px 22px 3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card)}.sgDoc .x{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:16px;height:16px;min-height:0;padding:0;border:0;border-radius:50%;background:#c00;color:#fff;font:700 11px/16px Arial,sans-serif;cursor:pointer}.sgDocH{width:min(900px,100%);font-weight:600;font-size:14px;margin-top:8px}.sgBadge{font-size:12px;padding:1px 8px;border-radius:999px;background:#fff3cd;color:#7a5a00;border:1px solid #f0d27a;cursor:pointer;white-space:nowrap}.sgBadge.ok{background:#e6f4ea;color:#1e6b34;border-color:#a6d8b4;cursor:default}.sgBadge.bad{background:#fdeaea;color:#a12020;border-color:#f0b8b8;cursor:default}.sgVoid{font-size:12px}
+button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:600}button.signBtn:hover{background:#25843a;border-color:#25843a}#sgDocs:empty{display:none}#sg .edh{background:#e6f4e8;border-bottom-color:#c5e3ca}.sgTop>.sgPeople:last-child{flex-wrap:nowrap}#sg .edh input,#sg .edh textarea,#sg .edh select{background:#fff}.sgFiles{gap:8px;padding-top:6px;padding-bottom:6px}
+/* the send-for-signature boxes sit in a pane on the left so the document gets the full height */
+#sg .sgMain{flex:1;display:flex;min-height:0}
+#sg .sgSide{flex:0 0 340px;width:340px;overflow:auto;background:#e6f4e8;border-right:1px solid #c5e3ca}
+#sg .sgSide .edh{border-bottom-color:#c5e3ca;align-items:stretch}
+#sg .sgSide .sgPeople,#sg .sgTop>.sgPeople:last-child{flex-wrap:wrap}
+#sg .sgSide .sgPeople label{flex:1 1 100%}
+#sg .sgSide .sgPeople>.sgPeople{flex:1 1 100%}
+#sg .sgSide .sgTools{display:grid;grid-template-columns:1fr 1fr}
+#sg .sgSide .sgTools>:not(button){grid-column:1/-1}
+#sg .sgSide .sgTools>[hidden]{display:none}
+#sg #sgBody{min-width:0}
+@media (max-width:760px){#sg .sgMain{flex-direction:column}#sg .sgSide{flex:0 0 auto;width:auto;max-height:45vh;border-right:0;border-bottom:1px solid #c5e3ca}}.sgDoc{position:relative;font-size:13px;padding:3px 22px 3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card)}.sgDoc .x{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:16px;height:16px;min-height:0;padding:0;border:0;border-radius:50%;background:#c00;color:#fff;font:700 11px/16px Arial,sans-serif;cursor:pointer}.sgDocH{width:min(900px,100%);font-weight:600;font-size:14px;margin-top:8px}.sgBadge{font-size:12px;padding:1px 8px;border-radius:999px;background:#fff3cd;color:#7a5a00;border:1px solid #f0d27a;cursor:pointer;white-space:nowrap}.sgBadge.ok{background:#e6f4ea;color:#1e6b34;border-color:#a6d8b4;cursor:default}.sgBadge.bad{background:#fdeaea;color:#a12020;border-color:#f0b8b8;cursor:default}.sgVoid{font-size:12px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
 </style>
 
@@ -392,6 +404,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
 </div>
 <div class="ed" id="sg" aria-hidden="true" style="z-index:25">
   <div class="edh"><span class="nm" id="sgName"></span><span class="small" id="sgTest" hidden style="color:#b45309">DocuSign test account: these are practice emails, not real signatures.</span><button type="button" id="sgCancel">Cancel</button><button type="button" class="pri" id="sgSend">Send to DocuSign</button></div>
+  <div class="sgMain"><div class="sgSide">
   <div class="edh sgTop">
     <div class="sgPeople"><label>Signer name<input id="sgN1" autocomplete="off"></label><label>Signer email<input id="sgE1" type="email" autocomplete="off"></label><button type="button" id="sgAdd2" title="Someone else signs too, like a co-owner or spouse">+ Second signer</button>
       <span id="sg2" hidden class="sgPeople"><label>Second signer name<input id="sgN2" autocomplete="off"></label><label>Second signer email<input id="sgE2" type="email" autocomplete="off"></label><button type="button" id="sgRm2" title="No second signer">Remove</button></span></div>
@@ -401,7 +414,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div class="edh sgTools"><span class="small">Add a box, then click on the page:</span><button type="button" data-sgt="sign">Sign here</button><button type="button" data-sgt="initial">Initials</button><button type="button" data-sgt="date">Date signed</button><button type="button" data-sgt="name">Printed name</button>
     <span id="sgWho" hidden class="small">For: <label><input type="radio" name="sgWho" value="0" checked> <span id="sgW1">Signer 1</span></label> <label><input type="radio" name="sgWho" value="1"> <span id="sgW2">Signer 2</span></label></span>
     <span class="edmsg" id="sgInfo"></span></div>
-  <div class="edb" id="sgBody"></div>
+  </div><div class="edb" id="sgBody"></div></div>
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
 <div class="mbg" id="shDlg" role="dialog" aria-modal="true" aria-labelledby="shTitle" style="z-index:21"><div class="mbox" style="width:min(620px,96vw)">
