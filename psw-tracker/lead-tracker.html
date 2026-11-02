@@ -3767,8 +3767,9 @@ function sgClose(){$('sg').classList.remove('on','adding');$('sg').setAttribute(
 const sgFileList=()=>sg?(sg.kind==='lead'?(cur&&cur.files)||[]:clFileList()):[];
 function sgDocsUi(){if(!sg)return;const inIt=new Set(sg.docs.map(d=>d.f.id)),more=sgFileList().filter(f=>isPdfFile(f)&&!inIt.has(f.id));
   $('sgName').textContent=sg.docs.length>1?`${sg.docs.length} files to sign`:sg.docs[0].f.name;
-  $('sgDocs').innerHTML=(sg.docs.length>1?sg.docs.map((d,i)=>`<span class="sgDoc">${i+1}. ${esc(d.f.name)}${i?`<button type="button" class="x" data-sgdrop="${i}" title="Take this file out" aria-label="Take this file out">×</button>`:''}</span>`).join(''):'')+
-    (more.length?`<select id="sgMore" style="width:auto"><option value="">+ Add another file…</option>${more.map(f=>`<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')}</select>`:'')}
+  // the Add box stays on the left; the files in this envelope line up to its right
+  $('sgDocs').innerHTML=(more.length||sg.docs.length>1?`<select id="sgMore" style="width:auto"${more.length?'':' disabled'}><option value="">${more.length?'+ Add another file…':'No other PDFs to add'}</option>${more.map(f=>`<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')}</select>`:'')+
+    (sg.docs.length>1?sg.docs.map((d,i)=>`<span class="sgDoc">${i+1}. ${esc(d.f.name)}${i?`<button type="button" class="x" data-sgdrop="${i}" title="Take this file out" aria-label="Take this file out">×</button>`:''}</span>`).join(''):'')}
 // render one PDF's pages at the end and guess its signature boxes
 async function sgAddDoc(f){const d={f,start:sg.pages.length};sg.docs.push(d);sgDocsUi();
   d.bytes=await fileBytes(f);await loadPdfJs();d.pdf=await pdfjsLib.getDocument({data:d.bytes.slice(),...PDF_FONTS}).promise;
