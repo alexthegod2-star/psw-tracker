@@ -351,7 +351,8 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
     <div class="sec" id="supSec">
       <h3>Supplementals/Forms</h3>
       <div class="small" style="margin-bottom:8px">Fills the form from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
-      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button><button class="pri" data-sup="sl2">SL2</button></div>
+      <div class="row" id="supBtns" style="align-items:center"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button><button class="pri" data-sup="sl2">SL2</button><span id="supMine" class="row" style="gap:6px;align-items:center"></span><button type="button" id="supAddBtn" title="Add a fillable carrier form as a button here, for every lead">+ Add form</button></div>
+      <div class="row" id="supAddBox" hidden style="margin-top:6px;align-items:center"><input id="supAddName" placeholder="Button name (e.g. Kinsale contractor sup)" style="width:280px"><input type="file" id="supAddFile" accept="application/pdf,.pdf"><button class="pri" type="button" id="supAddSave">Save form</button><button type="button" id="supAddCancel">Cancel</button></div>
       <div class="msg" id="supMsg"></div>
     </div>
 
@@ -2322,6 +2323,10 @@ async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg 
     const lab=Object.fromEntries(QS_KEYS),sheet={};document.querySelectorAll('#edBody .annotationLayer [name]').forEach(el=>{if(el.classList.contains('tsIn'))return;
       const k=el.name.replace(/^f_/,''),v=el.type==='checkbox'?(el.checked?'Yes':''):String(el.value||'').trim();if(v&&!(k in sheet))sheet[k]=v});
     if(!Object.keys(sheet).length){say('This quote sheet is empty, so there’s nothing to fill the form with.','err');return}
+    await supFillWith(bytes,f.name,boxes,sheet,say,'com sup')}
+  catch(e){say(`${f.name}: couldn’t be filled (${e.message||'error'}).`,'err')}}
+// fills a carrier form's boxes from a quote sheet ({key without f_: value}) and saves it to the lead's Files as "<client> <suffix>.pdf"
+async function supFillWith(bytes,fname,boxes,sheet,say,suffix){const lab=Object.fromEntries(QS_KEYS),f={name:fname};
     const g=k=>sheet[k]||'',today=new Date();let vals={},ai=false,aiErr='';
     if(sample){say(`Claude is matching ${boxes.length} box${boxes.length===1?'':'es'} on ${f.name} to this sheet…`);
       const lines=Object.entries(sheet).map(([k,v])=>`${lab[k]||k}: ${v}`).join('\n'),list=boxes.map((b,i)=>`${i+1} | ${b.kind} | ${b.label||'-'} | ${b.name}${b.choices.length?' | choices: '+b.choices.join('; '):''}`).join('\n');
@@ -2338,10 +2343,9 @@ async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg 
       else if(fl instanceof PDFLib.PDFTextField){fl.setText(String(v));done++}}catch(_){}}
     try{form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica))}catch(_){}
     const client=(g('client_name')||cur.company||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',have=new Set((cur.files||[]).map(x=>x.name.toLowerCase()));
-    let name=`${client} com sup.pdf`;for(let i=2;have.has(name.toLowerCase());i++)name=`${client} com sup ${i}.pdf`;
+    let name=`${client} ${suffix}.pdf`;for(let i=2;have.has(name.toLowerCase());i++)name=`${client} ${suffix} ${i}.pdf`;
     const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
     if(ok)say(`Filled ${done} box${done===1?'':'es'}${ai?' (Claude matched them)':sample?` (Claude couldn’t: ${aiErr}, so matched by label)`:' (Claude isn’t turned on, so matched by label)'} and saved ${name} under Files. Open it to check and finish the rest.`,'ok');else say($('fileMsg').textContent||'Couldn’t save it.','err')}
-  catch(e){say(`${f.name}: couldn’t be filled (${e.message||'error'}).`,'err')}}
 {const d=$('edSupDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)supFill(f)});
   $('edSupIn').onchange=()=>{const f=$('edSupIn').files[0];$('edSupIn').value='';if(f)supFill(f)}}
@@ -4676,6 +4680,40 @@ $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data
     const ok=await uploadOne(new File([await doc.save()],name,{type:'application/pdf'}));
     if(ok){m.className='msg ok';m.textContent=`${name} is attached under Files.`}else{m.className='msg err';m.textContent=$('fileMsg').textContent}
   }catch(err){m.className='msg err';m.textContent='Couldn’t make the supplemental: '+(err.message||err.code||'error')}
+  btn.disabled=false;btn.textContent=label});
+// forms added with "+ Add form": kept for every lead in the supForms list; a click fills the form from the lead's quote sheet the way "Fill a carrier form" does
+const supCol=db.collection('supForms');let supForms=[];
+const supRender=()=>{$('supMine').innerHTML=supForms.map(x=>`<span class="row" style="gap:2px;align-items:center"><button class="pri" type="button" data-supx="${esc(x.id)}">${esc(x.name)}</button><button type="button" class="danger" data-supdel="${esc(x.id)}" title="Remove this form from the list">✕</button></span>`).join('')};
+supCol.onSnapshot(sn=>{supForms=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name).localeCompare(String(b.name)));supRender()},()=>{});
+const supAddClose=()=>{$('supAddBox').hidden=true;$('supAddName').value='';$('supAddFile').value=''};
+$('supAddBtn').onclick=()=>{$('supAddBox').hidden=!$('supAddBox').hidden;if(!$('supAddBox').hidden)$('supAddName').focus()};
+$('supAddCancel').onclick=supAddClose;
+$('supAddFile').onchange=()=>{const f=$('supAddFile').files[0];if(f&&!$('supAddName').value.trim())$('supAddName').value=f.name.replace(/\.pdf$/i,'')};
+$('supAddSave').onclick=async()=>{const m=$('supMsg'),say=(t,c='')=>{m.className='msg'+(c?' '+c:'');m.textContent=t},f=$('supAddFile').files[0],n=$('supAddName').value.replace(/\s+/g,' ').trim();
+  if(!f)return say('Pick the fillable PDF first.','err');if(!n)return say('Give the button a name.','err');if(!assets)return say('Files can’t be saved here.','err');
+  if(supForms.some(x=>String(x.name).toLowerCase()===n.toLowerCase()))return say(`There’s already a form called ${n}.`,'err');
+  const b=$('supAddSave');b.disabled=true;
+  try{say(`Checking ${f.name}…`);const bytes=new Uint8Array(await f.arrayBuffer());let boxes;try{boxes=await supFields(bytes)}catch(_){boxes=[]}
+    if(!boxes.length){say(`${f.name} has no fill-in boxes, so it can’t be filled. Ask the carrier for the fillable PDF.`,'err');b.disabled=false;return}
+    const r=await storeBytes(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'application/pdf');
+    await supCol.add({name:n,file:{id:r.id,enc:r.enc||'',name:f.name},addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});
+    supAddClose();say(`${n} is added. It’s a button here on every lead now.`,'ok')}
+  catch(e){say('Couldn’t add the form: '+errText(e),'err')}b.disabled=false};
+$('supSec').addEventListener('click',async e=>{const del=e.target.closest('[data-supdel]');if(del){const x=supForms.find(y=>y.id===del.dataset.supdel);if(!x)return;
+    if(!(await sureDel(`Remove ${x.name} from the forms list for everyone? Copies already saved to leads stay.`)))return;
+    try{await supCol.doc(x.id).delete();if(assets&&x.file)assets.delete(x.file.id).catch(()=>{})}catch(err){toast(errText(err))}return}
+  const btn=e.target.closest('[data-supx]');if(!btn||!(await ensureSaved()))return;const x=supForms.find(y=>y.id===btn.dataset.supx),m=$('supMsg'),label=btn.textContent,say=(t,c='')=>{m.className='msg'+(c?' '+c:'');m.textContent=t};if(!x)return;
+  const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(y=>/ com quote sheet\.pdf$/i.test(y.name));
+  if(!qs)return say('This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.','err');
+  btn.disabled=true;btn.textContent='Working…';
+  try{say(`Reading ${qs.name}…`);await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');let raw;try{raw=await fileBytes(qs)}catch(_){throw new Error('the quote sheet file is missing')}
+    const q=await PDFLib.PDFDocument.load(raw),sheet={};
+    for(const fl of q.getForm().getFields()){let v='';if(fl instanceof PDFLib.PDFTextField)v=fl.getText()||'';else if(fl instanceof PDFLib.PDFCheckBox)v=fl.isChecked()?'Yes':'';else if(fl instanceof PDFLib.PDFRadioGroup||fl instanceof PDFLib.PDFDropdown)v=[].concat(fl.getSelected()||'')[0]||'';
+      v=String(v).trim();const k=fl.getName().replace(/^f_/,'');if(v&&!(k in sheet))sheet[k]=v}
+    if(!sheet.client_name)sheet.client_name=fresh.company||[fresh.firstName,fresh.lastName].filter(Boolean).join(' ');
+    let bytes;try{bytes=await fileBytes(x.file)}catch(_){throw new Error('the saved form file is missing')}
+    const boxes=await supFields(bytes);await supFillWith(bytes,x.file.name||x.name+'.pdf',boxes,sheet,say,x.name.replace(/[^A-Za-z0-9 -]+/g,'').trim()||'form')}
+  catch(err){say(`Couldn’t fill ${x.name}: ${err.message||err.code||'error'}`,'err')}
   btn.disabled=false;btn.textContent=label});
 })();
 </script>
