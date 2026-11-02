@@ -6,6 +6,7 @@ FastAPI + SQLite, following Dave's database plan:
 - tracker module: leads, contacts, tasks and PDF files (/api/tracker/), switchable via PSW_MODULES
 - secrets live in .env next to this file, never in the code
 """
+import html as html_mod
 import base64
 import hashlib
 import hmac
@@ -400,6 +401,40 @@ def reset_ask(request: Request, who: str = Form(...)):
                 except Exception as e:
                     print("reset email failed:", e, flush=True)
     return RedirectResponse("/reset?sent=1", status_code=303)
+
+
+# ---------- core: forgot username (emails the username(s) on file for that email address) ----------
+_name_sent = {}
+
+
+@app.get("/username")
+def username_page():
+    return FileResponse(STATIC / "username.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/username")
+def username_ask(request: Request, email: str = Form(...)):
+    """The answer is the same whether or not the email matched, so it can't be used to find out who has a login"""
+    w = email.strip().lower()
+    now = time.time()
+    if "@" in w and now - _name_sent.get(w, 0) > 60 and os.environ.get("RESEND_API_KEY", "").strip():  # one email a minute per address
+        with db() as c:
+            rows = c.execute("SELECT username, name FROM users WHERE active=1 AND email<>'' AND lower(email)=? ORDER BY username", (w,)).fetchall()
+        if rows:
+            _name_sent[w] = now
+            base = str(request.base_url).rstrip("/")
+            if not re.match(r"https?://(localhost|127\.)", base):
+                base = base.replace("http://", "https://", 1)
+            first = (rows[0]["name"] or rows[0]["username"]).split()[0]
+            names = "".join(f"<li><b>{html_mod.escape(r['username'])}</b></li>" for r in rows)
+            html = (f"<p>Hi {html_mod.escape(first)},</p><p>Someone asked for the PSW database username that goes with this email address. "
+                    f"{'It is' if len(rows) == 1 else 'They are'}:</p><ul>{names}</ul>"
+                    f'<p><a href="{base}/login">Sign in to the PSW database</a></p><p>If you didn\'t ask for this, you can ignore this email.</p>')
+            try:
+                resend_post({"from": RESET_FROM, "to": [w], "subject": "Your PSW database username", "html": html})
+            except Exception as e:
+                print("username email failed:", e, flush=True)
+    return RedirectResponse("/username?sent=1", status_code=303)
 
 
 def open_reset(c, t):
