@@ -1935,6 +1935,10 @@ def ds_table(c):
               "sent_by TEXT NOT NULL, user_id TEXT NOT NULL, checked REAL NOT NULL DEFAULT 0, signed_blob TEXT NOT NULL DEFAULT '', "
               "signed_size INTEGER NOT NULL DEFAULT 0, attached INTEGER NOT NULL DEFAULT 0, done_at REAL)")
     c.execute("CREATE INDEX IF NOT EXISTS sign_envelopes_doc ON sign_envelopes(doc_path)")
+    have = {r[1] for r in c.execute("PRAGMA table_info(sign_envelopes)")}
+    for col in ("files", "signed_list"):  # several PDFs in one envelope: [{id,name}] sent, [{fileId,fileName,id,size}] signed
+        if col not in have:
+            c.execute(f"ALTER TABLE sign_envelopes ADD COLUMN {col} TEXT NOT NULL DEFAULT '[]'")
 
 
 def ds_consent_url(request, host):
@@ -1984,15 +1988,21 @@ async def sign_send(request: Request):
         err(404, "sign_off")
     b = await request.json()
     path = sign_doc_path(b.get("path"))
-    fid, fname = str(b.get("fileId") or ""), str(b.get("fileName") or "document.pdf").strip()[:200]
-    if not SEG.match(fid):
-        err(400, "bad_id")
-    try:
-        pdf = base64.b64decode(str(b.get("pdf") or ""), validate=True)
-    except Exception:
+    docs = []
+    for d in (b.get("docs") or [{"fileId": b.get("fileId"), "fileName": b.get("fileName"), "pdf": b.get("pdf"), "pid": b.get("pid")}])[:10]:
+        fid, fname = str(d.get("fileId") or ""), str(d.get("fileName") or "document.pdf").strip()[:200]
+        if not SEG.match(fid):
+            err(400, "bad_id")
+        try:
+            pdf = base64.b64decode(str(d.get("pdf") or ""), validate=True)
+        except Exception:
+            err(400, "bad_pdf")
+        if not pdf.startswith(b"%PDF") or len(pdf) > MAX_BLOB:
+            err(400, "bad_pdf")
+        docs.append({"id": fid, "name": fname, "pdf": pdf, "pid": str(d.get("pid") or "")[:64]})
+    if not docs or sum(len(d["pdf"]) for d in docs) > 25 * 1024 * 1024:
         err(400, "bad_pdf")
-    if not pdf.startswith(b"%PDF") or len(pdf) > MAX_BLOB:
-        err(400, "bad_pdf")
+    fid, fname = docs[0]["id"], docs[0]["name"]
     signers = []
     for s in (b.get("signers") or [])[:2]:
         name, email = str(s.get("name") or "").strip()[:100], str(s.get("email") or "").strip().lower()[:200]
@@ -2005,21 +2015,21 @@ async def sign_send(request: Request):
     n = 0
     for t in (b.get("tabs") or [])[:200]:
         try:
-            k, who = DS_KINDS.get(str(t.get("type"))), int(t.get("signer") or 0)
+            k, who, dn = DS_KINDS.get(str(t.get("type"))), int(t.get("signer") or 0), int(t.get("doc") or 0)
             pg, x, y = int(t["page"]), max(0, round(float(t["x"]))), max(0, round(float(t["y"])))
         except (AttributeError, KeyError, TypeError, ValueError):
             continue
-        if not k or not 0 <= who < len(signers):
+        if not k or not 0 <= who < len(signers) or not 0 <= dn < len(docs):
             continue
-        tabs[who].setdefault(k, []).append({"documentId": "1", "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)})
+        tabs[who].setdefault(k, []).append({"documentId": str(dn + 1), "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)})
         n += 1
     for i, s in enumerate(signers):
         if not tabs[i].get("signHereTabs"):
             err(400, "no_sign_box")
     subject = str(b.get("subject") or "").strip()[:100] or ("Please sign: " + re.sub(r"\.pdf$", "", fname, flags=re.I))[:100]
     env = {"emailSubject": subject, "status": "sent",
-           "documents": [{"documentBase64": base64.b64encode(pdf).decode(), "name": fname if fname.lower().endswith(".pdf") else fname + ".pdf",
-                          "fileExtension": "pdf", "documentId": "1"}],
+           "documents": [{"documentBase64": base64.b64encode(d["pdf"]).decode(), "name": d["name"] if d["name"].lower().endswith(".pdf") else d["name"] + ".pdf",
+                          "fileExtension": "pdf", "documentId": str(i + 1)} for i, d in enumerate(docs)],
            "recipients": {"signers": [{"email": s["email"], "name": s["name"], "recipientId": str(i + 1), "routingOrder": "1", "tabs": tabs[i]}
                                       for i, s in enumerate(signers)]}}
     msg = str(b.get("message") or "").strip()[:2000]
@@ -2034,32 +2044,38 @@ async def sign_send(request: Request):
         return ds_err(DsError("ds_failed", "DocuSign didn't return an envelope"))
     with db() as c:
         ds_table(c)
-        c.execute("INSERT INTO sign_envelopes(id,doc_path,file_id,file_name,pid,signers,status,sent_at,sent_by,user_id,checked) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                  (eid, path, fid, fname, str(b.get("pid") or "")[:64], json.dumps(signers), str(r.get("status") or "sent"), time.time(),
-                   u["name"] or u["username"], u["id"], time.time()))
+        c.execute("INSERT INTO sign_envelopes(id,doc_path,file_id,file_name,pid,signers,status,sent_at,sent_by,user_id,checked,files) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                  (eid, path, fid, fname, docs[0]["pid"], json.dumps(signers), str(r.get("status") or "sent"), time.time(),
+                   u["name"] or u["username"], u["id"], time.time(), json.dumps([{"id": d["id"], "name": d["name"]} for d in docs])))
     return {"ok": True, "id": eid, "status": r.get("status") or "sent", "test": _ds["host"] == "account-d.docusign.com"}
 
 
 def sign_row(r):
     return {"id": r["id"], "fileId": r["file_id"], "fileName": r["file_name"], "pid": r["pid"], "status": r["status"],
             "sentAt": r["sent_at"], "sentBy": r["sent_by"], "doneAt": r["done_at"], "signers": json.loads(r["signers"]),
-            "signed": {"id": r["signed_blob"], "size": r["signed_size"]} if r["signed_blob"] else None, "attached": bool(r["attached"])}
+            "signed": {"id": r["signed_blob"], "size": r["signed_size"]} if r["signed_blob"] else None, "attached": bool(r["attached"]),
+            "files": json.loads(r["files"] or "[]"), "signedList": json.loads(r["signed_list"] or "[]")}
 
 
 def sign_refresh(r):
     """ask DocuSign about an envelope that isn't finished; a completed one's signed PDF is saved as a file"""
     st = ds_call("GET", f"/envelopes/{r['id']}").get("status") or r["status"]
-    blob, size = r["signed_blob"], r["signed_size"]
+    blob, size, sl = r["signed_blob"], r["signed_size"], r["signed_list"] or "[]"
     if st == "completed" and not blob:
-        pdf = ds_call("GET", f"/envelopes/{r['id']}/documents/combined", raw=True)
-        blob, size = new_id(32), len(pdf)
-        (BLOBS / blob).write_bytes(pdf)
-        with db() as c:
-            c.execute("INSERT INTO tracker_blobs(id,type,size,created,created_by) VALUES(?,?,?,?,?)",
-                      (blob, "application/pdf", size, time.time(), r["user_id"]))
+        files = json.loads(r["files"] or "[]") or [{"id": r["file_id"], "name": r["file_name"]}]
+        out = []
+        for i, f in enumerate(files):  # each signed PDF comes back as its own file
+            pdf = ds_call("GET", f"/envelopes/{r['id']}/documents/{i + 1}", raw=True)
+            bid = new_id(32)
+            (BLOBS / bid).write_bytes(pdf)
+            with db() as c:
+                c.execute("INSERT INTO tracker_blobs(id,type,size,created,created_by) VALUES(?,?,?,?,?)",
+                          (bid, "application/pdf", len(pdf), time.time(), r["user_id"]))
+            out.append({"fileId": f["id"], "fileName": f["name"], "id": bid, "size": len(pdf)})
+        blob, size, sl = out[0]["id"], out[0]["size"], json.dumps(out)
     with db() as c:
-        c.execute("UPDATE sign_envelopes SET status=?, checked=?, signed_blob=?, signed_size=?, done_at=CASE WHEN ? THEN coalesce(done_at,?) ELSE done_at END WHERE id=?",
-                  (st, time.time(), blob, size, st in DS_FINAL, time.time(), r["id"]))
+        c.execute("UPDATE sign_envelopes SET status=?, checked=?, signed_blob=?, signed_size=?, signed_list=?, done_at=CASE WHEN ? THEN coalesce(done_at,?) ELSE done_at END WHERE id=?",
+                  (st, time.time(), blob, size, sl, st in DS_FINAL, time.time(), r["id"]))
 
 
 @app.get("/api/sign/list")
