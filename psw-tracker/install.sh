@@ -63,7 +63,30 @@ if [ -s "$SRC/.tg-key" ]; then
     sed -i '/^TELEGRAM_BOT_TOKEN=/d' "$APP/.env"; echo "TELEGRAM_BOT_TOKEN=$KEY" >> "$APP/.env"; echo "== Telegram bot token set"
   else echo "!! The TELEGRAM_BOT_TOKEN secret doesn't look like a Telegram bot token (123456:ABC...), so it was not used"; fi
 fi
-chown -R root:psw "$APP"; chmod 640 "$APP/.env"
+# DocuSign: the deploy step sends the integration key and user ID as .ds-id, and the RSA private key as .ds-key
+if [ -s "$SRC/.ds-id" ]; then
+  IK="$(sed -n 1p "$SRC/.ds-id" | tr -d '[:space:]')"; UID_="$(sed -n 2p "$SRC/.ds-id" | tr -d '[:space:]')"; rm -f "$SRC/.ds-id"
+  G='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  if [[ "$IK" =~ $G && "$UID_" =~ $G ]]; then
+    sed -i '/^DOCUSIGN_INTEGRATION_KEY=/d;/^DOCUSIGN_USER_ID=/d' "$APP/.env"
+    echo "DOCUSIGN_INTEGRATION_KEY=$IK" >> "$APP/.env"; echo "DOCUSIGN_USER_ID=$UID_" >> "$APP/.env"; echo "== DocuSign integration key and user ID set"
+  else echo "!! DOCUSIGN_INTEGRATION_KEY and DOCUSIGN_USER_ID should each look like 1a2b3c4d-1a2b-1a2b-1a2b-1a2b3c4d5e6f, so they were not used"; fi
+fi
+if [ -s "$SRC/.ds-key" ]; then
+  # a key copied from a web page can lose its line breaks; put them back
+  if python3 -c '
+import re, sys
+k = open(sys.argv[1]).read().replace("\r", "")
+m = re.search(r"-----BEGIN ([A-Z ]*PRIVATE KEY)-----(.*?)-----END \1-----", k, re.S)
+if not m:
+    sys.exit(1)
+body = re.sub(r"\s+", "", m.group(2))
+open(sys.argv[2], "w").write(f"-----BEGIN {m.group(1)}-----\n" + "\n".join(body[i:i + 64] for i in range(0, len(body), 64)) + f"\n-----END {m.group(1)}-----\n")
+' "$SRC/.ds-key" "$APP/docusign-key.pem"
+  then echo "== DocuSign private key set"; else echo "!! DOCUSIGN_PRIVATE_KEY has no -----BEGIN RSA PRIVATE KEY----- / -----END lines, so it was not used"; fi
+  rm -f "$SRC/.ds-key"
+fi
+chown -R root:psw "$APP"; chmod 640 "$APP/.env"; if [ -f "$APP/docusign-key.pem" ]; then chmod 640 "$APP/docusign-key.pem"; fi
 chown -R psw:psw "$DATA"; chmod 750 "$DATA"
 
 echo "== Python packages"

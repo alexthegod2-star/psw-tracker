@@ -23,6 +23,9 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SIMPLETEXTING_API_KEY: ${{ secrets.SIMPLETEXTING_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          DOCUSIGN_INTEGRATION_KEY: ${{ secrets.DOCUSIGN_INTEGRATION_KEY }}
+          DOCUSIGN_USER_ID: ${{ secrets.DOCUSIGN_USER_ID }}
+          DOCUSIGN_PRIVATE_KEY: ${{ secrets.DOCUSIGN_PRIVATE_KEY }}
         run: |
           # optional repo secret ANTHROPIC_API_KEY: sent along with the update; install.sh puts it in the server's .env (never in the repo)
           if [ -n "$ANTHROPIC_API_KEY" ]; then (umask 077; printf '%s' "$ANTHROPIC_API_KEY" > psw-tracker/.claude-key); fi
@@ -32,6 +35,9 @@ jobs:
           if [ -n "$SIMPLETEXTING_API_KEY" ]; then (umask 077; printf '%s' "$SIMPLETEXTING_API_KEY" > psw-tracker/.text-key); fi
           # optional repo secret TELEGRAM_BOT_TOKEN (sign-in codes by Telegram): same route, as .tg-key
           if [ -n "$TELEGRAM_BOT_TOKEN" ]; then (umask 077; printf '%s' "$TELEGRAM_BOT_TOKEN" > psw-tracker/.tg-key); fi
+          # optional repo secrets DOCUSIGN_INTEGRATION_KEY, DOCUSIGN_USER_ID, DOCUSIGN_PRIVATE_KEY (Send for signature): same route, as .ds-id and .ds-key
+          if [ -n "$DOCUSIGN_INTEGRATION_KEY" ] && [ -n "$DOCUSIGN_USER_ID" ]; then (umask 077; printf '%s\n%s\n' "$DOCUSIGN_INTEGRATION_KEY" "$DOCUSIGN_USER_ID" > psw-tracker/.ds-id); fi
+          if [ -n "$DOCUSIGN_PRIVATE_KEY" ]; then (umask 077; printf '%s' "$DOCUSIGN_PRIVATE_KEY" > psw-tracker/.ds-key); fi
           install -m 700 -d ~/.ssh
           [ -n "$DEPLOY_HOST" ] || { echo "::error::Secret DEPLOY_HOST is missing or empty"; exit 1; }
           [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "::error::Secret DEPLOY_KNOWN_HOSTS is missing or empty"; exit 1; }

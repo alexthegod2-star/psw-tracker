@@ -1713,6 +1713,300 @@ def mail_history_one(mid: int, request: Request):
     return {"html": r["html"]}
 
 
+# ---------- DocuSign: send a client's or lead's PDF for e-signature ----------
+# Needs repo secrets DOCUSIGN_INTEGRATION_KEY, DOCUSIGN_USER_ID and DOCUSIGN_PRIVATE_KEY (the deploy puts them on the server).
+# Works with a free DocuSign developer (demo) key for testing and with the live key after DocuSign's go-live review; it tries both.
+DS_HOSTS = ("account.docusign.com", "account-d.docusign.com")
+DS_FINAL = ("completed", "declined", "voided")
+DS_KINDS = {"sign": "signHereTabs", "initial": "initialHereTabs", "date": "dateSignedTabs", "name": "fullNameTabs"}
+_ds = {"tok": "", "exp": 0, "host": "", "acct": "", "base": ""}
+
+
+class DsError(Exception):
+    def __init__(self, code, detail="", host=""):
+        super().__init__(code)
+        self.code, self.detail, self.host = code, detail, host
+
+
+def ds_key_file():
+    return Path(os.environ.get("DOCUSIGN_KEY_FILE") or (Path(__file__).parent / "docusign-key.pem"))
+
+
+def ds_on():
+    return bool(os.environ.get("DOCUSIGN_INTEGRATION_KEY", "").strip() and os.environ.get("DOCUSIGN_USER_ID", "").strip()
+                and ds_key_file().is_file())
+
+
+def ds_http(method, url, data=None, headers=None):
+    """(status, body bytes); the tests swap this out for a fake DocuSign"""
+    req = urllib.request.Request(url, data=data, method=method, headers={"user-agent": "psw-tracker", **(headers or {})})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return r.status, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+
+
+def ds_assertion(host):
+    import base64
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding
+    b64 = lambda b: base64.urlsafe_b64encode(b).rstrip(b"=")
+    now = int(time.time())
+    head = b64(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
+    body = b64(json.dumps({"iss": os.environ["DOCUSIGN_INTEGRATION_KEY"].strip(), "sub": os.environ["DOCUSIGN_USER_ID"].strip(),
+                           "aud": host, "iat": now, "exp": now + 3600, "scope": "signature impersonation"}).encode())
+    key = serialization.load_pem_private_key(ds_key_file().read_bytes(), password=None)
+    return (head + b"." + body + b"." + b64(key.sign(head + b"." + body, padding.PKCS1v15(), hashes.SHA256()))).decode()
+
+
+def ds_token():
+    if _ds["tok"] and _ds["exp"] > time.time() + 120:
+        return _ds["tok"]
+    consent, said = "", ""
+    for host in ([_ds["host"]] if _ds["host"] else []) + [h for h in DS_HOSTS if h != _ds["host"]]:
+        try:
+            a = ds_assertion(host)
+        except Exception as e:
+            raise DsError("bad_key", "The DocuSign private key couldn't be read: " + str(e)[:200])
+        st, b = ds_http("POST", f"https://{host}/oauth/token", urllib.parse.urlencode(
+            {"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer", "assertion": a}).encode(),
+            {"content-type": "application/x-www-form-urlencoded"})
+        try:
+            j = json.loads(b or b"{}")
+        except ValueError:
+            j = {}
+        if st == 200 and j.get("access_token"):
+            tok = j["access_token"]
+            st2, b2 = ds_http("GET", f"https://{host}/oauth/userinfo", headers={"authorization": "Bearer " + tok})
+            accts = (json.loads(b2 or b"{}").get("accounts") or []) if st2 == 200 else []
+            want = os.environ.get("DOCUSIGN_ACCOUNT_ID", "").strip()
+            ac = next((x for x in accts if want and x.get("account_id") == want), None) or next((x for x in accts if x.get("is_default")), None) or (accts[:1] or [None])[0]
+            if not ac:
+                raise DsError("no_account", "DocuSign signed in but listed no account for this user")
+            _ds.update(tok=tok, exp=time.time() + int(j.get("expires_in") or 3600), host=host, acct=ac["account_id"], base=ac["base_uri"].rstrip("/"))
+            return tok
+        e = str(j.get("error") or st)
+        if e == "consent_required":
+            consent = consent or host
+        said = said or e
+        print(f"DocuSign sign-in at {host}: {st} {e}", flush=True)
+    if consent:
+        raise DsError("consent", host=consent)
+    raise DsError("auth_failed", said)
+
+
+def ds_call(method, path, body=None, raw=False):
+    """eSignature REST call on this account; path starts after /accounts/{id}"""
+    for again in (True, False):
+        tok = ds_token()
+        st, b = ds_http(method, f"{_ds['base']}/restapi/v2.1/accounts/{_ds['acct']}{path}",
+                        json.dumps(body).encode() if body is not None else None,
+                        {"authorization": "Bearer " + tok, "accept": "application/pdf" if raw else "application/json",
+                         **({"content-type": "application/json"} if body is not None else {})})
+        if st == 401 and again:
+            _ds["tok"] = ""
+            continue
+        if st >= 300:
+            try:
+                j = json.loads(b or b"{}")
+                msg = j.get("message") or j.get("errorCode") or ""
+            except ValueError:
+                msg = ""
+            print("DocuSign", method, path, st, msg, flush=True)
+            raise DsError("ds_failed", str(msg)[:300] or f"DocuSign said {st}")
+        return b if raw else json.loads(b or b"{}")
+
+
+def ds_err(e: DsError):
+    return JSONResponse({"code": e.code, "detail": e.detail}, status_code=502)
+
+
+def ds_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS sign_envelopes(id TEXT PRIMARY KEY, doc_path TEXT NOT NULL, file_id TEXT NOT NULL, "
+              "file_name TEXT NOT NULL, pid TEXT NOT NULL DEFAULT '', signers TEXT NOT NULL, status TEXT NOT NULL, sent_at REAL NOT NULL, "
+              "sent_by TEXT NOT NULL, user_id TEXT NOT NULL, checked REAL NOT NULL DEFAULT 0, signed_blob TEXT NOT NULL DEFAULT '', "
+              "signed_size INTEGER NOT NULL DEFAULT 0, attached INTEGER NOT NULL DEFAULT 0, done_at REAL)")
+    c.execute("CREATE INDEX IF NOT EXISTS sign_envelopes_doc ON sign_envelopes(doc_path)")
+
+
+def ds_consent_url(request, host):
+    base = os.environ.get("PSW_PUBLIC_URL", "").strip().rstrip("/") or str(request.base_url).rstrip("/")
+    return f"https://{host}/oauth/auth?" + urllib.parse.urlencode({"response_type": "code", "scope": "signature impersonation",
+        "client_id": os.environ.get("DOCUSIGN_INTEGRATION_KEY", "").strip(), "redirect_uri": base + "/docusign/done"})
+
+
+@app.get("/api/sign/status")
+def sign_status(request: Request):
+    need_module("tracker"); need_user(request)
+    if not ds_on():
+        return {"configured": False}
+    try:
+        ds_token()
+    except DsError as e:
+        out = {"configured": True, "ready": False, "code": e.code, "detail": e.detail}
+        if e.code == "consent":
+            out["consentUrl"] = ds_consent_url(request, e.host)
+        return out
+    return {"configured": True, "ready": True, "test": _ds["host"] == "account-d.docusign.com"}
+
+
+@app.get("/docusign/done")
+def docusign_done():
+    return HTMLResponse("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+                        "<title>DocuSign connected</title><body style='font:16px system-ui;padding:40px;text-align:center'>"
+                        "<h2>DocuSign is connected</h2><p>You can close this tab and go back to the PSW database.</p>")
+
+
+def sign_doc_path(p):
+    p = str(p or "")
+    m = re.match(r"^(leads|clients)/([A-Za-z0-9_\-]{1,64})$", p)
+    if not m:
+        err(400, "bad_path")
+    with db() as c:
+        if not c.execute("SELECT 1 FROM tracker_docs WHERE path=?", (p,)).fetchone():
+            err(404, "not_found")
+    return p
+
+
+@app.post("/api/sign/send")
+async def sign_send(request: Request):
+    import base64
+    need_module("tracker"); u = need_user(request)
+    if not ds_on():
+        err(404, "sign_off")
+    b = await request.json()
+    path = sign_doc_path(b.get("path"))
+    fid, fname = str(b.get("fileId") or ""), str(b.get("fileName") or "document.pdf").strip()[:200]
+    if not SEG.match(fid):
+        err(400, "bad_id")
+    try:
+        pdf = base64.b64decode(str(b.get("pdf") or ""), validate=True)
+    except Exception:
+        err(400, "bad_pdf")
+    if not pdf.startswith(b"%PDF") or len(pdf) > MAX_BLOB:
+        err(400, "bad_pdf")
+    signers = []
+    for s in (b.get("signers") or [])[:2]:
+        name, email = str(s.get("name") or "").strip()[:100], str(s.get("email") or "").strip().lower()[:200]
+        if not name or not EMAIL_RE.match(email):
+            err(400, "bad_signer")
+        signers.append({"name": name, "email": email})
+    if not signers:
+        err(400, "bad_signer")
+    tabs = [dict() for _ in signers]
+    n = 0
+    for t in (b.get("tabs") or [])[:200]:
+        try:
+            k, who = DS_KINDS.get(str(t.get("type"))), int(t.get("signer") or 0)
+            pg, x, y = int(t["page"]), max(0, round(float(t["x"]))), max(0, round(float(t["y"])))
+        except (AttributeError, KeyError, TypeError, ValueError):
+            continue
+        if not k or not 0 <= who < len(signers):
+            continue
+        tabs[who].setdefault(k, []).append({"documentId": "1", "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)})
+        n += 1
+    for i, s in enumerate(signers):
+        if not tabs[i].get("signHereTabs"):
+            err(400, "no_sign_box")
+    subject = str(b.get("subject") or "").strip()[:100] or ("Please sign: " + re.sub(r"\.pdf$", "", fname, flags=re.I))[:100]
+    env = {"emailSubject": subject, "status": "sent",
+           "documents": [{"documentBase64": base64.b64encode(pdf).decode(), "name": fname if fname.lower().endswith(".pdf") else fname + ".pdf",
+                          "fileExtension": "pdf", "documentId": "1"}],
+           "recipients": {"signers": [{"email": s["email"], "name": s["name"], "recipientId": str(i + 1), "routingOrder": "1", "tabs": tabs[i]}
+                                      for i, s in enumerate(signers)]}}
+    msg = str(b.get("message") or "").strip()[:2000]
+    if msg:
+        env["emailBlurb"] = msg
+    try:
+        r = ds_call("POST", "/envelopes", env)
+    except DsError as e:
+        return ds_err(e)
+    eid = str(r.get("envelopeId") or "")
+    if not eid:
+        return ds_err(DsError("ds_failed", "DocuSign didn't return an envelope"))
+    with db() as c:
+        ds_table(c)
+        c.execute("INSERT INTO sign_envelopes(id,doc_path,file_id,file_name,pid,signers,status,sent_at,sent_by,user_id,checked) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                  (eid, path, fid, fname, str(b.get("pid") or "")[:64], json.dumps(signers), str(r.get("status") or "sent"), time.time(),
+                   u["name"] or u["username"], u["id"], time.time()))
+    return {"ok": True, "id": eid, "status": r.get("status") or "sent", "test": _ds["host"] == "account-d.docusign.com"}
+
+
+def sign_row(r):
+    return {"id": r["id"], "fileId": r["file_id"], "fileName": r["file_name"], "pid": r["pid"], "status": r["status"],
+            "sentAt": r["sent_at"], "sentBy": r["sent_by"], "doneAt": r["done_at"], "signers": json.loads(r["signers"]),
+            "signed": {"id": r["signed_blob"], "size": r["signed_size"]} if r["signed_blob"] else None, "attached": bool(r["attached"])}
+
+
+def sign_refresh(r):
+    """ask DocuSign about an envelope that isn't finished; a completed one's signed PDF is saved as a file"""
+    st = ds_call("GET", f"/envelopes/{r['id']}").get("status") or r["status"]
+    blob, size = r["signed_blob"], r["signed_size"]
+    if st == "completed" and not blob:
+        pdf = ds_call("GET", f"/envelopes/{r['id']}/documents/combined", raw=True)
+        blob, size = new_id(32), len(pdf)
+        (BLOBS / blob).write_bytes(pdf)
+        with db() as c:
+            c.execute("INSERT INTO tracker_blobs(id,type,size,created,created_by) VALUES(?,?,?,?,?)",
+                      (blob, "application/pdf", size, time.time(), r["user_id"]))
+    with db() as c:
+        c.execute("UPDATE sign_envelopes SET status=?, checked=?, signed_blob=?, signed_size=?, done_at=CASE WHEN ? THEN coalesce(done_at,?) ELSE done_at END WHERE id=?",
+                  (st, time.time(), blob, size, st in DS_FINAL, time.time(), r["id"]))
+
+
+@app.get("/api/sign/list")
+def sign_list(request: Request, path: str = "", now: int = 0):
+    need_module("tracker"); need_user(request)
+    path = sign_doc_path(path)
+    with db() as c:
+        ds_table(c)
+        rows = c.execute("SELECT * FROM sign_envelopes WHERE doc_path=? ORDER BY sent_at", (path,)).fetchall()
+    problem = None
+    if ds_on():
+        for r in rows:
+            if (r["status"] not in DS_FINAL or (r["status"] == "completed" and not r["signed_blob"])) and (now or r["checked"] < time.time() - 60):
+                try:
+                    sign_refresh(r)
+                except DsError as e:
+                    problem = {"code": e.code, "detail": e.detail}
+                    break
+        with db() as c:
+            rows = c.execute("SELECT * FROM sign_envelopes WHERE doc_path=? ORDER BY sent_at", (path,)).fetchall()
+    return {"items": [sign_row(r) for r in rows], "problem": problem}
+
+
+@app.post("/api/sign/{eid}/attached")
+async def sign_attached(request: Request, eid: str):
+    """the page claims the signed copy before adding it to the files, so two open screens don't both add it; undo gives it back"""
+    need_module("tracker"); need_user(request)
+    undo = bool((json.loads(await request.body() or b"{}") or {}).get("undo"))
+    with db() as c:
+        ds_table(c)
+        n = c.execute("UPDATE sign_envelopes SET attached=? WHERE id=? AND attached=? AND signed_blob!=''", (0 if undo else 1, eid, 1 if undo else 0)).rowcount
+    return {"ok": True, "claimed": bool(n) and not undo}
+
+
+@app.post("/api/sign/{eid}/void")
+async def sign_void(request: Request, eid: str):
+    need_module("tracker"); need_user(request)
+    with db() as c:
+        ds_table(c)
+        r = c.execute("SELECT * FROM sign_envelopes WHERE id=?", (eid,)).fetchone()
+    if not r:
+        err(404, "not_found")
+    if r["status"] in DS_FINAL:
+        return {"ok": True, "status": r["status"]}
+    why = str((await request.json()).get("reason") or "").strip()[:200] or "Cancelled by Pacific Southwest Insurance Services"
+    try:
+        ds_call("PUT", f"/envelopes/{eid}", {"status": "voided", "voidedReason": why})
+    except DsError as e:
+        return ds_err(e)
+    with db() as c:
+        c.execute("UPDATE sign_envelopes SET status='voided', done_at=?, checked=? WHERE id=?", (time.time(), time.time(), eid))
+    return {"ok": True, "status": "voided"}
+
+
 @app.get("/healthz")
 def health():
     return Response("ok")
