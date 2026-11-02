@@ -218,8 +218,13 @@ def login_page():
 @app.post("/login")
 def login(username: str = Form(...), password: str = Form(...)):
     with db() as c:
-        u = c.execute("SELECT * FROM users WHERE username=? AND active=1", (username.strip().lower(),)).fetchone()
-        if not u or not check_pw(password, u["pw"]):
+        w = username.strip().lower()
+        u = c.execute("SELECT * FROM users WHERE username=? AND active=1", (w,)).fetchone()
+        if not u and "@" in w:  # an email address works too, when it belongs to exactly one login
+            rows = c.execute("SELECT * FROM users WHERE active=1 AND email<>'' AND lower(email)=?", (w,)).fetchall()
+            u = rows[0] if len(rows) == 1 else None
+        # a phone can add a space at the end of a typed password; the password without it is tried too
+        if not u or not (check_pw(password, u["pw"]) or (password != password.strip() and check_pw(password.strip(), u["pw"]))):
             time.sleep(1)
             return RedirectResponse("/login?bad=1", status_code=303)
         if code_route(u):  # password was right: send a code (Telegram or text), sign in after it is typed
@@ -453,13 +458,13 @@ def reset_new_page(t: str = ""):
 
 @app.post("/reset/new")
 def reset_new(t: str = Form(...), password: str = Form(...), password2: str = Form(...)):
-    if len(password) < 8 or password != password2:
+    if len(password.strip()) < 8 or password.strip() != password2.strip():
         return RedirectResponse(f"/reset/new?t={t}&bad=1", status_code=303)
     with db() as c:
         row = open_reset(c, t)
         if not row:
             return RedirectResponse("/reset?expired=1", status_code=303)
-        c.execute("UPDATE users SET pw=? WHERE id=?", (hash_pw(password), row["user_id"]))
+        c.execute("UPDATE users SET pw=? WHERE id=?", (hash_pw(password.strip()), row["user_id"]))  # no stray spaces a phone added at the ends
         c.execute("UPDATE password_resets SET used=? WHERE user_id=? AND used IS NULL", (time.time(), row["user_id"]))
         c.execute("DELETE FROM sessions WHERE user_id=?", (row["user_id"],))  # signed out everywhere; sign in again with the new password (and texted code)
     return RedirectResponse("/login?reset=1", status_code=303)
@@ -1759,14 +1764,21 @@ def _hook_find(o, keys):
     return ""
 
 
-@app.post("/api/text/hook/{token}")
+@app.api_route("/api/text/hook/{token}", methods=["GET", "POST"])
 async def text_hook(token: str, request: Request):
-    """incoming texts: SimpleTexting calls this address (set under Integrations > API & Webhooks) for each reply"""
+    """incoming texts: SimpleTexting calls this address for each reply. The newer webhooks POST JSON; the older
+    "SMS forwarding" webhook (Settings > API > Webhooks) sends from/to/text as a GET query or a form post"""
     if not text_on() or not hmac.compare_digest(token, text_hook_token()):
         err(404, "not_found")
-    try:
-        b = await request.json()
-    except Exception:
+    b = dict(request.query_params)
+    if request.method == "POST":
+        raw = await request.body()
+        try:
+            j = json.loads(raw or b"{}")
+            b = j if isinstance(j, dict) else {"items": j}
+        except Exception:
+            b.update(urllib.parse.parse_qsl(raw.decode("utf-8", "replace")))
+    if not b:
         return {"ok": True}
     kind = _hook_find(b, ("type", "event", "trigger")).upper()
     if kind and "INCOMING" not in kind:

@@ -31,6 +31,6 @@
   <button type="submit">Save new password</button>
 </form>
 <script>const q=new URLSearchParams(location.search);document.getElementById('t').value=q.get('t')||'';if(q.get('bad'))document.getElementById('bad').hidden=false</script>
-<script>/* the eye shows the password as typed, and hides it again */document.querySelectorAll('input[type=password]').forEach(p=>{const w=document.createElement('span');w.className='pw';p.parentNode.insertBefore(w,p);w.appendChild(p);const b=document.createElement('button');b.type='button';b.className='eye';b.textContent='👁';b.title=b.ariaLabel='Show password';w.appendChild(b);b.onclick=()=>{const s=p.type==='password';p.type=s?'text':'password';b.title=b.ariaLabel=s?'Hide password':'Show password';b.classList.toggle('on',s);p.focus()}})</script>
+<script>/* the eye shows the password as typed, and hides it again */document.querySelectorAll('input[type=password]').forEach(p=>{p.setAttribute('autocapitalize','none');p.setAttribute('autocorrect','off');p.spellcheck=false;const w=document.createElement('span');w.className='pw';p.parentNode.insertBefore(w,p);w.appendChild(p);const b=document.createElement('button');b.type='button';b.className='eye';b.textContent='👁';b.title=b.ariaLabel='Show password';w.appendChild(b);b.onclick=()=>{const s=p.type==='password';p.type=s?'text':'password';b.title=b.ariaLabel=s?'Hide password':'Show password';b.classList.toggle('on',s);p.focus()}})</script>
 </body>
 </html>

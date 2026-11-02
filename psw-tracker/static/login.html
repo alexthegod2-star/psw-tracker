@@ -28,12 +28,12 @@
   <p class="bad" id="bad" hidden>Wrong username or password.</p>
   <p class="bad" id="sms" hidden>Couldn’t text your sign-in code. Try again in a minute.</p>
   <p class="bad" id="expired" hidden>That sign-in code expired or was typed wrong too many times. Sign in again for a new one.</p>
-  <label>Username<input name="username" autocomplete="username" autocapitalize="none" required autofocus></label>
+  <label>Username or email<input name="username" autocomplete="username" autocapitalize="none" required autofocus></label>
   <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
   <button type="submit">Sign in</button>
   <span class="fpRow"><a class="fp" href="/username">Forgot username?</a><a class="fp" href="/reset">Forgot password?</a></span>
 </form>
 <script>for(const k of ['bad','sms','expired','reset'])if(new RegExp('[?&]'+k+'=').test(location.search))document.getElementById(k).hidden=false</script>
-<script>/* the eye shows the password as typed, and hides it again */document.querySelectorAll('input[type=password]').forEach(p=>{const w=document.createElement('span');w.className='pw';p.parentNode.insertBefore(w,p);w.appendChild(p);const b=document.createElement('button');b.type='button';b.className='eye';b.textContent='👁';b.title=b.ariaLabel='Show password';w.appendChild(b);b.onclick=()=>{const s=p.type==='password';p.type=s?'text':'password';b.title=b.ariaLabel=s?'Hide password':'Show password';b.classList.toggle('on',s);p.focus()}})</script>
+<script>/* the eye shows the password as typed, and hides it again */document.querySelectorAll('input[type=password]').forEach(p=>{p.setAttribute('autocapitalize','none');p.setAttribute('autocorrect','off');p.spellcheck=false;const w=document.createElement('span');w.className='pw';p.parentNode.insertBefore(w,p);w.appendChild(p);const b=document.createElement('button');b.type='button';b.className='eye';b.textContent='👁';b.title=b.ariaLabel='Show password';w.appendChild(b);b.onclick=()=>{const s=p.type==='password';p.type=s?'text':'password';b.title=b.ariaLabel=s?'Hide password':'Show password';b.classList.toggle('on',s);p.focus()}})</script>
 </body>
 </html>

@@ -39,6 +39,6 @@ fetch('/api/auth/invite?t='+encodeURIComponent(t)).then(r=>r.ok?r.json():null).t
   document.getElementById('user').value=i.username;
   document.getElementById('who').textContent='Hi '+i.name.split(' ')[0]+', choose a password to finish setting up your login. You\'ll sign in with this username.'});
 </script>
-<script>/* the eye shows the password as typed, and hides it again */document.querySelectorAll('input[type=password]').forEach(p=>{const w=document.createElement('span');w.className='pw';p.parentNode.insertBefore(w,p);w.appendChild(p);const b=document.createElement('button');b.type='button';b.className='eye';b.textContent='👁';b.title=b.ariaLabel='Show password';w.appendChild(b);b.onclick=()=>{const s=p.type==='password';p.type=s?'text':'password';b.title=b.ariaLabel=s?'Hide password':'Show password';b.classList.toggle('on',s);p.focus()}})</script>
+<script>/* the eye shows the password as typed, and hides it again */document.querySelectorAll('input[type=password]').forEach(p=>{p.setAttribute('autocapitalize','none');p.setAttribute('autocorrect','off');p.spellcheck=false;const w=document.createElement('span');w.className='pw';p.parentNode.insertBefore(w,p);w.appendChild(p);const b=document.createElement('button');b.type='button';b.className='eye';b.textContent='👁';b.title=b.ariaLabel='Show password';w.appendChild(b);b.onclick=()=>{const s=p.type==='password';p.type=s?'text':'password';b.title=b.ariaLabel=s?'Hide password':'Show password';b.classList.toggle('on',s);p.focus()}})</script>
 </body>
 </html>
