@@ -18,6 +18,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -104,6 +105,16 @@ def init_db():
                 first = (r["name"] or "").split()[:1]
                 if r["username"].lower() in UNLOCK_PEOPLE or (first and first[0].lower() in UNLOCK_PEOPLE):
                     c.execute("UPDATE users SET can_unlock=1 WHERE id=?", (r["id"],))
+        if "cell" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Cell: where the sign-in code is texted
+            c.execute("ALTER TABLE users ADD COLUMN cell TEXT NOT NULL DEFAULT ''")
+        if "tg" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Telegram chat ID: the sign-in code goes there instead of a text
+            c.execute("ALTER TABLE users ADD COLUMN tg TEXT NOT NULL DEFAULT ''")
+        if "code_by" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Code by: text, tg (Telegram) or off
+            c.execute("ALTER TABLE users ADD COLUMN code_by TEXT NOT NULL DEFAULT 'text'")
+        c.execute("CREATE TABLE IF NOT EXISTS login_codes(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, code_hash TEXT NOT NULL, "
+                  "expires REAL NOT NULL, tries INTEGER NOT NULL DEFAULT 0, sent REAL NOT NULL)")
+        c.execute("CREATE TABLE IF NOT EXISTS password_resets(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires REAL NOT NULL, used REAL)")
+        c.execute("UPDATE sessions SET expires=? WHERE expires>?", (session_end(), session_end()))  # sign-ins made before daily sign-in end at the next 4 AM too
         if "sig" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Signature: picture stamped on ACORDs this person makes
             c.execute("ALTER TABLE users ADD COLUMN sig TEXT NOT NULL DEFAULT ''")
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
@@ -182,8 +193,6 @@ def current_user(request: Request):
             "SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=? AND s.expires>? AND u.active=1",
             (tok, time.time()),
         ).fetchone()
-        if row:
-            c.execute("UPDATE sessions SET expires=? WHERE token=?", (time.time() + SESSION_DAYS * 86400, tok))
     return row
 
 
@@ -212,13 +221,213 @@ def login(username: str = Form(...), password: str = Form(...)):
         if not u or not check_pw(password, u["pw"]):
             time.sleep(1)
             return RedirectResponse("/login?bad=1", status_code=303)
-        tok = secrets.token_urlsafe(32)
-        c.execute("DELETE FROM sessions WHERE expires<?", (time.time(),))
-        c.execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)",
-                  (tok, u["id"], time.time() + SESSION_DAYS * 86400))
+        if code_route(u):  # password was right: send a code (Telegram or text), sign in after it is typed
+            t = secrets.token_urlsafe(24)
+            c.execute("DELETE FROM login_codes WHERE expires<? OR user_id=?", (time.time(), u["id"]))
+            code = send_login_code(u)
+            if not code:
+                return RedirectResponse("/login?sms=0", status_code=303)
+            c.execute("INSERT INTO login_codes(token_hash,user_id,code_hash,expires,tries,sent) VALUES(?,?,?,?,0,?)",
+                      (token_hash(t), u["id"], token_hash(code), time.time() + CODE_MINUTES * 60, time.time()))
+            return RedirectResponse(f"/login/code?t={t}", status_code=303)
+        tok = start_session(c, u["id"])
+    return signed_in(tok)
+
+
+def session_end():
+    """Sign-ins last until the next 4 AM Pacific, so everyone signs in (password and texted code) at least once a day."""
+    try:
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo("America/Los_Angeles"))
+        end = now.replace(hour=4, minute=0, second=0, microsecond=0)
+        if end <= now:
+            end += timedelta(days=1)
+        return end.timestamp()
+    except Exception:
+        return time.time() + 86400
+
+
+def signed_in(tok):
     r = RedirectResponse("/", status_code=303)
-    r.set_cookie(COOKIE, tok, max_age=SESSION_DAYS * 86400, httponly=True, secure=SECURE_COOKIE, samesite="lax")
+    r.set_cookie(COOKIE, tok, max_age=max(60, int(session_end() - time.time())), httponly=True, secure=SECURE_COOKIE, samesite="lax")
     return r
+
+
+# ---------- core: texted sign-in code (through SimpleTexting; on for people with a Cell in Admin when SIMPLETEXTING_API_KEY is set) ----------
+CODE_MINUTES = 10
+CODE_TRIES = 5
+
+
+def cell10(v):
+    """A US cell typed any way ((818) 555-1234, +1 818...) as 10 digits, else ''."""
+    d = re.sub(r"\D", "", str(v or ""))
+    if len(d) == 11 and d[0] == "1":
+        d = d[1:]
+    return d if len(d) == 10 else ""
+
+
+def tg_id(v):
+    v = str(v or "").strip()
+    return v if re.fullmatch(r"-?\d{5,15}", v) else ""
+
+
+def code_route(u):
+    """where this person's sign-in code goes, by Admin's Code by: 'tg' (Telegram chat ID set and the bot token on the server),
+    'text' (Cell set and SimpleTexting on), or '' (Off, or the number for the chosen way is missing: password only)"""
+    by = u["code_by"] or "text"
+    if by == "tg" and tg_id(u["tg"]) and os.environ.get("TELEGRAM_BOT_TOKEN", "").strip():
+        return "tg"
+    if by == "text" and cell10(u["cell"]) and text_on():
+        return "text"
+    return ""
+
+
+def telegram_send(chat, text):
+    req = urllib.request.Request(f"https://api.telegram.org/bot{os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()}/sendMessage",
+                                 data=json.dumps({"chat_id": chat, "text": text}).encode(), headers={"content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read() or b"{}")
+
+
+def send_login_code(u):
+    """Sends a new 6-digit code by Telegram or text; returns the code, or '' if it couldn't be sent."""
+    code = f"{secrets.randbelow(10**6):06d}"
+    msg = f"Your PSW database sign-in code is {code}. It expires in {CODE_MINUTES} minutes."
+    try:
+        if code_route(u) == "tg":
+            telegram_send(tg_id(u["tg"]), msg)
+            return code
+        payload = {"contactPhone": cell10(u["cell"]), "mode": "AUTO", "text": msg}
+        acct = re.sub(r"\D", "", os.environ.get("SIMPLETEXTING_PHONE", ""))[-10:]
+        if acct:
+            payload["accountPhone"] = acct
+        simpletexting_post(payload)
+        return code
+    except Exception as e:
+        print("login code text failed:", e, flush=True)
+        return ""
+
+
+def open_code(c, t):
+    return c.execute("SELECT l.*, u.cell, u.tg, u.code_by FROM login_codes l JOIN users u ON u.id=l.user_id WHERE l.token_hash=? AND l.expires>? AND l.tries<? AND u.active=1",
+                     (token_hash(t), time.time(), CODE_TRIES)).fetchone()
+
+
+@app.get("/login/code")
+def login_code_page(t: str = ""):
+    with db() as c:
+        ok = bool(t) and open_code(c, t)
+    if not ok:
+        return RedirectResponse("/login?expired=1", status_code=303)
+    return FileResponse(STATIC / "login-code.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/auth/code")
+def login_code_info(t: str):
+    with db() as c:
+        row = open_code(c, t)
+    if not row:
+        err(404, "expired")
+    if code_route(row) == "tg":
+        return {"to": "your Telegram"}
+    n = cell10(row["cell"])
+    return {"to": f"(***) ***-{n[-4:]}" if n else ""}
+
+
+@app.post("/login/code")
+def login_code(t: str = Form(...), code: str = Form(...)):
+    with db() as c:
+        row = open_code(c, t)
+        if not row:
+            return RedirectResponse("/login?expired=1", status_code=303)
+        if not hmac.compare_digest(token_hash(re.sub(r"\D", "", code)), row["code_hash"]):
+            c.execute("UPDATE login_codes SET tries=tries+1 WHERE token_hash=?", (row["token_hash"],))
+            time.sleep(1)
+            left = CODE_TRIES - row["tries"] - 1
+            return RedirectResponse(f"/login/code?t={t}&bad={left}" if left > 0 else "/login?expired=1", status_code=303)
+        c.execute("DELETE FROM login_codes WHERE token_hash=?", (row["token_hash"],))
+        tok = start_session(c, row["user_id"])
+    return signed_in(tok)
+
+
+@app.post("/login/code/resend")
+def login_code_resend(t: str = Form(...)):
+    with db() as c:
+        row = open_code(c, t)
+        if not row:
+            return RedirectResponse("/login?expired=1", status_code=303)
+        if time.time() - row["sent"] < 30:  # one text every 30 seconds
+            return RedirectResponse(f"/login/code?t={t}&wait=1", status_code=303)
+        code = send_login_code(row)
+        if not code:
+            return RedirectResponse(f"/login/code?t={t}&sms=0", status_code=303)
+        c.execute("UPDATE login_codes SET code_hash=?, expires=?, tries=0, sent=? WHERE token_hash=?",
+                  (token_hash(code), time.time() + CODE_MINUTES * 60, time.time(), row["token_hash"]))
+    return RedirectResponse(f"/login/code?t={t}&sent=1", status_code=303)
+
+
+# ---------- core: forgot password (emails a reset link through Resend from info@pswinsurance.com) ----------
+RESET_MINUTES = 60
+RESET_FROM = os.environ.get("PSW_RESET_FROM", "PSW Database <info@pswinsurance.com>")
+
+
+@app.get("/reset")
+def reset_page():
+    return FileResponse(STATIC / "reset.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/reset")
+def reset_ask(request: Request, who: str = Form(...)):
+    """Username or email; the answer is the same whether or not it matched, so it can't be used to find out who has a login"""
+    w = who.strip().lower()
+    with db() as c:
+        u = c.execute("SELECT * FROM users WHERE active=1 AND (username=? OR (email<>'' AND lower(email)=?))", (w, w)).fetchone()
+        if u and u["email"] and os.environ.get("RESEND_API_KEY", "").strip():
+            last = c.execute("SELECT MAX(expires) m FROM password_resets WHERE user_id=?", (u["id"],)).fetchone()["m"] or 0
+            if last - RESET_MINUTES * 60 < time.time() - 60:  # one email a minute
+                t = secrets.token_urlsafe(32)
+                c.execute("DELETE FROM password_resets WHERE expires<?", (time.time(),))
+                c.execute("INSERT INTO password_resets(token_hash,user_id,expires) VALUES(?,?,?)", (token_hash(t), u["id"], time.time() + RESET_MINUTES * 60))
+                base = str(request.base_url).rstrip("/")
+                if not re.match(r"https?://(localhost|127\.)", base):
+                    base = base.replace("http://", "https://", 1)
+                link = f"{base}/reset/new?t={t}"
+                first = (u["name"] or u["username"]).split()[0]
+                html = (f"<p>Hi {first},</p><p>Someone asked to reset your PSW database password. To pick a new one, open this link within {RESET_MINUTES} minutes:</p>"
+                        f'<p><a href="{link}">Reset my password</a></p><p>If you didn\'t ask for this, ignore this email; your password stays the same.</p>')
+                try:
+                    resend_post({"from": RESET_FROM, "to": [u["email"]], "subject": "Reset your PSW database password", "html": html})
+                except Exception as e:
+                    print("reset email failed:", e, flush=True)
+    return RedirectResponse("/reset?sent=1", status_code=303)
+
+
+def open_reset(c, t):
+    return c.execute("SELECT r.*, u.username FROM password_resets r JOIN users u ON u.id=r.user_id WHERE r.token_hash=? AND r.used IS NULL AND r.expires>? AND u.active=1",
+                     (token_hash(t), time.time())).fetchone()
+
+
+@app.get("/reset/new")
+def reset_new_page(t: str = ""):
+    with db() as c:
+        ok = bool(t) and open_reset(c, t)
+    if not ok:
+        return RedirectResponse("/reset?expired=1", status_code=303)
+    return FileResponse(STATIC / "reset-new.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/reset/new")
+def reset_new(t: str = Form(...), password: str = Form(...), password2: str = Form(...)):
+    if len(password) < 8 or password != password2:
+        return RedirectResponse(f"/reset/new?t={t}&bad=1", status_code=303)
+    with db() as c:
+        row = open_reset(c, t)
+        if not row:
+            return RedirectResponse("/reset?expired=1", status_code=303)
+        c.execute("UPDATE users SET pw=? WHERE id=?", (hash_pw(password), row["user_id"]))
+        c.execute("UPDATE password_resets SET used=? WHERE user_id=? AND used IS NULL", (time.time(), row["user_id"]))
+        c.execute("DELETE FROM sessions WHERE user_id=?", (row["user_id"],))  # signed out everywhere; sign in again with the new password (and texted code)
+    return RedirectResponse("/login?reset=1", status_code=303)
 
 
 @app.post("/logout")
@@ -245,7 +454,7 @@ def open_invite(c, t: str):
 def start_session(c, user_id):
     tok = secrets.token_urlsafe(32)
     c.execute("DELETE FROM sessions WHERE expires<?", (time.time(),))
-    c.execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)", (tok, user_id, time.time() + SESSION_DAYS * 86400))
+    c.execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)", (tok, user_id, session_end()))
     return tok
 
 
@@ -281,9 +490,7 @@ def invite_accept(t: str = Form(...), password: str = Form(...), password2: str 
         uid = c.execute("SELECT id FROM users WHERE username=?", (inv["username"],)).fetchone()["id"]
         c.execute("UPDATE invites SET used=? WHERE token_hash=?", (time.time(), inv["token_hash"]))
         tok = start_session(c, uid)
-    r = RedirectResponse("/", status_code=303)
-    r.set_cookie(COOKIE, tok, max_age=SESSION_DAYS * 86400, httponly=True, secure=SECURE_COOKIE, samesite="lax")
-    return r
+    return signed_in(tok)
 
 
 @app.get("/api/auth/me")
@@ -341,11 +548,11 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment,can_unlock,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,cell,tg,code_by,role,active,created,secrets,can_delete,payment,can_unlock,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
-    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
+    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "text": text_on(), "tgOn": bool(os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()), "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
 
 
 @app.post("/api/admin/users")
@@ -401,6 +608,48 @@ async def admin_set_email(username: str, request: Request):
     with db() as c:
         n = c.execute("UPDATE users SET email=? WHERE username=?", (email, username)).rowcount
         n += c.execute("UPDATE invites SET email=? WHERE username=? AND used IS NULL", (email, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/cell")
+async def admin_set_cell(username: str, request: Request):
+    """Cell: the sign-in code is texted here; empty means this person signs in with the password only"""
+    need_owner(request)
+    v = str((await request.json()).get("cell", "")).strip()
+    if v and not cell10(v):
+        err(400, "bad_cell")
+    with db() as c:
+        n = c.execute("UPDATE users SET cell=? WHERE username=?", (v[:40], username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/codeby")
+async def admin_set_code_by(username: str, request: Request):
+    """Code by: how this person gets their sign-in code: text, tg (Telegram) or off (password only)"""
+    need_owner(request)
+    v = str((await request.json()).get("by", "")).strip()
+    if v not in ("text", "tg", "off"):
+        err(400, "bad_code_by")
+    with db() as c:
+        n = c.execute("UPDATE users SET code_by=? WHERE username=?", (v, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/tg")
+async def admin_set_tg(username: str, request: Request):
+    """Telegram chat ID: when set, the sign-in code goes to Telegram instead of a text (for people outside the US)"""
+    need_owner(request)
+    v = str((await request.json()).get("tg", "")).strip()
+    if v and not tg_id(v):
+        err(400, "bad_tg")
+    with db() as c:
+        n = c.execute("UPDATE users SET tg=? WHERE username=?", (v, username)).rowcount
     if not n:
         err(404, "no_such_user")
     return {"ok": True}

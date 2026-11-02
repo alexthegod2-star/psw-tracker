@@ -22,6 +22,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SIMPLETEXTING_API_KEY: ${{ secrets.SIMPLETEXTING_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
           # optional repo secret ANTHROPIC_API_KEY: sent along with the update; install.sh puts it in the server's .env (never in the repo)
           if [ -n "$ANTHROPIC_API_KEY" ]; then (umask 077; printf '%s' "$ANTHROPIC_API_KEY" > psw-tracker/.claude-key); fi
@@ -29,6 +30,8 @@ jobs:
           if [ -n "$RESEND_API_KEY" ]; then (umask 077; printf '%s' "$RESEND_API_KEY" > psw-tracker/.resend-key); fi
           # optional repo secret SIMPLETEXTING_API_KEY (texting): same route, as .text-key
           if [ -n "$SIMPLETEXTING_API_KEY" ]; then (umask 077; printf '%s' "$SIMPLETEXTING_API_KEY" > psw-tracker/.text-key); fi
+          # optional repo secret TELEGRAM_BOT_TOKEN (sign-in codes by Telegram): same route, as .tg-key
+          if [ -n "$TELEGRAM_BOT_TOKEN" ]; then (umask 077; printf '%s' "$TELEGRAM_BOT_TOKEN" > psw-tracker/.tg-key); fi
           install -m 700 -d ~/.ssh
           [ -n "$DEPLOY_HOST" ] || { echo "::error::Secret DEPLOY_HOST is missing or empty"; exit 1; }
           [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "::error::Secret DEPLOY_KNOWN_HOSTS is missing or empty"; exit 1; }

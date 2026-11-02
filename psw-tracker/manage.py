@@ -5,6 +5,7 @@
   psw passwd USERNAME                          set a new password for someone
   psw disable USERNAME / psw enable USERNAME   turn a login off or back on
   psw users                                    list everyone
+  psw nocode USERNAME                          clear their Cell and Telegram so they sign in without a code
   psw apikey                                   make Claude's data key (shown once; replaces any older key)
   psw apikey off                               turn Claude's data key off
   psw backup                                   copy the database into the dated backups folder
@@ -74,6 +75,13 @@ def set_active(username, on):
         if not on:
             c.execute("DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE username=?)", (username.lower(),))
     print(("Enabled " if on else "Disabled ") + username if n else "No such user.")
+
+
+def nocode(username):
+    """Clears this person's Cell, so they sign in with the password only (when texts aren't getting through)"""
+    with app.db() as c:
+        n = c.execute("UPDATE users SET cell='', tg='' WHERE username=?", (username.lower(),)).rowcount
+    print("Cell and Telegram cleared; they sign in with the password only." if n else "No such user.")
 
 
 def users():
@@ -169,6 +177,8 @@ def main(a):
         set_active(a[1], a[0] == "enable")
     elif a[0] == "apikey":
         apikey(len(a) > 1 and a[1] == "off")
+    elif a[0] == "nocode" and len(a) == 2:
+        nocode(a[1])
     elif a[0] == "users":
         users()
     elif a[0] == "backup":
