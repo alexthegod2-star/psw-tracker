@@ -6,6 +6,7 @@ FastAPI + SQLite, following Dave's database plan:
 - tracker module: leads, contacts, tasks and PDF files (/api/tracker/), switchable via PSW_MODULES
 - secrets live in .env next to this file, never in the code
 """
+import html as html_mod
 import base64
 import hashlib
 import hmac
@@ -219,8 +220,13 @@ def login_page():
 @app.post("/login")
 def login(username: str = Form(...), password: str = Form(...)):
     with db() as c:
-        u = c.execute("SELECT * FROM users WHERE username=? AND active=1", (username.strip().lower(),)).fetchone()
-        if not u or not check_pw(password, u["pw"]):
+        w = username.strip().lower()
+        u = c.execute("SELECT * FROM users WHERE username=? AND active=1", (w,)).fetchone()
+        if not u and "@" in w:  # an email address works too, when it belongs to exactly one login
+            rows = c.execute("SELECT * FROM users WHERE active=1 AND email<>'' AND lower(email)=?", (w,)).fetchall()
+            u = rows[0] if len(rows) == 1 else None
+        # a phone can add a space at the end of a typed password; the password without it is tried too
+        if not u or not (check_pw(password, u["pw"]) or (password != password.strip() and check_pw(password.strip(), u["pw"]))):
             time.sleep(1)
             return RedirectResponse("/login?bad=1", status_code=303)
         if code_route(u):  # password was right: send a code (Telegram or text), sign in after it is typed
@@ -404,6 +410,40 @@ def reset_ask(request: Request, who: str = Form(...)):
     return RedirectResponse("/reset?sent=1", status_code=303)
 
 
+# ---------- core: forgot username (emails the username(s) on file for that email address) ----------
+_name_sent = {}
+
+
+@app.get("/username")
+def username_page():
+    return FileResponse(STATIC / "username.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/username")
+def username_ask(request: Request, email: str = Form(...)):
+    """The answer is the same whether or not the email matched, so it can't be used to find out who has a login"""
+    w = email.strip().lower()
+    now = time.time()
+    if "@" in w and now - _name_sent.get(w, 0) > 60 and os.environ.get("RESEND_API_KEY", "").strip():  # one email a minute per address
+        with db() as c:
+            rows = c.execute("SELECT username, name FROM users WHERE active=1 AND email<>'' AND lower(email)=? ORDER BY username", (w,)).fetchall()
+        if rows:
+            _name_sent[w] = now
+            base = str(request.base_url).rstrip("/")
+            if not re.match(r"https?://(localhost|127\.)", base):
+                base = base.replace("http://", "https://", 1)
+            first = (rows[0]["name"] or rows[0]["username"]).split()[0]
+            names = "".join(f"<li><b>{html_mod.escape(r['username'])}</b></li>" for r in rows)
+            html = (f"<p>Hi {html_mod.escape(first)},</p><p>Someone asked for the PSW database username that goes with this email address. "
+                    f"{'It is' if len(rows) == 1 else 'They are'}:</p><ul>{names}</ul>"
+                    f'<p><a href="{base}/login">Sign in to the PSW database</a></p><p>If you didn\'t ask for this, you can ignore this email.</p>')
+            try:
+                resend_post({"from": RESET_FROM, "to": [w], "subject": "Your PSW database username", "html": html})
+            except Exception as e:
+                print("username email failed:", e, flush=True)
+    return RedirectResponse("/username?sent=1", status_code=303)
+
+
 def open_reset(c, t):
     return c.execute("SELECT r.*, u.username FROM password_resets r JOIN users u ON u.id=r.user_id WHERE r.token_hash=? AND r.used IS NULL AND r.expires>? AND u.active=1",
                      (token_hash(t), time.time())).fetchone()
@@ -420,13 +460,13 @@ def reset_new_page(t: str = ""):
 
 @app.post("/reset/new")
 def reset_new(t: str = Form(...), password: str = Form(...), password2: str = Form(...)):
-    if len(password) < 8 or password != password2:
+    if len(password.strip()) < 8 or password.strip() != password2.strip():
         return RedirectResponse(f"/reset/new?t={t}&bad=1", status_code=303)
     with db() as c:
         row = open_reset(c, t)
         if not row:
             return RedirectResponse("/reset?expired=1", status_code=303)
-        c.execute("UPDATE users SET pw=? WHERE id=?", (hash_pw(password), row["user_id"]))
+        c.execute("UPDATE users SET pw=? WHERE id=?", (hash_pw(password.strip()), row["user_id"]))  # no stray spaces a phone added at the ends
         c.execute("UPDATE password_resets SET used=? WHERE user_id=? AND used IS NULL", (time.time(), row["user_id"]))
         c.execute("DELETE FROM sessions WHERE user_id=?", (row["user_id"],))  # signed out everywhere; sign in again with the new password (and texted code)
     return RedirectResponse("/login?reset=1", status_code=303)
@@ -1726,14 +1766,21 @@ def _hook_find(o, keys):
     return ""
 
 
-@app.post("/api/text/hook/{token}")
+@app.api_route("/api/text/hook/{token}", methods=["GET", "POST"])
 async def text_hook(token: str, request: Request):
-    """incoming texts: SimpleTexting calls this address (set under Integrations > API & Webhooks) for each reply"""
+    """incoming texts: SimpleTexting calls this address for each reply. The newer webhooks POST JSON; the older
+    "SMS forwarding" webhook (Settings > API > Webhooks) sends from/to/text as a GET query or a form post"""
     if not text_on() or not hmac.compare_digest(token, text_hook_token()):
         err(404, "not_found")
-    try:
-        b = await request.json()
-    except Exception:
+    b = dict(request.query_params)
+    if request.method == "POST":
+        raw = await request.body()
+        try:
+            j = json.loads(raw or b"{}")
+            b = j if isinstance(j, dict) else {"items": j}
+        except Exception:
+            b.update(urllib.parse.parse_qsl(raw.decode("utf-8", "replace")))
+    if not b:
         return {"ok": True}
     kind = _hook_find(b, ("type", "event", "trigger")).upper()
     if kind and "INCOMING" not in kind:
