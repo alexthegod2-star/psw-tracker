@@ -12,7 +12,7 @@ HOST="${PSW_HOST:-${IP//./-}.sslip.io}"
 echo "== Installing packages"
 # wait for the server's automatic security updates to let go of apt instead of failing the deploy
 apt-get -o DPkg::Lock::Timeout=600 update -qq
-DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y -qq python3-venv sqlite3 caddy >/dev/null
+DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y -qq python3-venv sqlite3 caddy ghostscript >/dev/null
 
 echo "== App user and folders"
 id psw >/dev/null 2>&1 || useradd --system --home-dir "$DATA" --shell /usr/sbin/nologin psw
@@ -49,7 +49,44 @@ if [ -s "$SRC/.resend-key" ]; then
     sed -i '/^RESEND_API_KEY=/d' "$APP/.env"; echo "RESEND_API_KEY=$KEY" >> "$APP/.env"; echo "== Email sending key set"
   else echo "!! The RESEND_API_KEY secret doesn't look like a Resend key (re_...), so it was not used"; fi
 fi
-chown -R root:psw "$APP"; chmod 640 "$APP/.env"
+# Texting: the deploy step sends the repo secret SIMPLETEXTING_API_KEY as .text-key; it replaces the key in .env
+if [ -s "$SRC/.text-key" ]; then
+  KEY="$(tr -d '[:space:]' < "$SRC/.text-key")"; rm -f "$SRC/.text-key"
+  if [[ "$KEY" =~ ^[A-Za-z0-9_.-]{16,}$ ]]; then
+    sed -i '/^SIMPLETEXTING_API_KEY=/d' "$APP/.env"; echo "SIMPLETEXTING_API_KEY=$KEY" >> "$APP/.env"; echo "== Texting key set"
+  else echo "!! The SIMPLETEXTING_API_KEY secret doesn't look like a SimpleTexting API token, so it was not used"; fi
+fi
+# Telegram: the deploy step sends the repo secret TELEGRAM_BOT_TOKEN as .tg-key; it replaces the token in .env
+if [ -s "$SRC/.tg-key" ]; then
+  KEY="$(tr -d '[:space:]' < "$SRC/.tg-key")"; rm -f "$SRC/.tg-key"
+  if [[ "$KEY" =~ ^[0-9]{5,}:[A-Za-z0-9_-]{30,}$ ]]; then
+    sed -i '/^TELEGRAM_BOT_TOKEN=/d' "$APP/.env"; echo "TELEGRAM_BOT_TOKEN=$KEY" >> "$APP/.env"; echo "== Telegram bot token set"
+  else echo "!! The TELEGRAM_BOT_TOKEN secret doesn't look like a Telegram bot token (123456:ABC...), so it was not used"; fi
+fi
+# DocuSign: the deploy step sends the integration key and user ID as .ds-id, and the RSA private key as .ds-key
+if [ -s "$SRC/.ds-id" ]; then
+  IK="$(sed -n 1p "$SRC/.ds-id" | tr -d '[:space:]')"; UID_="$(sed -n 2p "$SRC/.ds-id" | tr -d '[:space:]')"; rm -f "$SRC/.ds-id"
+  G='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  if [[ "$IK" =~ $G && "$UID_" =~ $G ]]; then
+    sed -i '/^DOCUSIGN_INTEGRATION_KEY=/d;/^DOCUSIGN_USER_ID=/d' "$APP/.env"
+    echo "DOCUSIGN_INTEGRATION_KEY=$IK" >> "$APP/.env"; echo "DOCUSIGN_USER_ID=$UID_" >> "$APP/.env"; echo "== DocuSign integration key and user ID set"
+  else echo "!! DOCUSIGN_INTEGRATION_KEY and DOCUSIGN_USER_ID should each look like 1a2b3c4d-1a2b-1a2b-1a2b-1a2b3c4d5e6f, so they were not used"; fi
+fi
+if [ -s "$SRC/.ds-key" ]; then
+  # a key copied from a web page can lose its line breaks; put them back
+  if python3 -c '
+import re, sys
+k = open(sys.argv[1]).read().replace("\r", "")
+m = re.search(r"-----BEGIN ([A-Z ]*PRIVATE KEY)-----(.*?)-----END \1-----", k, re.S)
+if not m:
+    sys.exit(1)
+body = re.sub(r"\s+", "", m.group(2))
+open(sys.argv[2], "w").write(f"-----BEGIN {m.group(1)}-----\n" + "\n".join(body[i:i + 64] for i in range(0, len(body), 64)) + f"\n-----END {m.group(1)}-----\n")
+' "$SRC/.ds-key" "$APP/docusign-key.pem"
+  then echo "== DocuSign private key set"; else echo "!! DOCUSIGN_PRIVATE_KEY has no -----BEGIN RSA PRIVATE KEY----- / -----END lines, so it was not used"; fi
+  rm -f "$SRC/.ds-key"
+fi
+chown -R root:psw "$APP"; chmod 640 "$APP/.env"; if [ -f "$APP/docusign-key.pem" ]; then chmod 640 "$APP/docusign-key.pem"; fi
 chown -R psw:psw "$DATA"; chmod 750 "$DATA"
 
 echo "== Python packages"

@@ -16,17 +16,22 @@
   input{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:7px;color:var(--ink)}
   input:focus{outline:2px solid var(--accent);outline-offset:-1px}
   button{font:inherit;font-weight:600;padding:10px;border:0;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer}
-  .bad{color:#b42318;font-size:13px;margin:0}
+  .bad{color:#b42318;font-size:13px;margin:0}.ok{color:#18794e;font-size:13px;margin:0}
+  .fp{color:var(--accent);font-size:13px;justify-self:center}
 </style>
 </head>
 <body>
 <form method="post" action="/login">
   <div class="top"><img src="/psw-logo.png" alt="" onerror="this.remove()"><h1>PSW Lead &amp; Task Tracker</h1></div>
+  <p class="ok" id="reset" hidden>Your password was changed. Sign in with the new one.</p>
   <p class="bad" id="bad" hidden>Wrong username or password.</p>
+  <p class="bad" id="sms" hidden>Couldn’t text your sign-in code. Try again in a minute.</p>
+  <p class="bad" id="expired" hidden>That sign-in code expired or was typed wrong too many times. Sign in again for a new one.</p>
   <label>Username<input name="username" autocomplete="username" autocapitalize="none" required autofocus></label>
   <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
   <button type="submit">Sign in</button>
+  <a class="fp" href="/reset">Forgot password?</a>
 </form>
-<script>if(/[?&]bad=1/.test(location.search))document.getElementById('bad').hidden=false</script>
+<script>for(const k of ['bad','sms','expired','reset'])if(new RegExp('[?&]'+k+'=').test(location.search))document.getElementById(k).hidden=false</script>
 </body>
 </html>

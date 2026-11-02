@@ -18,6 +18,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -41,6 +42,7 @@ load_env()
 DATA = Path(os.environ.get("PSW_DATA", "/var/lib/psw-tracker"))
 # who gets Payment Yes when that column is first added (by user name or first name); Admin changes it after that
 PAY_PEOPLE = {x.strip().lower() for x in os.environ.get("PSW_PAYMENT_PEOPLE", "alex,anna,patricia").split(",") if x.strip()}
+UNLOCK_PEOPLE = {x.strip().lower() for x in os.environ.get("PSW_UNLOCK_PEOPLE", "patricia").split(",") if x.strip()}  # Admin's Unlock starts on for these
 DB_PATH = DATA / "tracker.db"
 BLOBS = DATA / "blobs"
 MODULES = {m.strip() for m in os.environ.get("PSW_MODULES", "tracker").split(",") if m.strip()}
@@ -97,6 +99,22 @@ def init_db():
                 first = (r["name"] or "").split()[:1]
                 if r["username"].lower() in PAY_PEOPLE or (first and first[0].lower() in PAY_PEOPLE):
                     c.execute("UPDATE users SET payment=1 WHERE id=?", (r["id"],))
+        if "can_unlock" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Unlock Yes/No: can take over a lead or client someone else has open
+            c.execute("ALTER TABLE users ADD COLUMN can_unlock INTEGER NOT NULL DEFAULT 0")
+            for r in c.execute("SELECT id,username,name FROM users").fetchall():
+                first = (r["name"] or "").split()[:1]
+                if r["username"].lower() in UNLOCK_PEOPLE or (first and first[0].lower() in UNLOCK_PEOPLE):
+                    c.execute("UPDATE users SET can_unlock=1 WHERE id=?", (r["id"],))
+        if "cell" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Cell: where the sign-in code is texted
+            c.execute("ALTER TABLE users ADD COLUMN cell TEXT NOT NULL DEFAULT ''")
+        if "tg" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Telegram chat ID: the sign-in code goes there instead of a text
+            c.execute("ALTER TABLE users ADD COLUMN tg TEXT NOT NULL DEFAULT ''")
+        if "code_by" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Code by: text, tg (Telegram) or off
+            c.execute("ALTER TABLE users ADD COLUMN code_by TEXT NOT NULL DEFAULT 'text'")
+        c.execute("CREATE TABLE IF NOT EXISTS login_codes(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, code_hash TEXT NOT NULL, "
+                  "expires REAL NOT NULL, tries INTEGER NOT NULL DEFAULT 0, sent REAL NOT NULL)")
+        c.execute("CREATE TABLE IF NOT EXISTS password_resets(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires REAL NOT NULL, used REAL)")
+        c.execute("UPDATE sessions SET expires=? WHERE expires>?", (session_end(), session_end()))  # sign-ins made before daily sign-in end at the next 4 AM too
         if "sig" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Signature: picture stamped on ACORDs this person makes
             c.execute("ALTER TABLE users ADD COLUMN sig TEXT NOT NULL DEFAULT ''")
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
@@ -131,6 +149,7 @@ app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 @app.on_event("startup")
 def _startup():
     init_db()
+    binder_backfill()
 
 
 def err(status, code):
@@ -174,8 +193,6 @@ def current_user(request: Request):
             "SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=? AND s.expires>? AND u.active=1",
             (tok, time.time()),
         ).fetchone()
-        if row:
-            c.execute("UPDATE sessions SET expires=? WHERE token=?", (time.time() + SESSION_DAYS * 86400, tok))
     return row
 
 
@@ -204,13 +221,213 @@ def login(username: str = Form(...), password: str = Form(...)):
         if not u or not check_pw(password, u["pw"]):
             time.sleep(1)
             return RedirectResponse("/login?bad=1", status_code=303)
-        tok = secrets.token_urlsafe(32)
-        c.execute("DELETE FROM sessions WHERE expires<?", (time.time(),))
-        c.execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)",
-                  (tok, u["id"], time.time() + SESSION_DAYS * 86400))
+        if code_route(u):  # password was right: send a code (Telegram or text), sign in after it is typed
+            t = secrets.token_urlsafe(24)
+            c.execute("DELETE FROM login_codes WHERE expires<? OR user_id=?", (time.time(), u["id"]))
+            code = send_login_code(u)
+            if not code:
+                return RedirectResponse("/login?sms=0", status_code=303)
+            c.execute("INSERT INTO login_codes(token_hash,user_id,code_hash,expires,tries,sent) VALUES(?,?,?,?,0,?)",
+                      (token_hash(t), u["id"], token_hash(code), time.time() + CODE_MINUTES * 60, time.time()))
+            return RedirectResponse(f"/login/code?t={t}", status_code=303)
+        tok = start_session(c, u["id"])
+    return signed_in(tok)
+
+
+def session_end():
+    """Sign-ins last until the next 4 AM Pacific, so everyone signs in (password and texted code) at least once a day."""
+    try:
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo("America/Los_Angeles"))
+        end = now.replace(hour=4, minute=0, second=0, microsecond=0)
+        if end <= now:
+            end += timedelta(days=1)
+        return end.timestamp()
+    except Exception:
+        return time.time() + 86400
+
+
+def signed_in(tok):
     r = RedirectResponse("/", status_code=303)
-    r.set_cookie(COOKIE, tok, max_age=SESSION_DAYS * 86400, httponly=True, secure=SECURE_COOKIE, samesite="lax")
+    r.set_cookie(COOKIE, tok, max_age=max(60, int(session_end() - time.time())), httponly=True, secure=SECURE_COOKIE, samesite="lax")
     return r
+
+
+# ---------- core: texted sign-in code (through SimpleTexting; on for people with a Cell in Admin when SIMPLETEXTING_API_KEY is set) ----------
+CODE_MINUTES = 10
+CODE_TRIES = 5
+
+
+def cell10(v):
+    """A US cell typed any way ((818) 555-1234, +1 818...) as 10 digits, else ''."""
+    d = re.sub(r"\D", "", str(v or ""))
+    if len(d) == 11 and d[0] == "1":
+        d = d[1:]
+    return d if len(d) == 10 else ""
+
+
+def tg_id(v):
+    v = str(v or "").strip()
+    return v if re.fullmatch(r"-?\d{5,15}", v) else ""
+
+
+def code_route(u):
+    """where this person's sign-in code goes, by Admin's Code by: 'tg' (Telegram chat ID set and the bot token on the server),
+    'text' (Cell set and SimpleTexting on), or '' (Off, or the number for the chosen way is missing: password only)"""
+    by = u["code_by"] or "text"
+    if by == "tg" and tg_id(u["tg"]) and os.environ.get("TELEGRAM_BOT_TOKEN", "").strip():
+        return "tg"
+    if by == "text" and cell10(u["cell"]) and text_on():
+        return "text"
+    return ""
+
+
+def telegram_send(chat, text):
+    req = urllib.request.Request(f"https://api.telegram.org/bot{os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()}/sendMessage",
+                                 data=json.dumps({"chat_id": chat, "text": text}).encode(), headers={"content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read() or b"{}")
+
+
+def send_login_code(u):
+    """Sends a new 6-digit code by Telegram or text; returns the code, or '' if it couldn't be sent."""
+    code = f"{secrets.randbelow(10**6):06d}"
+    msg = f"Your PSW database sign-in code is {code}. It expires in {CODE_MINUTES} minutes."
+    try:
+        if code_route(u) == "tg":
+            telegram_send(tg_id(u["tg"]), msg)
+            return code
+        payload = {"contactPhone": cell10(u["cell"]), "mode": "AUTO", "text": msg}
+        acct = re.sub(r"\D", "", os.environ.get("SIMPLETEXTING_PHONE", ""))[-10:]
+        if acct:
+            payload["accountPhone"] = acct
+        simpletexting_post(payload)
+        return code
+    except Exception as e:
+        print("login code text failed:", e, flush=True)
+        return ""
+
+
+def open_code(c, t):
+    return c.execute("SELECT l.*, u.cell, u.tg, u.code_by FROM login_codes l JOIN users u ON u.id=l.user_id WHERE l.token_hash=? AND l.expires>? AND l.tries<? AND u.active=1",
+                     (token_hash(t), time.time(), CODE_TRIES)).fetchone()
+
+
+@app.get("/login/code")
+def login_code_page(t: str = ""):
+    with db() as c:
+        ok = bool(t) and open_code(c, t)
+    if not ok:
+        return RedirectResponse("/login?expired=1", status_code=303)
+    return FileResponse(STATIC / "login-code.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/auth/code")
+def login_code_info(t: str):
+    with db() as c:
+        row = open_code(c, t)
+    if not row:
+        err(404, "expired")
+    if code_route(row) == "tg":
+        return {"to": "your Telegram"}
+    n = cell10(row["cell"])
+    return {"to": f"(***) ***-{n[-4:]}" if n else ""}
+
+
+@app.post("/login/code")
+def login_code(t: str = Form(...), code: str = Form(...)):
+    with db() as c:
+        row = open_code(c, t)
+        if not row:
+            return RedirectResponse("/login?expired=1", status_code=303)
+        if not hmac.compare_digest(token_hash(re.sub(r"\D", "", code)), row["code_hash"]):
+            c.execute("UPDATE login_codes SET tries=tries+1 WHERE token_hash=?", (row["token_hash"],))
+            time.sleep(1)
+            left = CODE_TRIES - row["tries"] - 1
+            return RedirectResponse(f"/login/code?t={t}&bad={left}" if left > 0 else "/login?expired=1", status_code=303)
+        c.execute("DELETE FROM login_codes WHERE token_hash=?", (row["token_hash"],))
+        tok = start_session(c, row["user_id"])
+    return signed_in(tok)
+
+
+@app.post("/login/code/resend")
+def login_code_resend(t: str = Form(...)):
+    with db() as c:
+        row = open_code(c, t)
+        if not row:
+            return RedirectResponse("/login?expired=1", status_code=303)
+        if time.time() - row["sent"] < 30:  # one text every 30 seconds
+            return RedirectResponse(f"/login/code?t={t}&wait=1", status_code=303)
+        code = send_login_code(row)
+        if not code:
+            return RedirectResponse(f"/login/code?t={t}&sms=0", status_code=303)
+        c.execute("UPDATE login_codes SET code_hash=?, expires=?, tries=0, sent=? WHERE token_hash=?",
+                  (token_hash(code), time.time() + CODE_MINUTES * 60, time.time(), row["token_hash"]))
+    return RedirectResponse(f"/login/code?t={t}&sent=1", status_code=303)
+
+
+# ---------- core: forgot password (emails a reset link through Resend from info@pswinsurance.com) ----------
+RESET_MINUTES = 60
+RESET_FROM = os.environ.get("PSW_RESET_FROM", "PSW Database <info@pswinsurance.com>")
+
+
+@app.get("/reset")
+def reset_page():
+    return FileResponse(STATIC / "reset.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/reset")
+def reset_ask(request: Request, who: str = Form(...)):
+    """Username or email; the answer is the same whether or not it matched, so it can't be used to find out who has a login"""
+    w = who.strip().lower()
+    with db() as c:
+        u = c.execute("SELECT * FROM users WHERE active=1 AND (username=? OR (email<>'' AND lower(email)=?))", (w, w)).fetchone()
+        if u and u["email"] and os.environ.get("RESEND_API_KEY", "").strip():
+            last = c.execute("SELECT MAX(expires) m FROM password_resets WHERE user_id=?", (u["id"],)).fetchone()["m"] or 0
+            if last - RESET_MINUTES * 60 < time.time() - 60:  # one email a minute
+                t = secrets.token_urlsafe(32)
+                c.execute("DELETE FROM password_resets WHERE expires<?", (time.time(),))
+                c.execute("INSERT INTO password_resets(token_hash,user_id,expires) VALUES(?,?,?)", (token_hash(t), u["id"], time.time() + RESET_MINUTES * 60))
+                base = str(request.base_url).rstrip("/")
+                if not re.match(r"https?://(localhost|127\.)", base):
+                    base = base.replace("http://", "https://", 1)
+                link = f"{base}/reset/new?t={t}"
+                first = (u["name"] or u["username"]).split()[0]
+                html = (f"<p>Hi {first},</p><p>Someone asked to reset your PSW database password. To pick a new one, open this link within {RESET_MINUTES} minutes:</p>"
+                        f'<p><a href="{link}">Reset my password</a></p><p>If you didn\'t ask for this, ignore this email; your password stays the same.</p>')
+                try:
+                    resend_post({"from": RESET_FROM, "to": [u["email"]], "subject": "Reset your PSW database password", "html": html})
+                except Exception as e:
+                    print("reset email failed:", e, flush=True)
+    return RedirectResponse("/reset?sent=1", status_code=303)
+
+
+def open_reset(c, t):
+    return c.execute("SELECT r.*, u.username FROM password_resets r JOIN users u ON u.id=r.user_id WHERE r.token_hash=? AND r.used IS NULL AND r.expires>? AND u.active=1",
+                     (token_hash(t), time.time())).fetchone()
+
+
+@app.get("/reset/new")
+def reset_new_page(t: str = ""):
+    with db() as c:
+        ok = bool(t) and open_reset(c, t)
+    if not ok:
+        return RedirectResponse("/reset?expired=1", status_code=303)
+    return FileResponse(STATIC / "reset-new.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/reset/new")
+def reset_new(t: str = Form(...), password: str = Form(...), password2: str = Form(...)):
+    if len(password) < 8 or password != password2:
+        return RedirectResponse(f"/reset/new?t={t}&bad=1", status_code=303)
+    with db() as c:
+        row = open_reset(c, t)
+        if not row:
+            return RedirectResponse("/reset?expired=1", status_code=303)
+        c.execute("UPDATE users SET pw=? WHERE id=?", (hash_pw(password), row["user_id"]))
+        c.execute("UPDATE password_resets SET used=? WHERE user_id=? AND used IS NULL", (time.time(), row["user_id"]))
+        c.execute("DELETE FROM sessions WHERE user_id=?", (row["user_id"],))  # signed out everywhere; sign in again with the new password (and texted code)
+    return RedirectResponse("/login?reset=1", status_code=303)
 
 
 @app.post("/logout")
@@ -237,7 +454,7 @@ def open_invite(c, t: str):
 def start_session(c, user_id):
     tok = secrets.token_urlsafe(32)
     c.execute("DELETE FROM sessions WHERE expires<?", (time.time(),))
-    c.execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)", (tok, user_id, time.time() + SESSION_DAYS * 86400))
+    c.execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)", (tok, user_id, session_end()))
     return tok
 
 
@@ -273,9 +490,7 @@ def invite_accept(t: str = Form(...), password: str = Form(...), password2: str 
         uid = c.execute("SELECT id FROM users WHERE username=?", (inv["username"],)).fetchone()["id"]
         c.execute("UPDATE invites SET used=? WHERE token_hash=?", (time.time(), inv["token_hash"]))
         tok = start_session(c, uid)
-    r = RedirectResponse("/", status_code=303)
-    r.set_cookie(COOKIE, tok, max_age=SESSION_DAYS * 86400, httponly=True, secure=SECURE_COOKIE, samesite="lax")
-    return r
+    return signed_in(tok)
 
 
 @app.get("/api/auth/me")
@@ -283,7 +498,7 @@ def me(request: Request):
     u = need_user(request)
     return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
             "binder": u["username"] in BINDER_OWNERS and not bearer(request),
-            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u), "pay": can_pay(u)}
+            "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u), "pay": can_pay(u), "unlock": can_unlock(u) and not bearer(request)}
 
 
 @app.get("/api/auth/profiles")
@@ -333,11 +548,11 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,role,active,created,secrets,can_delete,payment,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,cell,tg,code_by,role,active,created,secrets,can_delete,payment,can_unlock,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
-    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
+    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "text": text_on(), "tgOn": bool(os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()), "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
 
 
 @app.post("/api/admin/users")
@@ -398,6 +613,48 @@ async def admin_set_email(username: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/api/admin/users/{username}/cell")
+async def admin_set_cell(username: str, request: Request):
+    """Cell: the sign-in code is texted here; empty means this person signs in with the password only"""
+    need_owner(request)
+    v = str((await request.json()).get("cell", "")).strip()
+    if v and not cell10(v):
+        err(400, "bad_cell")
+    with db() as c:
+        n = c.execute("UPDATE users SET cell=? WHERE username=?", (v[:40], username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/codeby")
+async def admin_set_code_by(username: str, request: Request):
+    """Code by: how this person gets their sign-in code: text, tg (Telegram) or off (password only)"""
+    need_owner(request)
+    v = str((await request.json()).get("by", "")).strip()
+    if v not in ("text", "tg", "off"):
+        err(400, "bad_code_by")
+    with db() as c:
+        n = c.execute("UPDATE users SET code_by=? WHERE username=?", (v, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/tg")
+async def admin_set_tg(username: str, request: Request):
+    """Telegram chat ID: when set, the sign-in code goes to Telegram instead of a text (for people outside the US)"""
+    need_owner(request)
+    v = str((await request.json()).get("tg", "")).strip()
+    if v and not tg_id(v):
+        err(400, "bad_tg")
+    with db() as c:
+        n = c.execute("UPDATE users SET tg=? WHERE username=?", (v, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
 @app.post("/api/admin/users/{username}/secrets")
 async def admin_set_secrets(username: str, request: Request):
     """User/Pass Yes or No: whether this person sees the user names and passwords saved for companies and GAs."""
@@ -405,6 +662,18 @@ async def admin_set_secrets(username: str, request: Request):
     on = bool((await request.json()).get("secrets"))
     with db() as c:
         n = c.execute("UPDATE users SET secrets=? WHERE username=?", (1 if on else 0, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/unlock")
+async def admin_set_unlock(username: str, request: Request):
+    """Unlock Yes or No: whether this person can take over a lead or client someone else has open."""
+    need_owner(request)
+    on = bool((await request.json()).get("unlock"))
+    with db() as c:
+        n = c.execute("UPDATE users SET can_unlock=? WHERE username=?", (1 if on else 0, username)).rowcount
     if not n:
         err(404, "no_such_user")
     return {"ok": True}
@@ -477,6 +746,11 @@ def can_pay(u):
     return u["username"] in PANEL_OWNERS or bool(u["payment"])
 
 
+def can_unlock(u):
+    """Admin's Unlock: may take over a lead or client someone else has open (owners always can)"""
+    return u["username"] in PANEL_OWNERS or bool(u["can_unlock"])
+
+
 def hidden_keys(u, col):
     """Fields of records in collection `col` that this person may not see (or change)."""
     if col == PAY_COL and not can_pay(u):
@@ -540,9 +814,15 @@ def binder_month(p):
     return f"{m[1]}-{m[2]}" if len(m[1]) == 4 else f"{m[2]}-{int(m[1]):02d}"
 
 
-def binder_sync(c, path, old, new):
-    """Policies on a client that are new, or whose producer was just set to someone with a binder log, get a binder entry in that log, in their effective date's month.
-    A policy already in the log keeps that entry's premium, com %, broker fee, dates, ... up to date, except boxes changed in the log by hand."""
+BINDER_FROM = "2026-09"  # the binder pulls in every policy from this month on; older ones only when they are new or newly given that producer
+
+
+def binder_sync(c, path, old, new, backfill=False):
+    """The binder log pulls from the clients: a policy whose producer has a binder log gets an entry in that log, in its effective date's month
+    (new policies, ones just given that producer, and any from BINDER_FROM on that are missing).
+    A policy already in the log keeps that entry's premium, com %, broker fee, dates, ... up to date, except boxes changed in the log by hand.
+    When a policy's producer changes to someone else, or the policy is removed, its entry leaves the log (unless its commission or BF is marked paid).
+    backfill: a check of a client as it stands (on startup), so nothing counts as new."""
     segs = path.split("/")
     if len(segs) != 2 or segs[0] != "clients" or not isinstance(new, dict):
         return
@@ -577,8 +857,9 @@ def binder_sync(c, path, old, new):
             if add:
                 c.execute("UPDATE tracker_docs SET data=?, updated=?, updated_by='binder' WHERE path=?", (json.dumps({**d, **add}, separators=(",", ":")), time.time(), r["path"]))
             continue
-        # a new policy, or one whose producer was just set to someone with a binder log
-        if owner == was.get(p["pid"], was.get(same(p))):
+        # a new policy, one whose producer was just set to someone with a binder log, or one from BINDER_FROM on that is missing
+        not_new = backfill or owner == was.get(p["pid"], was.get(same(p)))
+        if not_new and (not p.get("eff") or binder_month(p) < BINDER_FROM):
             continue
         note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
         d = {"name": name or "Client", "month": binder_month(p), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
@@ -588,6 +869,26 @@ def binder_sync(c, path, old, new):
         i = new_id()
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
                   (f"{col}/{i}", col, i, json.dumps(d, separators=(",", ":")), time.time(), "binder"))
+    # entries this client's policies put in a log whose owner is no longer the producer (or whose policy is gone) leave it, unless marked paid
+    now_owner = {p["pid"]: binder_owner(p) for p in new.get("policies") or [] if isinstance(p, dict) and p.get("pid")}
+    for owner in set(BINDER_PRODUCERS.values()):
+        col = f"private/{owner}/binder"
+        for r in c.execute("SELECT path,data FROM tracker_docs WHERE parent=? AND json_extract(data,'$.clientId')=?", (col, segs[1])).fetchall():
+            d = json.loads(r["data"])
+            if d.get("pid") and now_owner.get(d["pid"]) != owner and not d.get("comPaid") and not d.get("bfPaid"):
+                c.execute("DELETE FROM tracker_docs WHERE path=?", (r["path"],))
+
+
+def binder_backfill():
+    """On startup: every client's policies checked against the binder logs, so the logs match the clients (see binder_sync)."""
+    with db() as c:
+        for r in c.execute("SELECT path,data FROM tracker_docs WHERE parent='clients'").fetchall():
+            try:
+                d = json.loads(r["data"])
+            except ValueError:
+                continue
+            binder_sync(c, r["path"], d, d, backfill=True)
+        bump(c)
 
 
 def guard(request: Request, u, segs):
@@ -745,11 +1046,11 @@ def lock_args(body):
 
 @app.post("/api/tracker/lock")
 async def lock_take(request: Request):
-    """Take or renew the lock. force (owners only) takes it from whoever has it."""
+    """Take or renew the lock. force (owners, and people set to Yes under Unlock in Admin) takes it from whoever has it."""
     need_module("tracker"); u = need_user(request)
     body = await request.json()
     path, tab = lock_args(body)
-    force = bool(body.get("force")) and u["username"] in PANEL_OWNERS and not bearer(request)
+    force = bool(body.get("force")) and can_unlock(u) and not bearer(request)
     now = time.time()
     with db() as c:
         r = c.execute("SELECT * FROM locks WHERE path=?", (path,)).fetchone()
@@ -1125,9 +1426,13 @@ def mail_table(c):
 
 
 def imap_open(email, pw):
+    """Log in to the mail server. A password with letters outside plain ASCII (é, ñ, curly quotes, ...) can't go through LOGIN, so it goes as AUTHENTICATE PLAIN in UTF-8."""
     import imaplib
     m = imaplib.IMAP4_SSL("imap.gmail.com" if is_gmail(email) else IMAP_HOST, IMAP_PORT, timeout=20)
-    m.login(email, pw)
+    if pw.isascii() and email.isascii():
+        m.login(email, pw)
+    else:
+        m.authenticate("PLAIN", lambda _: ("\0" + email + "\0" + pw).encode("utf-8"))
     return m
 
 
@@ -1186,9 +1491,13 @@ async def mail_connect(request: Request):
     import imaplib
     try:
         m = imap_open(email, pw)
-    except imaplib.IMAP4.error:
-        err(400, "bad_login")
-    except Exception:
+    except imaplib.IMAP4.error as e:  # the mail server's own words go back too (wrong password, too many tries, access turned off, ...)
+        print(f"mail connect {email}: {IMAP_HOST} said {e}", flush=True)
+        said = e.args[0] if e.args else ""
+        said = said.decode("utf-8", "replace") if isinstance(said, bytes) else str(said)  # the server's words come as bytes: b'[AUTHENTICATIONFAILED] ...'
+        return JSONResponse({"code": "bad_login", "said": said[:200]}, status_code=400)
+    except Exception as e:
+        print(f"mail connect {email}: {IMAP_HOST} unreachable: {e!r}", flush=True)
         err(502, "imap_unreachable")
     try:
         box = imap_sent_box(m)
@@ -1307,18 +1616,583 @@ async def mail_send(request: Request):
     for n, t, d in atts:
         mt, _, st = (t if "/" in t else "application/octet-stream").partition("/")
         em.add_attachment(d, maintype=mt, subtype=st, filename=n)
-    copied = False
+    copied, relogin = False, False
+    import imaplib
     try:
-        import imaplib
         m = imap_open(acct["email"], mail_box().decrypt(acct["refresh"].encode()).decode())
         try:
             typ, _ = m.append(acct["sent_box"] or "INBOX.Sent", "\\Seen", imaplib.Time2Internaldate(time.time()), em.as_bytes(policy=SMTP))
             copied = typ == "OK"
         finally:
             m.logout()
+    except imaplib.IMAP4.error:  # the saved email password no longer works (changed in Bluehost): the page asks for the new one
+        relogin = True
     except Exception:
         copied = False
-    return {"ok": True, "sentCopy": copied}
+    with db() as c:
+        mail_log_table(c)
+        c.execute("INSERT INTO mail_log(user_id,user_name,at,sender,to_,cc,subject,html,files,copied) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                  (u["id"], u["name"] or u["username"], time.time(), sender, ", ".join(to), ", ".join(cc), subject, html,
+                   json.dumps([n for n, _, _ in atts]), 1 if copied else 0))
+    return {"ok": True, "sentCopy": copied, "relogin": relogin}
+
+
+# ---------- Sent history: every email sent from the database (not the attachments themselves, just their names)
+def mail_log_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS mail_log(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, user_name TEXT NOT NULL DEFAULT '', "
+              "at REAL NOT NULL, sender TEXT NOT NULL DEFAULT '', to_ TEXT NOT NULL DEFAULT '', cc TEXT NOT NULL DEFAULT '', subject TEXT NOT NULL DEFAULT '', "
+              "html TEXT NOT NULL DEFAULT '', files TEXT NOT NULL DEFAULT '[]', copied INTEGER NOT NULL DEFAULT 0)")
+
+
+# ---------- Texts from the database through SimpleTexting (the office's texting service; replies land in its own inbox and app).
+# Needs SIMPLETEXTING_API_KEY in .env (SimpleTexting: Settings > API). SIMPLETEXTING_PHONE picks the sending number when the account has more than one.
+TEXT_API = "https://api-app2.simpletexting.com/v2/api/messages"
+
+
+def text_on():
+    return bool(os.environ.get("SIMPLETEXTING_API_KEY", "").strip())
+
+
+def simpletexting_post(payload):
+    req = urllib.request.Request(TEXT_API, data=json.dumps(payload).encode(), headers={
+        "authorization": "Bearer " + os.environ.get("SIMPLETEXTING_API_KEY", "").strip(), "content-type": "application/json",
+        "accept": "application/json", "user-agent": "psw-tracker"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read() or b"{}")
+
+
+def text_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS text_log(id INTEGER PRIMARY KEY AUTOINCREMENT, at REAL NOT NULL, dir TEXT NOT NULL, "
+              "phone TEXT NOT NULL, text TEXT NOT NULL DEFAULT '', by_name TEXT NOT NULL DEFAULT '', ext_id TEXT NOT NULL DEFAULT '')")
+    c.execute("CREATE INDEX IF NOT EXISTS text_log_phone ON text_log(phone, at)")
+    have = {r[1] for r in c.execute("PRAGMA table_info(text_log)")}
+    for col, kind in (("by_user", "TEXT NOT NULL DEFAULT ''"), ("to_user", "TEXT NOT NULL DEFAULT ''"), ("to_name", "TEXT NOT NULL DEFAULT ''"), ("reply_to", "INTEGER")):
+        if col not in have:  # who sent a text, and for a reply: whose text it answers
+            c.execute(f"ALTER TABLE text_log ADD COLUMN {col} {kind}")
+
+
+def phone10(v):
+    d = re.sub(r"\D", "", str(v or ""))
+    if len(d) == 11 and d[0] == "1":
+        d = d[1:]
+    return d if len(d) == 10 else ""
+
+
+def text_hook_token():
+    """the secret part of the incoming-text webhook address, made once and kept on the server"""
+    f = DATA / "text-hook.key"
+    if not f.exists():
+        f.write_text(secrets.token_urlsafe(24))
+    return f.read_text().strip()
+
+
+@app.get("/api/text/status")
+def text_status(request: Request):
+    u = need_user(request)
+    out = {"configured": text_on()}
+    if text_on() and u["username"] in PANEL_OWNERS:
+        out["hookUrl"] = str(request.base_url).rstrip("/").replace("http://", "https://") + "/api/text/hook/" + text_hook_token()
+    return out
+
+
+@app.get("/api/text/history")
+def text_history(request: Request, phones: str = ""):
+    need_user(request)
+    ps = [x for x in {phone10(p) for p in phones.split(",")} if x][:4]
+    if not ps:
+        return {"items": []}
+    with db() as c:
+        text_table(c)
+        rows = c.execute(f"SELECT at,dir,phone,text,by_name FROM text_log WHERE phone IN ({','.join('?' * len(ps))}) ORDER BY at DESC LIMIT 300", ps).fetchall()
+    return JSONResponse({"items": [dict(r) for r in rows][::-1]}, headers=NO_STORE)
+
+
+@app.get("/api/text/inbox")
+def text_inbox(request: Request, mine: int = 0, q: str = "", since: float = 0):
+    """incoming texts, newest first; mine=1: only replies to texts this person sent"""
+    u = need_user(request)
+    sql, args = ("SELECT i.id,i.at,i.phone,i.text,i.to_name,i.to_user,o.text AS re_text,o.at AS re_at FROM text_log i "
+                 "LEFT JOIN text_log o ON o.id=i.reply_to WHERE i.dir='in' AND i.at>?"), [float(since or 0)]
+    if mine:
+        sql += " AND i.to_user=?"
+        args.append(u["id"])
+    for w in str(q or "").lower().split()[:6]:
+        sql += " AND lower(i.text||' '||i.phone||' '||i.to_name) LIKE ?"
+        args.append("%" + w.replace("%", "").replace("_", "") + "%")
+    with db() as c:
+        text_table(c)
+        rows = c.execute(sql + " ORDER BY i.at DESC LIMIT 500", args).fetchall()
+    return JSONResponse({"items": [{**dict(r), "mine": r["to_user"] == u["id"]} for r in rows], "me": u["id"]}, headers=NO_STORE)
+
+
+def _hook_find(o, keys):
+    """SimpleTexting's webhook body nests the message; look for the first matching key anywhere in it"""
+    if isinstance(o, dict):
+        for k in keys:
+            if k in o and isinstance(o[k], (str, int)) and str(o[k]).strip():
+                return str(o[k])
+        for v in o.values():
+            r = _hook_find(v, keys)
+            if r:
+                return r
+    elif isinstance(o, list):
+        for v in o:
+            r = _hook_find(v, keys)
+            if r:
+                return r
+    return ""
+
+
+@app.post("/api/text/hook/{token}")
+async def text_hook(token: str, request: Request):
+    """incoming texts: SimpleTexting calls this address (set under Integrations > API & Webhooks) for each reply"""
+    if not text_on() or not hmac.compare_digest(token, text_hook_token()):
+        err(404, "not_found")
+    try:
+        b = await request.json()
+    except Exception:
+        return {"ok": True}
+    kind = _hook_find(b, ("type", "event", "trigger")).upper()
+    if kind and "INCOMING" not in kind:
+        return {"ok": True}
+    ph = phone10(_hook_find(b, ("contactPhone", "from", "phone", "contact_phone")))
+    text = _hook_find(b, ("text", "message", "body"))[:4000]
+    if not ph or not text:
+        return {"ok": True}
+    mid = _hook_find(b, ("messageId", "id"))[:80]
+    with db() as c:
+        text_table(c)
+        if mid and c.execute("SELECT 1 FROM text_log WHERE ext_id=? AND dir='in'", (mid,)).fetchone():
+            return {"ok": True}
+        last = c.execute("SELECT id,by_user,by_name FROM text_log WHERE phone=? AND dir='out' ORDER BY at DESC LIMIT 1", (ph,)).fetchone()  # the text it answers
+        c.execute("INSERT INTO text_log(at,dir,phone,text,ext_id,to_user,to_name,reply_to) VALUES(?,?,?,?,?,?,?,?)",
+                  (time.time(), "in", ph, text, mid, last["by_user"] if last else "", last["by_name"] if last else "", last["id"] if last else None))
+    return {"ok": True}
+
+
+@app.post("/api/text/send")
+async def text_send(request: Request):
+    u = need_user(request)
+    if not text_on():
+        err(404, "text_off")
+    b = await request.json()
+    d = re.sub(r"\D", "", str(b.get("to") or ""))
+    if len(d) == 11 and d[0] == "1":
+        d = d[1:]
+    if len(d) != 10:
+        err(400, "bad_phone")
+    text = str(b.get("text") or "").strip()[:1500]
+    if not text:
+        err(400, "no_text")
+    payload = {"contactPhone": d, "mode": "AUTO", "text": text}
+    acct = re.sub(r"\D", "", os.environ.get("SIMPLETEXTING_PHONE", ""))[-10:]
+    if acct:
+        payload["accountPhone"] = acct
+    try:
+        r = simpletexting_post(payload)
+    except urllib.error.HTTPError as e:
+        try:
+            msg = str(json.loads(e.read()).get("message", ""))[:300]
+        except Exception:
+            msg = ""
+        print("SimpleTexting send failed:", e.code, msg, flush=True)
+        if e.code in (401, 403):
+            err(502, "text_key_rejected")
+        return JSONResponse({"code": "text_failed", "detail": msg or f"SimpleTexting said {e.code}"}, status_code=502)
+    except (urllib.error.URLError, TimeoutError):
+        err(502, "text_unreachable")
+    with db() as c:
+        text_table(c)
+        c.execute("INSERT INTO text_log(at,dir,phone,text,by_name,ext_id,by_user) VALUES(?,?,?,?,?,?,?)",
+                  (time.time(), "out", d, text, u["name"] or u["username"], str(r.get("id", ""))[:80], u["id"]))
+    return {"ok": True, "id": r.get("id", "")}
+
+
+@app.get("/api/mail/history")
+def mail_history(request: Request, q: str = "", all: int = 0):
+    """your own sent emails, newest first; the owners can see everyone's"""
+    u = need_user(request)
+    every = bool(all) and u["username"] in PANEL_OWNERS and not bearer(request)
+    sql, args = "SELECT id,user_name,at,sender,to_,cc,subject,files,copied FROM mail_log WHERE 1=1", []
+    if not every:
+        sql += " AND user_id=?"
+        args.append(u["id"])
+    for w in str(q or "").lower().split()[:6]:
+        sql += " AND lower(to_||' '||cc||' '||subject||' '||files||' '||user_name) LIKE ?"
+        args.append("%" + w.replace("%", "").replace("_", "") + "%")
+    with db() as c:
+        mail_log_table(c)
+        rows = c.execute(sql + " ORDER BY at DESC LIMIT 500", args).fetchall()
+    return {"canAll": u["username"] in PANEL_OWNERS and not bearer(request),
+            "items": [{"id": r["id"], "by": r["user_name"], "at": r["at"], "from": r["sender"], "to": r["to_"], "cc": r["cc"],
+                       "subject": r["subject"], "files": json.loads(r["files"] or "[]"), "sentCopy": bool(r["copied"])} for r in rows]}
+
+
+@app.get("/api/mail/history/{mid}")
+def mail_history_one(mid: int, request: Request):
+    u = need_user(request)
+    with db() as c:
+        mail_log_table(c)
+        r = c.execute("SELECT user_id,html FROM mail_log WHERE id=?", (mid,)).fetchone()
+    if not r or (r["user_id"] != u["id"] and (u["username"] not in PANEL_OWNERS or bearer(request))):
+        err(404, "not_found")
+    return {"html": r["html"]}
+
+
+# ---------- DocuSign: send a client's or lead's PDF for e-signature ----------
+# Needs repo secrets DOCUSIGN_INTEGRATION_KEY, DOCUSIGN_USER_ID and DOCUSIGN_PRIVATE_KEY (the deploy puts them on the server).
+# Works with a free DocuSign developer (demo) key for testing and with the live key after DocuSign's go-live review; it tries both.
+DS_HOSTS = ("account.docusign.com", "account-d.docusign.com")
+DS_FINAL = ("completed", "declined", "voided")
+DS_KINDS = {"sign": "signHereTabs", "initial": "initialHereTabs", "date": "dateSignedTabs", "name": "fullNameTabs"}
+_ds = {"tok": "", "exp": 0, "host": "", "acct": "", "base": ""}
+
+
+class DsError(Exception):
+    def __init__(self, code, detail="", host=""):
+        super().__init__(code)
+        self.code, self.detail, self.host = code, detail, host
+
+
+def ds_key_file():
+    return Path(os.environ.get("DOCUSIGN_KEY_FILE") or (Path(__file__).parent / "docusign-key.pem"))
+
+
+def ds_on():
+    return bool(os.environ.get("DOCUSIGN_INTEGRATION_KEY", "").strip() and os.environ.get("DOCUSIGN_USER_ID", "").strip()
+                and ds_key_file().is_file())
+
+
+def ds_http(method, url, data=None, headers=None):
+    """(status, body bytes); the tests swap this out for a fake DocuSign"""
+    req = urllib.request.Request(url, data=data, method=method, headers={"user-agent": "psw-tracker", **(headers or {})})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return r.status, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+
+
+def ds_assertion(host):
+    import base64
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding
+    b64 = lambda b: base64.urlsafe_b64encode(b).rstrip(b"=")
+    now = int(time.time())
+    head = b64(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
+    body = b64(json.dumps({"iss": os.environ["DOCUSIGN_INTEGRATION_KEY"].strip(), "sub": os.environ["DOCUSIGN_USER_ID"].strip(),
+                           "aud": host, "iat": now, "exp": now + 3600, "scope": "signature impersonation"}).encode())
+    key = serialization.load_pem_private_key(ds_key_file().read_bytes(), password=None)
+    return (head + b"." + body + b"." + b64(key.sign(head + b"." + body, padding.PKCS1v15(), hashes.SHA256()))).decode()
+
+
+def ds_token():
+    if _ds["tok"] and _ds["exp"] > time.time() + 120:
+        return _ds["tok"]
+    consent, said = "", ""
+    for host in ([_ds["host"]] if _ds["host"] else []) + [h for h in DS_HOSTS if h != _ds["host"]]:
+        try:
+            a = ds_assertion(host)
+        except Exception as e:
+            raise DsError("bad_key", "The DocuSign private key couldn't be read: " + str(e)[:200])
+        st, b = ds_http("POST", f"https://{host}/oauth/token", urllib.parse.urlencode(
+            {"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer", "assertion": a}).encode(),
+            {"content-type": "application/x-www-form-urlencoded"})
+        try:
+            j = json.loads(b or b"{}")
+        except ValueError:
+            j = {}
+        if st == 200 and j.get("access_token"):
+            tok = j["access_token"]
+            st2, b2 = ds_http("GET", f"https://{host}/oauth/userinfo", headers={"authorization": "Bearer " + tok})
+            accts = (json.loads(b2 or b"{}").get("accounts") or []) if st2 == 200 else []
+            want = os.environ.get("DOCUSIGN_ACCOUNT_ID", "").strip()
+            ac = next((x for x in accts if want and x.get("account_id") == want), None) or next((x for x in accts if x.get("is_default")), None) or (accts[:1] or [None])[0]
+            if not ac:
+                raise DsError("no_account", "DocuSign signed in but listed no account for this user")
+            _ds.update(tok=tok, exp=time.time() + int(j.get("expires_in") or 3600), host=host, acct=ac["account_id"], base=ac["base_uri"].rstrip("/"))
+            return tok
+        e = str(j.get("error") or st)
+        if e == "consent_required":
+            consent = consent or host
+        said = said or e
+        print(f"DocuSign sign-in at {host}: {st} {e}", flush=True)
+    if consent:
+        raise DsError("consent", host=consent)
+    raise DsError("auth_failed", said)
+
+
+def ds_call(method, path, body=None, raw=False):
+    """eSignature REST call on this account; path starts after /accounts/{id}"""
+    for again in (True, False):
+        tok = ds_token()
+        st, b = ds_http(method, f"{_ds['base']}/restapi/v2.1/accounts/{_ds['acct']}{path}",
+                        json.dumps(body).encode() if body is not None else None,
+                        {"authorization": "Bearer " + tok, "accept": "application/pdf" if raw else "application/json",
+                         **({"content-type": "application/json"} if body is not None else {})})
+        if st == 401 and again:
+            _ds["tok"] = ""
+            continue
+        if st >= 300:
+            try:
+                j = json.loads(b or b"{}")
+                msg = j.get("message") or j.get("errorCode") or ""
+            except ValueError:
+                msg = ""
+            print("DocuSign", method, path, st, msg, flush=True)
+            raise DsError("ds_failed", str(msg)[:300] or f"DocuSign said {st}")
+        return b if raw else json.loads(b or b"{}")
+
+
+def ds_err(e: DsError):
+    return JSONResponse({"code": e.code, "detail": e.detail}, status_code=502)
+
+
+def ds_table(c):
+    c.execute("CREATE TABLE IF NOT EXISTS sign_envelopes(id TEXT PRIMARY KEY, doc_path TEXT NOT NULL, file_id TEXT NOT NULL, "
+              "file_name TEXT NOT NULL, pid TEXT NOT NULL DEFAULT '', signers TEXT NOT NULL, status TEXT NOT NULL, sent_at REAL NOT NULL, "
+              "sent_by TEXT NOT NULL, user_id TEXT NOT NULL, checked REAL NOT NULL DEFAULT 0, signed_blob TEXT NOT NULL DEFAULT '', "
+              "signed_size INTEGER NOT NULL DEFAULT 0, attached INTEGER NOT NULL DEFAULT 0, done_at REAL)")
+    c.execute("CREATE INDEX IF NOT EXISTS sign_envelopes_doc ON sign_envelopes(doc_path)")
+    have = {r[1] for r in c.execute("PRAGMA table_info(sign_envelopes)")}
+    for col in ("files", "signed_list"):  # several PDFs in one envelope: [{id,name}] sent, [{fileId,fileName,id,size}] signed
+        if col not in have:
+            c.execute(f"ALTER TABLE sign_envelopes ADD COLUMN {col} TEXT NOT NULL DEFAULT '[]'")
+
+
+def ds_consent_url(request, host):
+    base = os.environ.get("PSW_PUBLIC_URL", "").strip().rstrip("/") or str(request.base_url).rstrip("/")
+    return f"https://{host}/oauth/auth?" + urllib.parse.urlencode({"response_type": "code", "scope": "signature impersonation",
+        "client_id": os.environ.get("DOCUSIGN_INTEGRATION_KEY", "").strip(), "redirect_uri": base + "/docusign/done"})
+
+
+@app.get("/api/sign/status")
+def sign_status(request: Request):
+    need_module("tracker"); need_user(request)
+    if not ds_on():
+        return {"configured": False}
+    try:
+        ds_token()
+    except DsError as e:
+        out = {"configured": True, "ready": False, "code": e.code, "detail": e.detail}
+        if e.code == "consent":
+            out["consentUrl"] = ds_consent_url(request, e.host)
+        return out
+    return {"configured": True, "ready": True, "test": _ds["host"] == "account-d.docusign.com"}
+
+
+@app.get("/docusign/done")
+def docusign_done():
+    return HTMLResponse("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+                        "<title>DocuSign connected</title><body style='font:16px system-ui;padding:40px;text-align:center'>"
+                        "<h2>DocuSign is connected</h2><p>You can close this tab and go back to the PSW database.</p>")
+
+
+def sign_doc_path(p):
+    p = str(p or "")
+    m = re.match(r"^(leads|clients)/([A-Za-z0-9_\-]{1,64})$", p)
+    if not m:
+        err(400, "bad_path")
+    with db() as c:
+        if not c.execute("SELECT 1 FROM tracker_docs WHERE path=?", (p,)).fetchone():
+            err(404, "not_found")
+    return p
+
+
+@app.post("/api/sign/send")
+async def sign_send(request: Request):
+    import base64
+    need_module("tracker"); u = need_user(request)
+    if not ds_on():
+        err(404, "sign_off")
+    b = await request.json()
+    path = sign_doc_path(b.get("path"))
+    docs = []
+    for d in (b.get("docs") or [{"fileId": b.get("fileId"), "fileName": b.get("fileName"), "pdf": b.get("pdf"), "pid": b.get("pid")}])[:10]:
+        fid, fname = str(d.get("fileId") or ""), str(d.get("fileName") or "document.pdf").strip()[:200]
+        if not SEG.match(fid):
+            err(400, "bad_id")
+        try:
+            pdf = base64.b64decode(str(d.get("pdf") or ""), validate=True)
+        except Exception:
+            err(400, "bad_pdf")
+        if not pdf.startswith(b"%PDF") or len(pdf) > MAX_BLOB:
+            err(400, "bad_pdf")
+        docs.append({"id": fid, "name": fname, "pdf": pdf, "pid": str(d.get("pid") or "")[:64]})
+    if not docs or sum(len(d["pdf"]) for d in docs) > 25 * 1024 * 1024:
+        err(400, "bad_pdf")
+    fid, fname = docs[0]["id"], docs[0]["name"]
+    signers = []
+    for s in (b.get("signers") or [])[:2]:
+        name, email = str(s.get("name") or "").strip()[:100], str(s.get("email") or "").strip().lower()[:200]
+        if not name or not EMAIL_RE.match(email):
+            err(400, "bad_signer")
+        signers.append({"name": name, "email": email})
+    if not signers:
+        err(400, "bad_signer")
+    tabs = [dict() for _ in signers]
+    n = 0
+    for t in (b.get("tabs") or [])[:200]:
+        try:
+            k, who, dn = DS_KINDS.get(str(t.get("type"))), int(t.get("signer") or 0), int(t.get("doc") or 0)
+            pg, x, y = int(t["page"]), max(0, round(float(t["x"]))), max(0, round(float(t["y"])))
+        except (AttributeError, KeyError, TypeError, ValueError):
+            continue
+        if not k or not 0 <= who < len(signers) or not 0 <= dn < len(docs):
+            continue
+        tabs[who].setdefault(k, []).append({"documentId": str(dn + 1), "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)})
+        n += 1
+    for i, s in enumerate(signers):
+        if not tabs[i].get("signHereTabs"):
+            err(400, "no_sign_box")
+    subject = str(b.get("subject") or "").strip()[:100] or ("Please sign: " + re.sub(r"\.pdf$", "", fname, flags=re.I))[:100]
+    env = {"emailSubject": subject, "status": "sent",
+           "documents": [{"documentBase64": base64.b64encode(d["pdf"]).decode(), "name": d["name"] if d["name"].lower().endswith(".pdf") else d["name"] + ".pdf",
+                          "fileExtension": "pdf", "documentId": str(i + 1)} for i, d in enumerate(docs)],
+           "recipients": {"signers": [{"email": s["email"], "name": s["name"], "recipientId": str(i + 1), "routingOrder": "1", "tabs": tabs[i]}
+                                      for i, s in enumerate(signers)]}}
+    msg = str(b.get("message") or "").strip()[:2000]
+    if msg:
+        env["emailBlurb"] = msg
+    try:
+        r = ds_call("POST", "/envelopes", env)
+    except DsError as e:
+        return ds_err(e)
+    eid = str(r.get("envelopeId") or "")
+    if not eid:
+        return ds_err(DsError("ds_failed", "DocuSign didn't return an envelope"))
+    with db() as c:
+        ds_table(c)
+        c.execute("INSERT INTO sign_envelopes(id,doc_path,file_id,file_name,pid,signers,status,sent_at,sent_by,user_id,checked,files) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                  (eid, path, fid, fname, docs[0]["pid"], json.dumps(signers), str(r.get("status") or "sent"), time.time(),
+                   u["name"] or u["username"], u["id"], time.time(), json.dumps([{"id": d["id"], "name": d["name"]} for d in docs])))
+    return {"ok": True, "id": eid, "status": r.get("status") or "sent", "test": _ds["host"] == "account-d.docusign.com"}
+
+
+def sign_row(r):
+    return {"id": r["id"], "fileId": r["file_id"], "fileName": r["file_name"], "pid": r["pid"], "status": r["status"],
+            "sentAt": r["sent_at"], "sentBy": r["sent_by"], "doneAt": r["done_at"], "signers": json.loads(r["signers"]),
+            "signed": {"id": r["signed_blob"], "size": r["signed_size"]} if r["signed_blob"] else None, "attached": bool(r["attached"]),
+            "files": json.loads(r["files"] or "[]"), "signedList": json.loads(r["signed_list"] or "[]")}
+
+
+def sign_refresh(r):
+    """ask DocuSign about an envelope that isn't finished; a completed one's signed PDF is saved as a file"""
+    st = ds_call("GET", f"/envelopes/{r['id']}").get("status") or r["status"]
+    blob, size, sl = r["signed_blob"], r["signed_size"], r["signed_list"] or "[]"
+    if st == "completed" and not blob:
+        files = json.loads(r["files"] or "[]") or [{"id": r["file_id"], "name": r["file_name"]}]
+        out = []
+        for i, f in enumerate(files):  # each signed PDF comes back as its own file
+            pdf = ds_call("GET", f"/envelopes/{r['id']}/documents/{i + 1}", raw=True)
+            bid = new_id(32)
+            (BLOBS / bid).write_bytes(pdf)
+            with db() as c:
+                c.execute("INSERT INTO tracker_blobs(id,type,size,created,created_by) VALUES(?,?,?,?,?)",
+                          (bid, "application/pdf", len(pdf), time.time(), r["user_id"]))
+            out.append({"fileId": f["id"], "fileName": f["name"], "id": bid, "size": len(pdf)})
+        blob, size, sl = out[0]["id"], out[0]["size"], json.dumps(out)
+    with db() as c:
+        c.execute("UPDATE sign_envelopes SET status=?, checked=?, signed_blob=?, signed_size=?, signed_list=?, done_at=CASE WHEN ? THEN coalesce(done_at,?) ELSE done_at END WHERE id=?",
+                  (st, time.time(), blob, size, sl, st in DS_FINAL, time.time(), r["id"]))
+
+
+@app.get("/api/sign/list")
+def sign_list(request: Request, path: str = "", now: int = 0):
+    need_module("tracker"); need_user(request)
+    path = sign_doc_path(path)
+    with db() as c:
+        ds_table(c)
+        rows = c.execute("SELECT * FROM sign_envelopes WHERE doc_path=? ORDER BY sent_at", (path,)).fetchall()
+    problem = None
+    if ds_on():
+        for r in rows:
+            if (r["status"] not in DS_FINAL or (r["status"] == "completed" and not r["signed_blob"])) and (now or r["checked"] < time.time() - 60):
+                try:
+                    sign_refresh(r)
+                except DsError as e:
+                    problem = {"code": e.code, "detail": e.detail}
+                    break
+        with db() as c:
+            rows = c.execute("SELECT * FROM sign_envelopes WHERE doc_path=? ORDER BY sent_at", (path,)).fetchall()
+    return {"items": [sign_row(r) for r in rows], "problem": problem}
+
+
+@app.post("/api/sign/{eid}/attached")
+async def sign_attached(request: Request, eid: str):
+    """the page claims the signed copy before adding it to the files, so two open screens don't both add it; undo gives it back"""
+    need_module("tracker"); need_user(request)
+    undo = bool((json.loads(await request.body() or b"{}") or {}).get("undo"))
+    with db() as c:
+        ds_table(c)
+        n = c.execute("UPDATE sign_envelopes SET attached=? WHERE id=? AND attached=? AND signed_blob!=''", (0 if undo else 1, eid, 1 if undo else 0)).rowcount
+    return {"ok": True, "claimed": bool(n) and not undo}
+
+
+@app.post("/api/sign/{eid}/void")
+async def sign_void(request: Request, eid: str):
+    need_module("tracker"); need_user(request)
+    with db() as c:
+        ds_table(c)
+        r = c.execute("SELECT * FROM sign_envelopes WHERE id=?", (eid,)).fetchone()
+    if not r:
+        err(404, "not_found")
+    if r["status"] in DS_FINAL:
+        return {"ok": True, "status": r["status"]}
+    why = str((await request.json()).get("reason") or "").strip()[:200] or "Cancelled by Pacific Southwest Insurance Services"
+    try:
+        ds_call("PUT", f"/envelopes/{eid}", {"status": "voided", "voidedReason": why})
+    except DsError as e:
+        return ds_err(e)
+    with db() as c:
+        c.execute("UPDATE sign_envelopes SET status='voided', done_at=?, checked=? WHERE id=?", (time.time(), time.time(), eid))
+    return {"ok": True, "status": "voided"}
+
+
+# ---------- Shrink PDF: Ghostscript rewrites it with pictures at 150 dpi (normal), 72 dpi (small) or in grayscale ----------
+SHRINK_MAX = 25 * 1024 * 1024  # the web server (Caddy) takes 25 MB at most
+SHRINK_LEVELS = {"normal": ["-dPDFSETTINGS=/ebook"], "small": ["-dPDFSETTINGS=/screen"],
+                 "gray": ["-dPDFSETTINGS=/ebook", "-sColorConversionStrategy=Gray", "-dProcessColorModel=/DeviceGray"]}
+
+
+def shrink_pdf(data: bytes, level: str) -> bytes:
+    import shutil
+    import subprocess
+    import tempfile
+    gs = shutil.which("gs")
+    if not gs:
+        err(501, "shrink_off")
+    with tempfile.TemporaryDirectory() as d:
+        src, out = Path(d) / "in.pdf", Path(d) / "out.pdf"
+        src.write_bytes(data)
+        try:
+            r = subprocess.run([gs, "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.5", *SHRINK_LEVELS[level], "-dNOPAUSE", "-dQUIET", "-dBATCH",
+                                "-dSAFER", "-dDetectDuplicateImages=true", "-dCompressFonts=true", "-dPrinted=false", f"-sOutputFile={out}", str(src)],
+                               capture_output=True, timeout=240)
+        except subprocess.TimeoutExpired:
+            err(504, "shrink_slow")
+        if r.returncode != 0 or not out.exists() or out.stat().st_size < 100:
+            print("shrink failed:", r.returncode, r.stderr[-500:], flush=True)
+            err(422, "shrink_failed")
+        return out.read_bytes()
+
+
+@app.post("/api/pdf/shrink")
+async def pdf_shrink(request: Request, level: str = "normal"):
+    """the PDF in the body comes back smaller (or unchanged when it can't get smaller); X-Before / X-After give the sizes"""
+    need_module("tracker"); need_user(request)
+    if level not in SHRINK_LEVELS:
+        err(400, "bad_level")
+    data = await request.body()
+    if len(data) > SHRINK_MAX:
+        err(413, "too_large")
+    if not data.startswith(b"%PDF"):
+        err(400, "bad_pdf")
+    from starlette.concurrency import run_in_threadpool
+    out = await run_in_threadpool(shrink_pdf, data, level)
+    same = len(out) >= len(data) * 0.97
+    return Response(data if same else out, media_type="application/pdf",
+                    headers={"X-Before": str(len(data)), "X-After": str(len(data) if same else len(out)), "X-Shrunk": "0" if same else "1", "Cache-Control": "no-store"})
 
 
 @app.get("/healthz")
