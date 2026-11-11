@@ -116,6 +116,8 @@ def init_db():
                   "expires REAL NOT NULL, tries INTEGER NOT NULL DEFAULT 0, sent REAL NOT NULL)")
         c.execute("CREATE TABLE IF NOT EXISTS password_resets(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires REAL NOT NULL, used REAL)")
         c.execute("UPDATE sessions SET expires=? WHERE expires>?", (session_end(), session_end()))  # sign-ins made before daily sign-in end at the next 4 AM too
+        if "mail_as" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Send email from: another person's connected email this person sends through
+            c.execute("ALTER TABLE users ADD COLUMN mail_as TEXT NOT NULL DEFAULT ''")
         if "sig" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Signature: picture stamped on ACORDs this person makes
             c.execute("ALTER TABLE users ADD COLUMN sig TEXT NOT NULL DEFAULT ''")
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
@@ -588,11 +590,14 @@ def need_owner(request: Request):
 def admin_users(request: Request):
     me = need_owner(request)
     with db() as c:
-        rows = c.execute("SELECT username,name,email,cell,tg,code_by,role,active,created,secrets,can_delete,payment,can_unlock,sig FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = c.execute("SELECT username,name,email,cell,tg,code_by,role,active,created,secrets,can_delete,payment,can_unlock,sig,mail_as FROM users ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        mail_table(c)  # whose email is connected, for Send email from
+        accts = c.execute("SELECT u.username,u.name,m.email FROM mail_accounts m JOIN users u ON u.id=m.user_id "
+                          "WHERE u.active=1 AND m.email<>'' AND m.refresh<>'' ORDER BY u.name COLLATE NOCASE").fetchall()
         pending = c.execute("SELECT username,name,email,role,expires FROM invites WHERE used IS NULL AND expires>? ORDER BY expires",
                             (time.time(),)).fetchall()
     have = {r["username"] for r in rows}
-    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "text": text_on(), "tgOn": bool(os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()), "users": [dict(r) for r in rows], "invites": [dict(r) for r in pending if r["username"] not in have]}
+    return {"me": me["username"], "owners": sorted(PANEL_OWNERS), "text": text_on(), "tgOn": bool(os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()), "users": [dict(r) for r in rows], "mailAccts": [dict(r) for r in accts], "invites": [dict(r) for r in pending if r["username"] not in have]}
 
 
 @app.post("/api/admin/users")
@@ -648,6 +653,20 @@ async def admin_set_email(username: str, request: Request):
     with db() as c:
         n = c.execute("UPDATE users SET email=? WHERE username=?", (email, username)).rowcount
         n += c.execute("UPDATE invites SET email=? WHERE username=? AND used IS NULL", (email, username)).rowcount
+    if not n:
+        err(404, "no_such_user")
+    return {"ok": True}
+
+
+@app.post("/api/admin/users/{username}/mailas")
+async def admin_set_mail_as(username: str, request: Request):
+    """Send email from: this person sends through another person's connected email (no password shared); empty means their own"""
+    need_owner(request)
+    v = str((await request.json()).get("as", "")).strip().lower()
+    with db() as c:
+        if v and (v == username or not c.execute("SELECT 1 FROM users WHERE username=? AND active=1", (v,)).fetchone()):
+            err(400, "bad_mail_as")
+        n = c.execute("UPDATE users SET mail_as=? WHERE username=?", (v, username)).rowcount
     if not n:
         err(404, "no_such_user")
     return {"ok": True}
@@ -1489,14 +1508,28 @@ def resend_post(payload):
         return json.loads(r.read() or b"{}")
 
 
+def send_acct(c, u):
+    """The email account this person sends through: the one Admin shared with them (Send email from), else their own.
+    Returns (row with email/refresh/sent_box, name of the person it's shared from or '')."""
+    mail_table(c)
+    by = (u["mail_as"] if "mail_as" in u.keys() else "") or ""
+    if by:
+        r = c.execute("SELECT m.email,m.refresh,m.sent_box,u.name,u.username FROM mail_accounts m JOIN users u ON u.id=m.user_id "
+                      "WHERE u.username=? AND u.active=1", (by,)).fetchone()
+        if r and r["email"] and r["refresh"]:
+            return r, r["name"] or r["username"]
+    return c.execute("SELECT email,refresh,sent_box FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone(), ""
+
+
 @app.get("/api/mail/status")
 def mail_status(request: Request):
     u = need_user(request)
     with db() as c:
         mail_table(c)
         r = c.execute("SELECT email,refresh,sig FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
-    return {"configured": mail_on(), "connected": bool(mail_on() and r and r["email"] and r["refresh"]),
-            "email": (r["email"] if r else "") or u["email"] or "", "sig": r["sig"] if r else "", "domain": MAIL_DOMAIN}
+        a, shared = send_acct(c, u)
+    return {"configured": mail_on(), "connected": bool(mail_on() and a and a["email"] and a["refresh"]),
+            "email": (a["email"] if a else "") or u["email"] or "", "sig": r["sig"] if r else "", "domain": MAIL_DOMAIN, "sharedBy": shared}
 
 
 @app.post("/api/mail/connect")
@@ -1600,7 +1633,7 @@ async def mail_send(request: Request):
         atts.append((name, typ, data))
     with db() as c:
         mail_table(c)
-        acct = c.execute("SELECT email,refresh,sent_box FROM mail_accounts WHERE user_id=?", (u["id"],)).fetchone()
+        acct, shared = send_acct(c, u)
     if not acct or not acct["email"] or not acct["refresh"]:
         err(409, "mail_not_connected")
     sender = f'{u["name"]} <{acct["email"]}>' if u["name"] else acct["email"]
@@ -1647,7 +1680,7 @@ async def mail_send(request: Request):
         finally:
             m.logout()
     except imaplib.IMAP4.error:  # the saved email password no longer works (changed in Bluehost): the page asks for the new one
-        relogin = True
+        relogin = not shared  # a shared email is fixed by its owner reconnecting, not by the person borrowing it
     except Exception:
         copied = False
     with db() as c:
