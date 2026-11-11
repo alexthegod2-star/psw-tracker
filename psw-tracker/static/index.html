@@ -247,7 +247,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   </div>
   <div id="clientsView" hidden>
     <div class="bar">
-      <input id="cq" type="search" placeholder="Search clients, contacts, policy #, carrier">
+      <input id="cq" type="search" placeholder="Search name, phone, email, policy #, carrier">
       <select id="cfAgent"><option value="">Everyone</option></select>
     </div>
     <div class="tablewrap">
@@ -3037,9 +3037,12 @@ function renderClients(){
   $('clientCount').textContent=clients.length;
   if(view==='clients')$('count').textContent=clients.length?`${clients.length} client${clients.length===1?'':'s'}`:'No clients yet';
   opts($('cfAgent'),[...new Set([...AGENTS,...clients.map(c=>(c.agent||'').trim()).filter(Boolean)])],'Everyone');
-  const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value;
+  const q=$('cq').value.trim().toLowerCase(),fa=$('cfAgent').value,qDigits=/^[\d\s().+-]+$/.test(q)&&q.replace(/\D/g,'').length>=4?q.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,''):'';
   const rows=clients.filter(c=>{if(fa&&c.agent!==fa)return false;if(!q)return true;
-    return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,c.phone,c.email,c.phone2,c.email2,c.address,c.location,c.notes,c.genNotes,...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
+    const ppl=c.people||[],phones=[c.phone,c.phone2,c.workPhone,...ppl.flatMap(p=>[p.phone,p.phone2,p.workPhone])];
+    // a phone number matches however it's typed: 7472501815, 747-250-1815, (747) 250-1815, 250-1815
+    if(qDigits&&phones.some(x=>String(x||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').includes(qDigits)))return true;
+    return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,...phones,c.email,c.email2,c.address,c.location,c.notes,c.genNotes,...ppl.flatMap(p=>[p.firstName,p.lastName,p.preferredName,p.email,p.email2]),...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
     .sort(clCmp);
   document.querySelectorAll('th[data-ck]').forEach(th=>{th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.ck===cSortK?(cSortDir>0?' ▲':' ▼'):'')});
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
