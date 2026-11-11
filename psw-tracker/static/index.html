@@ -96,7 +96,7 @@ button.delrow{padding:3px 8px;font-size:12px}
 .files li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .files .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .files .sz{color:var(--mute);font-size:12px}
-.files li{flex-wrap:wrap}.files .fnb{flex:1 1 260px;min-width:180px;display:flex;flex-direction:column;gap:1px}.files .fnb .nm{flex:none;white-space:normal;overflow:visible;overflow-wrap:anywhere;font-weight:600}.files .fdt{font-size:12px}.files li[draggable=true]{cursor:grab}.files li.dragging{opacity:.5}.files .grip{color:var(--mute);font-size:16px;line-height:1;cursor:grab;user-select:none}
+.files li{flex-wrap:wrap}.files .fnb{flex:1 1 260px;min-width:180px;display:flex;flex-direction:column;gap:1px}.files .fnb .nm{flex:none;white-space:normal;overflow:visible;overflow-wrap:anywhere;font-weight:600}.files .fdt{font-size:12px}.fact{position:relative}.fact>summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:13.5px;background:var(--card,#fff);white-space:nowrap}.fact>summary::-webkit-details-marker{display:none}.fact .factList{position:absolute;right:0;top:calc(100% + 4px);z-index:30;display:flex;flex-direction:column;gap:4px;min-width:170px;padding:6px;background:var(--card,#fff);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.14)}.fact .factList button{width:100%;text-align:left}.files li[draggable=true]{cursor:grab}.files li.dragging{opacity:.5}.files .grip{color:var(--mute);font-size:16px;line-height:1;cursor:grab;user-select:none}
 a.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
 .mpick{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}.mpick label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;color:var(--ink);margin:0;cursor:pointer}
 .mpick input{width:auto;flex:none;margin:0}.brow{display:flex;gap:8px;align-items:center;font-size:14px}.brow label{margin:0;font-weight:400;font-size:14px;color:var(--ink);cursor:pointer}.nab{padding:1px 7px;font-size:11px;font-weight:600;border-radius:6px;color:var(--mute)}.nab.on{background:var(--mute);color:var(--card);border-color:var(--mute)}.brow.isna label{color:var(--mute);text-decoration:line-through}.mpick label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1898,11 +1898,12 @@ const EXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jp
 // when a lead file was added and last saved, e.g. "Added 11/11/26 3:07 PM · Saved 11/11/26 3:15 PM"
 const fileWhen=iso=>{const d=iso&&new Date(iso);return d&&!isNaN(d)?d.toLocaleString('en-US',{month:'2-digit',day:'2-digit',year:'2-digit',hour:'numeric',minute:'2-digit'}).replace(',',''):''};
 const fileDates=f=>{const a=fileWhen(f.at),e=fileWhen(f.editedAt);return [a&&'Added '+a,e&&e!==a&&'Saved '+e].filter(Boolean).join(' · ')};
+document.addEventListener('click',e=>{document.querySelectorAll('details.fact[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.factList button'))d.open=false})},true);
 function renderFiles(){
   renderMail();signEnsure('lead');
   const fs=(cur&&cur.files)||[];
   warmFiles(fs);
-  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="fnb"><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span>${fileDates(f)?`<span class="sz fdt">${esc(fileDates(f))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span>${assets?`<button data-ren="${esc(f.id)}" title="Change this file's name">Rename</button>`:''}<button class="pri" data-open="${esc(f.id)}">Open / edit</button>${signBits(f,'lead')}${shrinkBits(f)}${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="fnb"><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span>${fileDates(f)?`<span class="sz fdt">${esc(fileDates(f))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span>${signBits(f,'lead','status')}<button class="pri" data-open="${esc(f.id)}">Open / edit</button>${assets?`<button data-ren="${esc(f.id)}" title="Change this file's name">Rename</button>`:''}${(a=>a?`<details class="fact"><summary>Actions ▾</summary><div class="factList">${a}</div></details>`:'')(signBits(f,'lead','btn')+shrinkBits(f)+(dl?`<button data-save="${esc(f.id)}">Download</button>`:''))}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
 async function addFiles(list){
   if(!list.length||!assets)return;if(!(await ensureSaved()))return;
@@ -3773,11 +3774,12 @@ async function signAttach(path,kind){if(!assets)return;
       else await putClFiles([...clFileList(),...entries]);
       it.attached=true;toast(entries.length>1?`${entries.length} signed files came back from DocuSign and were added to the files.`:`${entries[0].name} came back from DocuSign and was added to the files.`,5000)}
     catch(e){try{await post({undo:true})}catch(_){}}}}
-function signBits(f,kind){if(!signSt||!signSt.configured||!isPdfFile(f))return '';const path=signPathNow(kind);if(!path)return '';
+function signBits(f,kind,part){ // part: 'btn' = just the Sign button, 'status' = just the signing status; neither = bothif(!signSt||!signSt.configured||!isPdfFile(f))return '';const path=signPathNow(kind);if(!path)return '';
   const its=signItems(path).filter(x=>(x.files&&x.files.length?x.files.map(y=>y.id):[x.fileId]).includes(f.id)),it=its[its.length-1];let s='';
   if(it){const fin=SG_FINAL.includes(it.status),cls=it.status==='completed'?' ok':fin?' bad':'',t=SG_TXT[it.status]||it.status;
     s=`<span class="sgBadge${cls}" data-sgck="${esc(it.id)}" title="${esc(`${t}. Sent to ${it.signers.map(x=>`${x.name} (${x.email})`).join(' and ')} by ${it.sentBy}, ${fmtDT(new Date(it.sentAt*1000).toISOString())}.${fin?'':' Click to check now.'}`)}">${esc(t)}</span>${!fin&&assets?`<button class="linkish sgVoid" data-sgvoid="${esc(it.id)}" title="Cancel this signature request">Cancel</button>`:''}`}
-  return (assets?`<button class="signBtn" data-sign="${esc(f.id)}" title="Send this PDF to be signed with DocuSign">Sign</button>`:'')+s}
+  const btn=assets?`<button class="signBtn" data-sign="${esc(f.id)}" title="Send this PDF to be signed with DocuSign">${part==='btn'?'Send for signature':'Sign'}</button>`:'';
+  return part==='btn'?btn:part==='status'?s:btn+s}
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sign],[data-sgck],[data-sgvoid]');if(!b)return;const box=b.closest('#files,#clFiles,#ppFiles');if(!box)return;
   e.stopPropagation();const kind=box.id==='files'?'lead':'client',path=signPathNow(kind);if(!path)return;
   if(b.dataset.sign){const f=(kind==='lead'?(cur.files||[]):clFileList()).find(x=>x.id===b.dataset.sign);if(f)openSign(f,kind);return}
