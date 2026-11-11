@@ -96,7 +96,7 @@ button.delrow{padding:3px 8px;font-size:12px}
 .files li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .files .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .files .sz{color:var(--mute);font-size:12px}
-.files .fdt{white-space:nowrap}.files li[draggable=true]{cursor:grab}.files li.dragging{opacity:.5}.files .grip{color:var(--mute);font-size:16px;line-height:1;cursor:grab;user-select:none}
+.files li{flex-wrap:wrap}.files .fnb{flex:1 1 260px;min-width:180px;display:flex;flex-direction:column;gap:1px}.files .fnb .nm{flex:none;white-space:normal;overflow:visible;overflow-wrap:anywhere;font-weight:600}.files .fdt{font-size:12px}.files li[draggable=true]{cursor:grab}.files li.dragging{opacity:.5}.files .grip{color:var(--mute);font-size:16px;line-height:1;cursor:grab;user-select:none}
 a.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
 .mpick{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}.mpick label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;color:var(--ink);margin:0;cursor:pointer}
 .mpick input{width:auto;flex:none;margin:0}.brow{display:flex;gap:8px;align-items:center;font-size:14px}.brow label{margin:0;font-weight:400;font-size:14px;color:var(--ink);cursor:pointer}.nab{padding:1px 7px;font-size:11px;font-weight:600;border-radius:6px;color:var(--mute)}.nab.on{background:var(--mute);color:var(--card);border-color:var(--mute)}.brow.isna label{color:var(--mute);text-decoration:line-through}.mpick label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1902,7 +1902,7 @@ function renderFiles(){
   renderMail();signEnsure('lead');
   const fs=(cur&&cur.files)||[];
   warmFiles(fs);
-  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span>${fileDates(f)?`<span class="sz fdt">${esc(fileDates(f))}</span>`:''}${assets?`<button data-ren="${esc(f.id)}" title="Change this file's name">Rename</button>`:''}<button class="pri" data-open="${esc(f.id)}">Open / edit</button>${signBits(f,'lead')}${shrinkBits(f)}${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="fnb"><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span>${fileDates(f)?`<span class="sz fdt">${esc(fileDates(f))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span>${assets?`<button data-ren="${esc(f.id)}" title="Change this file's name">Rename</button>`:''}<button class="pri" data-open="${esc(f.id)}">Open / edit</button>${signBits(f,'lead')}${shrinkBits(f)}${dl?`<button data-save="${esc(f.id)}">Save</button>`:''}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
 async function addFiles(list){
   if(!list.length||!assets)return;if(!(await ensureSaved()))return;
