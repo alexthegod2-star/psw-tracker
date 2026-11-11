@@ -3259,7 +3259,7 @@ function mtgHtml(){const v=String(ppExtraVals.mtg_int||'').trim(),r=(k,l)=>`<div
   return `<div class="mtgBox"><label class="mtgH">Mortgagee</label><div class="covRow"><label>Interest</label><select data-x="mtg_int"><option value=""></option>${[...MTG_INT,...(v&&!MTG_INT.includes(v)?[v]:[])].map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>`+
     r('mtg_name','Name')+r('mtg_name2','Name line 2')+r('mtg_addr1','Address')+r('mtg_addr2','Address line 2')+
     `<div class="covRow"><label>City / ST / Zip</label><input data-x="mtg_city" title="City"><input data-x="mtg_state" title="State" maxlength="2" style="flex:0 0 46px"><input data-x="mtg_zip" title="Zip" inputmode="numeric" maxlength="10" style="flex:0 0 78px"></div>`+r('mtg_loan','Loan #')+'</div>'}
-function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?[...LOB_FIELDS[line],...(LOB_OLD[line]||[]).filter(([k])=>String(ppExtraVals[k]||'').trim())]:null;
+function renderPpExtra(force){const line=LOBS.find(x=>x.toLowerCase()===$('ppLine').value.trim().toLowerCase()),fs=line?[...(LOB_FIELDS[line]||[]),...(LOB_OLD[line]||[]).filter(([k])=>String(ppExtraVals[k]||'').trim())]:null;
   if(!force&&line===ppExtraLine)return;ppExtraLine=line; // only redraw when the line really changes, so typing in a field isn't lost
   $('ppExtra').querySelectorAll('[data-x]').forEach(el=>{ppExtraVals[el.dataset.x]=el.value}); // keep what was typed when the line changes
   $('ppExtraWrap').hidden=!fs;if(!fs){$('ppExtra').innerHTML='';$('polBox').classList.remove('wide');return}
