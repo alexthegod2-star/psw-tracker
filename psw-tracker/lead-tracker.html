@@ -3774,7 +3774,8 @@ async function signAttach(path,kind){if(!assets)return;
       else await putClFiles([...clFileList(),...entries]);
       it.attached=true;toast(entries.length>1?`${entries.length} signed files came back from DocuSign and were added to the files.`:`${entries[0].name} came back from DocuSign and was added to the files.`,5000)}
     catch(e){try{await post({undo:true})}catch(_){}}}}
-function signBits(f,kind,part){ // part: 'btn' = just the Sign button, 'status' = just the signing status; neither = bothif(!signSt||!signSt.configured||!isPdfFile(f))return '';const path=signPathNow(kind);if(!path)return '';
+// signBits part: 'btn' = just the Sign button, 'status' = just the signing status; neither = both
+function signBits(f,kind,part){if(!signSt||!signSt.configured||!isPdfFile(f))return '';const path=signPathNow(kind);if(!path)return '';
   const its=signItems(path).filter(x=>(x.files&&x.files.length?x.files.map(y=>y.id):[x.fileId]).includes(f.id)),it=its[its.length-1];let s='';
   if(it){const fin=SG_FINAL.includes(it.status),cls=it.status==='completed'?' ok':fin?' bad':'',t=SG_TXT[it.status]||it.status;
     s=`<span class="sgBadge${cls}" data-sgck="${esc(it.id)}" title="${esc(`${t}. Sent to ${it.signers.map(x=>`${x.name} (${x.email})`).join(' and ')} by ${it.sentBy}, ${fmtDT(new Date(it.sentAt*1000).toISOString())}.${fin?'':' Click to check now.'}`)}">${esc(t)}</span>${!fin&&assets?`<button class="linkish sgVoid" data-sgvoid="${esc(it.id)}" title="Cancel this signature request">Cancel</button>`:''}`}
