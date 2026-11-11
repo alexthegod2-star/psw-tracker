@@ -1620,12 +1620,15 @@ $('fillBtn').onclick=()=>{const t=$('dropText').value.trim();if(!t){$('fillMsg')
 function quoteFill(q){
   // PSW quote sheet PDF: read its own form fields directly, no Claude needed
   const o={company:q.f_client_name,phone:q.f_phone,email:q.f_email,leadSource:$('leadSource').value.trim()?'':q.f_lead_source};
-  if(q.f_contact_first||q.f_contact_last){o.firstName=String(q.f_contact_first||'').trim();o.lastName=String(q.f_contact_last||'').trim()}
+  if(q.f_ins_first||q.f_ins_last){o.firstName=String(q.f_ins_first||'').trim();o.lastName=String(q.f_ins_last||'').trim()} // personal auto / home sheets
+  else if(q.f_contact_first||q.f_contact_last){o.firstName=String(q.f_contact_first||'').trim();o.lastName=String(q.f_contact_last||'').trim()}
   else{const nm=String(q.f_contact_name||'').trim().split(/\s+/).filter(Boolean);  // quote sheets saved before the name was split
-  if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}}
+  if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}
+  else if(q.f_owner_first||q.f_owner_last){o.firstName=String(q.f_owner_first||'').trim();o.lastName=String(q.f_owner_last||'').trim()}} // com auto sheet with only the owner's name
   const d=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(q.f_lead_date||'').trim());
   if(d)o.leadDate=`${d[3]}-${pad(d[1])}-${pad(d[2])}`;
-  if(!$('leadType').value){const t=[q.f_description,q.f_detailed_description,q.f_client_name].join(' ');
+  if(!$('leadType').value&&q.personal)o.leadType='Personal';
+  else if(!$('leadType').value){const t=[q.f_description,q.f_detailed_description,q.f_client_name].join(' ');
     o.leadType=/golf/i.test(t)?'Golf sim':/christmas|xmas|holiday\s*light/i.test(t)?'Xmas lights':/party\s*bus|limo/i.test(t)?'Party bus':'Commercial'}
   return apply(o);
 }
@@ -2045,7 +2048,7 @@ async function openEditor(f,opt){
   ed={f,kind,notes:[],fields:[],dirty:false,save:opt&&opt.save};$('ed').classList.toggle('top',!!ed.save);
   {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edQs').hidden=!sup;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home||sup);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edQsMsg').textContent='';$('edSupMsg').textContent='';$('edQsText').value=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
-  $('edSave').hidden=!assets;$('edSave').textContent=ed.save?'Save to client':'Save to lead';$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=ed.save?'Save this certificate to the client':sheetKind(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+  $('edSave').hidden=!assets;$('edSave').textContent=ed.save?'Save to client':'Save to lead';$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=ed.save?'Save this certificate to the client':isQuoteSheet(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
   try{
     ed.bytes=await fileBytes(f);
@@ -2345,7 +2348,7 @@ async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg 
 {const d=$('edSupDrop');d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)supFill(f)});
   $('edSupIn').onchange=()=>{const f=$('edSupIn').files[0];$('edSupIn').value='';if(f)supFill(f)}}
-// com and com auto quote sheets: Save to lead also copies the sheet's client details into the lead and saves the lead
+// quote sheets (com, com auto, personal auto, personal home): Save to lead also copies the sheet's client details into the lead and saves the lead
 function sheetVals(){const q={};document.querySelectorAll('#edBody .annotationLayer [name^="f_"]').forEach(el=>{if(el.value&&el.value.trim())q[el.name]=el.value.trim()});return q}
 async function sheetToLead(q){const n=quoteFill(q);if(!n)return '';await $('saveBtn').onclick();
   return $('saveMsg').classList.contains('ok')?` Filled ${n} lead field${n===1?'':'s'} from it and saved the lead.`:' '+$('saveMsg').textContent}
@@ -2460,7 +2463,7 @@ async function saveEd(reopen){
     return true;
   }catch(e){edMsg(e&&e.code?errText(e):'Couldn’t save'+(e&&e.message?` (${e.message})`:'')+'.','err');return false}
 }
-$('edSave').onclick=async()=>{const b=$('edSave');b.disabled=true;const q=ed&&sheetKind(ed.f.name)?sheetVals():null;
+$('edSave').onclick=async()=>{const b=$('edSave');b.disabled=true;const q=ed&&isQuoteSheet(ed.f.name)?sheetVals():null;if(q&&/ personal (auto|home) quote sheet\.pdf$/i.test(ed.f.name))q.personal=1;
   if(await saveEd(true)&&q){const t=await sheetToLead(q);if(t)edMsg('Saved to the lead.'+t+' You can keep editing.',/saved the lead/.test(t)?'ok':'err')}b.disabled=false};
 $('edDl').onclick=async()=>{if(!ed||!ed.bytes)return;try{const blob=await buildEdited();let data=new Uint8Array(await blob.arrayBuffer());if(ed.save&&/pdf/i.test(blob.type||'')||ed.save&&/\.pdf$/i.test(ed.f.name||''))data=await flatPdf(data);await dl.save({filename:ed.f.name,data})}catch(e){if(e&&e.code!=='declined')edMsg(e.code?errText(e):'Couldn’t download.','err')}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed').classList.contains('on')&&!(e.target.classList&&e.target.classList.contains('tsIn'))){e.stopImmediatePropagation();$('edClose').click()}},true);
