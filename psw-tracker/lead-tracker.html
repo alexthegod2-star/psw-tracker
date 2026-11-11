@@ -1623,7 +1623,8 @@ function quoteFill(q){
   if(q.f_ins_first||q.f_ins_last){o.firstName=String(q.f_ins_first||'').trim();o.lastName=String(q.f_ins_last||'').trim()} // personal auto / home sheets
   else if(q.f_contact_first||q.f_contact_last){o.firstName=String(q.f_contact_first||'').trim();o.lastName=String(q.f_contact_last||'').trim()}
   else{const nm=String(q.f_contact_name||'').trim().split(/\s+/).filter(Boolean);  // quote sheets saved before the name was split
-  if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}}
+  if(nm.length){o.firstName=nm[0];o.lastName=nm.slice(1).join(' ')}
+  else if(q.f_owner_first||q.f_owner_last){o.firstName=String(q.f_owner_first||'').trim();o.lastName=String(q.f_owner_last||'').trim()}} // com auto sheet with only the owner's name
   const d=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(q.f_lead_date||'').trim());
   if(d)o.leadDate=`${d[3]}-${pad(d[1])}-${pad(d[2])}`;
   if(!$('leadType').value&&q.personal)o.leadType='Personal';
