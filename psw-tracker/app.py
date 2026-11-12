@@ -106,6 +106,9 @@ def init_db():
                 first = (r["name"] or "").split()[:1]
                 if r["username"].lower() in UNLOCK_PEOPLE or (first and first[0].lower() in UNLOCK_PEOPLE):
                     c.execute("UPDATE users SET can_unlock=1 WHERE id=?", (r["id"],))
+        if not c.execute("SELECT 1 FROM meta WHERE k='unlock_everyone'").fetchone():  # one time: everyone may Unlock and edit (Admin can still set someone to No)
+            c.execute("UPDATE users SET can_unlock=1")
+            c.execute("INSERT INTO meta(k,v) VALUES('unlock_everyone','1')")
         if "cell" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Cell: where the sign-in code is texted
             c.execute("ALTER TABLE users ADD COLUMN cell TEXT NOT NULL DEFAULT ''")
         if "tg" not in {r[1] for r in c.execute("PRAGMA table_info(users)")}:  # Admin's Telegram chat ID: the sign-in code goes there instead of a text
@@ -527,7 +530,7 @@ def invite_accept(t: str = Form(...), password: str = Form(...), password2: str 
         if c.execute("SELECT 1 FROM users WHERE username=?", (inv["username"],)).fetchone():
             c.execute("UPDATE users SET pw=?, active=1 WHERE username=?", (hash_pw(password), inv["username"]))
         else:
-            c.execute("INSERT INTO users(id,username,name,pw,role,active,created,email) VALUES(?,?,?,?,?,1,?,?)",
+            c.execute("INSERT INTO users(id,username,name,pw,role,active,created,email,can_unlock) VALUES(?,?,?,?,?,1,?,?,1)",
                       (new_id(), inv["username"], inv["name"], hash_pw(password), inv["role"], time.time(), inv["email"]))
         uid = c.execute("SELECT id FROM users WHERE username=?", (inv["username"],)).fetchone()["id"]
         c.execute("UPDATE invites SET used=? WHERE token_hash=?", (time.time(), inv["token_hash"]))
@@ -619,7 +622,7 @@ async def admin_add_user(request: Request):
         if pw:
             if len(pw) < 8:
                 err(400, "too_short")
-            c.execute("INSERT INTO users(id,username,name,pw,role,active,created,email) VALUES(?,?,?,?,?,1,?,?)",
+            c.execute("INSERT INTO users(id,username,name,pw,role,active,created,email,can_unlock) VALUES(?,?,?,?,?,1,?,?,1)",
                       (new_id(), username, name, hash_pw(pw), role, time.time(), email))
             return {"ok": True}
         t = secrets.token_urlsafe(24)  # same one-time sign-up link as  sudo psw invite
