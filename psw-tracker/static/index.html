@@ -47,7 +47,7 @@ tbody tr:last-child td{border-bottom:none}
 #repDlg .mbox,#certDlg .mbox{background:#f3eefc}#repDlg input,#repDlg select,#certDlg input,#certDlg select,#certDlg textarea{background:#fff}.repT{background:#fff;border-radius:8px}#repDlg .repT th{background:#f3eefc}.linkish{background:none;border:0;padding:0;margin:0;color:#1f5fa8;text-decoration:underline;cursor:pointer;font:inherit;min-height:0}.mlConn{display:grid;gap:6px;margin-top:10px;padding:10px 12px;border:1px solid #c9b6f0;background:#f3eefc;border-radius:10px}.mlConn .row{gap:8px;flex-wrap:wrap}.mlConn input{flex:1 1 180px}.mlGrid{display:grid;gap:8px;margin-top:10px}.mlGrid label{display:flex;flex-direction:column;font-size:13px;gap:2px}.mlGrid textarea{font:inherit;resize:vertical}#mlSigBox summary{cursor:pointer;font-size:13px}.sigBar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0 4px}.sigBar button{min-height:0;padding:2px 9px;font-size:13px}.sigBar select{width:auto;padding:2px 4px;font-size:13px}.sigSw{display:inline-flex;gap:3px;align-items:center;font-size:12px;margin:0 4px}.sigSw button{width:18px;height:18px;padding:0;border:1px solid #bbb;border-radius:4px}.sigSw input{width:26px;height:22px;padding:0;border:0;background:none}.sigEd{min-height:90px;max-height:260px;overflow:auto;border:1px solid var(--line,#ccc);border-radius:8px;padding:6px 8px;background:#fff;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:normal}.sigEd:empty:before{content:attr(data-ph);color:#999;white-space:pre-line}#mlDlg .mbox{background:#fdeaea}#mlDlg input,#mlDlg textarea,#mlDlg select{background:#fff}#mlDlg .mlConn{background:#fff6f6;border-color:#f0b8b8}#mhDlg .mbox{background:#fdeaea}#mhDlg input{background:#fff}.mhWrap{max-height:42vh;overflow:auto}.mhT{width:100%;border-collapse:collapse;font-size:13px}.mhT th,.mhT td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}.mhT th{position:sticky;top:0;background:#f8dede}.mhT tbody tr{cursor:pointer}.txDot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#d32f2f;margin-right:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.15)}.txDot.on{background:#2e9d3e;box-shadow:0 0 0 3px rgba(46,157,62,.25)}.tiT tr.new td{font-weight:600;background:#fff8e1}.tiT td:nth-child(3){white-space:pre-wrap;min-width:260px}.mhT tbody tr:hover,.mhT tbody tr.on{background:#fff3f3}.mhT td:first-child{white-space:nowrap}#mhBody{display:block;box-sizing:border-box;width:100%;height:42vh;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;margin-top:6px}.ccQuick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:-4px}.ccQuick button{min-height:0;padding:2px 10px;font-size:13px}.mlAtt{display:grid;gap:3px;margin-top:4px;font-size:13px;max-height:160px;overflow:auto}.mlGrid .mlAtt label{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}.mlAtt input{width:auto;flex:none;margin:0}.mlAtt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repF{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin:12px 0}.repF label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.repQ{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;grid-column:1/-1}.repT tbody tr{cursor:pointer}.repT th{cursor:pointer;white-space:nowrap}
 @media print{body.repPrint>*:not(#repDlg){display:none!important}body.repPrint #repDlg{position:static;background:none;padding:0}body.repPrint #repDlg .repT th{background:#fff}body.repPrint #repDlg .mbox{background:#fff;width:auto;max-height:none;border:0;box-shadow:none}body.repPrint .repF,body.repPrint #repDlg .row:last-child{display:none}}
 th[data-ck]{cursor:pointer;user-select:none}th[data-ck]:hover{text-decoration:underline}
-.mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
+#nhBox{background:#fde2e2}#noteDlg{z-index:12}.mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none;align-items:center;justify-content:center;padding:16px}
 .mbg.on{display:flex}.fillTwo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:stretch}.fillTwo .drop{margin:0;flex-direction:column;align-items:stretch;justify-content:center}.fillTwo .drop input{width:100%;min-width:0}.fillPaste{display:flex;flex-direction:column;gap:6px}.fillPaste textarea{flex:1;min-height:70px;width:100%;resize:vertical}.fillPaste button{align-self:flex-end;margin:0}.mailTop{display:flex;gap:10px;align-items:flex-start}.mailTop .mpick{flex:1;min-width:0}.mailTop #mcEdit{flex:none;margin:0}#mcBox{width:min(820px,100%);max-height:90vh;overflow-y:auto}.mcRow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1fr) 30px;gap:8px;align-items:center;margin-bottom:6px}.mcRow b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcRow.mcHd{font-size:12px;color:var(--muted);font-weight:600}@media(max-width:640px){.mcRow{grid-template-columns:1fr 1fr}.mcRow b{grid-column:1/-1}.mcRow input[data-k=email]{grid-column:1/-1}.mcRow.mcHd{display:none}.mcRow>span:last-child{display:none}.mcRow input[data-k=label]{grid-column:1/-1}}.mcDel{padding:4px 0;width:30px;margin:0}
 .adm table{font-size:13px}.adm th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.adm td{padding:6px 8px;border-bottom:1px solid var(--line)}.adm .off td{color:var(--mute)}.admSig{display:flex;gap:6px;align-items:center}.admSig img{height:30px;max-width:110px;background:#fff;border:1px solid var(--line);border-radius:4px}.admSig button{padding:4px 10px;font-size:12px}
 .adm .admRm{color:var(--bad);padding:4px 10px;font-size:12px}.adm .admRs{padding:4px 10px;font-size:12px}
@@ -521,7 +521,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
         <textarea id="clPayInfo" style="width:100%;min-height:70px" placeholder="Payments made, autopay, billing notes"></textarea></section>
       <section class="ppCard"><div class="ppCardH"><h4>Customer notes</h4></div>
         <textarea id="clGenNotes" style="width:100%;min-height:90px" placeholder="General notes about this customer"></textarea></section>
-      <section class="ppCard"><div class="ppCardH"><h4>Notes</h4><button type="button" class="pri" id="clAddNote">+ Add note</button></div>
+      <section class="ppCard"><div class="ppCardH"><h4>Notes</h4><span style="display:flex;gap:6px"><button type="button" id="clNoteHist" hidden>Notes history</button><button type="button" class="pri" id="clAddNote">+ Add note</button></span></div>
         <ul class="log" id="clNoteLog" style="margin:0"></ul></section>
     </div>
     <aside class="ppSide clSide">
@@ -566,6 +566,12 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div id="coCons"></div>
   <div class="small" style="margin-top:8px">Saved for everyone who signs in to the PSW database.</div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="coCancel">Cancel</button><button class="pri" id="coSave">Save</button></div>
+</div></div>
+<div class="mbg" id="nhDlg" role="dialog" aria-modal="true" aria-labelledby="nhTitleH"><div class="mbox" id="nhBox" style="width:min(640px,96vw);max-height:88vh;display:flex;flex-direction:column">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="nhTitleH" style="margin:0">Notes history</h3><button id="nhClose">Close</button></div>
+  <input type="search" id="nhQ" placeholder="Search notes" style="margin:10px 0 4px">
+  <div class="small" id="nhCount"></div>
+  <ul class="log" id="nhLog" style="margin:6px 0 0;overflow-y:auto;flex:1"></ul>
 </div></div>
 <div class="mbg" id="noteDlg" role="dialog" aria-modal="true" aria-labelledby="noteTitleH"><div class="mbox" id="noteBox" style="max-width:560px">
   <h3 id="noteTitleH">Add note</h3>
@@ -3511,11 +3517,25 @@ function closeClient(){$('clientDlg').classList.remove('on');lockStop('client');
 let clNoteLog=[];
 async function renderClNotes(){const ids=[...new Set(clNoteLog.map(n=>n.by).filter(x=>x&&!(x in names)))];
   if(ids.length&&user){try{const ps=await user.profiles(ids);ps.forEach(p=>names[p.id]=p.isMe?'You':(p.name||''))}catch(e){}}
-  $('clNoteLog').innerHTML=clNoteLog.map((n,i)=>[n,i]).reverse().map(([n,i])=>`<li data-ni="${i}" title="Click to edit" style="background:var(--card);cursor:pointer"><div class="small" style="font-weight:600">${n.at?esc(fmtDT(n.at)):'Earlier notes'}${names[n.by]?' · '+esc(names[n.by]):''}${n.editedAt?' · edited':''}</div><div style="white-space:pre-wrap">${esc(n.text)}</div></li>`).join('')}
+  // the client screen shows the newest 5; Notes history shows them all, with a search
+  const all=clNoteLog.map((n,i)=>[n,i]).reverse();
+  $('clNoteLog').innerHTML=all.slice(0,5).map(noteLi).join('');
+  $('clNoteHist').hidden=!all.length;$('clNoteHist').textContent=all.length>5?`Notes history (${all.length})`:'Notes history';
+  if($('nhDlg').classList.contains('on'))renderNoteHist()}
+const noteLi=([n,i])=>`<li data-ni="${i}" title="Click to edit" style="background:var(--card);cursor:pointer"><div class="small" style="font-weight:600">${n.at?esc(fmtDT(n.at)):'Earlier notes'}${names[n.by]?' · '+esc(names[n.by]):''}${n.editedAt?' · edited':''}</div><div style="white-space:pre-wrap">${esc(n.text)}</div></li>`;
+function renderNoteHist(){const q=$('nhQ').value.trim().toLowerCase(),all=clNoteLog.map((n,i)=>[n,i]).reverse(),
+    hits=q?all.filter(([n])=>[n.text,n.at?fmtDT(n.at):'',names[n.by]||''].join(' ').toLowerCase().includes(q)):all;
+  $('nhLog').innerHTML=hits.map(noteLi).join('')||'<li class="small" style="border:none">No notes match.</li>';
+  $('nhCount').textContent=q?`${hits.length} of ${all.length} note${all.length===1?'':'s'}`:`${all.length} note${all.length===1?'':'s'}, newest first`}
+$('clNoteHist').onclick=()=>{$('nhQ').value='';renderNoteHist();$('nhDlg').classList.add('on');setTimeout(()=>$('nhQ').focus(),30)};
+$('nhQ').addEventListener('input',renderNoteHist);
+const closeNh=()=>$('nhDlg').classList.remove('on');
+$('nhClose').onclick=closeNh;$('nhDlg').addEventListener('click',e=>{if(e.target===$('nhDlg'))closeNh()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('nhDlg').classList.contains('on')&&!$('noteDlg').classList.contains('on')){e.stopImmediatePropagation();closeNh()}},true);
 // note pop-up: "+ Add note" writes a new one; clicking a saved note opens it for editing
 let noteIdx=-1;const noteMode=i=>{noteIdx=i;$('noteTitleH').textContent=i<0?'Add note':'Edit note'};
-$('clNoteLog').addEventListener('click',e=>{const li=e.target.closest('[data-ni]');if(!li)return;const n=clNoteLog[+li.dataset.ni];if(!n)return;
-  noteMode(+li.dataset.ni);$('noteText').value=n.text||'';$('noteWhen').textContent=(n.at?fmtDT(n.at):'Earlier notes')+(names[n.by]?' · '+names[n.by]:'');$('noteDlg').classList.add('on');setTimeout(()=>$('noteText').focus(),30)});
+['clNoteLog','nhLog'].forEach(id=>$(id).addEventListener('click',e=>{const li=e.target.closest('[data-ni]');if(!li)return;const n=clNoteLog[+li.dataset.ni];if(!n)return;
+  noteMode(+li.dataset.ni);$('noteText').value=n.text||'';$('noteWhen').textContent=(n.at?fmtDT(n.at):'Earlier notes')+(names[n.by]?' · '+names[n.by]:'');$('noteDlg').classList.add('on');setTimeout(()=>$('noteText').focus(),30)}));
 $('clAddNote').onclick=()=>{noteMode(-1);$('noteText').value='';$('noteWhen').textContent='Will be stamped '+fmtDT(new Date().toISOString());$('noteDlg').classList.add('on');setTimeout(()=>$('noteText').focus(),30)};
 const closeNote=()=>$('noteDlg').classList.remove('on');
 $('noteCancel').onclick=closeNote;$('noteDlg').addEventListener('click',e=>{if(e.target===$('noteDlg'))closeNote()});
