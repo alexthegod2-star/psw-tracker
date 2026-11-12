@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/claude-shim.js"></script></head><body><!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>.admCont{display:grid;gap:4px;min-width:240px}.admCont input{width:100%;margin:0!important}.admCont label{margin:0!important}
-:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#mailBtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}#mailBtns>*{width:100%;margin:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns>[data-mail=cust]{grid-column-start:1}#mailBtns>.mailItem{display:flex;align-items:center;gap:6px;overflow:visible;padding:0}#mailBtns .mailItem .btn{flex:1;min-width:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns .mailSent{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:#1f8a4c;cursor:pointer}#mailBtns .btn.sent{background:#1f8a4c;border-color:#1f8a4c}
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#mailBtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}#mailBtns>*{width:100%;margin:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns>[data-mail=cust]{grid-column-start:1}#mailBtns>.mailItem{display:flex;align-items:center;gap:6px;overflow:visible;padding:0}.smList{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 12px;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:8px;max-height:260px;overflow:auto}.smList label{display:flex;gap:6px;align-items:center;font-size:13.5px;cursor:pointer}.smList .small{margin-left:auto}#mailBtns .mailItem .btn{flex:1;min-width:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}#mailBtns .mailSent{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:#1f8a4c;cursor:pointer}#mailBtns .btn.sent{background:#1f8a4c;border-color:#1f8a4c}
 </style></head><body>
 <title>Pacific Southwest Insurance Services Database</title>
 <style>
@@ -453,6 +453,17 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <p class="msg" id="mlMsg"></p>
   <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px"><a href="#" id="mlOutlook" target="_blank" rel="noopener" class="small">Open in Outlook instead</a>
     <div class="row"><button type="button" id="mlCancel">Cancel</button><button type="button" class="pri" id="mlSend">Send</button></div></div>
+</div></div>
+<div class="mbg" id="smDlg" role="dialog" aria-modal="true" aria-labelledby="smTitle" style="z-index:20"><div class="mbox" style="width:min(760px,96vw);max-height:92vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="smTitle" style="margin:0">Send multiple</h3><span class="small" id="smFrom"></span></div>
+  <div class="small" style="margin:4px 0 8px">Each person you tick gets their own email; nobody sees who else got it. Each one starts with Hi and their name.</div>
+  <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:13px">Send to</b><span class="row" style="gap:6px"><button type="button" id="smAll" style="padding:2px 10px;font-size:12px">Tick all</button><button type="button" id="smNone" style="padding:2px 10px;font-size:12px">Clear</button></span></div>
+  <div id="smList" class="smList"></div>
+  <div class="mlGrid" style="margin-top:10px"><label>Subject<input id="smSubj" autocomplete="off"></label>
+    <label>Message<span class="small" id="smHi" style="font-weight:normal"></span><textarea id="smBody" rows="7"></textarea></label>
+    <div><b style="font-size:13px">Attachments</b><div id="smAtt" class="mlAtt"></div></div></div>
+  <p class="msg" id="smMsg"></p>
+  <div class="row" style="justify-content:flex-end;margin-top:10px"><button type="button" id="smCancel">Cancel</button><button type="button" class="pri" id="smSend">Send</button></div>
 </div></div>
 <div class="mbg" id="sureDlg" role="dialog" aria-modal="true" aria-labelledby="sureTitle" style="z-index:30"><div class="mbox"><h3 id="sureTitle">Are you sure?</h3><p id="sureText"></p><div class="row" style="justify-content:flex-end"><button id="sureNo">No</button><button class="danger" id="sureYes">Yes</button></div></div></div>
 <div class="mbg" id="mcDlg" role="dialog" aria-modal="true" aria-labelledby="mcTitleH"><div class="mbox" id="mcBox">
@@ -1866,7 +1877,7 @@ function renderMail(){
   $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
   const sent=(cur&&cur.mailSent)||{};
   // each carrier button has a check box: ticked means the email went out, and the button turns green
-  $('mailBtns').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<div class="mailItem"><input type="checkbox" class="mailSent" data-sent="${esc(r.key)}"${d?' checked':''} aria-label="Sent to ${esc(r.label)}" title="${d?'Sent '+esc(fmtDate(String(d).slice(0,10))):'Tick when you have sent this email'}"><a class="btn pri${d?' sent':''}" data-mail="${i}" href="mailto:${esc(mailTo(r))}" target="_blank" rel="noopener" title="${esc(mailTip(r))}">${esc(r.label)}</a></div>`}).join('')+`<a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
+  $('mailBtns').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<div class="mailItem"><input type="checkbox" class="mailSent" data-sent="${esc(r.key)}"${d?' checked':''} aria-label="Sent to ${esc(r.label)}" title="${d?'Sent '+esc(fmtDate(String(d).slice(0,10))):'Tick when you have sent this email'}"><a class="btn pri${d?' sent':''}" data-mail="${i}" href="mailto:${esc(mailTo(r))}" target="_blank" rel="noopener" title="${esc(mailTip(r))}">${esc(r.label)}</a></div>`}).join('')+`<button type="button" class="pri" id="smOpen" title="Send a separate email to each underwriter you tick, each starting with Hi (their name)">Send multiple</button><a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
 }
 // marks (or unmarks) an address as emailed on this lead; clicking a carrier button marks it too
 async function setMailSent(to,on){
@@ -1876,6 +1887,37 @@ async function setMailSent(to,on){
   try{await leadsCol.doc(cur.id).update({mailSent:next});cur.mailSent=next}catch(err){toast(errText(err))}renderMail()}
 $('mailBtns').addEventListener('change',e=>{const box=e.target.closest('.mailSent');if(box)setMailSent(box.dataset.sent,box.checked)});
 $('mailPick').addEventListener('change',e=>{const id=e.target.dataset.mf;if(!id)return;e.target.checked?mailSel.add(id):mailSel.delete(id)});
+/* ---------- Send multiple: a separate email to each ticked underwriter, each starting "Hi (name)," ---------- */
+const smFirst=r=>{const f=(r.label.split('/')[0]||'').trim();return /^(submissions?|help|info|team)$/i.test(f)?'':f};
+const smGreet=r=>{const f=smFirst(r);return `Hi${f?' '+f:''},\n\n`};
+async function smOpen(){if(!cur)return;if(isLocked('lead'))return toast('This lead is view-only right now.');if(!(await ensureSaved()))return;
+  await mailStatus(true);if(!(mailSt&&mailSt.connected)){const m=$('mailMsg');m.className='msg err';m.textContent='Connect your email first: click any underwriter button, connect at the top of that window, then use Send multiple.';return}
+  const sent=cur.mailSent||{},{nm,co}=mailClient();
+  $('smList').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<label title="${esc(mailTo(r))}"><input type="checkbox" data-smi="${i}"> ${esc(r.label)}${d?`<span class="small">sent ${esc(fmtDate(String(d).slice(0,10)))}</span>`:''}</label>`}).join('');
+  $('smSubj').value=`QUOTE ${co||nm}`.trim();$('smBody').value='Please quote';$('smHi').textContent=' (Hi and the name are added at the top of each)';
+  const fs=cur.files||[];$('smAtt').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-smf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}> ${esc(f.name)}</label>`).join(''):'<span class="small">No files on this lead.</span>';
+  $('smFrom').textContent=mailSt.email?`From ${mailSt.email}`:'';$('smMsg').textContent='';$('smMsg').className='msg';$('smSend').disabled=false;
+  $('smDlg').classList.add('on')}
+const smClose=()=>$('smDlg').classList.remove('on');
+$('smAll').onclick=()=>$('smList').querySelectorAll('input').forEach(x=>x.checked=true);
+$('smNone').onclick=()=>$('smList').querySelectorAll('input').forEach(x=>x.checked=false);
+$('smCancel').onclick=smClose;$('smDlg').addEventListener('click',e=>{if(e.target===$('smDlg'))smClose()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('smDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();smClose()}},true);
+$('smSend').onclick=async()=>{const who=[...$('smList').querySelectorAll('input:checked')].map(x=>mailList[+x.dataset.smi]).filter(Boolean),m=$('smMsg');
+  if(!who.length){m.className='msg err';m.textContent='Tick at least one person to send to.';return}
+  const atts=[...$('smAtt').querySelectorAll('input:checked')].map(x=>(cur.files||[]).find(f=>f.id===x.dataset.smf)).filter(Boolean).map(f=>({blob:f.id,name:f.name}));
+  const subject=$('smSubj').value,body=$('smBody').value.replace(/^\s*hi\b[^\n]*\n+/i,''),sig=mailSt.sig||'';
+  const btn=$('smSend');btn.disabled=true;const ok=[],bad=[];
+  for(const [n,r] of who.entries()){m.className='msg';m.textContent=`Sending ${n+1} of ${who.length}: ${r.label}…`;
+    const html=`<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${mlHtml(smGreet(r)+body)}${sig?'<br><br>'+sig:''}</div>`;
+    try{const x=await fetch('/api/mail/send',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:mailTo(r),cc:'',subject,html,attachments:atts})});
+      const d=await x.json().catch(()=>({}));if(!x.ok){bad.push(`${r.label}: ${ML_ERR[d.code]||'couldn’t send'}`);continue}
+      ok.push(r.label);if(!(cur.mailSent&&cur.mailSent[r.key]))await setMailSent(r.key,true)}
+    catch(_){bad.push(`${r.label}: couldn’t reach the server`)}}
+  if(!bad.length){smClose();toast(`Sent ${ok.length} separate email${ok.length===1?'':'s'}: ${ok.join(', ')}.`,7000);return}
+  m.className='msg err';m.innerHTML=`${ok.length?esc(`Sent to ${ok.join(', ')}. `):''}Not sent:<br>${bad.map(esc).join('<br>')}`;btn.disabled=false;
+  $('smList').querySelectorAll('input').forEach(x=>{const r=mailList[+x.dataset.smi];x.checked=!!r&&!ok.includes(r.label)&&x.checked})};
+$('mailBtns').addEventListener('click',e=>{if(e.target.closest('#smOpen'))smOpen()});
 function mailClient(){const v=k=>$(k).value.trim(),nm=[v('firstName'),v('lastName')].filter(Boolean).join(' ');return {nm,co:v('company')}}
 function copyText(t){
   try{navigator.clipboard.writeText(t).catch(()=>{})}catch(_){}
