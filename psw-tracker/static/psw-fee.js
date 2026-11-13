@@ -15,7 +15,7 @@ const ag={on:true,name:"Pacific Southwest Insurance Services",addr:"9036 Reseda 
 /* some carriers' PDFs (e.g. Vertafore/ABCpdf) draw text with private fonts whose letters can't be read back as text */
 function garbled(items){
   const s=items.map(i=>i.str).join("").replace(/\s/g,"");
-  if(s.length<20) return false;
+  if(s.length<20) return true; /* a scanned page (just a picture, little or no text) gets read with OCR too */
   const bad=[...s].filter(c=>c<" "||c==="\uFFFD").length;
   return bad/s.length>0.15;
 }
@@ -46,8 +46,13 @@ async function ocrItems(page,items,ocr,glyphs){
       /* these fonts often report a stretched height, so trust the narrower scale */
       size=Math.min(hit[0].size,hit[0].sx||hit[0].size);
     }
-    out.push({str,x,y,w:Math.max(1,xr-x),size,family:"",glyphs:wg,fn});
+    out.push({str,x,y,w:Math.max(1,xr-x),size,family:"",glyphs:wg,fn,scan:!hit.length,yt});
   }
+  /* on a scanned page (no PDF text under the words) each word's box bottom differs (p, y and $ hang lower), so words that share a line get one baseline */
+  const sc=out.filter(o=>o.scan).sort((p,q)=>(p.y+p.yt)-(q.y+q.yt)), groups=[];
+  for(const o of sc){ const mid=(o.y+o.yt)/2, g=groups.find(g=>Math.abs(g.mid-mid)<Math.max(2,(o.yt-o.y)*0.45)); if(g){g.items.push(o);} else groups.push({mid,items:[o]}); }
+  for(const g of groups){ const base=Math.max(...g.items.map(o=>o.y)); g.items.forEach(o=>{o.y=base;}); }
+  out.forEach(o=>{delete o.scan; delete o.yt;});
   return out;
 }
 async function readLines(bytes,ocr,pdfDoc){
@@ -506,7 +511,7 @@ function locateAll(pages){
     const lines=pages[i].lines, used=new Set();
     for(let t=0;t<lines.length;t++){
       const T=lines[t];
-      if(used.has(T) || !T.amounts.length || !/^total\b/i.test(T.label) || /base|additional|general liability/i.test(T.label)) continue;
+      if(used.has(T) || !T.amounts.length || !/^(grand\s+)?total\b/i.test(T.label) || /base|additional|general liability/i.test(T.label)) continue;
       const chain=[]; let prevY=T.y;
       for(let k=t-1;k>=0;k--){
         const L=lines[k]; if(L.y<=T.y) continue;
@@ -548,6 +553,15 @@ function shiftPageDown(pdfDoc,pi,d){
   const annots=page.node.lookup(PDFName.of("Annots"));
   if(annots instanceof PDFArray) annots.asArray().forEach(a=>{ const dd=ctx.lookup(a), rc=dd&&dd.lookup&&dd.lookup(PDFName.of("Rect"));
     if(rc instanceof PDFArray){ const v=rc.asArray().map(x=>x.asNumber()); dd.set(PDFName.of("Rect"),ctx.obj([v[0],v[1]-d,v[2],v[3]-d])); } });
+}
+/* shrink everything on a page by k (kept centred across, bottom fixed), for a scanned page with no room at the top */
+function shrinkPage(pdfDoc,pi,k){
+  const {PDFName,PDFArray,PDFRef}=PDFLib, ctx=pdfDoc.context, page=pdfDoc.getPage(pi), W=page.getWidth();
+  page.pushOperators(PDFLib.pushGraphicsState(),PDFLib.popGraphicsState());
+  const c=page.node.get(PDFName.of("Contents"));
+  const list=c instanceof PDFArray?c.asArray():(c instanceof PDFRef&&ctx.lookup(c) instanceof PDFArray?ctx.lookup(c).asArray():[c]);
+  const pre=ctx.register(ctx.flateStream(strToBytes("q "+k.toFixed(4)+" 0 0 "+k.toFixed(4)+" "+(W*(1-k)/2).toFixed(3)+" 0 cm\n"))), post=ctx.register(ctx.flateStream(strToBytes("\nQ\n")));
+  page.node.set(PDFName.of("Contents"),ctx.obj([pre,...list,post]));  page.contentStream=undefined; page.contentStreamRef=undefined; /* text drawn after this (the agency header) goes in a new stream, not shrunk */
 }
 /* draws the agency block centred between yMin and top on one page */
 async function addAgencyHeader(pdfDoc,pi,yMin,top,fReg,fBold){
@@ -609,12 +623,14 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     const right=a.x+a.w, cx=a.x+a.w/2;
     const pick=l=>{ let best=null,bd=25; for(const b of l.amounts){ const d=Math.abs((b.x+b.w/2)-cx); if(d<bd){bd=d;best=b;} } return best; };
     const members=chain.map(pick).filter(Boolean);
+    /* a Sub Total line already includes the premium lines above it, so the check adds from the Sub Total down */
+    const si=chain.findIndex(l=>/\bsub\s*-?\s*total\b/i.test(l.label)), summed=(si>=0?chain.slice(0,si+1):chain).map(pick).filter(Boolean);
     const spread=v=>v.length?Math.max(...v)-Math.min(...v):0;
     const sR=spread(members.map(b=>b.x+b.w)), sC=spread(members.map(b=>b.x+b.w/2)), sL=spread(members.map(b=>b.x));
     const align=sL+0.5<Math.min(sR,sC)?"left":sR<=sC+0.5?"right":"center";
     const m=pick(last)||a;
     const old=toNum(a.str);
-    const sum=Math.round(members.reduce((s,b)=>s+toNum(b.str),0)*100)/100;
+    const sum=Math.round(summed.reduce((s,b)=>s+toNum(b.str),0)*100)/100;
     return {tot:a,align,feeLeft:m.x,feeRight:m.x+m.w,feeCx:m.x+m.w/2,feeSize:m.size,right,cx,old,sum,neu:Math.round((old+fee)*100)/100};
   });
   const place=(c,w,forTotal)=>c.align==="left"?(forTotal?c.tot.x:c.feeLeft):c.align==="center"?(forTotal?c.cx:c.feeCx)-w/2:(forTotal?c.right:c.feeRight)-w;
@@ -640,6 +656,29 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     fFee=gf(chain.flatMap(l=>l.amounts))||fFee;
     fTot=cols.map((c,i)=>gf([c.tot,...chain.flatMap(l=>l.amounts)])||fTot[i]);
   }
+  /* a scanned quote (the page is one picture): copy the Total row and everything under it one row down,
+     write the fee in the old Total row, and the new total in the copied one */
+  if(loc.ocr && !probe.texts.length){
+    const page=pdfDoc.getPage(pi), W=page.getWidth(), p=pitch, cut=T.y-p*0.28;
+    if(Math.min(...loc.lines.map(l=>l.y))-p<8) return {err:"no room",pi};
+    const {PDFName,PDFArray,PDFRef}=PDFLib, ctx=pdfDoc.context, c0=page.node.get(PDFName.of("Contents"));
+    const list=c0 instanceof PDFArray?c0.asArray():(c0 instanceof PDFRef&&ctx.lookup(c0) instanceof PDFArray?ctx.lookup(c0).asArray():[c0]);
+    const S=t=>ctx.register(ctx.flateStream(strToBytes(t))), n=v=>v.toFixed(2);
+    page.node.set(PDFName.of("Contents"),ctx.obj([S("q\n"),...list,S("\nQ\nq 1 g 0 0 "+n(W)+" "+n(cut)+" re f Q\nq 0 0 "+n(W)+" "+n(cut)+" re W n 1 0 0 1 0 "+n(-p)+" cm\n"),...list,S("\nQ\n")]));
+    const med=a=>{ const v=a.slice().sort((x,y)=>x-y); return v[Math.floor(v.length/2)]; };
+    const sz=Math.min(11,Math.max(7,p*0.7)), dollar=T.items.some(i=>i.str.trim()==="$");
+    const money=v=>dollar?fmt(v).slice(1):fmt(v); /* the quote prints its $ in a column of its own */
+    const white=(x,y,x2)=>pdfDoc.getPage(pi).drawRectangle({x:x-2.5,y:y-p*0.24,width:x2-x+5,height:p*0.8,color:PDFLib.rgb(1,1,1)});
+    const draw=()=>{
+      const pg=pdfDoc.getPage(pi), feeStr=money(fee);
+      T.items.filter(i=>i.str.trim()&&i.str.trim()!=="$").forEach(i=>white(i.x,T.y,i.x+i.w));
+      const lx=rightAligned?(last.labelRight-fReg.widthOfTextAtSize(label,sz)):(last.labelX!=null?last.labelX:T.labelX);
+      pg.drawText(label,{x:lx,y:T.y,size:sz,font:fReg,color:PDFLib.rgb(0,0,0)});
+      cols.forEach(c=>{ const w=fReg.widthOfTextAtSize(feeStr,sz); pg.drawText(feeStr,{x:place(c,w,false),y:T.y,size:sz,font:fReg,color:PDFLib.rgb(0,0,0)}); });
+      cols.forEach(c=>{ white(c.tot.x,T.y-p,c.right); const t=money(c.neu), w=fBold.widthOfTextAtSize(t,sz); pg.drawText(t,{x:place(c,w,true),y:T.y-p,size:sz,font:fBold,color:PDFLib.rgb(0,0,0)}); });
+    };
+    return {pi,cols,ok:true,newY:T.y,totY:T.y-p,shift:p,chain,draw,extra:[],scan:true};
+  }
   /* in the Crum-style tables amounts are bold; elsewhere follow the quote */
   const fbAmt=serif?fBold:fReg;
 
@@ -651,7 +690,7 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     for(const L of loc.lines.filter(l=>l.y<T.y-1).sort((a,b)=>b.y-a.y)){
       if(prev-L.y>pitch*2.5) break;
       if(!L.amounts.length){ if(!L.text||NOAMT.test(L.text)) continue; break; }
-      if(/^total\b/i.test(L.label)) cols.forEach(c=>{
+      if(/^(grand\s+)?total\b/i.test(L.label)) cols.forEach(c=>{
         const a=L.amounts.reduce((b,x)=>!b||Math.abs(x.x+x.w-c.right)<Math.abs(b.x+b.w-c.right)?x:b,null);
         if(a&&Math.abs(a.x+a.w-c.right)<40){ const t=fontAt(probe.texts,a.x,a.y,6); extra.push({a,c,t,f:docFont(t),neu:Math.round((toNum(a.str)+fee)*100)/100}); }
       });
@@ -781,6 +820,7 @@ async function add(srcBytes,fee,label,opts){
   const F=PDFLib.StandardFonts;
   const fReg=await pdfDoc.embedFont(serif?F.TimesRoman:F.Helvetica);
   const fBold=await pdfDoc.embedFont(serif?F.TimesRomanBold:F.HelveticaBold);
+  const scan0=pages[0].ocr && !walkPage(pdfDoc,0,{edit:false}).texts.length; /* page 1 is a scanned picture */
   removeCommission(pdfDoc,pages);
   const order=locs.map((L,k)=>({L,k})).sort((a,b)=>a.L.pageIndex-b.L.pageIndex||a.L.total.y-b.L.total.y);
   const done=[], skipped=[];
@@ -796,8 +836,11 @@ async function add(srcBytes,fee,label,opts){
   const head=ag.on && ag.name.trim(), bounds=head?pageBounds(pdfDoc,0):null;
   removeInitDate(pdfDoc,pages);
   done.forEach(r=>{ if(r) r.draw(); });
-  const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||(ai&&ai.insured)||"";
-  if(head){ if(bounds) await placeAgencyHeader(pdfDoc,bounds,insured,await pdfDoc.embedFont(F.TimesRoman),await pdfDoc.embedFont(F.TimesRomanBold));
+  const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||findField(pages,/^Applicant Name:?\s*(.+)$/i)||(ai&&ai.insured)||"";
+  if(head && scan0){ const pg=pdfDoc.getPage(0), H=pg.getHeight(), hi=Math.max(...pages[0].lines.map(l=>l.y+Math.max(...l.items.map(i=>i.size)))), k=Math.min(1,(H-HEAD_H)/Math.max(hi,1));
+    if(k<1) shrinkPage(pdfDoc,0,k);
+    await addAgencyHeader(pdfDoc,0,H-HEAD_H,H,await pdfDoc.embedFont(F.TimesRoman),await pdfDoc.embedFont(F.TimesRomanBold)); }
+  else if(head){ if(bounds) await placeAgencyHeader(pdfDoc,bounds,insured,await pdfDoc.embedFont(F.TimesRoman),await pdfDoc.embedFont(F.TimesRomanBold));
     else warn=(warn?warn+" ":"")+"Couldn't read the first page's layout, so the agency header wasn't added."; }
   const bytes=await pdfDoc.save();
 
@@ -847,7 +890,7 @@ function quotePricing(loc){
     if(!L.amounts.length){ if(!L.text||NOAMT.test(L.text)) continue; break; }
     if(COMM.test(L.text)||NETDUE.test(L.text)) break;
     const a=amtOf(L); if(!a) break;
-    if(/^total\b/i.test(L.label)){ if(more.length){ items.push({label:totalLabel+" (carrier subtotal)",amt:total,sub:true},...more); more.length=0; } total=toNum(a.str); totalLabel=clean(L.label); }
+    if(/^(grand\s+)?total\b/i.test(L.label)){ if(more.length){ items.push({label:totalLabel+" (carrier subtotal)",amt:total,sub:true},...more); more.length=0; } total=toNum(a.str); totalLabel=clean(L.label); }
     else more.push({label:clean(L.label),amt:toNum(a.str)});
     prev=L.y;
   }
@@ -865,7 +908,7 @@ function annotPricing(pdfDoc){
       for(const raw of c.decodeText().split(/[\r\n]+/)){
         const m=raw.trim().match(/^(.*?)[\s:]*\$\s*(-?[\d,]+\.\d{2})$/); if(!m||!m[1].trim()) continue;
         const label=m[1].replace(/[:\s]+$/,"").trim(), amt=toNum(m[2]);
-        if(/^total\b/i.test(label)){ total=amt; break; }
+        if(/^(grand\s+)?total\b/i.test(label)){ total=amt; break; }
         items.push({label,amt});
       }
       if(total!=null&&items.length) return {items,total,cols:1};
@@ -891,7 +934,7 @@ async function combine(list,fee,label,opts){
     if(!locs.length && !pr) throw new Error(nm+": couldn't find the premium totals (a column of fees and taxes followed by a Total line).");
     if(pr?pr.items.some(i=>i.label.toLowerCase()===label.toLowerCase()):locs.some(L=>L.chain.some(f=>f.label.toLowerCase()===label.toLowerCase()))) throw new Error(nm+" already has a \""+label+"\" line. Use the original carrier PDF; the fee goes on the summary page once.");
     if(!pr) pr=quotePricing(locs.slice().sort((a,b)=>a.pageIndex-b.pageIndex||b.total.y-a.total.y)[0]);
-    const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||findField(pages,/^INSURED:\s*(.+)$/i)||(ai&&ai.insured)||"";
+    const insured=findField(pages,/^Primary Named Insured\s+(.+)$/i)||findField(pages,/^INSURED NAME:?\s*(.+)$/i)||findField(pages,/^NAMED INSURED:?\s*(.+)$/i)||findField(pages,/^Name Insured \(as it should appear on the policy\):?\s*(.+)$/i)||findField(pages,/^Applicant Name:?\s*(.+)$/i)||findField(pages,/^INSURED:\s*(.+)$/i)||(ai&&ai.insured)||"";
     const lob=(q.label||"").trim()||guessLob(pages,pr.items)||("Quote "+(quotes.length+1));
     /* same clean-up as the fee tool: no carrier commission or net due lines, no quote initiation date */
     removeCommission(pdfDoc,pages);
