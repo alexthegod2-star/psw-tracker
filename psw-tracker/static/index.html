@@ -406,8 +406,8 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div class="edSide" id="edQs" hidden><div class="drop" id="edQsDrop"><b>Fill this sheet from a file</b><label class="qsLead"><input type="checkbox" id="edQsLead"> Also fill lead</label><p class="small" style="margin:6px 0 8px">Drop an application, email, ACORD, spreadsheet or picture here. What it says goes into this sheet's empty boxes; then hit Save to lead.</p>
     <label class="btn" style="margin:0">Choose file<input type="file" id="edQsIn" hidden accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.eml,.docx,.xlsx,.xls,image/*,application/pdf,text/*"></label><div class="msg small" id="edQsMsg" style="margin-top:8px"></div></div>
     <div class="drop qsPaste"><b>Or paste the text</b><label class="qsLead"><input type="checkbox" id="edQsLead2"> Also fill lead</label><textarea id="edQsText" placeholder="Paste an email, an application or the client’s details here. It fills the sheet as soon as you paste."></textarea></div></div>
-  <div class="edSide right" id="edSup" hidden><div class="drop" id="edSupDrop"><b>Fill a carrier form</b><p class="small" style="margin:6px 0 8px">Drop a fillable supplemental or application here. It's filled from this quote sheet and saved to the lead's Files as “com sup”.</p>
-    <label class="btn" style="margin:0">Choose file<input type="file" id="edSupIn" hidden accept=".pdf,application/pdf"></label><div class="msg small" id="edSupMsg" style="margin-top:8px"></div></div></div>
+  <div class="edSide right" id="edSup" hidden><div class="drop" id="edSupDrop"><b>Fill a carrier form</b><p class="small" style="margin:6px 0 8px">Drop a fillable supplemental or application (PDF or Word .docx) here. It's filled from this quote sheet and saved to the lead's Files as “com sup”.</p>
+    <label class="btn" style="margin:0">Choose file<input type="file" id="edSupIn" hidden accept=".pdf,application/pdf,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"></label><div class="msg small" id="edSupMsg" style="margin-top:8px"></div></div></div>
 </div>
 <div class="ed" id="sg" aria-hidden="true" style="z-index:25">
   <div class="edh"><span class="nm" id="sgName"></span><span class="small" id="sgTest" hidden style="color:#b45309">DocuSign test account: these are practice emails, not real signatures.</span><button type="button" id="sgCancel">Cancel</button><button type="button" class="pri" id="sgSend">Send to DocuSign</button></div>
@@ -2393,11 +2393,69 @@ const SUP_GUESS=[[/\b(applicant|named insured|insured'?s? name|name of (applican
   [/\b(effective|eff\.?|proposed eff\w*)\b.*date|^effective/i,'eff_date'],[/expir/i,'exp_date'],[/payroll/i,'payroll'],[/(gross|annual|total).*(sales|receipts|revenue)|^(sales|receipts|revenue)/i,'gross_receipts'],
   [/full[ -]?time/i,'full_time'],[/part[ -]?time/i,'part_time'],[/(year|date).*(started|established|founded|began)|year.*business/i,'year_started'],[/years?.*experience/i,'years_experience'],
   [/(description|nature) of (business|operations)|describe.*operations|^operations\b|business description/i,'description'],[/\b(fein|ein|tax id|federal id)\b/i,'tax_id'],[/contact/i,'contact']];
+/* Word (.docx) carrier forms: find the places to write (form fields, content controls, ____ blanks, empty answer cells, ☐ boxes),
+   each with the printed label next to it, and write the answers back into the same .docx */
+async function docxSpots(bytes){
+  const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main',W14='http://schemas.microsoft.com/office/word/2010/wordml';
+  const zip=await JSZip.loadAsync(bytes),xf=zip.file('word/document.xml');if(!xf)throw new Error('this isn’t a Word document');
+  const doc=new DOMParser().parseFromString(await xf.async('string'),'application/xml');
+  const kids=(el,tag)=>[...el.childNodes].filter(n=>n.namespaceURI===W&&n.localName===tag),all=(el,tag)=>[...el.getElementsByTagNameNS(W,tag)];
+  const up=(el,tag)=>{for(let n=el.parentNode;n&&n.nodeType===1;n=n.parentNode)if(n.namespaceURI===W&&n.localName===tag)return n;return null};
+  const textOf=el=>all(el,'r').map(r=>[...r.childNodes].map(n=>n.localName==='t'?n.textContent:n.localName==='tab'?' ':'').join('')).join('').replace(/\s+/g,' ').trim();
+  const clip=t=>t.replace(/[\s:_.$#]+$/,'').replace(/^[\s:_.]+/,'').slice(-110);
+  const mk=(tag,attrs)=>{const e=doc.createElementNS(W,'w:'+tag);Object.entries(attrs||{}).forEach(([k,v])=>e.setAttributeNS(W,'w:'+k,v));return e};
+  const cellLeft=el=>{const tc=up(el,'tc');if(!tc)return '';for(let c=tc.previousSibling;c;c=c.previousSibling)if(c.localName==='tc'){const t=textOf(c);if(t)return t}return ''};
+  const prevPara=p=>{for(let n=p.previousSibling;n;n=n.previousSibling)if(n.localName==='p'){const t=textOf(n);if(t)return t}return ''};
+  const labelFor=(p,before)=>clip(before)||clip(cellLeft(p))||clip(prevPara(p));
+  const spots=[],used=new Set(),seen=new Set();let id=0;
+  const add=(kind,label,apply,choices)=>{let lab=label||'';if(seen.has(kind+lab)){let k=2;while(seen.has(kind+lab+' #'+k))k++;lab+=' #'+k}seen.add(kind+lab);spots.push({name:'w'+(++id),kind,label:lab,choices:choices||[],apply})};
+  const setRuns=(runs,v,after)=>{const ts=runs.flatMap(r=>kids(r,'t'));if(ts.length){ts[0].textContent=v;ts[0].setAttribute('xml:space','preserve');ts.slice(1).forEach(t=>t.textContent='')}
+    else if(after){const r=mk('r'),t=mk('t');t.setAttribute('xml:space','preserve');t.textContent=v;r.appendChild(t);after.parentNode.insertBefore(r,after.nextSibling)}};
+  // 1) Word form fields (text boxes and check boxes made with the old Forms toolbar)
+  for(const p of all(doc,'p')){const runs=all(p,'r');let before='';
+    for(let i=0;i<runs.length;i++){const fc=kids(runs[i],'fldChar')[0];
+      if(!(fc&&fc.getAttributeNS(W,'fldCharType')==='begin'&&kids(fc,'ffData').length)){if(!kids(runs[i],'fldChar').length)before+=textOf(runs[i])+' ';continue}
+      const ff=kids(fc,'ffData')[0];let j=i+1,sep=-1,end=-1;for(;j<runs.length;j++){const c=kids(runs[j],'fldChar')[0];if(!c)continue;const ty=c.getAttributeNS(W,'fldCharType');if(ty==='separate')sep=j;if(ty==='end'){end=j;break}}
+      if(end<0)break;const inner=runs.slice(i,end+1);inner.forEach(r=>kids(r,'t').forEach(t=>used.add(t)));
+      const cb=kids(ff,'checkBox')[0],ti=kids(ff,'textInput')[0];
+      if(cb){const right=runs.slice(end+1).map(textOf).join(' ').split(/[☐☒]/)[0];
+        add('check',[clip(before)||clip(cellLeft(p)),clip(right)].filter(Boolean).join(' / '),()=>{kids(cb,'checked').forEach(e=>cb.removeChild(e));cb.appendChild(mk('checked',{val:'1'}))})}
+      else if(ti){const res=sep>=0?runs.slice(sep+1,end):[],lab=labelFor(p,before);add('text',lab,v=>setRuns(res,v,runs[sep>=0?sep:i]))}
+      before='';i=end}}
+  // 2) content controls (Developer tab boxes, date pickers, drop-downs, check boxes)
+  for(const sd of all(doc,'sdt')){const pr=kids(sd,'sdtPr')[0],ct=kids(sd,'sdtContent')[0];if(!pr||!ct||all(ct,'sdt').length)continue;
+    if(all(ct,'t').some(t=>used.has(t)))continue;all(ct,'t').forEach(t=>used.add(t));
+    const nm=(kids(pr,'alias')[0]||kids(pr,'tag')[0]),alias=nm?nm.getAttributeNS(W,'val'):'';
+    const p=up(sd,'p')||all(ct,'p')[0]||sd,beforeTxt=(()=>{const pp=up(sd,'p');if(!pp)return '';let t='';for(const r of all(pp,'r')){if(sd.contains(r))break;t+=textOf(r)+' '}return t})();
+    const lab=clip(alias)||labelFor(p,beforeTxt),cbx=pr.getElementsByTagNameNS(W14,'checkbox')[0];
+    if(cbx){add('check',lab,()=>{const c=cbx.getElementsByTagNameNS(W14,'checked')[0];if(c)c.setAttributeNS(W14,'w14:val','1');const t=all(ct,'t')[0];if(t)t.textContent='☒'});continue}
+    const dd=kids(pr,'dropDownList')[0]||kids(pr,'comboBox')[0],ch=dd?kids(dd,'listItem').map(li=>li.getAttributeNS(W,'displayText')||li.getAttributeNS(W,'value')).filter(Boolean):[];
+    add(dd?'list':'text',lab,v=>{kids(pr,'showingPlcHdr').forEach(e=>pr.removeChild(e));const runs=all(ct,'r');runs.forEach(r=>{const rp=kids(r,'rPr')[0];if(rp)kids(rp,'rStyle').forEach(e=>{if(/placeholder/i.test(e.getAttributeNS(W,'val')))rp.removeChild(e)})});
+      if(runs.length)setRuns(runs,v);else{const pp=all(ct,'p')[0]||ct,r=mk('r'),t=mk('t');t.setAttribute('xml:space','preserve');t.textContent=v;r.appendChild(t);pp.appendChild(r)}},ch)}
+  // 3) ____ blanks and ☐ boxes typed in the text
+  const repl=new Map();
+  for(const p of all(doc,'p')){const runs=all(p,'r');let before='';
+    for(const r of runs){for(const t of kids(r,'t')){const s0=t.textContent;if(used.has(t)){before+=s0;continue}
+        const re=/_{3,}|[☐□]/g;let m,k=0;while((m=re.exec(s0))){const at=m.index,kk=k++,txt=before+s0.slice(0,at),seg=txt.split(/_{3,}|[☐□☒]/).pop();
+          if(m[0][0]==='_'){add('text',labelFor(p,seg),v=>{const a=repl.get(t)||[];a[kk]=' '+v+' ';repl.set(t,a)})}
+          else{const q=clip(txt.split(/[☐□☒]/)[0])||clip(cellLeft(p))||clip(prevPara(p)),right=(s0.slice(at+1)+' '+runs.slice(runs.indexOf(r)+1).map(textOf).join(' ')).split(/[☐□☒]|_{3,}/)[0];
+            add('check',[q,clip(right)].filter(Boolean).join(' / '),()=>{const a=repl.get(t)||[];a[kk]='☒';repl.set(t,a)})}}
+        before+=s0}}}
+  // 4) empty answer cells next to a label cell
+  for(const tr of all(doc,'tr')){const tcs=kids(tr,'tc');for(let j=1;j<tcs.length;j++){const c=tcs[j];if(textOf(c)||all(c,'sdt').length||all(c,'fldChar').length)continue;
+      const lab=clip(textOf(tcs[j-1]));if(!lab||/^[☐□☒]/.test(lab))continue;
+      add('text',lab,v=>{const pp=kids(c,'p')[0]||c.appendChild(mk('p')),r=mk('r'),t=mk('t');t.setAttribute('xml:space','preserve');t.textContent=v;r.appendChild(t);pp.appendChild(r)})}}
+  return {spots,save:async()=>{for(const [t,a] of repl){let k=0;t.textContent=t.textContent.replace(/_{3,}|[☐□]/g,x=>{const v=a[k++];return v===undefined?x:v});t.setAttribute('xml:space','preserve')}
+    zip.file('word/document.xml',new XMLSerializer().serializeToString(doc));return await zip.generateAsync({type:'uint8array',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}}}
 async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg small'+(c?' '+c:'');m.textContent=t};
-  if(!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf'){say(`${f.name} isn’t a PDF.`,'err');return}
+  const isDocx=/\.docx$/i.test(f.name)||f.type==='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if(/\.doc$/i.test(f.name)||f.type==='application/msword'){say(`${f.name} is an old Word file (.doc). Open it in Word, choose File > Save As > Word Document (.docx), and drop that here.`,'err');return}
+  if(!isDocx&&!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf'){say(`${f.name} isn’t a PDF or Word (.docx) file.`,'err');return}
   if(!cur||!cur.id){say('Open this sheet from a lead first.','err');return}
-  try{say(`Reading ${f.name}…`);const bytes=new Uint8Array(await f.arrayBuffer()),boxes=await supFields(bytes);
-    if(!boxes.length){say(`${f.name} has no fill-in boxes, so it can’t be filled. Ask the carrier for the fillable PDF.`,'err');return}
+  try{say(`Reading ${f.name}…`);const bytes=new Uint8Array(await f.arrayBuffer());let wd=null;
+    if(isDocx){await loadJs(CDN+'jszip/3.10.1/jszip.min.js');wd=await docxSpots(bytes)}
+    const boxes=wd?wd.spots:await supFields(bytes);
+    if(!boxes.length){say(wd?`${f.name} has no blanks, boxes or empty answer cells to fill.`:`${f.name} has no fill-in boxes, so it can’t be filled. Ask the carrier for the fillable PDF.`,'err');return}
     const lab=Object.fromEntries(QS_KEYS),sheet={};document.querySelectorAll('#edBody .annotationLayer [name]').forEach(el=>{if(el.classList.contains('tsIn'))return;
       const k=el.name.replace(/^f_/,''),v=el.type==='checkbox'?(el.checked?'Yes':''):String(el.value||'').trim();if(v&&!(k in sheet))sheet[k]=v});
     if(!Object.keys(sheet).length){say('This quote sheet is empty, so there’s nothing to fill the form with.','err');return}
@@ -2409,6 +2467,12 @@ async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg 
     if(!ai)boxes.forEach(b=>{if(b.kind!=='text')return;const t=(b.label||'')+' '+b.name.replace(/[_.\[\]\d]+/g,' ');const hit=SUP_GUESS.find(([re])=>re.test(b.label||'')||re.test(t));if(!hit)return;
       const v=hit[1]==='contact'?[g('contact_first'),g('contact_last')].filter(Boolean).join(' '):hit[1]==='property_address'?(/^same/i.test(g('property_address'))||!g('property_address')?g('mailing_address'):g('property_address')):g(hit[1]);if(v)vals[b.name]=v});
     const n=Object.keys(vals).length;if(!n){say(`Nothing on ${f.name} matched this quote sheet${ai?'':sample?` (Claude couldn’t: ${aiErr})`:' (Claude isn’t turned on)'}.`,'err');return}
+    if(wd){say('Filling the form…');let done=0;for(const [k,v] of Object.entries(vals)){const sp=wd.spots.find(b=>b.name===k);if(!sp)continue;
+        if(sp.kind==='check'){if(v===true||/^(true|yes|y|x|on)$/i.test(String(v))){sp.apply(true);done++}}else{sp.apply(String(v).replace(/\s*\(.*\)$/,''));done++}}
+      const client=(g('client_name')||cur.company||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',have=new Set((cur.files||[]).map(x=>x.name.toLowerCase()));
+      let name=`${client} com sup.docx`;for(let i=2;have.has(name.toLowerCase());i++)name=`${client} com sup ${i}.docx`;
+      const ok=await uploadOne(new File([await wd.save()],name,{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+      if(ok)say(`Filled ${done} blank${done===1?'':'s'}${ai?' (Claude matched them)':sample?` (Claude couldn’t: ${aiErr}, so matched by label)`:' (Claude isn’t turned on, so matched by label)'} and saved ${name} under Files. Use Actions > Download to open it in Word, check it and finish the rest.`,'ok');else say($('fileMsg').textContent||'Couldn’t save it.','err');return}
     say('Filling the form…');await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const doc=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true}),form=doc.getForm();let done=0;
     for(const [k,v] of Object.entries(vals)){try{const fl=form.getField(k),s=String(v).replace(/\s*\(.*\)$/,'');
       if(fl instanceof PDFLib.PDFCheckBox){if(v===true||/^(true|yes|y|x|on)$/i.test(s)){fl.check();done++}}
