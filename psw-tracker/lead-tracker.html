@@ -61,6 +61,12 @@ th[data-ck]{cursor:pointer;user-select:none}th[data-ck]:hover{text-decoration:un
 .finT{border-collapse:collapse;font-size:13px;min-width:1150px;width:100%}.finT td,.finT th{border:1px solid var(--line);padding:0;text-align:right;white-space:nowrap}.finT th{padding:4px 6px;background:var(--drbg);text-align:left}.finT th.mo{text-align:center}
 .finT input{border:0;border-radius:0;background:transparent;width:100%;min-width:62px;padding:4px 6px;font:inherit;text-align:right;box-sizing:border-box}.finT input.nm{text-align:left;min-width:120px}.finT input.du{min-width:84px}
 .finT .tot td{font-weight:700;padding:4px 6px;border-top:2px solid var(--ink,#222)}.finT .tot td:first-child{text-align:left}.finT .yr{padding:4px 6px;font-weight:600}.finT .add td{border:0;text-align:left;padding:4px 0 10px}
+.finTabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.finTabs button{border:0;border-radius:0;min-height:0;padding:6px 14px;font-weight:600;background:transparent}.finTabs button.on{background:var(--ink,#222);color:#fff}
+.dayT{border-collapse:collapse;font-size:13px;min-width:820px;width:100%}.dayT td,.dayT th{border:1px solid var(--line);padding:0;text-align:center;white-space:nowrap}.dayT th{padding:4px 6px;background:var(--drbg)}.dayT th.sec{text-align:left}.dayT td.n{color:var(--mute);padding:0 6px;width:1px}
+.dayT input{border:0;border-radius:0;background:transparent;width:100%;min-width:56px;padding:4px 6px;font:inherit;text-align:center;box-sizing:border-box}.dayT input.nm{text-align:left;min-width:170px}.dayT input[type=checkbox]{width:18px;height:18px;min-width:0;margin:4px auto;cursor:pointer;display:block}
+.dayT .today{background:#fff8d6}.dayT th.today{background:#f5e6a6}.dayT td.done{background:#e3f4e6}.dayT .x{border:0;background:none;color:var(--mute);padding:0 6px;min-width:0;cursor:pointer}.dayT .x:hover{color:#c0392b}.dayT .kd{border:0;background:none;color:var(--mute);padding:0 4px;min-width:0;cursor:pointer;font-size:11px}.dayT .add td{border:0;text-align:left;padding:4px 0 10px}.dayT .cnt td{font-weight:700;padding:4px 6px}
+.dayT textarea{border:0;background:transparent;width:100%;min-width:110px;min-height:54px;padding:4px 6px;font:inherit;box-sizing:border-box;resize:vertical;display:block}
+.daySr{display:flex;gap:6px;align-items:center;margin:14px 0 6px}.daySr input{flex:1;max-width:420px}.dayHits{display:grid;gap:4px;margin:0 0 10px;font-size:13px;max-height:220px;overflow:auto}.dayHits button{text-align:left;min-height:0;padding:5px 8px;font-weight:400;white-space:normal}.dayHits mark{background:#ffe27a}
 .finT .x{border:0;background:none;color:var(--mute);padding:0 6px;min-width:0;cursor:pointer}.finT .x:hover{color:#c0392b}.finT .neg{color:#c0392b}
 button.delrow{padding:3px 8px;font-size:12px}
 #contactSec .grid3{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:560px){#contactSec .grid3{grid-template-columns:1fr 1fr}}
@@ -642,9 +648,14 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="pri" id="repCsv" type="button">Download for Excel</button><button id="repPrint" type="button">Print</button><button id="repClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="finDlg" role="dialog" aria-modal="true" aria-labelledby="finTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
-  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="finTitleH" style="margin:0">Alex Finance Personal</h3><div class="row" style="align-items:center"><button type="button" id="finPrev" title="Previous year">&lsaquo;</button><b id="finYr" style="min-width:48px;text-align:center"></b><button type="button" id="finNext" title="Next year">&rsaquo;</button></div></div>
-  <div class="small" style="margin:6px 0 10px">Only you can see this. Type amounts in the month boxes; the totals add up by month and for the year.</div>
-  <div style="overflow-x:auto"><table class="finT" id="finT"></table></div>
+  <div class="row" style="justify-content:space-between;align-items:center"><div class="row" style="align-items:center;gap:12px"><h3 id="finTitleH" style="margin:0">Alex Finance Personal</h3><span class="finTabs" role="tablist"><button type="button" id="finTabFin" class="on" role="tab">Finance</button><button type="button" id="finTabDay" role="tab">Alex Daily</button></span></div><div class="row" style="align-items:center" id="finYrNav"><button type="button" id="finPrev" title="Previous year">&lsaquo;</button><b id="finYr" style="min-width:48px;text-align:center"></b><button type="button" id="finNext" title="Next year">&rsaquo;</button></div><div class="row" style="align-items:center" id="dayNav" hidden><button type="button" id="dayPrev" title="Previous week">&lsaquo;</button><b id="dayWk" style="min-width:150px;text-align:center"></b><button type="button" id="dayNext" title="Next week">&rsaquo;</button><button type="button" id="dayToday">This week</button></div></div>
+  <div id="finPane"><div class="small" style="margin:6px 0 10px">Only you can see this. Type amounts in the month boxes; the totals add up by month and for the year.</div>
+  <div style="overflow-x:auto"><table class="finT" id="finT"></table></div></div>
+  <div id="dayPane" hidden><div class="small" style="margin:6px 0 10px">Only you can see this. Check off each item for the day. Rows marked # take a number or a word (like Weight or Total Steps); click ✓/# to switch a row. Changes save by themselves.</div>
+  <div style="overflow-x:auto"><table class="dayT" id="dayT"></table></div>
+  <div class="daySr"><input id="daySearch" type="search" placeholder="Search all notes…" autocomplete="off"><button type="button" id="daySearchClr">Clear</button></div>
+  <div class="dayHits" id="dayHits" hidden></div>
+  <div style="overflow-x:auto"><table class="dayT" id="dayN"></table></div></div>
   <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px"><span class="msg" id="finMsg"></span><div class="row"><button class="pri" id="finSave" type="button">Save</button><button id="finClose" type="button">Close</button></div></div>
 </div></div>
 <div class="mbg" id="admDlg" role="dialog" aria-modal="true" aria-labelledby="admTitleH"><div class="mbox adm" style="width:96vw;max-height:90vh;overflow:auto">
@@ -3193,9 +3204,9 @@ async function finLoad(y){finYear=y;$('finMsg').textContent='';fin=null;finDirty
   if(!fin)fin=finTpl();FIN_SEC.forEach(([k])=>{fin[k]=(fin[k]||[]).map(r=>{const old=r.amt==null&&/^\$?[\d,]+(\.\d+)?$/.test(String(r.due||'').trim());return {name:r.name||'',due:old?'':r.due||'',amt:old?r.due:r.amt||'',m:FIN_MO.map((_,i)=>(r.m||[])[i]||'')}})});finRender()}
 async function finSave(quiet){if(!fin||!finDirty)return true;try{await finCol.doc(String(finYear)).set(fin);finDirty=false;if(!quiet){$('finMsg').className='msg ok';$('finMsg').textContent='Saved'}return true}
   catch(e){$('finMsg').className='msg err';$('finMsg').textContent=errText(e);return false}}
-$('finBtn').onclick=async()=>{if(!finCol)return;$('finDlg').classList.add('on');await finLoad(new Date().getFullYear())};
-const finClose=async()=>{if(await finSave(true))$('finDlg').classList.remove('on')};
-$('finClose').onclick=finClose;$('finSave').onclick=()=>finSave(false);
+$('finBtn').onclick=async()=>{if(!finCol)return;$('finDlg').classList.add('on');finTab('fin');await finLoad(new Date().getFullYear())};
+const finClose=async()=>{await daySave();if(await finSave(true))$('finDlg').classList.remove('on')};
+$('finClose').onclick=finClose;$('finSave').onclick=async()=>{if(finView==='day'){await daySave(false)}else finSave(false)};
 $('finPrev').onclick=async()=>{if(await finSave(true))finLoad(finYear-1)};$('finNext').onclick=async()=>{if(await finSave(true))finLoad(finYear+1)};
 $('finT').addEventListener('input',e=>{const tr=e.target.closest('tr[data-s]');if(!tr)return;const r=fin[tr.dataset.s][+tr.dataset.i];
   if(e.target.dataset.m!=null)r.m[+e.target.dataset.m]=e.target.value;else r[e.target.dataset.f]=e.target.value;finDirty=true;$('finMsg').textContent='';finCalc()});
@@ -3204,7 +3215,67 @@ $('finT').addEventListener('click',async e=>{const a=e.target.closest('[data-fad
   const d=e.target.closest('[data-fdel]');if(!d)return;const tr=d.closest('tr[data-s]'),rows=fin[tr.dataset.s],i=+tr.dataset.i;
   if(!await sure(`Delete the ${rows[i].name?'"'+rows[i].name+'"':'blank'} row and its amounts for ${finYear}?`))return;rows.splice(i,1);finDirty=true;finRender()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('finDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();finClose()}},true);
-fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u||!u.owner||!u.username||!db)return;finCol=db.collection('private').doc(u.username).collection('finance');$('finBtn').hidden=false}).catch(()=>{});
+// Alex Daily: a week-by-week checklist (Sun-Sat) plus three notes per day, kept in private/<username>/daily (the "_list" doc holds the rows, "w-<Sunday>" docs hold each week).
+let finView='fin',dayCol=null,dayList=null,dayWk=null,dayW=null,dayDirty=false,dayListDirty=false,dayTimer=null;
+const DAY_NOTES=3,dayId=()=>Math.random().toString(36).slice(2,10);
+const dayKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const daySun=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-x.getDay());return x};
+const dayDates=()=>Array.from({length:7},(_,i)=>{const x=new Date(dayWk);x.setDate(x.getDate()+i);return x});
+const dayTpl=()=>{const mk=(a,num)=>a.map(n=>({id:dayId(),name:n,kind:num.includes(n)?'num':'check'}));
+  return {morning:mk(['Wake Up','Take multivitamin','Open curtain','Turn on light','Weight','NO M','NO P','NO G','Clean room','Steps before I leave','Drink water','Take out trash','Stretch','Elliptical','Light workout','Bicep curls','Sit ups','Push ups','Jumping jacks','Touch toes','Chair hip flexor','Knee strikes','Rows','1K walk','Floss','Brush teeth','Shave','Shower','Out the door'],['Weight','Steps before I leave']),
+    night:mk(['Stretch','Total Steps','No soda','GO TO BED'],['Total Steps'])}};
+const DAY_SEC=[['morning','MORNING'],['night','NIGHT']];
+function dayCellsDone(k){const v=(dayW.d[k]||{});return [...dayList.morning,...dayList.night].filter(r=>r.kind==='check'&&v[r.id]).length}
+function dayRender(){const ds=dayDates(),today=dayKey(new Date()),last=ds[6];
+  $('dayWk').textContent=`${ds[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${last.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  const hd=ds.map(d=>{const k=dayKey(d);return `<th class="${k===today?'today':''}">${d.toLocaleDateString('en-US',{weekday:'short'})}<br>${d.getMonth()+1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}</th>`}).join('');let h='';
+  DAY_SEC.forEach(([s,label])=>{h+=`<tr><th></th><th class="sec" colspan="2">${label}</th>${hd}</tr>`;
+    dayList[s].forEach((r,i)=>{h+=`<tr data-s="${s}" data-i="${i}"><td class="n">${i+1}</td><td style="width:1px;white-space:nowrap"><button type="button" class="x" data-ddel title="Delete this row">&times;</button><button type="button" class="kd" data-dkind title="${r.kind==='num'?'Takes a number or word. Click to make it a checkbox':'Checkbox. Click to make it take a number or word'}">${r.kind==='num'?'#':'✓'}</button></td><td><input class="nm" data-dn value="${esc(r.name)}"></td>`+
+      ds.map(d=>{const k=dayKey(d),v=(dayW.d[k]||{})[r.id];return r.kind==='num'?`<td class="${k===today?'today':''}"><input data-dk="${k}" value="${esc(v||'')}"></td>`:`<td class="${v?'done':k===today?'today':''}"><input type="checkbox" data-dk="${k}"${v?' checked':''}></td>`}).join('')+'</tr>'});
+    h+=`<tr class="add"><td colspan="10"><button type="button" data-dadd="${s}">+ Add row</button></td></tr>`});
+  h+=`<tr class="cnt"><td></td><td colspan="2" style="text-align:left">CHECKED OFF</td>${ds.map(d=>`<td>${dayCellsDone(dayKey(d))}</td>`).join('')}</tr>`;
+  $('dayT').innerHTML=h;
+  let n=`<tr><th></th><th class="sec">NOTES</th>${hd}</tr>`;for(let j=0;j<DAY_NOTES;j++)n+=`<tr><td class="n">${j+1}</td><td style="text-align:left;padding:4px 6px">Notes of the day ${j+1}</td>${ds.map(d=>{const k=dayKey(d);return `<td class="${k===today?'today':''}"><textarea data-nk="${k}" data-nj="${j}">${esc(((dayW.notes||{})[k]||[])[j]||'')}</textarea></td>`}).join('')}</tr>`;
+  $('dayN').innerHTML=n}
+async function dayLoad(sun){await daySave();dayWk=sun;$('finMsg').textContent='';
+  try{if(!dayList){const l=await dayCol.doc('_list').get();dayList=l.exists?l.data():null;if(!dayList){dayList=dayTpl();dayListDirty=true}}
+    const w=await dayCol.doc('w-'+dayKey(sun)).get();dayW=w.exists?w.data():{};}catch(e){$('finMsg').className='msg err';$('finMsg').textContent=errText(e);if(!dayList)dayList=dayTpl();dayW={}}
+  dayW.d=dayW.d||{};dayW.notes=dayW.notes||{};dayDirty=false;dayRender();daySave()}
+async function daySave(loud){clearTimeout(dayTimer);if(!dayCol||!dayW)return true;try{
+  if(dayListDirty){await dayCol.doc('_list').set(dayList);dayListDirty=false}
+  if(dayDirty){await dayCol.doc('w-'+dayKey(dayWk)).set({...dayW,week:dayKey(dayWk)});dayDirty=false}
+  if(loud===false){$('finMsg').className='msg ok';$('finMsg').textContent='Saved'}return true}catch(e){$('finMsg').className='msg err';$('finMsg').textContent=errText(e);return false}}
+const daySoon=()=>{clearTimeout(dayTimer);$('finMsg').textContent='';dayTimer=setTimeout(()=>daySave(),800)};
+async function finTab(v){if(v===finView)return;if(v==='day'){if(!dayCol)return;await finSave(true)}else await daySave();finView=v;
+  $('finTabFin').classList.toggle('on',v==='fin');$('finTabDay').classList.toggle('on',v==='day');$('finPane').hidden=$('finYrNav').hidden=v!=='fin';$('dayPane').hidden=$('dayNav').hidden=v!=='day';
+  $('finTitleH').textContent=v==='day'?'Alex Daily':'Alex Finance Personal';$('finMsg').textContent='';if(v==='day')await dayLoad(dayWk||daySun(new Date()))}
+$('finTabFin').onclick=()=>finTab('fin');$('finTabDay').onclick=()=>finTab('day');
+const dayShift=n=>{const x=new Date(dayWk);x.setDate(x.getDate()+n);dayLoad(x)};
+$('dayPrev').onclick=()=>dayShift(-7);$('dayNext').onclick=()=>dayShift(7);$('dayToday').onclick=()=>dayLoad(daySun(new Date()));
+$('dayT').addEventListener('change',e=>{const t=e.target;if(t.type!=='checkbox'||!t.dataset.dk)return;const r=dayList[t.closest('tr').dataset.s][+t.closest('tr').dataset.i],k=t.dataset.dk;
+  const v=dayW.d[k]=dayW.d[k]||{};if(t.checked)v[r.id]=1;else delete v[r.id];t.parentElement.className=t.checked?'done':k===dayKey(new Date())?'today':'';dayDirty=true;
+  const tds=$('dayT').querySelectorAll('tr.cnt td');dayDates().forEach((d,i)=>tds[i+2].textContent=dayCellsDone(dayKey(d)));daySoon()});
+$('dayT').addEventListener('input',e=>{const t=e.target,tr=t.closest('tr[data-s]');if(!tr||t.type==='checkbox')return;const r=dayList[tr.dataset.s][+tr.dataset.i];
+  if(t.dataset.dn!=null){r.name=t.value;dayListDirty=true}else if(t.dataset.dk){const v=dayW.d[t.dataset.dk]=dayW.d[t.dataset.dk]||{};if(t.value.trim())v[r.id]=t.value;else delete v[r.id];dayDirty=true}daySoon()});
+$('dayT').addEventListener('click',async e=>{const a=e.target.closest('[data-dadd]');if(a){dayList[a.dataset.dadd].push({id:dayId(),name:'',kind:'check'});dayListDirty=true;dayRender();daySoon();const rs=$('dayT').querySelectorAll(`tr[data-s="${a.dataset.dadd}"] input.nm`);rs[rs.length-1].focus();return}
+  const tr=e.target.closest('tr[data-s]');if(!tr)return;const rows=dayList[tr.dataset.s],i=+tr.dataset.i;
+  if(e.target.closest('[data-dkind]')){rows[i].kind=rows[i].kind==='num'?'check':'num';dayListDirty=true;dayRender();daySoon();return}
+  if(!e.target.closest('[data-ddel]'))return;if(!await sure(`Delete the ${rows[i].name?'"'+rows[i].name+'"':'blank'} row from Alex Daily? Past check marks for it will be hidden.`))return;rows.splice(i,1);dayListDirty=true;dayRender();daySoon()});
+$('dayN').addEventListener('input',e=>{const t=e.target;if(!t.dataset.nk)return;const a=dayW.notes[t.dataset.nk]=dayW.notes[t.dataset.nk]||Array(DAY_NOTES).fill('');a[+t.dataset.nj]=t.value;dayDirty=true;daySoon()});
+// Search notes: looks through every saved week (and this week's unsaved typing) for the words typed.
+let daySrT=null;
+async function daySearch(){const q=$('daySearch').value.trim().toLowerCase(),box=$('dayHits');if(!q){box.hidden=true;box.innerHTML='';return}
+  await daySave();let weeks=[];try{weeks=(await dayCol.get()).docs.filter(d=>d.id.startsWith('w-')).map(d=>d.data())}catch(e){box.hidden=false;box.textContent=errText(e);return}
+  const cur=weeks.findIndex(w=>w.week===dayKey(dayWk));if(cur>=0)weeks[cur]=dayW;else weeks.push({...dayW,week:dayKey(dayWk)});
+  const words=q.split(/\s+/),hits=[];weeks.forEach(w=>Object.entries(w.notes||{}).forEach(([k,a])=>(a||[]).forEach((t,j)=>{if(t&&words.every(x=>t.toLowerCase().includes(x)))hits.push({k,j,t,week:w.week})})));
+  hits.sort((a,b)=>b.k.localeCompare(a.k)||a.j-b.j);const re=new RegExp('('+words.map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gi');
+  box.hidden=false;box.innerHTML=hits.length?`<div class="small">${hits.length} note${hits.length>1?'s':''} found</div>`+hits.map(h=>{const [y,m,d]=h.k.split('-').map(Number),dt=new Date(y,m-1,d);
+    return `<button type="button" data-hk="${h.k}"><b>${dt.toLocaleDateString('en-US',{weekday:'short',month:'numeric',day:'numeric',year:'2-digit'})} · Note ${h.j+1}</b> — ${esc(h.t).replace(re,'<mark>$1</mark>')}</button>`}).join(''):'<div class="small">No notes match.</div>'}
+$('daySearch').addEventListener('input',()=>{clearTimeout(daySrT);daySrT=setTimeout(daySearch,300)});
+$('daySearchClr').onclick=()=>{$('daySearch').value='';daySearch()};
+$('dayHits').addEventListener('click',async e=>{const b=e.target.closest('[data-hk]');if(!b)return;const [y,m,d]=b.dataset.hk.split('-').map(Number);await dayLoad(daySun(new Date(y,m-1,d)));
+  const t=$('dayN').querySelector(`textarea[data-nk="${b.dataset.hk}"]`);if(t){t.scrollIntoView({block:'center'});t.focus()}});
+fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u||!u.owner||!u.username||!db)return;finCol=db.collection('private').doc(u.username).collection('finance');dayCol=db.collection('private').doc(u.username).collection('daily');$('finBtn').hidden=false}).catch(()=>{});
 let myLogins=new Map(),myLoginCol=null;
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u||!u.username)return;myLoginCol=db.collection('private').doc(u.username).collection('siteLogins');
   myLoginCol.onSnapshot(s=>{myLogins=new Map(s.docs.map(d=>{const x={id:d.id,...d.data()};return [x.key,x]}))},()=>{})}).catch(()=>{});
