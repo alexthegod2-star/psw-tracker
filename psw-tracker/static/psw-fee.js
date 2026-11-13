@@ -666,12 +666,16 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     const S=t=>ctx.register(ctx.flateStream(strToBytes(t))), n=v=>v.toFixed(2);
     page.node.set(PDFName.of("Contents"),ctx.obj([S("q\n"),...list,S("\nQ\nq 1 g 0 0 "+n(W)+" "+n(cut)+" re f Q\nq 0 0 "+n(W)+" "+n(cut)+" re W n 1 0 0 1 0 "+n(-p)+" cm\n"),...list,S("\nQ\n")]));
     const med=a=>{ const v=a.slice().sort((x,y)=>x-y); return v[Math.floor(v.length/2)]; };
-    const sz=Math.min(11,Math.max(7,p*0.7)), dollar=T.items.some(i=>i.str.trim()==="$");
+    /* match the printed letters: a word with capitals and no hanging letters (g, j, p, q, y) is about 0.72 of the font size tall */
+    const tall=chain.concat([T]).flatMap(l=>l.items).filter(i=>/^[A-Z][A-Za-z:]*$/.test(i.str.trim())&&!/[gjpqy]/.test(i.str)).map(i=>i.size/1.25/0.72);
+    const sz=Math.min(12,Math.max(6,tall.length>2?med(tall):p*0.7)), dollar=T.items.some(i=>i.str.trim()==="$");
     const money=v=>dollar?fmt(v).slice(1):fmt(v); /* the quote prints its $ in a column of its own */
     const white=(x,y,x2)=>pdfDoc.getPage(pi).drawRectangle({x:x-2.5,y:y-p*0.24,width:x2-x+5,height:p*0.8,color:PDFLib.rgb(1,1,1)});
     const draw=()=>{
       const pg=pdfDoc.getPage(pi), feeStr=money(fee);
-      T.items.filter(i=>i.str.trim()&&i.str.trim()!=="$").forEach(i=>white(i.x,T.y,i.x+i.w));
+      T.items.filter(i=>i.str.trim()).forEach(i=>white(i.x,T.y,i.x+i.w));
+      /* the Total row's $ is often bold; the fee row's $ matches the other fee rows */
+      T.items.filter(i=>i.str.trim()==="$").forEach(i=>pg.drawText("$",{x:i.x,y:T.y,size:sz,font:fReg,color:PDFLib.rgb(0,0,0)}));
       const lx=rightAligned?(last.labelRight-fReg.widthOfTextAtSize(label,sz)):(last.labelX!=null?last.labelX:T.labelX);
       pg.drawText(label,{x:lx,y:T.y,size:sz,font:fReg,color:PDFLib.rgb(0,0,0)});
       cols.forEach(c=>{ const w=fReg.widthOfTextAtSize(feeStr,sz); pg.drawText(feeStr,{x:place(c,w,false),y:T.y,size:sz,font:fReg,color:PDFLib.rgb(0,0,0)}); });
