@@ -455,7 +455,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
     <div class="row"><button type="button" id="mlCancel">Cancel</button><button type="button" class="pri" id="mlSend">Send</button></div></div>
 </div></div>
 <div class="mbg" id="smDlg" role="dialog" aria-modal="true" aria-labelledby="smTitle" style="z-index:20"><div class="mbox" style="width:min(760px,96vw);max-height:92vh;overflow:auto">
-  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="smTitle" style="margin:0">Send multiple</h3><span class="small" id="smFrom"></span></div>
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="smTitle" style="margin:0">Send multiple emails</h3><span class="small" id="smFrom"></span></div>
   <div class="small" style="margin:4px 0 8px">Each person you tick gets their own email; nobody sees who else got it. Each one starts with Hi and their name.</div>
   <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:13px">Send to</b><span class="row" style="gap:6px"><button type="button" id="smAll" style="padding:2px 10px;font-size:12px">Tick all</button><button type="button" id="smNone" style="padding:2px 10px;font-size:12px">Clear</button></span></div>
   <div id="smList" class="smList"></div>
@@ -1877,7 +1877,7 @@ function renderMail(){
   $('mailPick').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-mf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`).join(''):'<div class="small">No files attached yet.</div>';
   const sent=(cur&&cur.mailSent)||{};
   // each carrier button has a check box: ticked means the email went out, and the button turns green
-  $('mailBtns').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<div class="mailItem"><input type="checkbox" class="mailSent" data-sent="${esc(r.key)}"${d?' checked':''} aria-label="Sent to ${esc(r.label)}" title="${d?'Sent '+esc(fmtDate(String(d).slice(0,10))):'Tick when you have sent this email'}"><a class="btn pri${d?' sent':''}" data-mail="${i}" href="mailto:${esc(mailTo(r))}" target="_blank" rel="noopener" title="${esc(mailTip(r))}">${esc(r.label)}</a></div>`}).join('')+`<button type="button" class="pri" id="smOpen" title="Send a separate email to each underwriter you tick, each starting with Hi (their name)">Send multiple</button><a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
+  $('mailBtns').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<div class="mailItem"><input type="checkbox" class="mailSent" data-sent="${esc(r.key)}"${d?' checked':''} aria-label="Sent to ${esc(r.label)}" title="${d?'Sent '+esc(fmtDate(String(d).slice(0,10))):'Tick when you have sent this email'}"><a class="btn pri${d?' sent':''}" data-mail="${i}" href="mailto:${esc(mailTo(r))}" target="_blank" rel="noopener" title="${esc(mailTip(r))}">${esc(r.label)}</a></div>`}).join('')+`<button type="button" class="pri" id="smOpen" style="background:#6a3fb5;border-color:#6a3fb5;color:#fff" title="Send a separate email to each underwriter you tick, each starting with Hi (their name)">Send multiple emails</button><a class="btn pri" data-mail="cust" href="mailto:" target="_blank" rel="noopener" title="Send the ticked quote sheet to the customer to finish">Email customer</a><button type="button" class="pri" id="qlSend" title="Send the client a link to fill in the com quote online">Send quote link</button>`;
 }
 // marks (or unmarks) an address as emailed on this lead; clicking a carrier button marks it too
 async function setMailSent(to,on){
@@ -1891,7 +1891,7 @@ $('mailPick').addEventListener('change',e=>{const id=e.target.dataset.mf;if(!id)
 const smFirst=r=>{const f=(r.label.split('/')[0]||'').trim();return /^(submissions?|help|info|team)$/i.test(f)?'':f};
 const smGreet=r=>{const f=smFirst(r);return `Hi${f?' '+f:''},\n\n`};
 async function smOpen(){if(!cur)return;if(isLocked('lead'))return toast('This lead is view-only right now.');if(!(await ensureSaved()))return;
-  await mailStatus(true);if(!(mailSt&&mailSt.connected)){const m=$('mailMsg');m.className='msg err';m.textContent='Connect your email first: click any underwriter button, connect at the top of that window, then use Send multiple.';return}
+  await mailStatus(true);if(!(mailSt&&mailSt.connected)){const m=$('mailMsg');m.className='msg err';m.textContent='Connect your email first: click any underwriter button, connect at the top of that window, then use Send multiple emails.';return}
   const sent=cur.mailSent||{},{nm,co}=mailClient();
   $('smList').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<label title="${esc(mailTo(r))}"><input type="checkbox" data-smi="${i}"> ${esc(r.label)}${d?`<span class="small">sent ${esc(fmtDate(String(d).slice(0,10)))}</span>`:''}</label>`}).join('');
   $('smSubj').value=`QUOTE ${co||nm}`.trim();edSet('smBody','Please quote');$('smHi').textContent=' (Hi and the name are added at the top of each)';
