@@ -63,7 +63,7 @@ th[data-ck]{cursor:pointer;user-select:none}th[data-ck]:hover{text-decoration:un
 .finT .tot td{font-weight:700;padding:4px 6px;border-top:2px solid var(--ink,#222)}.finT .tot td:first-child{text-align:left}.finT .yr{padding:4px 6px;font-weight:600}.finT .add td{border:0;text-align:left;padding:4px 0 10px}
 .finTabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.finTabs button{border:0;border-radius:0;min-height:0;padding:6px 14px;font-weight:600;background:transparent}.finTabs button.on{background:var(--ink,#222);color:#fff}
 .dayT{border-collapse:collapse;font-size:13px;min-width:820px;width:100%}.dayT td,.dayT th{border:1px solid var(--line);padding:0;text-align:center;white-space:nowrap}.dayT th{padding:4px 6px;background:var(--drbg)}.dayT th.sec{text-align:left}.dayT td.n{color:var(--mute);padding:0 6px;width:1px}
-.dayT input{border:0;border-radius:0;background:transparent;width:100%;min-width:56px;padding:4px 6px;font:inherit;text-align:center;box-sizing:border-box}.dayT input.nm{text-align:left;min-width:170px}.dayT input[type=checkbox]{width:18px;height:18px;min-width:0;margin:4px auto;cursor:pointer;display:block}
+.dayT input{border:0;border-radius:0;background:transparent;width:100%;min-width:56px;padding:4px 6px;font:inherit;text-align:center;box-sizing:border-box}.dayT input.nm{text-align:left;min-width:170px}.dayT input[type=time]{min-width:104px;padding:3px 4px}.dayT input[type=checkbox]{width:18px;height:18px;min-width:0;margin:4px auto;cursor:pointer;display:block}
 .dayT .today{background:#fff8d6}.dayT th.today{background:#f5e6a6}.dayT td.done{background:#e3f4e6}.dayT .x{border:0;background:none;color:var(--mute);padding:0 6px;min-width:0;cursor:pointer}.dayT .x:hover{color:#c0392b}.dayT .kd{border:0;background:none;color:var(--mute);padding:0 4px;min-width:0;cursor:pointer;font-size:11px}.dayT .add td{border:0;text-align:left;padding:4px 0 10px}.dayT .cnt td{font-weight:700;padding:4px 6px}
 .dayT textarea{border:0;background:transparent;width:100%;min-width:110px;min-height:54px;padding:4px 6px;font:inherit;box-sizing:border-box;resize:vertical;display:block}
 .daySr{display:flex;gap:6px;align-items:center;margin:14px 0 6px}.daySr input{flex:1;max-width:420px}.dayHits{display:grid;gap:4px;margin:0 0 10px;font-size:13px;max-height:220px;overflow:auto}.dayHits button{text-align:left;min-height:0;padding:5px 8px;font-weight:400;white-space:normal}.dayHits mark{background:#ffe27a}
@@ -651,7 +651,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div class="row" style="justify-content:space-between;align-items:center"><div class="row" style="align-items:center;gap:12px"><h3 id="finTitleH" style="margin:0">Alex Finance Personal</h3><span class="finTabs" role="tablist"><button type="button" id="finTabFin" class="on" role="tab">Finance</button><button type="button" id="finTabDay" role="tab">Alex Daily</button></span></div><div class="row" style="align-items:center" id="finYrNav"><button type="button" id="finPrev" title="Previous year">&lsaquo;</button><b id="finYr" style="min-width:48px;text-align:center"></b><button type="button" id="finNext" title="Next year">&rsaquo;</button></div><div class="row" style="align-items:center" id="dayNav" hidden><button type="button" id="dayPrev" title="Previous week">&lsaquo;</button><b id="dayWk" style="min-width:150px;text-align:center"></b><button type="button" id="dayNext" title="Next week">&rsaquo;</button><button type="button" id="dayToday">This week</button></div></div>
   <div id="finPane"><div class="small" style="margin:6px 0 10px">Only you can see this. Type amounts in the month boxes; the totals add up by month and for the year.</div>
   <div style="overflow-x:auto"><table class="finT" id="finT"></table></div></div>
-  <div id="dayPane" hidden><div class="small" style="margin:6px 0 10px">Only you can see this. Check off each item for the day. Rows marked # take a number or a word (like Weight or Total Steps); click ✓/# to switch a row. Changes save by themselves.</div>
+  <div id="dayPane" hidden><div class="small" style="margin:6px 0 10px">Only you can see this. Check off each item for the day. Rows marked # take a number or a word (like Weight or Total Steps) and rows marked 🕒 take a time (like Out the door); click the ✓/#/🕒 mark to switch a row. Changes save by themselves.</div>
   <div style="overflow-x:auto"><table class="dayT" id="dayT"></table></div>
   <div class="daySr"><input id="daySearch" type="search" placeholder="Search all notes…" autocomplete="off"><button type="button" id="daySearchClr">Clear</button></div>
   <div class="dayHits" id="dayHits" hidden></div>
@@ -3221,24 +3221,25 @@ const DAY_NOTES=3,dayId=()=>Math.random().toString(36).slice(2,10);
 const dayKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const daySun=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-x.getDay());return x};
 const dayDates=()=>Array.from({length:7},(_,i)=>{const x=new Date(dayWk);x.setDate(x.getDate()+i);return x});
-const dayTpl=()=>{const mk=(a,num)=>a.map(n=>({id:dayId(),name:n,kind:num.includes(n)?'num':'check'}));
+const dayTpl=()=>{const mk=(a,num)=>a.map(n=>({id:dayId(),name:n,kind:n==='Out the door'?'time':num.includes(n)?'num':'check'}));
   return {morning:mk(['Wake Up','Take multivitamin','Open curtain','Turn on light','Weight','NO M','NO P','NO G','Clean room','Steps before I leave','Drink water','Take out trash','Stretch','Elliptical','Light workout','Bicep curls','Sit ups','Push ups','Jumping jacks','Touch toes','Chair hip flexor','Knee strikes','Rows','1K walk','Floss','Brush teeth','Shave','Shower','Out the door'],['Weight','Steps before I leave']),
-    night:mk(['Stretch','Total Steps','No soda','GO TO BED'],['Total Steps'])}};
+    night:mk(['Stretch','Total Steps','No soda','GO TO BED'],['Total Steps']),v:2}};
+const DAY_KIND={check:['✓','Checkbox'],num:['#','Takes a number or word'],time:['🕒','Takes a time']},DAY_NEXT={check:'num',num:'time',time:'check'};
 const DAY_SEC=[['morning','MORNING'],['night','NIGHT']];
 function dayCellsDone(k){const v=(dayW.d[k]||{});return [...dayList.morning,...dayList.night].filter(r=>r.kind==='check'&&v[r.id]).length}
 function dayRender(){const ds=dayDates(),today=dayKey(new Date()),last=ds[6];
   $('dayWk').textContent=`${ds[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${last.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
   const hd=ds.map(d=>{const k=dayKey(d);return `<th class="${k===today?'today':''}">${d.toLocaleDateString('en-US',{weekday:'short'})}<br>${d.getMonth()+1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}</th>`}).join('');let h='';
   DAY_SEC.forEach(([s,label])=>{h+=`<tr><th></th><th class="sec" colspan="2">${label}</th>${hd}</tr>`;
-    dayList[s].forEach((r,i)=>{h+=`<tr data-s="${s}" data-i="${i}"><td class="n">${i+1}</td><td style="width:1px;white-space:nowrap"><button type="button" class="x" data-ddel title="Delete this row">&times;</button><button type="button" class="kd" data-dkind title="${r.kind==='num'?'Takes a number or word. Click to make it a checkbox':'Checkbox. Click to make it take a number or word'}">${r.kind==='num'?'#':'✓'}</button></td><td><input class="nm" data-dn value="${esc(r.name)}"></td>`+
-      ds.map(d=>{const k=dayKey(d),v=(dayW.d[k]||{})[r.id];return r.kind==='num'?`<td class="${k===today?'today':''}"><input data-dk="${k}" value="${esc(v||'')}"></td>`:`<td class="${v?'done':k===today?'today':''}"><input type="checkbox" data-dk="${k}"${v?' checked':''}></td>`}).join('')+'</tr>'});
+    dayList[s].forEach((r,i)=>{h+=`<tr data-s="${s}" data-i="${i}"><td class="n">${i+1}</td><td style="width:1px;white-space:nowrap"><button type="button" class="x" data-ddel title="Delete this row">&times;</button><button type="button" class="kd" data-dkind title="${DAY_KIND[r.kind][1]}. Click to change it to: ${DAY_KIND[DAY_NEXT[r.kind]][1].toLowerCase()}">${DAY_KIND[r.kind][0]}</button></td><td><input class="nm" data-dn value="${esc(r.name)}"></td>`+
+      ds.map(d=>{const k=dayKey(d),v=(dayW.d[k]||{})[r.id];return r.kind==='time'?`<td class="${k===today?'today':''}"><input type="time" data-dk="${k}" value="${esc(v||'')}"></td>`:r.kind==='num'?`<td class="${k===today?'today':''}"><input data-dk="${k}" value="${esc(v||'')}"></td>`:`<td class="${v?'done':k===today?'today':''}"><input type="checkbox" data-dk="${k}"${v?' checked':''}></td>`}).join('')+'</tr>'});
     h+=`<tr class="add"><td colspan="10"><button type="button" data-dadd="${s}">+ Add row</button></td></tr>`});
   h+=`<tr class="cnt"><td></td><td colspan="2" style="text-align:left">CHECKED OFF</td>${ds.map(d=>`<td>${dayCellsDone(dayKey(d))}</td>`).join('')}</tr>`;
   $('dayT').innerHTML=h;
   let n=`<tr><th></th><th class="sec">NOTES</th>${hd}</tr>`;for(let j=0;j<DAY_NOTES;j++)n+=`<tr><td class="n">${j+1}</td><td style="text-align:left;padding:4px 6px">Notes of the day ${j+1}</td>${ds.map(d=>{const k=dayKey(d);return `<td class="${k===today?'today':''}"><textarea data-nk="${k}" data-nj="${j}">${esc(((dayW.notes||{})[k]||[])[j]||'')}</textarea></td>`}).join('')}</tr>`;
   $('dayN').innerHTML=n}
 async function dayLoad(sun){await daySave();dayWk=sun;$('finMsg').textContent='';
-  try{if(!dayList){const l=await dayCol.doc('_list').get();dayList=l.exists?l.data():null;if(!dayList){dayList=dayTpl();dayListDirty=true}}
+  try{if(!dayList){const l=await dayCol.doc('_list').get();dayList=l.exists?l.data():null;if(!dayList){dayList=dayTpl();dayListDirty=true}else if(!dayList.v){dayList.morning.forEach(r=>{if(/^out the door$/i.test(r.name)&&r.kind==='check')r.kind='time'});dayList.v=2;dayListDirty=true}}
     const w=await dayCol.doc('w-'+dayKey(sun)).get();dayW=w.exists?w.data():{};}catch(e){$('finMsg').className='msg err';$('finMsg').textContent=errText(e);if(!dayList)dayList=dayTpl();dayW={}}
   dayW.d=dayW.d||{};dayW.notes=dayW.notes||{};dayDirty=false;dayRender();daySave()}
 async function daySave(loud){clearTimeout(dayTimer);if(!dayCol||!dayW)return true;try{
@@ -3252,14 +3253,14 @@ async function finTab(v){if(v===finView)return;if(v==='day'){if(!dayCol)return;a
 $('finTabFin').onclick=()=>finTab('fin');$('finTabDay').onclick=()=>finTab('day');
 const dayShift=n=>{const x=new Date(dayWk);x.setDate(x.getDate()+n);dayLoad(x)};
 $('dayPrev').onclick=()=>dayShift(-7);$('dayNext').onclick=()=>dayShift(7);$('dayToday').onclick=()=>dayLoad(daySun(new Date()));
-$('dayT').addEventListener('change',e=>{const t=e.target;if(t.type!=='checkbox'||!t.dataset.dk)return;const r=dayList[t.closest('tr').dataset.s][+t.closest('tr').dataset.i],k=t.dataset.dk;
+$('dayT').addEventListener('change',e=>{const t=e.target;if(t.type==='time'&&t.dataset.dk){const r=dayList[t.closest('tr').dataset.s][+t.closest('tr').dataset.i],v=dayW.d[t.dataset.dk]=dayW.d[t.dataset.dk]||{};if(t.value)v[r.id]=t.value;else delete v[r.id];dayDirty=true;daySoon();return}if(t.type!=='checkbox'||!t.dataset.dk)return;const r=dayList[t.closest('tr').dataset.s][+t.closest('tr').dataset.i],k=t.dataset.dk;
   const v=dayW.d[k]=dayW.d[k]||{};if(t.checked)v[r.id]=1;else delete v[r.id];t.parentElement.className=t.checked?'done':k===dayKey(new Date())?'today':'';dayDirty=true;
   const tds=$('dayT').querySelectorAll('tr.cnt td');dayDates().forEach((d,i)=>tds[i+2].textContent=dayCellsDone(dayKey(d)));daySoon()});
-$('dayT').addEventListener('input',e=>{const t=e.target,tr=t.closest('tr[data-s]');if(!tr||t.type==='checkbox')return;const r=dayList[tr.dataset.s][+tr.dataset.i];
+$('dayT').addEventListener('input',e=>{if(e.target.type==='time')return;const t=e.target,tr=t.closest('tr[data-s]');if(!tr||t.type==='checkbox')return;const r=dayList[tr.dataset.s][+tr.dataset.i];
   if(t.dataset.dn!=null){r.name=t.value;dayListDirty=true}else if(t.dataset.dk){const v=dayW.d[t.dataset.dk]=dayW.d[t.dataset.dk]||{};if(t.value.trim())v[r.id]=t.value;else delete v[r.id];dayDirty=true}daySoon()});
 $('dayT').addEventListener('click',async e=>{const a=e.target.closest('[data-dadd]');if(a){dayList[a.dataset.dadd].push({id:dayId(),name:'',kind:'check'});dayListDirty=true;dayRender();daySoon();const rs=$('dayT').querySelectorAll(`tr[data-s="${a.dataset.dadd}"] input.nm`);rs[rs.length-1].focus();return}
   const tr=e.target.closest('tr[data-s]');if(!tr)return;const rows=dayList[tr.dataset.s],i=+tr.dataset.i;
-  if(e.target.closest('[data-dkind]')){rows[i].kind=rows[i].kind==='num'?'check':'num';dayListDirty=true;dayRender();daySoon();return}
+  if(e.target.closest('[data-dkind]')){rows[i].kind=DAY_NEXT[rows[i].kind]||'check';dayListDirty=true;dayRender();daySoon();return}
   if(!e.target.closest('[data-ddel]'))return;if(!await sure(`Delete the ${rows[i].name?'"'+rows[i].name+'"':'blank'} row from Alex Daily? Past check marks for it will be hidden.`))return;rows.splice(i,1);dayListDirty=true;dayRender();daySoon()});
 $('dayN').addEventListener('input',e=>{const t=e.target;if(!t.dataset.nk)return;const a=dayW.notes[t.dataset.nk]=dayW.notes[t.dataset.nk]||Array(DAY_NOTES).fill('');a[+t.dataset.nj]=t.value;dayDirty=true;daySoon()});
 // Search notes: looks through every saved week (and this week's unsaved typing) for the words typed.
