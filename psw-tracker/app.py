@@ -53,7 +53,7 @@ MAX_BLOB = 20 * 1024 * 1024
 MAX_DOC = 1024 * 1024
 COOKIE = "psw_session"
 SEG = re.compile(r"^[A-Za-z0-9_\-]{1,64}$")
-OK_TYPES = re.compile(r"^(application/pdf|image/(png|jpeg|gif|webp)|text/(plain|csv)|application/json)$")
+OK_TYPES = re.compile(r"^(application/pdf|image/(png|jpeg|gif|webp)|text/(plain|csv)|application/json|application/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet))$")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
