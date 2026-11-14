@@ -1961,7 +1961,8 @@ $('mailBtns').addEventListener('click',async e=>{
 });
 
 /* ---------- files ---------- */
-const EXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',csv:'text/csv',txt:'text/plain'};
+const EXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',csv:'text/csv',txt:'text/plain',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
+const isOffice=f=>/officedocument|msword|ms-excel/.test(f.type||'')||/\.(docx|xlsx)$/i.test(f.name||'');
 // when a lead file was added and last saved, e.g. "Added 11/11/26 3:07 PM · Saved 11/11/26 3:15 PM"
 const fileWhen=iso=>{const d=iso&&new Date(iso);return d&&!isNaN(d)?d.toLocaleString('en-US',{month:'2-digit',day:'2-digit',year:'2-digit',hour:'numeric',minute:'2-digit'}).replace(',',''):''};
 const fileDates=f=>{const a=fileWhen(f.at),e=fileWhen(f.editedAt);return [a&&'Added '+a,e&&e!==a&&'Saved '+e].filter(Boolean).join(' · ')};
@@ -1970,7 +1971,7 @@ function renderFiles(){
   renderMail();signEnsure('lead');
   const fs=(cur&&cur.files)||[];
   warmFiles(fs);
-  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="fnb"><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span>${fileDates(f)?`<span class="sz fdt">${esc(fileDates(f))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span>${signBits(f,'lead','status')}<button class="pri" data-open="${esc(f.id)}">Open / edit</button>${assets?`<button data-ren="${esc(f.id)}" title="Change this file's name">Rename</button>`:''}${(a=>a?`<details class="fact"><summary>Actions ▾</summary><div class="factList">${a}</div></details>`:'')(signBits(f,'lead','btn')+shrinkBits(f)+(dl?`<button data-save="${esc(f.id)}">Download</button>`:''))}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
+  $('files').innerHTML=fs.length?fs.map(f=>`<li draggable="true" data-drag="${esc(f.id)}" title="Drag to your desktop or into an email"><span class="grip" aria-hidden="true">⠿</span><span class="fnb"><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span>${fileDates(f)?`<span class="sz fdt">${esc(fileDates(f))}</span>`:''}</span><span class="sz">${esc(fmtSize(f.size||0))}</span>${signBits(f,'lead','status')}<button class="pri" data-open="${esc(f.id)}">${isOffice(f)?(/\.xlsx$/i.test(f.name)?'Open in Excel':'Open in Word'):'Open / edit'}</button>${assets?`<button data-ren="${esc(f.id)}" title="Change this file's name">Rename</button>`:''}${(a=>a?`<details class="fact"><summary>Actions ▾</summary><div class="factList">${a}</div></details>`:'')(signBits(f,'lead','btn')+shrinkBits(f)+(dl?`<button data-save="${esc(f.id)}">Download</button>`:''))}${assets?`<button class="danger" data-rm="${esc(f.id)}">Remove</button>`:''}</li>`).join(''):'<li class="small" style="border:none;padding:0">No files attached.</li>';
 }
 async function addFiles(list){
   if(!list.length||!assets)return;if(!(await ensureSaved()))return;
@@ -2062,7 +2063,7 @@ fz.addEventListener('drop',e=>addCombo([...(e.dataTransfer.files||[])]))}
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function storeBytes(buf,type){
   try{return await assets.upload(new Blob([buf],{type}),{type})}
-  catch(e){if(!e||e.code!=='unsupported_type'||type!=='application/pdf')throw e;
+  catch(e){if(!e||e.code!=='unsupported_type'||!/^application\//.test(type))throw e;
     const r=await assets.upload(new Blob([toB64(buf)],{type:'text/plain'}),{type:'text/plain'});return {...r,enc:'b64'}}}
 async function fileBytes(f){const res=await fetch('/_blob/'+f.id);if(!res.ok)throw new Error('missing');const b=await res.arrayBuffer();
   return f.enc==='b64'?Uint8Array.from(atob(new TextDecoder().decode(b).trim()),c=>c.charCodeAt(0)):new Uint8Array(b)}
@@ -2071,7 +2072,7 @@ async function uploadOne(f){
   const m=$('fileMsg');if(isLocked('lead')){m.className='msg err';m.textContent='This lead is view-only right now, so files can’t be added.';return false}
   {const nn=f.name.replace(/( com (?:auto )?quote sheet)(?:\s*\(\d+\)|[\s_-]*(?:filled|completed?|signed))+\.pdf$/i,'$1.pdf');if(nn!==f.name)f=new File([f],nn,{type:f.type})} // a returned copy replaces the original
   const ext=(f.name.split('.').pop()||'').toLowerCase(),type=EXT[ext];
-  if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;return}
+  if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, Word (.docx), Excel (.xlsx), images, CSV or text files can be attached.`;return}
   m.className='msg';m.textContent=`Uploading ${f.name}…`;
   // send a plain copy of the bytes (not the File object), and say what was sent if storage refuses it
   let buf;try{buf=await f.arrayBuffer()}catch(_){m.className='msg err';m.textContent=`${f.name}: couldn’t read the file. Try again.`;return false}
@@ -2093,7 +2094,7 @@ $('files').addEventListener('click',async e=>{
     const ext=(f.name.match(/\.[A-Za-z0-9]{1,5}$/)||[''])[0];if(ext&&!n.toLowerCase().endsWith(ext.toLowerCase()))n+=ext; // keeps .pdf etc.
     try{const fresh=leads.find(l=>l.id===cur.id)||cur,files=(fresh.files||[]).map(x=>x.id===ren?{...x,name:n}:x);
       await leadsCol.doc(cur.id).update({files});cur.files=files;renderFiles();toast(`Renamed to ${n}`)}catch(err){m.className='msg err';m.textContent=errText(err)}return}
-  if(op){const f=(cur.files||[]).find(x=>x.id===op);if(f)openEditor(f);return}
+  if(op){const f=(cur.files||[]).find(x=>x.id===op);if(f&&isOffice(f)){try{const b=await fileBytes(f);await dl.save({filename:f.name,data:new Blob([b],{type:f.type})});m.className='msg ok';m.textContent=`${f.name} downloaded. Open it from your Downloads to edit it in ${/\.xlsx$/i.test(f.name)?'Excel':'Word'}.`}catch(err){if(err&&err.code!=='declined'){m.className='msg err';m.textContent=errText(err)}}return}if(f)openEditor(f);return}
   if(sv){const f=(cur.files||[]).find(x=>x.id===sv);try{const b=await fileBytes(f);await dl.save({filename:f.name,data:b})}catch(err){if(err&&err.code!=='declined'){m.className='msg err';m.textContent=errText(err)}}}
   if(rm){
     {const f=(cur.files||[]).find(x=>x.id===rm);if(!(await sureDel(`Delete the file ${f?f.name:''} from this lead? This can’t be undone.`)))return}
@@ -2119,6 +2120,7 @@ $('edClose').onclick=async()=>{const c=$('edClose');if(c.disabled)return;
   if(ed&&ed.dirty&&assets&&(ed.save||cur&&cur.id)){c.disabled=true;const q=sheetKind(ed.f.name)?sheetVals():null,ok=await saveEd(false);c.disabled=false;if(ok){closeEditor();if(q)await sheetToLead(q)}return}
   if(ed&&ed.dirty&&$('edClose').dataset.armed!=='1'){$('edClose').dataset.armed='1';$('edClose').textContent='Close without saving?';setTimeout(()=>{$('edClose').dataset.armed='';$('edClose').textContent='Close'},4000);return}$('edClose').dataset.armed='';$('edClose').textContent='Close';closeEditor()};
 async function openEditor(f,opt){
+  if(isOffice(f)){try{const b=await fileBytes(f);await dl.save({filename:f.name,data:new Blob([b],{type:f.type})});toast(`${f.name} downloaded. Open it from your Downloads to edit it.`)}catch(err){if(err&&err.code!=='declined')toast(errText(err))}return}
   {const home=/ personal home quote sheet\.pdf$/i.test(f.name);if((sheetKind(f.name)||home)&&assets&&cur&&cur.id&&!sheetChecked.has(f.id)){const up=home?await upgradeHome(f):await upgradeAuto(f);if(up===true){const nf=(cur.files||[]).find(x=>x.name===f.name);if(nf)f=nf}sheetChecked.add(f.id)}}
   const kind=/pdf/.test(f.type)||/\.pdf$/i.test(f.name)?'pdf':/^image\//.test(f.type)?'img':'text';
   ed={f,kind,notes:[],fields:[],dirty:false,save:opt&&opt.save};$('ed').classList.toggle('top',!!ed.save);
@@ -2479,7 +2481,7 @@ async function supFill(f){const m=$('edSupMsg'),say=(t,c='')=>{m.className='msg 
       const client=(g('client_name')||cur.company||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',have=new Set((cur.files||[]).map(x=>x.name.toLowerCase()));
       let name=`${client} com sup.docx`;for(let i=2;have.has(name.toLowerCase());i++)name=`${client} com sup ${i}.docx`;
       const ok=await uploadOne(new File([await wd.save()],name,{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
-      if(ok)say(`Filled ${done} blank${done===1?'':'s'}${ai?' (Claude matched them)':sample?` (Claude couldn’t: ${aiErr}, so matched by label)`:' (Claude isn’t turned on, so matched by label)'} and saved ${name} under Files. Use Actions > Download to open it in Word, check it and finish the rest.`,'ok');else say($('fileMsg').textContent||'Couldn’t save it.','err');return}
+      if(ok)say(`Filled ${done} blank${done===1?'':'s'}${ai?' (Claude matched them)':sample?` (Claude couldn’t: ${aiErr}, so matched by label)`:' (Claude isn’t turned on, so matched by label)'} and saved ${name} under Files. Click Open in Word next to it to check it and finish the rest.`,'ok');else say($('fileMsg').textContent||'Couldn’t save it.','err');return}
     say('Filling the form…');await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const doc=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true}),form=doc.getForm();let done=0;
     for(const [k,v] of Object.entries(vals)){try{const fl=form.getField(k),s=String(v).replace(/\s*\(.*\)$/,'');
       if(fl instanceof PDFLib.PDFCheckBox){if(v===true||/^(true|yes|y|x|on)$/i.test(s)){fl.check();done++}}
@@ -3138,7 +3140,7 @@ function renderTaskFiles(){$('tUpRow').hidden=!assets;
   $('tFiles').innerHTML=tFiles.map(f=>`<li><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(fmtSize(f.size||0))}</span><button class="pri" data-topen="${esc(f.id)}">Open</button><button data-tsave="${esc(f.id)}">Save</button>${assets?`<button class="danger" data-trm="${esc(f.id)}">Remove</button>`:''}</li>`).join('')}
 async function addTaskFiles(list){if(!assets)return;const m=$('taskMsg');
   for(const f of list){const type=EXT[(f.name.split('.').pop()||'').toLowerCase()];
-    if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;continue}
+    if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, Word (.docx), Excel (.xlsx), images, CSV or text files can be attached.`;continue}
     m.className='msg';m.textContent=`Uploading ${f.name}…`;
     try{const buf=await f.arrayBuffer(),head=new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0,4)));
       if(type==='application/pdf'&&head!=='%PDF'){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF, so it can’t be stored.`;continue}
@@ -3777,7 +3779,7 @@ $('clDel').onclick=async()=>{if(!editClient)return;{const nm=editClient.company|
 let clPending=[];
 async function addClientFiles(list,pid){if(!assets)return;const m=pid?$('ppMsg'):$('clientMsg');if(isLocked('client')){m.className='msg err';m.textContent='This client is view-only right now, so files can’t be added.';return}
   for(const f of list){const type=EXT[(f.name.split('.').pop()||'').toLowerCase()];
-    if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, images, CSV or text files can be attached. Save Word/Excel files as PDF first.`;continue}
+    if(!type){m.className='msg err';m.textContent=`${f.name}: only PDF, Word (.docx), Excel (.xlsx), images, CSV or text files can be attached.`;continue}
     m.className='msg';m.textContent=`Uploading ${f.name}…`;
     try{const buf=await f.arrayBuffer();if(type==='application/pdf'&&new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0,4)))!=='%PDF'){m.className='msg err';m.textContent=`${f.name} isn’t a real PDF, so it can’t be stored.`;continue}
       const r=await storeBytes(buf,type),entry={id:r.id,name:f.name,type,size:r.sizeBytes,...(r.enc?{enc:r.enc}:{}),at:new Date().toISOString(),...(me?{by:me}:{}),...(pid?{pid}:{})};
