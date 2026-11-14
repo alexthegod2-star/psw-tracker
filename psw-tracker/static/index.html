@@ -880,7 +880,8 @@ function render(){
     return hay.includes(q)||(qd.length>=3&&[l.phone,l.homePhone,l.workPhone].some(x=>String(x||'').replace(/\D/g,'').includes(qd)));
   });
   const sv=l=>sortK==='nfiles'?(l.files||[]).length:sortK==='status'?(l.dead===true?3:l.sold===true?2:made(l)?1:0):String(l[sortK]||''); // status order: No contact, Contacted, Sold, Dead
-  rows.sort((a,b)=>{const va=sv(a),vb=sv(b);
+  rows.sort((a,b)=>{const da=a.dead===true,db=b.dead===true;if(da!==db)return da?1:-1; // dead leads always go to the bottom, whatever the sort
+    const va=sv(a),vb=sv(b);
     if(va===vb)return String(b.createdAt||'').localeCompare(String(a.createdAt||''));
     if(va==='')return 1;if(vb==='')return -1;
     return (va<vb?-1:1)*sortDir});
