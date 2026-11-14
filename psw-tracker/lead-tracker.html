@@ -2401,7 +2401,7 @@ async function docxSpots(bytes){
   const doc=new DOMParser().parseFromString(await xf.async('string'),'application/xml');
   const kids=(el,tag)=>[...el.childNodes].filter(n=>n.namespaceURI===W&&n.localName===tag),all=(el,tag)=>[...el.getElementsByTagNameNS(W,tag)];
   const up=(el,tag)=>{for(let n=el.parentNode;n&&n.nodeType===1;n=n.parentNode)if(n.namespaceURI===W&&n.localName===tag)return n;return null};
-  const textOf=el=>all(el,'r').map(r=>[...r.childNodes].map(n=>n.localName==='t'?n.textContent:n.localName==='tab'?' ':'').join('')).join('').replace(/\s+/g,' ').trim();
+  const textOf=el=>(el.namespaceURI===W&&el.localName==='r'?[el]:all(el,'r')).map(r=>[...r.childNodes].map(n=>n.localName==='t'?n.textContent:n.localName==='tab'?' ':'').join('')).join('').replace(/\s+/g,' ').trim();
   const clip=t=>t.replace(/[\s:_.$#]+$/,'').replace(/^[\s:_.]+/,'').slice(-110);
   const mk=(tag,attrs)=>{const e=doc.createElementNS(W,'w:'+tag);Object.entries(attrs||{}).forEach(([k,v])=>e.setAttributeNS(W,'w:'+k,v));return e};
   const cellLeft=el=>{const tc=up(el,'tc');if(!tc)return '';for(let c=tc.previousSibling;c;c=c.previousSibling)if(c.localName==='tc'){const t=textOf(c);if(t)return t}return ''};
@@ -2412,15 +2412,17 @@ async function docxSpots(bytes){
   const setRuns=(runs,v,after)=>{const ts=runs.flatMap(r=>kids(r,'t'));if(ts.length){ts[0].textContent=v;ts[0].setAttribute('xml:space','preserve');ts.slice(1).forEach(t=>t.textContent='')}
     else if(after){const r=mk('r'),t=mk('t');t.setAttribute('xml:space','preserve');t.textContent=v;r.appendChild(t);after.parentNode.insertBefore(r,after.nextSibling)}};
   // 1) Word form fields (text boxes and check boxes made with the old Forms toolbar)
-  for(const p of all(doc,'p')){const runs=all(p,'r');let before='';
+  const rawRun=r=>[...r.childNodes].map(n=>n.localName==='t'?n.textContent:n.localName==='tab'?' ':'').join('');
+  for(const p of all(doc,'p')){const runs=all(p,'r');let before='',lastQ='',prevOpt='';
     for(let i=0;i<runs.length;i++){const fc=kids(runs[i],'fldChar')[0];
-      if(!(fc&&fc.getAttributeNS(W,'fldCharType')==='begin'&&kids(fc,'ffData').length)){if(!kids(runs[i],'fldChar').length)before+=textOf(runs[i])+' ';continue}
+      if(!(fc&&fc.getAttributeNS(W,'fldCharType')==='begin'&&kids(fc,'ffData').length)){if(!kids(runs[i],'fldChar').length)before+=rawRun(runs[i]);continue}
       const ff=kids(fc,'ffData')[0];let j=i+1,sep=-1,end=-1;for(;j<runs.length;j++){const c=kids(runs[j],'fldChar')[0];if(!c)continue;const ty=c.getAttributeNS(W,'fldCharType');if(ty==='separate')sep=j;if(ty==='end'){end=j;break}}
       if(end<0)break;const inner=runs.slice(i,end+1);inner.forEach(r=>kids(r,'t').forEach(t=>used.add(t)));
       const cb=kids(ff,'checkBox')[0],ti=kids(ff,'textInput')[0];
-      if(cb){const right=runs.slice(end+1).map(textOf).join(' ').split(/[☐☒]/)[0];
-        add('check',[clip(before)||clip(cellLeft(p)),clip(right)].filter(Boolean).join(' / '),()=>{kids(cb,'checked').forEach(e=>cb.removeChild(e));cb.appendChild(mk('checked',{val:'1'}))})}
-      else if(ti){const res=sep>=0?runs.slice(sep+1,end):[],lab=labelFor(p,before);add('text',lab,v=>setRuns(res,v,runs[sep>=0?sep:i]))}
+      if(cb){let right='';for(const r of runs.slice(end+1)){const c=kids(r,'fldChar')[0];if(c&&c.getAttributeNS(W,'fldCharType')==='begin')break;right+=rawRun(r)}
+        const opt=clip(right.split(/[☐☒]/)[0].replace(/\s+/g,' ')),b=clip(before.replace(/\s+/g,' ')),q=(prevOpt&&b===prevOpt&&lastQ)?lastQ:(b||clip(cellLeft(p))||clip(prevPara(p)));lastQ=q;prevOpt=opt;
+        add('check',[q,opt].filter(Boolean).join(' / '),()=>{kids(cb,'checked').forEach(e=>cb.removeChild(e));cb.appendChild(mk('checked',{val:'1'}))})}
+      else if(ti){const res=sep>=0?runs.slice(sep+1,end):[],lab=labelFor(p,before.replace(/\s+/g,' '));prevOpt='';add('text',lab,v=>setRuns(res,v,runs[sep>=0?sep:i]))}
       before='';i=end}}
   // 2) content controls (Developer tab boxes, date pickers, drop-downs, check boxes)
   for(const sd of all(doc,'sdt')){const pr=kids(sd,'sdtPr')[0],ct=kids(sd,'sdtContent')[0];if(!pr||!ct||all(ct,'sdt').length)continue;
