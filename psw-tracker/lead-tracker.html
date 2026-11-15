@@ -1471,9 +1471,13 @@ async function fileText(f){
     pdfjsLib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';
     const doc=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;
     let out=[];lastFields={};
-    for(let i=1;i<=Math.min(doc.numPages,15);i++){const pg=await doc.getPage(i);
+    for(let i=1;i<=Math.min(doc.numPages,60);i++){const pg=await doc.getPage(i);
       const tc=await pg.getTextContent();out.push(tc.items.map(x=>x.str+(x.hasEOL?'\n':' ')).join(''));
       try{const an=await pg.getAnnotations();an.forEach(a=>{const fv=Array.isArray(a.fieldValue)?a.fieldValue[0]:a.fieldValue;if(a.fieldName&&fv&&typeof fv==='string'){out.push(`${a.fieldName}: ${fv}`);lastFields[a.fieldName]=fv}})}catch(_){}}
+    // long dec pages carry privacy notices and policy wording; when the text runs long, drop those pages so the driver/vehicle pages near the end still reach Claude
+    if(out.join('\n').length>36000){const keep=x=>/date of birth|\bD\.?O\.?B\b|licen[cs]e (?:no|number|#)|\bVIN\b|\b(?=[A-HJ-NPR-Z0-9]*\d)[A-HJ-NPR-Z0-9]{17}\b/i.test(x),
+        junk=x=>/privacy|protect your information|personal information|opt[- ]out|affiliates|fraud warning|notice of information|consumer privacy act|we may disclose/i.test(x);
+      const slim=out.filter(x=>keep(x)||!junk(x));if(slim.length<out.length)out=slim}
     return out.join('\n');
   }
   if(ext==='docx'){await loadJs(CDN+'mammoth/1.6.0/mammoth.browser.min.js');return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
