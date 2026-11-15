@@ -256,12 +256,12 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   </div>
   <div id="clientsView" hidden>
     <div class="bar">
-      <input id="cq" type="search" placeholder="Search name, phone, email, policy #, carrier">
+      <input id="cq" type="search" placeholder="Search name, phone, email, policy #, carrier, date created (11/15/2026)">
       <select id="cfAgent"><option value="">Everyone</option></select>
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th data-ck="name">Client</th><th data-ck="firstName">First</th><th data-ck="lastName">Last</th><th data-ck="phone">Cell</th><th data-ck="email">Email</th><th data-ck="pol">Policies</th><th data-ck="renew">Next renewal</th><th data-ck="agent">Agent</th></tr></thead>
+        <thead><tr><th data-ck="name">Client</th><th data-ck="firstName">First</th><th data-ck="lastName">Last</th><th data-ck="phone">Cell</th><th data-ck="email">Email</th><th data-ck="pol">Policies</th><th data-ck="renew">Next renewal</th><th data-ck="agent">Agent</th><th data-ck="createdAt" title="The day the client was added">Created</th></tr></thead>
         <tbody id="ctb"></tbody>
       </table>
       <div class="empty" id="cempty" hidden></div>
@@ -3186,11 +3186,12 @@ $('tDel').onclick=async()=>{if(!editTask)return;if(!(await sureDel(`Delete the t
 const clientsCol=db.collection('clients');let clients=[],editClient=null;
 const clientName=c=>c.company||[c.firstName,c.lastName].filter(Boolean).join(' ')||'(no name)';
 const nextRenew=c=>(c.policies||[]).map(p=>p.exp).filter(x=>x&&x>=todayISO()).sort()[0]||'';
+const clCreated=c=>{const d=c.createdAt?new Date(c.createdAt):null;return d&&!isNaN(d)?`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`:''}; // MM/DD/YYYY in local time
 clientsCol.onSnapshot(s=>{clients=s.docs.map(d=>({id:d.id,...d.data()}));renderClients();clStaleCheck()},e=>{$('cempty').hidden=false;$('cempty').textContent=errText(e)});
 // client list: click a heading to sort by it, again to reverse; blanks go last; ties fall back to the client name
 let cSortK='name',cSortDir=1;
 const pol=c=>(c.policies||[]).map(p=>p.line).filter(Boolean).join(', ')||((c.policies||[]).length?`${c.policies.length}`:'');
-function clCmp(a,b){const v=c=>String(cSortK==='name'?clientName(c):cSortK==='pol'?pol(c):cSortK==='renew'?nextRenew(c)||'':cSortK==='phone'?String(c.phone||'').replace(/\D/g,''):c[cSortK]||'').trim().toLowerCase(),va=v(a),vb=v(b);
+function clCmp(a,b){const v=c=>String(cSortK==='name'?clientName(c):cSortK==='pol'?pol(c):cSortK==='renew'?nextRenew(c)||'':cSortK==='phone'?String(c.phone||'').replace(/\D/g,''):cSortK==='createdAt'?String(c.createdAt||''):c[cSortK]||'').trim().toLowerCase(),va=v(a),vb=v(b);
   if(!va!==!vb)return va?-1:1;return (va.localeCompare(vb,undefined,{numeric:true})*cSortDir)||clientName(a).localeCompare(clientName(b))}
 function renderClients(){
   $('clientCount').textContent=clients.length;
@@ -3201,12 +3202,12 @@ function renderClients(){
     const ppl=c.people||[],phones=[c.phone,c.phone2,c.workPhone,...ppl.flatMap(p=>[p.phone,p.phone2,p.workPhone])];
     // a phone number matches however it's typed: 7472501815, 747-250-1815, (747) 250-1815, 250-1815
     if(qDigits&&phones.some(x=>String(x||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').includes(qDigits)))return true;
-    return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,...phones,c.email,c.email2,c.address,c.location,c.notes,c.genNotes,...ppl.flatMap(p=>[p.firstName,p.lastName,p.preferredName,p.email,p.email2]),...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number])].join(' ').toLowerCase().includes(q)})
+    return [c.company,c.dba,c.firstName,c.lastName,c.preferredName,...phones,c.email,c.email2,c.address,c.location,c.notes,c.genNotes,...ppl.flatMap(p=>[p.firstName,p.lastName,p.preferredName,p.email,p.email2]),...(c.policies||[]).flatMap(p=>[p.line,p.carrier,p.company,p.number]),clCreated(c),clCreated(c).replace(/\b0(\d)/g,'$1')].join(' ').toLowerCase().includes(q)})
     .sort(clCmp);
   document.querySelectorAll('th[data-ck]').forEach(th=>{th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.ck===cSortK?(cSortDir>0?' ▲':' ▼'):'')});
   const nr=c=>{const d=nextRenew(c);return d?`<span class="${d<=new Date(Date.now()+60*864e5).toISOString().slice(0,10)?'due-today':''}">${esc(fmtDate(d))}</span>`:''};
-  $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(fmtClPhone(c.phone))}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td></tr>`).join('');
-  $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(fmtClPhone(c.phone)),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent)].filter(Boolean).join(' · ')}</div></div>`).join('');
+  $('ctb').innerHTML=rows.map(c=>`<tr data-client="${esc(c.id)}"><td><b>${esc(clientName(c))}</b>${c.dba?`<div class="small">DBA ${esc(c.dba)}</div>`:''}</td><td>${esc(c.firstName)}</td><td>${esc(c.lastName)}</td><td>${esc(fmtClPhone(c.phone))}</td><td>${esc(c.email)}</td><td>${esc(pol(c))}</td><td>${nr(c)}</td><td>${esc(c.agent)}</td><td>${esc(clCreated(c))}</td></tr>`).join('');
+  $('ccards').innerHTML=rows.map(c=>`<div class="lc" data-client="${esc(c.id)}"><div class="t">${esc(clientName(c))}</div><div class="m">${[esc([c.firstName,c.lastName].filter(Boolean).join(' ')),esc(fmtClPhone(c.phone)),esc(pol(c)),nextRenew(c)?'renews '+nr(c):'',esc(c.agent),clCreated(c)?'added '+esc(clCreated(c)):''].filter(Boolean).join(' · ')}</div></div>`).join('');
   const ce=$('cempty');ce.hidden=rows.length>0;ce.innerHTML=clients.length?'<b>No matching clients</b>Try a different search.':'<b>No clients yet</b>Click “+ New client”, or open a lead and click “→ PSW Client”.';
 }
 ['cq','cfAgent'].forEach(id=>$(id).addEventListener('input',renderClients));
