@@ -3801,12 +3801,16 @@ const CL_FILL={company:['clCompany','Business name'],busType:['clBusType','Busin
   phone2:['clPhone2','Home phone'],email2:['clEmail2','Secondary email'],workPhone:['clWork','Work / office phone'],
   address:['clAddress','Mailing street address'],city:['clCity','Mailing city'],state:['clState','Mailing state (2 letters)'],zip:['clZip','Mailing ZIP'],
   location:['clLocation','Business location street address, if different'],locCity:['clLocCity','Location city'],locState:['clLocState','Location state (2 letters)'],locZip:['clLocZip','Location ZIP']};
+// a name typed in all capitals (JOHN GOMEZ, O'BRIEN-SMITH TRUCKING LLC) becomes John Gomez, O'Brien-Smith Trucking LLC; names already in mixed case are left alone
+const NAME_KEEP=new Set(['LLC','LLP','LP','PC','PLLC','DBA','II','III','IV','USA','CPA','DDS','MD']);
+const properName=v=>{v=String(v??'');if(!/[A-Z]/.test(v)||/[a-z]/.test(v))return v;
+  return v.toLowerCase().replace(/[a-z0-9]+/g,(w,i,str)=>{const up=w.toUpperCase();if(NAME_KEEP.has(up))return up;if(i>0&&str[i-1]==="'"&&w.length===1)return w;return w[0].toUpperCase()+w.slice(1)})};
 function clApply(o){let n=0;
   // only one phone number in the document (say just home or work): it goes in Cell phone too
   if(o&&typeof o==='object'){const ph=[...new Set(['phone','phone2','workPhone'].map(k=>String(o[k]??'').replace(/\D/g,'')).filter(Boolean))];
     if(ph.length===1&&!String(o.phone??'').trim())o={...o,phone:['phone2','workPhone'].map(k=>String(o[k]??'').trim()).find(Boolean)}}
   for(const [k,[id]] of Object.entries(CL_FILL)){const el=$(id);let v=String((o&&o[k])??'').trim();if(!el||!v||el.value.trim())continue;
-    if(/phone|^workPhone$/i.test(k))v=fmtPhone(v);if(k==='dob')v=fmtDOB(v);if(/state$/i.test(k))v=v.toUpperCase().slice(0,2);
+    if(/phone|^workPhone$/i.test(k))v=fmtPhone(v);if(k==='dob')v=fmtDOB(v);if(/^(firstName|lastName|company|dba)$/.test(k))v=properName(v);if(/state$/i.test(k))v=v.toUpperCase().slice(0,2);
     if(el.tagName==='SELECT'){const hit=[...el.options].find(op=>op.value&&op.value.toLowerCase()===v.toLowerCase());if(!hit)continue;v=hit.value}
     el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));n++}
   return n}
@@ -3890,7 +3894,7 @@ function ppApply(o){let n=0;const set=(el,v)=>{v=String(v??'').trim();if(!el||!v
   for(const k in PP_FEES){const v=bNum(o[k]);if(v!=null)set($('ppFees').querySelector(`[data-f=${k}]`),bMoney(v))}ppTotal();
   if($('ppEff').value&&!$('ppExp').value){const iso=typedISO($('ppEff').value);if(/^\d{4}-/.test(iso)){const d=new Date(iso+'T00:00');d.setFullYear(d.getFullYear()+1);$('ppExp').value=fmtDate(d.toISOString().slice(0,10))}}
   for(const [k,v] of Object.entries(o.extra||{})){const el=$('ppExtra').querySelector(`[data-x="${k}"]`);if(!el)continue;let w=String(v??'').trim();
-    if(/_dob$/.test(k)&&w)w=fmtDOB(w);if(/^v\d+_miles$/.test(k)){const d=w.replace(/\D/g,'').slice(0,6);w=d?Number(d).toLocaleString('en-US'):''}if(/^v\d+_year$/.test(k))w=w.replace(/\D/g,'').slice(0,4);if(el.dataset.money&&/\d/.test(w))w=fmtMoney(w);set(el,w)}
+    if(/_dob$/.test(k)&&w)w=fmtDOB(w);if(/^d\d+_(first|last)$/.test(k))w=properName(w);if(/^v\d+_miles$/.test(k)){const d=w.replace(/\D/g,'').slice(0,6);w=d?Number(d).toLocaleString('en-US'):''}if(/^v\d+_year$/.test(k))w=w.replace(/\D/g,'').slice(0,4);if(el.dataset.money&&/\d/.test(w))w=fmtMoney(w);set(el,w)}
   $('ppExtra').querySelectorAll('[data-x$=_dob]').forEach(el=>{if(el.value)el.dispatchEvent(new Event('input',{bubbles:true}))}); // Yrs lic from age
   ppNumAll();
   return n}
@@ -4516,7 +4520,7 @@ $('mlFrom').addEventListener('click',e=>{if(e.target.id!=='mlChange')return;$('m
 // Open in Outlook instead: the old way (subject only, so Outlook adds its signature; the message is copied to paste in)
 $('mlOutlook').onclick=()=>{const to=$('mlTo').value.trim();$('mlOutlook').href=`mailto:${to}?subject=${encodeURIComponent($('mlSubj').value)}`;if(edText('mlBody'))copyText(edText('mlBody').replace(REVIEW_BTN,'Leave a review here: '+REVIEW_URL));mlClose()};
 // quick Cc buttons: click adds the person (separated by "; "), click again takes them off
-const CC_QUICK=[['Alex','alexk@pswinsurance.com'],['Patricia','patriciag@pswinsurance.com'],['Anna','anna.pswinsurance@gmail.com'],['Paul','paulm@pswinsurance.com'],['Service','service@pswinsurance.com']];
+const CC_QUICK=[['Alex','alexk@pswinsurance.com'],['Joel','joel@brosautoca.com'],['Patricia','patriciag@pswinsurance.com'],['Anna','anna.pswinsurance@gmail.com'],['Paul','paulm@pswinsurance.com'],['Service','service@pswinsurance.com']];
 const ccList=()=>$('mlCc').value.split(/[;,]/).map(x=>x.trim()).filter(Boolean);
 const ccMark=()=>{const on=new Set(ccList().map(x=>x.toLowerCase()));for(const b of $('mlCcQuick').querySelectorAll('button'))b.classList.toggle('pri',on.has(b.dataset.cc))};
 $('mlCcQuick').insertAdjacentHTML('beforeend',CC_QUICK.map(([n,a])=>`<button type="button" data-cc="${a}" title="${a}">${n}</button>`).join(''));
