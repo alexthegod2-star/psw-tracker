@@ -4724,7 +4724,7 @@ $('clMailList').addEventListener('click',async e=>{const b=e.target.closest('[da
 $('clMail').addEventListener('click',()=>{const to=clMailTo();if(!to){clMailNote();$('clEmail').focus();return}
   const who=clientName({company:$('clCompany').value.trim(),firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim()});
   if(mailSt&&mailSt.configured){const c=editClient||{};
-    composeMail({to,review:{name:$('clFirst').value.trim()||(who!=='(no name)'?who:'')},subject:who&&who!=='(no name)'?who:'',body:'',files:[...((c.files||clPending)||[])].reverse().filter(f=>!f.enc).map(f=>({id:f.id,name:f.name,on:false})),
+    composeMail({to,review:{name:$('clFirst').value.trim()||(who!=='(no name)'?who:'')},subject:who&&who!=='(no name)'?who:'',body:`Hi${$('clFirst').value.trim()?' '+properName($('clFirst').value.trim()):''},\n\n`,files:[...((c.files||clPending)||[])].reverse().filter(f=>!f.enc).map(f=>({id:f.id,name:f.name,on:false})),
       extra:editClient?[...certList()].reverse().map(x=>({name:x.name,type:'application/pdf',on:false,get:async()=>flatPdf(await fileBytes(x))})):[]});return}
   location.href=`mailto:${to.replace(/;\s*/g,',')}`});
 // Email cert to client: a new email to the client with the subject and a short message filled in; the PDF is saved for dragging in, since a mailto link can't carry attachments
