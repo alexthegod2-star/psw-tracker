@@ -1504,7 +1504,7 @@ $('qsGo').onclick=async()=>{const c=qsCtx,m=$('qsMsg');if(!c)return;const S=QL_S
     const body=`Hi${fn?' '+fn:''},\n\nTo finish your ${S.what}, please fill in or check the information here:\n${url}\n\nWhat we already have is filled in, so just correct anything that’s wrong and fill in the blanks, then click Send. The link works for 14 days.\n\nThank you,`;
     const subject=`Your ${S.what}: please finish the form`;
     if(mailSt&&mailSt.configured)composeMail({to:c.to,subject,body});
-    else location.href=`mailto:${encodeURIComponent(c.to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    else{if(c.to)leadLogContact(cur.id,'Email','Email: '+subject);location.href=`mailto:${encodeURIComponent(c.to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`}
     edMsg(`Link made for the ${S.name}. Send the email to the customer.`,'ok')}
   catch(err){m.className='msg err';m.textContent=err.message||errText(err)}finally{$('qsGo').disabled=false}};
 // a lead still showing "waiting" asks the server whether the client already sent the link, and catches up if so
@@ -1816,10 +1816,15 @@ const isPhone=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);let txLogged
 const txDigits=()=>{const d=$('txTo').value.replace(/\D/g,'');return d.length===10?'+1'+d:d.length===11&&d[0]==='1'?'+'+d:d};
 const txCopy=async(t,what)=>{try{await navigator.clipboard.writeText(t);$('txMsgOut').className='msg ok';$('txMsgOut').textContent=`${what} copied.`;return true}catch(_){$('txMsgOut').className='msg err';$('txMsgOut').textContent=`Couldn’t copy the ${what.toLowerCase()}; select it and copy it yourself.`;return false}};
 const txSetLink=()=>{$('txPhone').href=`sms:${txDigits()}${/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?'}body=${encodeURIComponent($('txMsg').value)}`};
+// adds an entry to a lead's contact log (the lead may be closed by the time an email finishes sending)
+async function leadLogContact(id,how,notes){if(!id||!leadsCol)return;const now=new Date().toISOString(),entry={at:now,how,notes,createdAt:now};if(me)entry.by=me;
+  try{const ref=await leadsCol.doc(id).collection('contacts').add(entry);
+    if(cur&&cur.id===id){if(!contacts.some(c=>c.id===ref.id))contacts.push({id:ref.id,...entry});await syncLatest();renderLog()}
+    else await leadsCol.doc(id).update({lastContacted:now,howContacted:how})}catch(e){toast('The email went, but it couldn’t be added to the contact log: '+errText(e))}}
 async function txLogIt(){if(txCtx!=='lead'||txLogged||!$('txLog').checked||!cur)return;txLogged=true;
   try{const entry={at:new Date().toISOString(),how:'Text',notes:$('txMsg').value.trim(),createdAt:new Date().toISOString()};if(me)entry.by=me;if(txStep){entry.step=txStep;entry.notes=txStep+' - '+entry.notes}
     const ref=await leadsCol.doc(cur.id).collection('contacts').add(entry);if(!contacts.some(c=>c.id===ref.id))contacts.push({id:ref.id,...entry});await syncLatest();renderLog();txStepMarks()}catch(e){txLogged=false;toast(errText(e))}}
-$('textBtn').onclick=async()=>{if(!(await ensureSaved()))return;txCtx='lead';$('txTitleH').textContent='Text customer';$('txLogL').hidden=false;const ph=$('phone').value.trim();
+$('textBtn').onclick=async()=>{if(!(await ensureSaved()))return;txCtx='lead';$('txTitleH').textContent='Text customer';$('txLogL').hidden=false;$('txLog').checked=true;const ph=$('phone').value.trim();
   $('txTo').value=fmtPhone(ph);let d='';try{d=localStorage.getItem('psw-text-draft')||''}catch(_){}
   const first=$('firstName').value.trim();$('txMsg').value=d?d.replace(/^Hi [^,\n]*,/,`Hi ${first||'there'},`):`Hi ${first||'there'}, `;
   const st=await textStatus();$('txSend').hidden=!st.configured;$('txSend').disabled=false;$('txPhone').hidden=!isPhone||st.configured;$('txWeb').hidden=isPhone||st.configured;txLogged=false;txSetLink();$('txMsgOut').textContent='';
@@ -2031,6 +2036,7 @@ $('mailBtns').addEventListener('click',async e=>{
   // sent from the database: the ticked files go along, and the carrier is marked sent once it actually goes
   if(mailSt&&mailSt.configured){e.preventDefault();composeMail({to:r.to,subject,body,files:((cur&&cur.files)||[]).map(f=>({id:f.id,name:f.name,on:mailSel.has(f.id)})),onSent:()=>{if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.key]))setMailSent(r.key,true)}});return}
   if(!cust&&!(cur&&cur.mailSent&&cur.mailSent[r.key]))setTimeout(()=>setMailSent(r.key,true),0); // after the email opens
+  if(cust&&cur)leadLogContact(cur.id,'Email','Email: '+subject); // Outlook: logged when the email opens
   a.href=`mailto:${r.to}?subject=${encodeURIComponent(subject)}`; // no body, so Outlook adds the signature
   const copied=copyText(body),paste=copied?' The greeting is copied: click in the email and press Ctrl+V.':'';
   const m=$('mailMsg');m.className='msg';
@@ -4589,7 +4595,7 @@ function reviewHtml(body,sig){const gold='#d4a017',navy='#1f3864',url=esc(REVIEW
 <tr><td style="padding:10px 34px 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr>
 <td style="vertical-align:bottom;font-size:15px;color:#222222">Thank you,<br>${sig||'The PSW team'}<div style="margin-top:4px;font-size:13px;color:#666666">Pacific Southwest Insurance Services · (818)701-1033 · <a href="https://pswis.com/" target="_blank" style="color:#666666">pswis.com</a><br>CA License #0F41718</div></td>
 <td style="vertical-align:bottom;text-align:right;width:130px"><img src="${esc(location.origin)}/psw-logo.png" width="120" alt="Pacific Southwest Insurance Services" style="display:block;margin-left:auto;border:0"></td></tr></table></td></tr></table></div>`}
-async function composeMail(o){mlCtx=o;mlReviewOn=false;await mailStatus(true);$('mlTo').value=o.to||'';$('mlCc').value='';ccMark();$('mlSubj').value=o.subject||'';edSet('mlBody',o.body);$('mlReview').hidden=!o.review;$('mlSig').innerHTML=sigLoad(mailSt.sig);$('mlSigBox').open=!mailSt.sig;
+async function composeMail(o){mlCtx=o;o.lead=cur&&cur.id&&$('email').value.trim()?{id:cur.id,emails:[$('email').value.trim().toLowerCase()]}:null;mlReviewOn=false;await mailStatus(true);$('mlTo').value=o.to||'';$('mlCc').value='';ccMark();$('mlSubj').value=o.subject||'';edSet('mlBody',o.body);$('mlReview').hidden=!o.review;$('mlSig').innerHTML=sigLoad(mailSt.sig);$('mlSigBox').open=!mailSt.sig;
   $('mlAtt').innerHTML=[...(o.extra||[]).map((f,i)=>`<label><input type="checkbox" data-mx="${i}"${f.on===false?'':' checked'}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`),
     ...(o.files||[]).map(f=>`<label><input type="checkbox" data-mb="${esc(f.id)}"${f.on?' checked':''}><span title="${esc(f.name)}">${esc(f.name)}</span></label>`)].join('')||'<div class="small">No files to attach.</div>';
   $('mlPw').value='';$('mlPw').type='password';$('mlPwEye').classList.remove('on');mlFromLine();mlSay('');
@@ -4773,7 +4779,9 @@ $('mlSend').onclick=async()=>{const o=mlCtx;if(!o)return;const to=$('mlTo').valu
     const d=await r.json().catch(()=>({}));
     if(!r.ok){if(d.code==='mail_not_connected'){await mailStatus(true);mlFromLine()}mlSay(ML_ERR[d.code]||'Couldn’t send the email.','err');btn.disabled=!(mailSt&&mailSt.connected);return}
     if(d.relogin){mlRelogin=true;mlClose();toast(`Email sent to ${to}, but your email password has changed, so it isn’t in your Outlook Sent folder. Next time you open an email, type your new password in the box at the top.`,9000)}
-    else{mlClose();toast(d.sentCopy?`Email sent to ${to}.`:`Email sent to ${to}. It couldn’t be copied to your Outlook Sent folder this time.`)}if(o.onSent)try{o.onSent()}catch(_){}}
+    else{mlClose();toast(d.sentCopy?`Email sent to ${to}.`:`Email sent to ${to}. It couldn’t be copied to your Outlook Sent folder this time.`)}if(o.onSent)try{o.onSent()}catch(_){}
+    // an email to the open lead's customer goes in that lead's contact log
+    if(o.lead){const all=(to+' '+$('mlCc').value).toLowerCase();if(o.lead.emails.some(x=>all.includes(x)))leadLogContact(o.lead.id,'Email','Email: '+($('mlSubj').value.trim()||'(no subject)'))}}
   catch(err){mlSay(err&&err.message?`Couldn’t send: ${err.message}`:'Couldn’t reach the server.','err');btn.disabled=false}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mhDlg').classList.contains('on')){e.stopImmediatePropagation();$('mhDlg').classList.remove('on');return}if(e.key==='Escape'&&$('mlDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();mlClose()}},true);
 // the client's copy: every box printed into the page (flattened), so it can't be edited
