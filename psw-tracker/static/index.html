@@ -1502,8 +1502,8 @@ $('qsGo').onclick=async()=>{const c=qsCtx,m=$('qsMsg');if(!c)return;const S=QL_S
   try{const r=await fetch('/api/tracker/quote-link',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead:'leads/'+cur.id,kind:c.kind,form,values,title:`${S.what[0].toUpperCase()+S.what.slice(1)} for ${who||'you'}`})});
     const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.code==='not_found'?'Save the lead first.':j.code==='too_large'?'That’s too much to send at once. Send fewer sections.':'Couldn’t make the link. Try again.');
     const url=location.origin+j.url,fn=properName(g('firstName')||c.v.contact_first||c.v.ins_first||'');cur.qlink={state:'sent',kind:c.kind,sentAt:Date.now()/1000,expires:j.expires};renderQl();qsClose();
-    const body=`Hi${fn?' '+fn:''},\n\nTo finish your ${S.what}, please fill in or check the information here:\n${url}\n\nWhat we already have is filled in, so just correct anything that’s wrong and fill in the blanks, then click Send. The link works for 14 days.\n\nThank you,`;
-    const subject=`Your ${S.what}: please finish the form`;
+    const body=`Hi${fn?' '+fn:''},\n\nTo finish your insurance quote, please fill in/confirm the information here:\n${url}\n\nThis link will be available for 14 days. Feel free to call us at 818-701-1033 if you would rather give us the info over the phone.\n\nThank you,`;
+    const subject=`Insurance request for ${who||'you'}, additional info needed`;
     if(mailSt&&mailSt.configured)composeMail({to:c.to,subject,body});
     else{if(c.to)leadLogContact(cur.id,'Email','Email: '+subject);location.href=`mailto:${encodeURIComponent(c.to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`}
     edMsg(`Link made for the ${S.name}. Send the email to the customer.`,'ok')}
