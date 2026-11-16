@@ -28,6 +28,8 @@ textarea{min-height:80px;resize:vertical}
 .radios input{width:auto;margin:0}
 .empty input:not([type=radio]),.empty textarea,.empty select{background:#f3eefc;border-color:#a98ad8;border-width:1.5px}
 .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.grpBox{border-top:1px dashed #c9b8ea;margin-top:14px;padding-top:12px}.grpBox h3{font-size:14px;margin:0 0 10px;color:#1b2a5c}
+.addGrp{margin-top:14px;background:#fff;color:var(--acc);border:1.5px solid var(--acc);padding:9px 16px}
 button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 22px;background:var(--acc);color:#fff;cursor:pointer}
 button:disabled{opacity:.6;cursor:default}
 .msg{font-size:14px}.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
@@ -56,8 +58,13 @@ function read(form){const a={};for(const s of form)for(const f of s.fields){cons
   catch(e){$('app').innerHTML='<div class="intro"><p class="msg err">Couldn’t load the form. Check your connection and refresh the page.</p></div>';return}
   const v=d.values||{};
   $('app').innerHTML=`<div class="intro"><p><b>${esc(d.title||'Your quote')}</b></p><p>${esc(d.agent||'Your agent')} at Pacific Southwest Insurance Services started this quote for you. Please check what’s filled in, fill in the blanks, and press <b>Send to my agent</b> at the bottom.</p><p class="small">Leave anything you don’t know blank. You can send this form once.</p></div>`+
-    d.form.map(s=>`<section class="sec"><h2>${esc(s.title)}</h2><div class="grid">${s.fields.map(f=>field(f,v)).join('')}</div></section>`).join('')+
+    d.form.map((s,si)=>{const main=s.fields.filter(f=>!f.grp),grps=[...new Set(s.fields.filter(f=>f.grp).map(f=>f.grp))];
+      // extra groups (Building 2, Building 3) stay closed until the customer clicks + Add, unless they already have answers
+      const box=g=>{const fs=s.fields.filter(f=>f.grp===g),open=fs.some(f=>String(v[f.k]||'').trim());return `<div class="grpBox" data-grp="${esc(g)}"${open?'':' hidden'}><h3>${esc(g)}</h3><div class="grid">${fs.map(f=>field(f,v)).join('')}</div></div>`};
+      return `<section class="sec" data-si="${si}"><h2>${esc(s.title)}</h2><div class="grid">${main.map(f=>field(f,v)).join('')}</div>${grps.map(box).join('')}${grps.length?'<button type="button" class="addGrp"></button>':''}</section>`}).join('')+
     `<div class="sec bar"><button id="send">Send to my agent</button><span class="msg" id="msg"></span></div>`;
+  const grpBtns=()=>document.querySelectorAll('.addGrp').forEach(b=>{const next=b.closest('.sec').querySelector('.grpBox[hidden]');b.hidden=!next;if(next)b.textContent='+ Add '+next.dataset.grp.toLowerCase()});grpBtns();
+  $('app').addEventListener('click',e=>{const b=e.target.closest('.addGrp');if(!b)return;const next=b.closest('.sec').querySelector('.grpBox[hidden]');if(next){next.hidden=false;const i=next.querySelector('input,select,textarea');if(i)i.focus()}grpBtns()});
   $('app').addEventListener('input',e=>{const w=e.target.closest('.f');if(w)w.classList.toggle('empty',!(e.target.type==='radio'||String(e.target.value).trim()))});
   $('send').onclick=async()=>{const b=$('send'),m=$('msg');b.disabled=true;m.className='msg';m.textContent='Sending…';
     try{const r=await fetch('/api/public/quote/'+encodeURIComponent(tok),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({answers:read(d.form)})});

@@ -1463,13 +1463,14 @@ function qlSheetForm(kind,v){const out=[];let n=0;
     for(const f of s.fields||[]){const fl=/\(first \/ last\)/i.test(f.label||'')&&f.pair;
       add(f.k,fl?f.label.replace(/\s*\(first \/ last\)/i,' – first name'):f.label,f.radio?{type:'radio',opts:f.radio}:f.opts?{type:'select',opts:f.opts}:f.area?{type:'area'}:{});
       if(f.pair)add(f.pair,fl?f.label.replace(/\s*\(first \/ last\)/i,' – last name'):(f.label2||f.label+' (2)'),opt(f.opts2));(f.also||[]).forEach(a=>add(a.k,a.label,opt(a.opts)))}
-    (s.bldg||[]).forEach(f=>add('b1_'+f.k,f.label));
+    for(let n=1;n<=3;n++)(s.bldg||[]).forEach(f=>{const lb=(kind==='com'&&QL_LABEL['b1_'+f.k])||f.label;add(`b${n}_${f.k}`,n===1?lb:lb.replace(/^Building\s+(\w)/i,(m,c)=>c.toUpperCase()),n===1?{}:{grp:`Building ${n}`})}); // buildings 2 and 3 open with + Add building on the customer's form
     for(const g of s.rowgrid||[])g.nums.forEach((_,i)=>g.cols.forEach(c=>add(`${g.prefix}${i+1}_${c.k}`,`${g.label} ${i+1} – ${c.label}`,opt(c.opts))));
     for(const r of s.excess||[])[['pol','policy number'],['eff','eff date'],['exp','exp date'],['prem','premium']].forEach(([c,l])=>add(`x_${r.k}_${c}`,`${r.label} ${l}`));
     if(s.grid)for(let c=1;c<=s.grid.count;c++)s.grid.rows.forEach(r=>add(`${s.grid.prefix}${c}_${r.k}`,`${s.grid.label} ${c} – ${r.label}`));
     if(s.table){const t=s.table,cols=[...t.cols,...(t.cols2||[])],has=i=>cols.some(c=>String(v[`${t.prefix}${i}_${c.k}`]||'').trim());let last=0;for(let i=1;i<=t.rows;i++)if(has(i))last=i;
       const word=t.prefix==='d'?'Driver':t.prefix==='v'?'Vehicle':t.prefix==='ai'?'Additional insured / lienholder':s.title.replace(/s$/,'');
       for(let i=1;i<=Math.min(t.rows,last+2);i++)cols.forEach(c=>add(`${t.prefix}${i}_${c.k}`,`${word} ${i} – ${c.label}`,opt(c.opts)))}
+    fs.forEach(f=>{if(/address$/i.test(f.k)&&!/^years/i.test(f.k)&&!/city|zip/i.test(f.label)&&!fs.some(x=>x.k===f.k.replace(/address$/i,'city')))f.label+=' (include city, state, zip)'}); // the customer types the whole address in one box
     out.push({letter,title:s.title,fields:fs})}
   return out.filter(x=>x.fields.length)}
 // what's on the sheet now: the saved file, then anything typed in the editor since
@@ -1526,7 +1527,7 @@ $('qlApply').onclick=async()=>{if(isLocked('lead'))return toast('This lead is vi
     const ans=j.answers,merged={...j.values,...v,...ans};
     const g=k=>$(k).value.trim(),person=[g('firstName'),g('lastName')].filter(Boolean).join(' ');
     if(kind==='com'||kind==='auto')merged.client_name=merged.client_name||g('company')||person;
-    if(kind==='com'){['gross_receipts','payroll'].forEach(k=>{if(ans[k])merged[k]=fmtMoney(ans[k])});QS_SECTIONS.forEach(s=>(s.bldg||[]).forEach(f=>{const k='b1_'+f.k;if(f.money&&ans[k])merged[k]=fmtMoney(ans[k])}))}
+    if(kind==='com'){['gross_receipts','payroll'].forEach(k=>{if(ans[k])merged[k]=fmtMoney(ans[k])});QS_SECTIONS.forEach(s=>(s.bldg||[]).forEach(f=>[1,2,3].forEach(n=>{const k=`b${n}_${f.k}`;if(f.money&&ans[k])merged[k]=fmtMoney(ans[k])})))}
     const bytes=await S.build(merged),name=qs?qs.name:`${String(merged.client_name||g('company')||person||'New client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()} ${S.name}.pdf`;
     if((await uploadOne(new File([bytes],name,{type:'application/pdf'})))!==true)throw new Error('The new quote sheet couldn’t be attached (see Files below).');
     // empty lead boxes take the client's answers too
