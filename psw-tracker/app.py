@@ -15,6 +15,7 @@ import os
 import re
 import secrets
 import sqlite3
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -125,6 +126,8 @@ def init_db():
             c.execute("ALTER TABLE users ADD COLUMN sig TEXT NOT NULL DEFAULT ''")
         c.execute("CREATE TABLE IF NOT EXISTS quote_links(token_hash TEXT PRIMARY KEY, lead TEXT NOT NULL, title TEXT NOT NULL, form TEXT NOT NULL, "
                   "vals TEXT NOT NULL, answers TEXT, agent TEXT NOT NULL, created REAL NOT NULL, created_by TEXT NOT NULL, expires REAL NOT NULL, submitted REAL)")
+        if "kind" not in {r[1] for r in c.execute("PRAGMA table_info(quote_links)")}:  # which quote sheet the link is for: com, auto, pauto, home
+            c.execute("ALTER TABLE quote_links ADD COLUMN kind TEXT NOT NULL DEFAULT 'com'")
 
 
 # ---------- passwords ----------
@@ -1328,6 +1331,26 @@ async def sample(request: Request):
 # An agent sends the client a private link (/q/<token>) to a web copy of the lead's com quote sheet.
 # The client fills in the blanks and submits once; the answers wait on the lead, and the lead's agent gets a task.
 LINK_DAYS = 14
+QL_SHEET = {"com": "com quote sheet", "auto": "com auto quote sheet", "pauto": "personal auto quote sheet", "home": "personal home quote sheet"}
+# when a customer sends back a quote link, a text goes to this number with their name (PSW_QUOTE_DONE_TEXT in .env to change it; blank to turn off)
+QUOTE_DONE_TEXT = os.environ.get("PSW_QUOTE_DONE_TEXT", "8183229136")
+
+
+def quote_done_text(who, kind):
+    num = re.sub(r"\D", "", QUOTE_DONE_TEXT or "")[-10:]
+    if len(num) != 10 or not text_on():
+        return
+    payload = {"contactPhone": num, "mode": "AUTO", "text": f"PSW database: {who} finished the {QL_SHEET.get(kind, 'quote sheet')} link. Open the lead and click Update quote sheet."}
+    acct = re.sub(r"\D", "", os.environ.get("SIMPLETEXTING_PHONE", ""))[-10:]
+    if acct:
+        payload["accountPhone"] = acct
+
+    def go():
+        try:
+            simpletexting_post(payload)
+        except Exception as e:
+            print("quote link done text failed:", e, flush=True)
+    threading.Thread(target=go, daemon=True).start()
 LEAD_PATH = re.compile(r"^leads/[A-Za-z0-9_\-]{1,64}$")
 QKEY = re.compile(r"^[a-z0-9_]{1,40}$")
 
@@ -1356,6 +1379,7 @@ async def quote_link_new(request: Request):
         err(400, "bad_form")
     vals = {k: str(v)[:4000] for k, v in vals.items() if k in keys and v not in (None, "")}
     title = str(body.get("title") or "")[:200]
+    kind = body.get("kind") if body.get("kind") in QL_SHEET else "com"
     form_s, vals_s = json.dumps(form), json.dumps(vals)
     if len(form_s) + len(vals_s) > MAX_DOC:
         err(413, "too_large")
@@ -1365,9 +1389,9 @@ async def quote_link_new(request: Request):
         if not c.execute("SELECT 1 FROM tracker_docs WHERE path=?", (lead,)).fetchone():
             err(404, "not_found")
         # earlier links stay open until they expire, so a client holding an older link can still send it
-        c.execute("INSERT INTO quote_links(token_hash,lead,title,form,vals,agent,created,created_by,expires) VALUES(?,?,?,?,?,?,?,?,?)",
-                  (token_hash(tok), lead, title, form_s, vals_s, u["name"], now, u["id"], now + LINK_DAYS * 86400))
-        lead_patch(c, lead, {"qlink": {"state": "sent", "sentAt": now, "expires": now + LINK_DAYS * 86400}})
+        c.execute("INSERT INTO quote_links(token_hash,lead,title,form,vals,agent,created,created_by,expires,kind) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                  (token_hash(tok), lead, title, form_s, vals_s, u["name"], now, u["id"], now + LINK_DAYS * 86400, kind))
+        lead_patch(c, lead, {"qlink": {"state": "sent", "kind": kind, "sentAt": now, "expires": now + LINK_DAYS * 86400}})
         bump(c)
     return {"token": tok, "url": f"/q/{tok}", "expires": now + LINK_DAYS * 86400}
 
@@ -1381,7 +1405,7 @@ def quote_link_get(request: Request, lead: str):
         r = c.execute("SELECT * FROM quote_links WHERE lead=? ORDER BY submitted IS NULL, COALESCE(submitted, created) DESC LIMIT 1", (lead,)).fetchone()
     if not r:
         return {"exists": False}
-    return {"exists": True, "submitted": r["submitted"], "expires": r["expires"], "values": json.loads(r["vals"]),
+    return {"exists": True, "kind": r["kind"] or "com", "submitted": r["submitted"], "expires": r["expires"], "values": json.loads(r["vals"]),
             "answers": json.loads(r["answers"]) if r["answers"] else None}
 
 
@@ -1417,9 +1441,12 @@ async def quote_public_submit(tok: str, request: Request):
         if c.execute("UPDATE quote_links SET answers=?, submitted=? WHERE token_hash=? AND submitted IS NULL",
                      (json.dumps(ans), now, r["token_hash"])).rowcount != 1:
             err(410, "submitted")
-        d = lead_patch(c, r["lead"], {"qlink": {"state": "done", "sentAt": r["created"], "doneAt": now}}) or {}
+        kind = r["kind"] or "com"
+        d = lead_patch(c, r["lead"], {"qlink": {"state": "done", "kind": kind, "sentAt": r["created"], "doneAt": now}}) or {}
         who = " ".join(x for x in (d.get("firstName", ""), d.get("lastName", "")) if x).strip() or d.get("company") or r["title"] or "A client"
-        task = {"title": f"{who} filled in the com quote link: open the lead and click Update quote sheet",
+        if d.get("company") and d.get("company") not in who:
+            who = f"{who} ({d['company']})"
+        task = {"title": f"{who} filled in the {QL_SHEET.get(kind, 'quote sheet')} link: open the lead and click Update quote sheet",
                 "firstName": d.get("firstName", ""), "lastName": d.get("lastName", ""), "company": d.get("company", ""),
                 "assignedTo": d.get("assignedTo") or r["agent"], "due": time.strftime("%Y-%m-%d"), "priority": "High",
                 "leadId": r["lead"].split("/", 1)[1], "notes": "", "files": [], "done": False, "doneAt": "",
@@ -1428,6 +1455,7 @@ async def quote_public_submit(tok: str, request: Request):
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
                   (f"tasks/{i}", "tasks", i, clean_data(task), now, r["created_by"]))
         bump(c)
+    quote_done_text(who, kind)
     return {"ok": True}
 
 
