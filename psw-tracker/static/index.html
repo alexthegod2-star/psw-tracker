@@ -1470,6 +1470,7 @@ function qlSheetForm(kind,v){const out=[];let n=0;
     if(s.table){const t=s.table,cols=[...t.cols,...(t.cols2||[])],has=i=>cols.some(c=>String(v[`${t.prefix}${i}_${c.k}`]||'').trim());let last=0;for(let i=1;i<=t.rows;i++)if(has(i))last=i;
       const word=t.prefix==='d'?'Driver':t.prefix==='v'?'Vehicle':t.prefix==='ai'?'Additional insured / lienholder':s.title.replace(/s$/,'');
       for(let i=1;i<=Math.min(t.rows,last+2);i++)cols.forEach(c=>add(`${t.prefix}${i}_${c.k}`,`${word} ${i} – ${c.label}`,opt(c.opts)))}
+    fs.forEach(f=>{if(/address$/i.test(f.k)&&!/^years/i.test(f.k)&&!/city|zip/i.test(f.label)&&!fs.some(x=>x.k===f.k.replace(/address$/i,'city')))f.label+=' (include city, state, zip)'}); // the customer types the whole address in one box
     out.push({letter,title:s.title,fields:fs})}
   return out.filter(x=>x.fields.length)}
 // what's on the sheet now: the saved file, then anything typed in the editor since
