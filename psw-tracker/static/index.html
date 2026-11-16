@@ -783,7 +783,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <datalist id="bnTypes"></datalist><datalist id="bnGas"></datalist><datalist id="bnCos"></datalist>
   <div class="bcalc" id="bnCalc"></div>
   <div class="msg" id="binMsg"></div>
-  <div class="row"><button class="danger" id="bnDel" style="margin-right:auto">Delete</button><button id="bnCancel">Cancel</button><button id="bnSaveAdd">Save + add another</button><button class="pri" id="bnSave">Save</button></div>
+  <div class="row"><button class="danger" id="bnDel">Delete</button><button type="button" id="bnGoPol" style="margin-right:auto" title="Open this client and the policy this entry is for">Go to policy</button><button id="bnCancel">Cancel</button><button id="bnSaveAdd">Save + add another</button><button class="pri" id="bnSave">Save</button></div>
 </div></div>
 <div class="mbg" id="bpDlg" role="dialog" aria-modal="true" aria-labelledby="bpTitleH"><div class="mbox" id="bpBox">
   <h3 id="bpTitleH">Paste from Excel</h3>
@@ -4860,7 +4860,10 @@ function openBin(b,preset){editBin=b||null;const v=b||preset||{};
   $('bnGas').innerHTML=[...new Set(binder.map(x=>x.ga).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
   $('bnCos').innerHTML=[...new Set(binder.map(x=>x.carrier).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
   $('bnDel').hidden=!b;$('bnDel').textContent='Delete';delete $('bnDel').dataset.arm;$('binMsg').textContent='';$('bnSave').disabled=$('bnSaveAdd').disabled=false;binCalcShow();
+  $('bnGoPol').hidden=!(b&&binClient(b));binSnap=JSON.stringify(binForm());
   $('binDlg').classList.add('on');setTimeout(()=>$('bnName').focus(),30)}
+let binSnap='';
+$('bnGoPol').onclick=async()=>{const b=editBin;if(!b)return;if(JSON.stringify(binForm())!==binSnap&&!await sure('You changed this entry. Go to the policy without saving the changes?'))return;closeBin();binOpenPolicy(b)};
 function closeBin(){$('binDlg').classList.remove('on');editBin=null}
 $('bnCancel').onclick=closeBin;$('binDlg').addEventListener('click',e=>{if(e.target===$('binDlg'))closeBin()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('binDlg').classList.contains('on')){e.stopImmediatePropagation();closeBin()}},true);
