@@ -1332,12 +1332,24 @@ async def sample(request: Request):
 # The client fills in the blanks and submits once; the answers wait on the lead, and the lead's agent gets a task.
 LINK_DAYS = 14
 QL_SHEET = {"com": "com quote sheet", "auto": "com auto quote sheet", "pauto": "personal auto quote sheet", "home": "personal home quote sheet"}
-# when a customer sends back a quote link, a text goes to this number with their name (PSW_QUOTE_DONE_TEXT in .env to change it; blank to turn off)
+# when a customer sends back a quote link, the lead's agent gets a text with the customer's name, at the cell in their Admin row.
+# If that agent has no cell on file, it goes to this number instead (PSW_QUOTE_DONE_TEXT in .env to change it; blank to turn that off)
 QUOTE_DONE_TEXT = os.environ.get("PSW_QUOTE_DONE_TEXT", "8183229136")
 
 
-def quote_done_text(who, kind):
-    num = re.sub(r"\D", "", QUOTE_DONE_TEXT or "")[-10:]
+def agent_cell(c, agent):
+    """the cell of the active user whose name or username is the lead's Assigned to"""
+    a = str(agent or "").strip().lower()
+    if not a:
+        return ""
+    for r in c.execute("SELECT name, username, cell FROM users WHERE active=1"):
+        if a in (str(r["name"] or "").strip().lower(), str(r["username"] or "").strip().lower()) and cell10(r["cell"]):
+            return cell10(r["cell"])
+    return ""
+
+
+def quote_done_text(who, kind, cell=""):
+    num = cell or re.sub(r"\D", "", QUOTE_DONE_TEXT or "")[-10:]
     if len(num) != 10 or not text_on():
         return
     payload = {"contactPhone": num, "mode": "AUTO", "text": f"PSW database: {who} finished the {QL_SHEET.get(kind, 'quote sheet')} link. Open the lead and click Update quote sheet."}
@@ -1454,8 +1466,9 @@ async def quote_public_submit(tok: str, request: Request):
         i = new_id()
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
                   (f"tasks/{i}", "tasks", i, clean_data(task), now, r["created_by"]))
+        cell = agent_cell(c, task["assignedTo"])
         bump(c)
-    quote_done_text(who, kind)
+    quote_done_text(who, kind, cell)
     return {"ok": True}
 
 
