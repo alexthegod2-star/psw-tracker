@@ -2146,8 +2146,8 @@ async def sign_send(request: Request):
         if not k or not 0 <= who < len(signers) or not 0 <= dn < len(docs):
             continue
         tab = {"documentId": str(dn + 1), "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)}
-        if k == "checkboxTabs":  # a box the signer may tick; not required, starts empty
-            tab.update({"tabLabel": f"check_{who + 1}_{n + 1}", "selected": "false", "required": "false"})
+        if k == "checkboxTabs":  # a box the signer may tick or untick; starts checked or empty as set on the send screen
+            tab.update({"tabLabel": f"check_{who + 1}_{n + 1}", "selected": "true" if t.get("checked") else "false", "required": "false"})
         tabs[who].setdefault(k, []).append(tab)
         n += 1
     for i, s in enumerate(signers):
