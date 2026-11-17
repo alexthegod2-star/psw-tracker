@@ -1949,7 +1949,9 @@ def mail_history_one(mid: int, request: Request):
 # Works with a free DocuSign developer (demo) key for testing and with the live key after DocuSign's go-live review; it tries both.
 DS_HOSTS = ("account.docusign.com", "account-d.docusign.com")
 DS_FINAL = ("completed", "declined", "voided")
-DS_KINDS = {"sign": "signHereTabs", "initial": "initialHereTabs", "date": "dateSignedTabs", "name": "fullNameTabs", "check": "checkboxTabs"}
+DS_KINDS = {"sign": "signHereTabs", "initial": "initialHereTabs", "date": "dateSignedTabs", "name": "fullNameTabs", "check": "checkboxTabs", "text": "textTabs"}
+DS_COLORS = ("Black", "BrightBlue", "BrightRed", "DarkGreen", "DarkRed", "Gold", "Green", "NavyBlue", "Purple", "White")
+DS_SIZES = (7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72)
 _ds = {"tok": "", "exp": 0, "host": "", "acct": "", "base": ""}
 
 
@@ -2146,8 +2148,19 @@ async def sign_send(request: Request):
         if not k or not 0 <= who < len(signers) or not 0 <= dn < len(docs):
             continue
         tab = {"documentId": str(dn + 1), "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)}
-        if k == "checkboxTabs":  # a box the signer may tick; not required, starts empty
-            tab.update({"tabLabel": f"check_{who + 1}_{n + 1}", "selected": "false", "required": "false"})
+        if k == "checkboxTabs":  # a box the signer may tick or untick; starts checked or empty as set on the send screen
+            tab.update({"tabLabel": f"check_{who + 1}_{n + 1}", "selected": "true" if t.get("checked") else "false", "required": "false"})
+        if k == "textTabs":  # a text box filled in ahead, which the signer can change (or must fill when required)
+            try:
+                size = min(DS_SIZES, key=lambda v: abs(v - float(t.get("size") or 11)))
+                w, h = max(20, round(float(t.get("w") or 120))), max(10, round(float(t.get("h") or 14)))
+            except (TypeError, ValueError):
+                size, w, h = 11, 120, 14
+            col = str(t.get("color") or "Black")
+            tab.update({"tabLabel": f"text_{who + 1}_{n + 1}", "value": str(t.get("value") or "")[:4000], "locked": "false",
+                        "required": "true" if t.get("required") else "false", "font": "Helvetica", "fontSize": f"Size{size}",
+                        "fontColor": col if col in DS_COLORS else "Black", "bold": "true" if t.get("bold") else "false",
+                        "italic": "true" if t.get("italic") else "false", "width": str(w), "height": str(h)})
         tabs[who].setdefault(k, []).append(tab)
         n += 1
     for i, s in enumerate(signers):
@@ -2255,6 +2268,34 @@ async def sign_void(request: Request, eid: str):
     with db() as c:
         c.execute("UPDATE sign_envelopes SET status='voided', done_at=?, checked=? WHERE id=?", (time.time(), time.time(), eid))
     return {"ok": True, "status": "voided"}
+
+
+@app.post("/api/sign/{eid}/correct")
+def sign_correct(request: Request, eid: str):
+    """Opens DocuSign's Correct screen for a request that isn't finished: change a signer's name or email, move or add boxes, resend."""
+    need_module("tracker"); need_user(request)
+    with db() as c:
+        ds_table(c)
+        r = c.execute("SELECT * FROM sign_envelopes WHERE id=?", (eid,)).fetchone()
+    if not r:
+        err(404, "not_found")
+    if r["status"] in DS_FINAL:
+        err(400, "finished")
+    base = os.environ.get("PSW_PUBLIC_URL", "").strip().rstrip("/") or str(request.base_url).rstrip("/")
+    try:
+        v = ds_call("POST", f"/envelopes/{eid}/views/correct", {"returnUrl": base + "/docusign/corrected"})
+    except DsError as e:
+        return ds_err(e)
+    if not (v or {}).get("url"):
+        err(502, "no_url")
+    return {"url": v["url"]}
+
+
+@app.get("/docusign/corrected")
+def docusign_corrected():
+    return HTMLResponse("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+                        "<title>DocuSign</title><body style='font:16px system-ui;padding:40px;text-align:center'>"
+                        "<h2>Done</h2><p>You can close this tab and go back to the PSW database.</p>")
 
 
 # ---------- Shrink PDF: Ghostscript rewrites it with pictures at 150 dpi (normal), 72 dpi (small) or in grayscale ----------
