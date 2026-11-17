@@ -201,7 +201,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{width:100%;height:100%;margin:0;accent-color:#1f5fbf}
 .annotationLayer .popupAnnotation,.annotationLayer .popupTriggerArea{display:none}
 .sgTop{flex-direction:column;align-items:stretch}#sg2[hidden],#sgWho[hidden],#sgTest[hidden],#sgAdd2[hidden]{display:none}.sgPeople{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.sgPeople label,.sgTop label{display:flex;flex-direction:column;font-size:13px;gap:2px;flex:1 1 200px}.sgTop textarea{font:inherit;resize:vertical}.sgTools button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}#sgWho label{display:inline-flex;gap:4px;align-items:center}#sgWho input{width:auto}
-.sgBox{position:absolute;z-index:4;box-sizing:border-box;border:2px solid #b58900;background:rgba(255,235,59,.6);color:#000;font:600 11px/1.1 Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;cursor:move;user-select:none;touch-action:none;border-radius:3px;overflow:visible}.sgBox.thin{font-size:9px;border-width:1px}.sgBox.s1{border-color:#1f5fbf;background:rgba(120,170,255,.55)}
+.sgBox{position:absolute;z-index:4;box-sizing:border-box;border:2px solid #b58900;background:rgba(255,235,59,.6);color:#000;font:600 11px/1.1 Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;cursor:move;user-select:none;touch-action:none;border-radius:3px;overflow:visible}.sgBox.thin{font-size:9px;border-width:1px}.sgBox.s1{border-color:#1f5fbf;background:rgba(120,170,255,.55)}.sgBox.chk{font-size:11px;padding:0;border-radius:2px}.sgBox.chk .x{top:-12px;right:-12px}
+#sgN1,#sgE1{background:rgba(255,235,59,.35);border-color:#b58900}#sgN2,#sgE2{background:rgba(120,170,255,.3);border-color:#1f5fbf}#sgW1{background:rgba(255,235,59,.6);border:1px solid #b58900;border-radius:4px;padding:0 5px}#sgW2{background:rgba(120,170,255,.55);border:1px solid #1f5fbf;border-radius:4px;padding:0 5px}
 .sgBox .x{position:absolute;top:-9px;right:-9px;width:18px;height:18px;min-height:0;border-radius:50%;background:#c00;color:#fff;font:700 12px/18px Arial,sans-serif;text-align:center;cursor:pointer;padding:0;border:0}
 button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:600}button.signBtn:hover{background:#25843a;border-color:#25843a}#sgDocs:empty{display:none}#sg .edh{background:#e6f4e8;border-bottom-color:#c5e3ca}.sgTop>.sgPeople:last-child{flex-wrap:nowrap}#sg .edh input,#sg .edh textarea,#sg .edh select{background:#fff}.sgFiles{gap:8px;padding-top:6px;padding-bottom:6px}
 /* the send-for-signature boxes sit in a pane on the left so the document gets the full height */
@@ -427,7 +428,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
     <div class="sgPeople"><label style="flex:1 1 260px">Email subject<input id="sgSubj" maxlength="100"></label><label style="flex:2 1 360px">Message<textarea id="sgMsgT" rows="2"></textarea></label></div>
   </div>
   <div class="edh sgFiles" id="sgDocs"></div>
-  <div class="edh sgTools"><span class="small">Add a box, then click on the page:</span><button type="button" data-sgt="sign">Sign here</button><button type="button" data-sgt="initial">Initials</button><button type="button" data-sgt="date">Date signed</button><button type="button" data-sgt="name">Printed name</button>
+  <div class="edh sgTools"><span class="small">Add a box, then click on the page:</span><button type="button" data-sgt="sign">Sign here</button><button type="button" data-sgt="initial">Initials</button><button type="button" data-sgt="date">Date signed</button><button type="button" data-sgt="name">Printed name</button><button type="button" data-sgt="check" title="A box the signer can tick">Checkbox</button>
     <span id="sgWho" hidden class="small">For: <label><input type="radio" name="sgWho" value="0" checked> <span id="sgW1">Signer 1</span></label> <label><input type="radio" name="sgWho" value="1"> <span id="sgW2">Signer 2</span></label></span>
     <span class="edmsg" id="sgInfo"></span></div>
   </div><div class="edb" id="sgBody"></div></div>
@@ -4168,7 +4169,7 @@ async function signGuess(pdf){const out=[];
       const d=items.filter(o=>SG_DATE.test(o.s)&&Math.abs(o.y-it.y)<4&&o.x>it.x&&o.x-it.x<420).sort((a,b)=>a.x-b.x)[0];
       if(d){const{how,...dt}=spot(d,'date');out.push({type:'date',signer:0,page:p-1,...dt})}}}
   return out}
-const SG_SZ={sign:[110,26],initial:[46,30],date:[80,14],name:[140,14]},SG_LBL={sign:'Sign here',initial:'Initials',date:'Date signed',name:'Printed name'};
+const SG_SZ={sign:[110,26],initial:[46,30],date:[80,14],name:[140,14],check:[14,14]},SG_LBL={sign:'Sign here',initial:'Initials',date:'Date signed',name:'Printed name',check:'✓'};
 let sg=null;
 const sgMsg=(t,bad)=>{$('sgInfo').textContent=t||'';$('sgInfo').style.color=bad?'#a12020':''};
 function sgTwo(){return !$('sg2').hidden}
@@ -4202,9 +4203,9 @@ function sgDropDoc(i){const d=sg.docs[i];if(!d||!i)return;const n=sg.pages.filte
 function sgDraw(){if(!sg)return;sg.pages.forEach(p=>p.wrap.querySelectorAll('.sgBox').forEach(x=>x.remove()));
   const two=sgTwo(),nm=i=>($(i?'sgN2':'sgN1').value.trim()||`Signer ${i+1}`).split(/\s+/)[0];
   sg.tabs.forEach((t,i)=>{const p=sg.pages[t.page];if(!p)return;const[w,h]=SG_SZ[t.type],el=document.createElement('div');
-    el.className='sgBox s'+t.signer+(t.type==='date'||t.type==='name'?' thin':'');el.dataset.i=i;
+    el.className='sgBox s'+t.signer+(t.type==='date'||t.type==='name'?' thin':'')+(t.type==='check'?' chk':'');el.dataset.i=i;
     el.style.cssText=`left:${t.x*p.sc}px;top:${t.y*p.sc}px;width:${w*p.sc}px;height:${h*p.sc}px`;
-    el.innerHTML=`<span>${esc(SG_LBL[t.type])}${two?' · '+esc(nm(t.signer)):''}</span><button type="button" class="x" data-sgx="${i}" title="Remove this box" aria-label="Remove this box">×</button>`;
+    el.innerHTML=`<span>${esc(SG_LBL[t.type])}${two&&t.type!=='check'?' · '+esc(nm(t.signer)):''}</span><button type="button" class="x" data-sgx="${i}" title="Remove this box" aria-label="Remove this box">×</button>`;
     el.title=two?'Drag to move. Click to switch who signs here.':'Drag to move.';p.wrap.appendChild(el)});
   const n=sg.tabs.filter(t=>t.type==='sign').length;
   if(!sg.err)sgMsg(n?`${n} signature box${n>1?'es':''}. Drag a box to move it, or use the buttons above to add more.`:'No signature box yet. Click “Sign here”, then click on the page where the client signs.')}
