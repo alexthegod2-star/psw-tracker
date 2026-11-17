@@ -2130,7 +2130,7 @@ async def sign_send(request: Request):
         err(400, "bad_pdf")
     fid, fname = docs[0]["id"], docs[0]["name"]
     signers = []
-    for s in (b.get("signers") or [])[:2]:
+    for s in (b.get("signers") or [])[:4]:
         name, email = str(s.get("name") or "").strip()[:100], str(s.get("email") or "").strip().lower()[:200]
         if not name or not EMAIL_RE.match(email):
             err(400, "bad_signer")
