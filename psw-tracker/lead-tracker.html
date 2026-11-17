@@ -4187,7 +4187,11 @@ const sgFont=t=>`${t.italic?'italic ':''}${t.bold?'bold ':''}${t.size}px Helveti
 function sgFit(t){if(t.type==='mysig')return;const c=sgFit.c||(sgFit.c=document.createElement('canvas').getContext('2d'));c.font=sgFont(t);
   const ls=String(t.text||' ').split('\n');t.w=Math.max(20,Math.ceil(Math.max(...ls.map(l=>c.measureText(l||' ').width))+2));t.h=Math.ceil(ls.length*t.size*1.2)}
 const sgWH=t=>SG_STAMP[t.type]?[t.w,t.h]:SG_SZ[t.type];
-function sgCompany(){return sg&&sg.kind==='lead'?(cur&&cur.company||'').trim():($('clCompany')?$('clCompany').value.trim():'')}
+function sgCompanyRaw(){return sg&&sg.kind==='lead'?(cur&&cur.company||'').trim():($('clCompany')?$('clCompany').value.trim():'')}
+/* a company name you changed in a box (then Done) is used for the next Company name box too, for this company */
+const sgCoKey=()=>'pswSgCo:'+sgCompanyRaw().toLowerCase();
+function sgCompany(){try{const v=localStorage.getItem(sgCoKey());if(v)return v}catch(_){}return sgCompanyRaw()}
+function sgCoRemember(t){if(!t||t.type!=='company')return;const v=String(t.text||'').trim();if(!v)return;try{if(v===sgCompanyRaw())localStorage.removeItem(sgCoKey());else localStorage.setItem(sgCoKey(),v)}catch(_){}}
 function sgStOpen(){const t=sg&&sg.tabs[sg.sel];$('sgStEd').hidden=!t;if(!t)return;const sig=t.type==='mysig';
   $('sgStT').textContent=sig?'My signature':t.type==='company'?'Company name':'Text box';$('sgStTxt').hidden=sig;$('sgStTxt').value=t.text||'';
   document.querySelectorAll('#sgStBar [data-sgf],#sgStBar .sigSw').forEach(b=>b.hidden=sig);
@@ -4283,14 +4287,14 @@ $('sgStTxt').addEventListener('input',()=>sgStSet('text',$('sgStTxt').value));
 $('sgStEdit').onchange=()=>sgStSet('edit',$('sgStEdit').checked);$('sgStReq').onchange=()=>sgStSet('req',$('sgStReq').checked);$('sgStWho').onchange=()=>sgStSet('signer',+$('sgStWho').value);
 $('sgStSize').onchange=()=>sgStSet('size',+$('sgStSize').value);$('sgStCol').addEventListener('input',()=>sgStSet('color',$('sgStCol').value));
 $('sgStBar').addEventListener('click',e=>{const c=e.target.closest('[data-sgc]'),f=e.target.closest('[data-sgf]'),t=sg&&sg.tabs[sg.sel];if(!t)return;if(c)sgStSet('color',c.dataset.sgc);if(f)sgStSet(f.dataset.sgf,!t[f.dataset.sgf])});
-$('sgStDone').onclick=()=>{if(!sg)return;const t=sg.tabs[sg.sel];if(t&&t.type!=='mysig'&&!t.edit&&!String(t.text||'').trim())sg.tabs.splice(sg.sel,1);sg.sel=null;sgDraw();sgStOpen()};
+$('sgStDone').onclick=()=>{if(!sg)return;const t=sg.tabs[sg.sel];sgCoRemember(t);if(t&&t.type!=='mysig'&&!t.edit&&!String(t.text||'').trim())sg.tabs.splice(sg.sel,1);sg.sel=null;sgDraw();sgStOpen()};
 function sgWhoNames(){['First','Second','Third','Fourth'].forEach((o,i)=>$('sgW'+(i+1)).textContent=$('sgN'+(i+1)).value.trim()||o+' signer')}
 ['sgN1','sgN2','sgN3','sgN4'].forEach(i=>$(i).addEventListener('input',()=>{sgWhoNames();if(sgTwo())sgDraw()}));
 document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.onclick=async()=>{if(!sg)return;const on=sg.tool!==b.dataset.sgt;
   if(on&&b.dataset.sgt==='mysig'&&!(sgSigUrl=await mySig()))return sgMsg('You don’t have a signature saved yet. An owner can add it for you in Admin (Signature).',true);sg.tool=on?b.dataset.sgt:'';document.querySelectorAll('#sg [data-sgt]').forEach(x=>x.classList.toggle('on',x===b&&on));$('sg').classList.toggle('adding',on);if(on){sg.err=0;sgMsg('Now click on the page where it goes.')}});
 // add a box where the page is clicked; drag a box to move it; click a box to switch signer (with two signers); × removes it
 $('sgBody').addEventListener('click',e=>{if(!sg)return;const x=e.target.closest('[data-sgx]');if(x){const k=+x.dataset.sgx;sg.tabs.splice(k,1);if(sg.sel!=null)sg.sel=sg.sel===k?null:sg.sel>k?sg.sel-1:sg.sel;sgDraw();sgStOpen();return}
-  if(!sg.tool&&!e.target.closest('.sgBox')&&sg.sel!=null){sg.sel=null;sgDraw();sgStOpen();return}
+  if(!sg.tool&&!e.target.closest('.sgBox')&&sg.sel!=null){sgCoRemember(sg.tabs[sg.sel]);sg.sel=null;sgDraw();sgStOpen();return}
   if(!sg.tool||e.target.closest('.sgBox'))return;const wrap=e.target.closest('.pg');if(!wrap)return;const p=sg.pages[+wrap.dataset.page],r=wrap.getBoundingClientRect();
   const who=sgTwo()?+(document.querySelector('#sgWho input:checked')||{value:0}).value:0;
   if(SG_STAMP[sg.tool]){const t={type:sg.tool,stamp:1,signer:0,page:+wrap.dataset.page,...sgStDef};
