@@ -1949,7 +1949,7 @@ def mail_history_one(mid: int, request: Request):
 # Works with a free DocuSign developer (demo) key for testing and with the live key after DocuSign's go-live review; it tries both.
 DS_HOSTS = ("account.docusign.com", "account-d.docusign.com")
 DS_FINAL = ("completed", "declined", "voided")
-DS_KINDS = {"sign": "signHereTabs", "initial": "initialHereTabs", "date": "dateSignedTabs", "name": "fullNameTabs"}
+DS_KINDS = {"sign": "signHereTabs", "initial": "initialHereTabs", "date": "dateSignedTabs", "name": "fullNameTabs", "check": "checkboxTabs"}
 _ds = {"tok": "", "exp": 0, "host": "", "acct": "", "base": ""}
 
 
@@ -2145,7 +2145,10 @@ async def sign_send(request: Request):
             continue
         if not k or not 0 <= who < len(signers) or not 0 <= dn < len(docs):
             continue
-        tabs[who].setdefault(k, []).append({"documentId": str(dn + 1), "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)})
+        tab = {"documentId": str(dn + 1), "pageNumber": str(max(1, pg)), "xPosition": str(x), "yPosition": str(y)}
+        if k == "checkboxTabs":  # a box the signer may tick; not required, starts empty
+            tab.update({"tabLabel": f"check_{who + 1}_{n + 1}", "selected": "false", "required": "false"})
+        tabs[who].setdefault(k, []).append(tab)
         n += 1
     for i, s in enumerate(signers):
         if not tabs[i].get("signHereTabs"):
