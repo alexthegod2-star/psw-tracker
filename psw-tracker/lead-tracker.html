@@ -4103,7 +4103,7 @@ const isPdfFile=f=>/pdf/.test(f.type||'')||/\.pdf$/i.test(f.name||'');
 const signPathNow=kind=>kind==='lead'?(cur&&cur.id?'leads/'+cur.id:''):(editClient&&editClient.id?'clients/'+editClient.id:'');
 const signItems=path=>(signDocs.get(path)||{items:[]}).items;
 const SG_FINAL=['completed','declined','voided'];
-const SG_TXT={created:'Not sent yet',sent:'Out for signature',delivered:'Opened, not signed yet',signed:'Signed',completed:'Signed ✓',declined:'Declined',voided:'Cancelled'};
+const SG_TXT={created:'Not sent yet',sent:'Out for signature',delivered:'Opened, not signed yet',signed:'Signed',completed:'Signed ✓',declined:'Declined',voided:'Voided'};
 function signRedraw(kind){try{if(kind==='lead'){if(cur)renderFiles()}else if(editClient){reClFiles();if(polTr)renderPpFiles()}}catch(_){}}
 function signEnsure(kind){const path=signPathNow(kind);if(!path||!signSt||!signSt.configured)return;const d=signDocs.get(path);if(d&&(d.busy||Date.now()-d.at<60000))return;signLoad(path,kind)}
 async function signLoad(path,kind,now){const d=signDocs.get(path)||{items:[],at:0};d.busy=true;signDocs.set(path,d);
@@ -4125,7 +4125,7 @@ async function signAttach(path,kind){if(!assets)return;
 function signBits(f,kind,part){if(!signSt||!signSt.configured||!isPdfFile(f))return '';const path=signPathNow(kind);if(!path)return '';
   const its=signItems(path).filter(x=>(x.files&&x.files.length?x.files.map(y=>y.id):[x.fileId]).includes(f.id)),it=its[its.length-1];let s='';
   if(it){const fin=SG_FINAL.includes(it.status),cls=it.status==='completed'?' ok':fin?' bad':'',t=SG_TXT[it.status]||it.status;
-    s=`<span class="sgBadge${cls}" data-sgck="${esc(it.id)}" title="${esc(`${t}. Sent to ${it.signers.map(x=>`${x.name} (${x.email})`).join(' and ')} by ${it.sentBy}, ${fmtDT(new Date(it.sentAt*1000).toISOString())}.${fin?'':' Click to check now.'}`)}">${esc(t)}</span>${!fin&&assets?`<button class="linkish sgVoid" data-sgfix="${esc(it.id)}" title="Change a signer’s name or email, move or add boxes, or resend, in DocuSign">Correct</button> <button class="linkish sgVoid" data-sgvoid="${esc(it.id)}" title="Cancel this signature request">Cancel</button>`:''}`}
+    s=`<span class="sgBadge${cls}" data-sgck="${esc(it.id)}" title="${esc(`${t}. Sent to ${it.signers.map(x=>`${x.name} (${x.email})`).join(' and ')} by ${it.sentBy}, ${fmtDT(new Date(it.sentAt*1000).toISOString())}.${fin?'':' Click to check now.'}`)}">${esc(t)}</span>${!fin&&assets?`<button class="linkish sgVoid" data-sgfix="${esc(it.id)}" title="Change a signer’s name or email, move or add boxes, or resend, in DocuSign">Correct</button> <button class="linkish sgVoid" data-sgvoid="${esc(it.id)}" title="Void (cancel) this signature request">Void</button>`:''}`}
   const btn=assets?`<button class="signBtn" data-sign="${esc(f.id)}" title="Send this PDF to be signed with DocuSign">${part==='btn'?'Send for signature':'Sign'}</button>`:'';
   return part==='btn'?btn:part==='status'?s:btn+s}
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sign],[data-sgck],[data-sgvoid],[data-sgfix]');if(!b)return;const box=b.closest('#files,#clFiles,#clFilesAll,#ppFiles');if(!box)return;
@@ -4137,9 +4137,10 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
     try{const r=await fetch(`/api/sign/${encodeURIComponent(b.dataset.sgfix)}/correct`,{method:'POST',credentials:'same-origin'});const j=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(j.code==='finished'?'it’s already finished':(j.detail||j.code||r.status));if(w)w.location=j.url;else location.href=j.url;toast('DocuSign’s Correct screen opened in a new tab. Make the changes there and press Correct.',6000)}
     catch(err){if(w)w.close();toast('Couldn’t open Correct: '+err.message,6000)}return}
-  if(b.dataset.sgvoid){if(!(await sure('Cancel this signature request? The link DocuSign emailed stops working. This can’t be undone.')))return;
-    try{const r=await fetch(`/api/sign/${encodeURIComponent(b.dataset.sgvoid)}/void`,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:'{}'});const j=await r.json().catch(()=>({}));
-      if(!r.ok)throw new Error(j.detail||j.code||r.status);toast('Signature request cancelled.')}catch(err){toast('Couldn’t cancel it: '+err.message,6000)}
+  if(b.dataset.sgvoid){if(!(await sure('Void this signature request? The link DocuSign emailed stops working. This can’t be undone.')))return;
+    const why=(prompt('Reason DocuSign emails to the signers (optional):','')||'').trim();
+    try{const r=await fetch(`/api/sign/${encodeURIComponent(b.dataset.sgvoid)}/void`,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({reason:why})});const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.detail||j.code||r.status);toast('Signature request voided.')}catch(err){toast('Couldn’t cancel it: '+err.message,6000)}
     signLoad(path,kind,true)}},true);
 
 // where a form asks the client to sign: "Applicant's Signature", "Signature of Insured", "Signature:" ... (not the producer's or agent's line)
