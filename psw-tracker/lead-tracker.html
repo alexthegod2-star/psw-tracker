@@ -200,7 +200,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .annotationLayer .choiceWidgetAnnotation select.tsSel{visibility:hidden}.annotationLayer .choiceWidgetAnnotation .tsIn{position:absolute;inset:0;background:rgba(0,54,255,.10);border:1px solid transparent;border-radius:0;box-sizing:border-box;color:#000;font:calc(9px*var(--scale-factor)) Helvetica,Arial,sans-serif;height:100%;width:100%;margin:0;padding:0 2px}.annotationLayer .choiceWidgetAnnotation .tsIn:focus{background:rgba(0,54,255,.04);border-color:#1f5fbf;outline:none}.annotationLayer .calcBtn{position:absolute;right:2px;top:50%;transform:translateY(-50%);padding:1px 8px;font-size:11px;line-height:1.3;border-radius:999px;background:var(--acc);color:var(--acc-ink);border:0;font-weight:600;cursor:pointer;z-index:2}
 .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{width:100%;height:100%;margin:0;accent-color:#1f5fbf}
 .annotationLayer .popupAnnotation,.annotationLayer .popupTriggerArea{display:none}
-.sgTop{flex-direction:column;align-items:stretch}#sg2[hidden],#sgWho[hidden],#sgTest[hidden],#sgAdd2[hidden]{display:none}.sgPeople{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.sgPeople label,.sgTop label{display:flex;flex-direction:column;font-size:13px;gap:2px;flex:1 1 200px}.sgTop textarea{font:inherit;resize:vertical}.sgTools button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}#sgWho label{display:inline-flex;gap:4px;align-items:center}#sgWho input{width:auto}
+.sgTop{flex-direction:column;align-items:stretch}#sg2[hidden],#sgWho[hidden],#sgTest[hidden],#sgAdd2[hidden]{display:none}.sgPeople{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.sgPeople label,.sgTop label{display:flex;flex-direction:column;font-size:13px;gap:2px;flex:1 1 200px}.sgTop textarea{font:inherit;resize:vertical}.sgTools button .ic{width:16px;height:16px;flex:none;margin-right:5px;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.sgTools button{display:inline-flex;align-items:center;justify-content:flex-start;text-align:left}#sg .sgTools .sgFill{margin-top:4px}.sgBox.stamp{background:rgba(255,255,255,.01);border:1px dashed #6b7c93;color:#000;justify-content:flex-start;align-items:flex-start;font-weight:400;white-space:pre;line-height:1.2;overflow:visible;padding:0}.sgBox.stamp.sel{border:2px solid #1f5fbf;box-shadow:0 0 0 3px rgba(31,95,191,.2)}.sgBox.stamp img{width:100%;height:100%;object-fit:contain;pointer-events:none}.sgBox .rs{position:absolute;right:-6px;bottom:-6px;width:12px;height:12px;background:#1f5fbf;border:2px solid #fff;border-radius:50%;cursor:nwse-resize}.sgStEd{flex-direction:column;align-items:stretch;gap:6px;background:#fff8e1}.sgStEd textarea{font:inherit;resize:vertical}.sgStEd .sigBar{margin:0}.sgStEd .sigBar button[data-sgf].on{background:var(--soft);border-color:var(--acc)}.sgStEd .sgStSz{display:inline-flex;align-items:center;gap:4px;font-size:12px}.sgStEd select{width:auto;padding:2px 4px}.sgStEd #sgStDone{align-self:flex-end}.sgTools button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}#sgWho label{display:inline-flex;gap:4px;align-items:center}#sgWho input{width:auto}
 .sgBox{position:absolute;z-index:4;box-sizing:border-box;border:2px solid #b58900;background:rgba(255,235,59,.6);color:#000;font:600 11px/1.1 Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;cursor:move;user-select:none;touch-action:none;border-radius:3px;overflow:visible}.sgBox.thin{font-size:9px;border-width:1px}.sgBox.s1{border-color:#1f5fbf;background:rgba(120,170,255,.55)}.sgBox.chk{font-size:11px;padding:0;border-radius:2px;cursor:pointer}.sgBox.chk.off span{visibility:hidden}.sgBox.chk .x{top:-12px;right:-12px}
 #sg .edh #sgN1,#sg .edh #sgE1{background:#fff09a;border:2px solid #b58900}#sg .edh #sgN2,#sg .edh #sgE2{background:#bcd4ff;border:2px solid #1f5fbf}#sgW1{background:rgba(255,235,59,.6);border:1px solid #b58900;border-radius:4px;padding:0 5px}#sgW2{background:rgba(120,170,255,.55);border:1px solid #1f5fbf;border-radius:4px;padding:0 5px}
 .sgBox .x{position:absolute;top:-9px;right:-9px;width:18px;height:18px;min-height:0;border-radius:50%;background:#c00;color:#fff;font:700 12px/18px Arial,sans-serif;text-align:center;cursor:pointer;padding:0;border:0}
@@ -428,9 +428,10 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
     <div class="sgPeople"><label style="flex:1 1 260px">Email subject<input id="sgSubj" maxlength="100"></label><label style="flex:2 1 360px">Message<textarea id="sgMsgT" rows="2"></textarea></label></div>
   </div>
   <div class="edh sgFiles" id="sgDocs"></div>
-  <div class="edh sgTools"><span class="small">Add a box, then click on the page:</span><button type="button" data-sgt="sign">Sign here</button><button type="button" data-sgt="initial">Initials</button><button type="button" data-sgt="date">Date signed</button><button type="button" data-sgt="name">Printed name</button><button type="button" data-sgt="check" title="A checkbox. It starts checked; click it on the page to uncheck it.">Checkbox</button>
+  <div class="edh sgTools"><span class="small">Add a box, then click on the page:</span><button type="button" data-sgt="sign"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 13l8-8 2 2-8 8H4z"/><path d="M2 18h16"/></svg>Sign here</button><button type="button" data-sgt="initial"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 15l3-9 3 9M4 12h4"/><path d="M11 18h7"/><path d="M12 14l5-5 1.5 1.5-5 5H12z"/></svg>Initials</button><button type="button" data-sgt="date"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="1.5"/><path d="M3 8h14M7 2v4M13 2v4"/></svg>Date signed</button><button type="button" data-sgt="name"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="6" r="3"/><path d="M4 17c0-3.3 2.7-5 6-5s6 1.7 6 5"/></svg>Printed name</button><button type="button" data-sgt="check" title="A checkbox. It starts checked; click it on the page to uncheck it."><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M6 10l3 3 5-6"/></svg>Checkbox</button><span class="small sgFill">We fill in (printed on the page before it goes out):</span><button type="button" data-sgt="text" title="Type your own text, with color and size"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h12M10 4v13M7 17h6"/></svg>Text box</button><button type="button" data-sgt="mysig" title="Puts your saved signature on the page"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 14c2-5 4-7 5-5s-2 6 0 6 3-6 5-6 1 5 3 5 2-2 3-3"/><path d="M2 18h16"/></svg>My signature</button><button type="button" data-sgt="company" title="The company name from the lead or client"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="3" width="12" height="15"/><path d="M7 6h2M11 6h2M7 9h2M11 9h2M7 12h2M11 12h2M9 18v-3h2v3"/></svg>Company name</button>
     <span id="sgWho" hidden class="small">For: <label><input type="radio" name="sgWho" value="0" checked> <span id="sgW1">Signer 1</span></label> <label><input type="radio" name="sgWho" value="1"> <span id="sgW2">Signer 2</span></label></span>
     <span class="edmsg" id="sgInfo"></span></div>
+  <div class="edh sgStEd" id="sgStEd" hidden><b id="sgStT">Text box</b><textarea id="sgStTxt" rows="2" placeholder="Type the text"></textarea><div class="sigBar" id="sgStBar"><button type="button" data-sgf="bold" title="Bold"><b>B</b></button><button type="button" data-sgf="italic" title="Italic"><i>I</i></button><span class="sigSw">Color:<button type="button" data-sgc="#000000" style="background:#000000" title="Black"></button><button type="button" data-sgc="#1f3864" style="background:#1f3864" title="Navy"></button><button type="button" data-sgc="#1f5fa8" style="background:#1f5fa8" title="Blue"></button><button type="button" data-sgc="#6a3fb5" style="background:#6a3fb5" title="Purple"></button><button type="button" data-sgc="#c00000" style="background:#c00000" title="Red"></button><button type="button" data-sgc="#2e7d32" style="background:#2e7d32" title="Green"></button><button type="button" data-sgc="#7f7f7f" style="background:#7f7f7f" title="Gray"></button><input type="color" id="sgStCol" value="#000000" title="Pick any color"></span><label class="sgStSz">Size<select id="sgStSize"></select></label></div><div class="small" id="sgStHelp">Drag the box on the page to move it.</div><button type="button" id="sgStDone">Done</button></div>
   </div><div class="edb" id="sgBody"></div></div>
 </div>
 <div class="mbg" id="askDel" role="dialog" aria-modal="true" aria-labelledby="askTitle"><div class="mbox"><h3 id="askTitle">Are you sure?</h3><p id="askText"></p><div class="row"><button id="askNo">No</button><button class="danger" id="askYes">Yes</button></div></div></div>
@@ -4170,6 +4171,30 @@ async function signGuess(pdf){const out=[];
       if(d){const{how,...dt}=spot(d,'date');out.push({type:'date',signer:0,page:p-1,...dt})}}}
   return out}
 const SG_SZ={sign:[110,26],initial:[46,30],date:[80,14],name:[140,14],check:[14,14]},SG_LBL={sign:'Sign here',initial:'Initials',date:'Date signed',name:'Printed name',check:'✓'};
+// boxes we fill in ourselves (text, company name, my signature): printed onto the PDF before it goes to DocuSign
+const SG_STAMP={text:1,company:1,mysig:1},sgStDef={color:'#000000',size:11,bold:false,italic:false};let sgSigUrl='';
+const sgFont=t=>`${t.italic?'italic ':''}${t.bold?'bold ':''}${t.size}px Helvetica, Arial, sans-serif`;
+function sgFit(t){if(t.type==='mysig')return;const c=sgFit.c||(sgFit.c=document.createElement('canvas').getContext('2d'));c.font=sgFont(t);
+  const ls=String(t.text||' ').split('\n');t.w=Math.max(20,Math.ceil(Math.max(...ls.map(l=>c.measureText(l||' ').width))+2));t.h=Math.ceil(ls.length*t.size*1.2)}
+const sgWH=t=>SG_STAMP[t.type]?[t.w,t.h]:SG_SZ[t.type];
+function sgCompany(){return sg&&sg.kind==='lead'?(cur&&cur.company||'').trim():($('clCompany')?$('clCompany').value.trim():'')}
+function sgStOpen(){const t=sg&&sg.tabs[sg.sel];$('sgStEd').hidden=!t;if(!t)return;const sig=t.type==='mysig';
+  $('sgStT').textContent=sig?'My signature':t.type==='company'?'Company name':'Text box';$('sgStTxt').hidden=sig;$('sgStTxt').value=t.text||'';
+  document.querySelectorAll('#sgStBar [data-sgf],#sgStBar .sigSw').forEach(b=>b.hidden=sig);
+  $('sgStSize').innerHTML=(sig?[60,80,100,130,160,200,250]:[7,8,9,10,11,12,14,16,18,20,24,28,36]).map(n=>`<option value="${n}">${sig?Math.round(n/130*100)+'%':n+' pt'}</option>`).join('');
+  const sv=sig?Math.round(t.w):t.size;if(![...$('sgStSize').options].some(o=>+o.value===sv))$('sgStSize').insertAdjacentHTML('afterbegin',`<option value="${sv}">${sig?Math.round(sv/130*100)+'%':sv+' pt'}</option>`);$('sgStSize').value=sv;
+  if(!sig){$('sgStCol').value=t.color;document.querySelectorAll('#sgStBar [data-sgf]').forEach(b=>b.classList.toggle('on',!!t[b.dataset.sgf]))}
+  $('sgStHelp').textContent=sig?'Drag to move. Drag the blue dot to resize.':'Drag the box on the page to move it.'}
+function sgStSet(k,v){const t=sg&&sg.tabs[sg.sel];if(!t)return;if(t.type==='mysig'&&k==='size'){const r=t.h/t.w;t.w=v;t.h=Math.round(v*r)}else{t[k]=v;if(k!=='text')sgStDef[k]=v;sgFit(t)}sgDraw();sgStOpen()}
+// draw the filled-in boxes onto one file's pages (pdf-lib), top-left x/y in points like DocuSign
+async function sgStampPdf(bytes,list){if(!list.length)return bytes;const L=PDFLib,doc=await L.PDFDocument.load(bytes,{ignoreEncryption:true}),F=L.StandardFonts,fonts={};
+  const font=async t=>{const k=t.bold?(t.italic?'HelveticaBoldOblique':'HelveticaBold'):(t.italic?'HelveticaOblique':'Helvetica');return fonts[k]||(fonts[k]=await doc.embedFont(F[k]))};
+  const hex=c=>{const n=parseInt(String(c||'#000').replace('#',''),16)||0;return L.rgb((n>>16&255)/255,(n>>8&255)/255,(n&255)/255)};let img=null;
+  for(const{t,pn}of list){const pg=doc.getPage(pn-1);if(!pg)continue;const b=pg.getCropBox?pg.getCropBox():pg.getMediaBox(),top=b.y+b.height;
+    if(t.type==='mysig'){if(!sgSigUrl)continue;img=img||await doc.embedPng(sigBytes(sgSigUrl));pg.drawImage(img,{x:b.x+t.x,y:top-t.y-t.h,width:t.w,height:t.h});continue}
+    const f=await font(t);String(t.text||'').split('\n').forEach((l,i)=>{const clean=[...l].filter(ch=>{try{f.encodeText(ch);return true}catch(_){return false}}).join('');
+      if(clean)pg.drawText(clean,{x:b.x+t.x+1,y:top-t.y-t.size*(0.95+1.2*i),size:t.size,font:f,color:hex(t.color)})})}
+  return doc.save()}
 let sg=null;
 const sgMsg=(t,bad)=>{$('sgInfo').textContent=t||'';$('sgInfo').style.color=bad?'#a12020':''};
 function sgTwo(){return !$('sg2').hidden}
@@ -4193,7 +4218,7 @@ async function sgAddDoc(f){const d={f,start:sg.pages.length};sg.docs.push(d);sgD
     wrap.appendChild(cv);$('sgBody').appendChild(wrap);sg.pages.push({wrap,sc,w:base.width,h:base.height,doc:d,pn:i});
     await page.render({canvasContext:cv.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null,annotationMode:pdfjsLib.AnnotationMode.ENABLE_FORMS}).promise}
   const found=(await signGuess(d.pdf)).map(t=>({...t,page:t.page+d.start}));sg.tabs.push(...found);sgDraw();return found.filter(t=>t.type==='sign').length}
-function sgDropDoc(i){const d=sg.docs[i];if(!d||!i)return;const n=sg.pages.filter(p=>p.doc===d).length;
+function sgDropDoc(i){const d=sg.docs[i];if(!d||!i)return;sg.sel=null;$('sgStEd').hidden=true;sg.sel=null;$('sgStEd').hidden=true;const n=sg.pages.filter(p=>p.doc===d).length;
   sg.pages.filter(p=>p.doc===d).forEach(p=>p.wrap.remove());$('sgBody').querySelectorAll('.sgDocH').forEach(h=>h.remove());
   sg.tabs=sg.tabs.filter(t=>sg.pages[t.page].doc!==d).map(t=>t.page>d.start?{...t,page:t.page-n}:t);sg.pages=sg.pages.filter(p=>p.doc!==d);
   if(d.pdf)d.pdf.destroy();sg.docs.splice(i,1);
@@ -4202,17 +4227,20 @@ function sgDropDoc(i){const d=sg.docs[i];if(!d||!i)return;const n=sg.pages.filte
   sgDocsUi();sgDraw()}
 function sgDraw(){if(!sg)return;sg.pages.forEach(p=>p.wrap.querySelectorAll('.sgBox').forEach(x=>x.remove()));
   const two=sgTwo(),nm=i=>($(i?'sgN2':'sgN1').value.trim()||`Signer ${i+1}`).split(/\s+/)[0];
-  sg.tabs.forEach((t,i)=>{const p=sg.pages[t.page];if(!p)return;const[w,h]=SG_SZ[t.type],el=document.createElement('div');
+  sg.tabs.forEach((t,i)=>{const p=sg.pages[t.page];if(!p)return;const[w,h]=sgWH(t),el=document.createElement('div');
+    if(SG_STAMP[t.type]){el.className='sgBox stamp'+(sg.sel===i?' sel':'');el.dataset.i=i;el.style.cssText=`left:${t.x*p.sc}px;top:${t.y*p.sc}px;width:${w*p.sc}px;height:${h*p.sc}px`;
+      el.innerHTML=(t.type==='mysig'?`<img src="${esc(sgSigUrl)}" alt="My signature"><span class="rs" title="Drag to resize"></span>`:`<span style="font:${t.italic?'italic ':''}${t.bold?'700':'400'} ${t.size*p.sc}px/1.2 Helvetica,Arial,sans-serif;color:${esc(t.color)}">${esc(t.text||'')}</span>`)+`<button type="button" class="x" data-sgx="${i}" title="Remove this box" aria-label="Remove this box">×</button>`;
+      el.title='Click to change it. Drag to move.';p.wrap.appendChild(el);return}
     el.className='sgBox s'+t.signer+(t.type==='date'||t.type==='name'?' thin':'')+(t.type==='check'?' chk'+(t.on?'':' off'):'');el.dataset.i=i;
     el.style.cssText=`left:${t.x*p.sc}px;top:${t.y*p.sc}px;width:${w*p.sc}px;height:${h*p.sc}px`;
     el.innerHTML=`<span>${esc(SG_LBL[t.type])}${two&&t.type!=='check'?' · '+esc(nm(t.signer)):''}</span><button type="button" class="x" data-sgx="${i}" title="Remove this box" aria-label="Remove this box">×</button>`;
     el.title=t.type==='check'?`Click to ${t.on?'uncheck':'check'} it (${t.on?'starts checked':'starts empty'}). Drag to move. The signer can still change it.`:two?'Drag to move. Click to switch who signs here.':'Drag to move.';p.wrap.appendChild(el)});
   const n=sg.tabs.filter(t=>t.type==='sign').length;
-  if(!sg.err)sgMsg(n?`${n} signature box${n>1?'es':''}. Drag a box to move it, or use the buttons above to add more.`:'No signature box yet. Click “Sign here”, then click on the page where the client signs.')}
+  if(!sg.err&&sg.sel==null)sgMsg(n?`${n} signature box${n>1?'es':''}. Drag a box to move it, or use the buttons above to add more.`:'No signature box yet. Click “Sign here”, then click on the page where the client signs.')}
 async function openSign(f,kind){
   const st=await signStatus(true);if(!st.configured)return toast('DocuSign isn’t set up yet.');
   const v=kind==='lead'?{n:[cur.firstName,cur.lastName].filter(Boolean).join(' ')||cur.company||'',e:cur.email||''}:{n:[$('clFirst').value.trim(),$('clLast').value.trim()].filter(Boolean).join(' ')||$('clCompany').value.trim(),e:$('clEmail').value.trim()};
-  sg={f,kind,path:signPathNow(kind),tabs:[],tool:'',pages:[],docs:[],err:''};
+  sg={f,kind,path:signPathNow(kind),tabs:[],tool:'',pages:[],docs:[],err:'',sel:null};$('sgStEd').hidden=true;
   $('sgName').textContent=f.name;$('sgN1').value=v.n;$('sgE1').value=v.e;$('sgN2').value='';$('sgE2').value='';$('sg2').hidden=true;$('sgAdd2').hidden=false;$('sgWho').hidden=true;
   $('sgSubj').value=((v.n?v.n+' ':'')+'binding docs').slice(0,100);
   $('sgMsgT').value=`Hi ${(v.n.split(/\s+/)[0])||'there'},\n\nPlease review and sign the attached document. Let us know if you have any questions.\n\nPacific Southwest Insurance Services\n(818) 701-1033`;
@@ -4232,30 +4260,43 @@ $('sgDocs').addEventListener('change',async e=>{if(e.target.id!=='sgMore'||!sg)r
 $('sgDocs').addEventListener('click',e=>{const b=e.target.closest('[data-sgdrop]');if(b&&sg)sgDropDoc(+b.dataset.sgdrop)});
 $('sgAdd2').onclick=()=>{$('sg2').hidden=false;$('sgAdd2').hidden=true;$('sgWho').hidden=false;$('sgN2').focus();sgDraw()};
 $('sgRm2').onclick=()=>{$('sg2').hidden=true;$('sgAdd2').hidden=false;$('sgWho').hidden=true;document.querySelector('#sgWho input[value="0"]').checked=true;if(sg){sg.tabs=sg.tabs.filter(t=>t.signer!==1);sgDraw()}};
+$('sgStTxt').addEventListener('input',()=>sgStSet('text',$('sgStTxt').value));
+$('sgStSize').onchange=()=>sgStSet('size',+$('sgStSize').value);$('sgStCol').addEventListener('input',()=>sgStSet('color',$('sgStCol').value));
+$('sgStBar').addEventListener('click',e=>{const c=e.target.closest('[data-sgc]'),f=e.target.closest('[data-sgf]'),t=sg&&sg.tabs[sg.sel];if(!t)return;if(c)sgStSet('color',c.dataset.sgc);if(f)sgStSet(f.dataset.sgf,!t[f.dataset.sgf])});
+$('sgStDone').onclick=()=>{if(!sg)return;const t=sg.tabs[sg.sel];if(t&&t.type!=='mysig'&&!String(t.text||'').trim())sg.tabs.splice(sg.sel,1);sg.sel=null;sgDraw();sgStOpen()};
 ['sgN1','sgN2'].forEach(i=>$(i).addEventListener('input',()=>{$(i==='sgN1'?'sgW1':'sgW2').textContent=$(i).value.trim()||(i==='sgN1'?'Signer 1':'Signer 2');if(sgTwo())sgDraw()}));
-document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.onclick=()=>{if(!sg)return;const on=sg.tool!==b.dataset.sgt;sg.tool=on?b.dataset.sgt:'';document.querySelectorAll('#sg [data-sgt]').forEach(x=>x.classList.toggle('on',x===b&&on));$('sg').classList.toggle('adding',on);if(on){sg.err=0;sgMsg('Now click on the page where it goes.')}});
+document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.onclick=async()=>{if(!sg)return;const on=sg.tool!==b.dataset.sgt;
+  if(on&&b.dataset.sgt==='mysig'&&!(sgSigUrl=await mySig()))return sgMsg('You don’t have a signature saved yet. An owner can add it for you in Admin (Signature).',true);sg.tool=on?b.dataset.sgt:'';document.querySelectorAll('#sg [data-sgt]').forEach(x=>x.classList.toggle('on',x===b&&on));$('sg').classList.toggle('adding',on);if(on){sg.err=0;sgMsg('Now click on the page where it goes.')}});
 // add a box where the page is clicked; drag a box to move it; click a box to switch signer (with two signers); × removes it
-$('sgBody').addEventListener('click',e=>{if(!sg)return;const x=e.target.closest('[data-sgx]');if(x){sg.tabs.splice(+x.dataset.sgx,1);sgDraw();return}
-  if(!sg.tool||e.target.closest('.sgBox'))return;const wrap=e.target.closest('.pg');if(!wrap)return;const p=sg.pages[+wrap.dataset.page],r=wrap.getBoundingClientRect(),[w,h]=SG_SZ[sg.tool];
+$('sgBody').addEventListener('click',e=>{if(!sg)return;const x=e.target.closest('[data-sgx]');if(x){const k=+x.dataset.sgx;sg.tabs.splice(k,1);if(sg.sel!=null)sg.sel=sg.sel===k?null:sg.sel>k?sg.sel-1:sg.sel;sgDraw();sgStOpen();return}
+  if(!sg.tool&&!e.target.closest('.sgBox')&&sg.sel!=null){sg.sel=null;sgDraw();sgStOpen();return}
+  if(!sg.tool||e.target.closest('.sgBox'))return;const wrap=e.target.closest('.pg');if(!wrap)return;const p=sg.pages[+wrap.dataset.page],r=wrap.getBoundingClientRect();
+  if(SG_STAMP[sg.tool]){const t={type:sg.tool,stamp:1,signer:0,page:+wrap.dataset.page,...sgStDef};
+    if(t.type==='mysig'){t.w=130;t.h=36}else{t.text=t.type==='company'?sgCompany():'';sgFit(t)}
+    t.x=Math.max(0,Math.min(p.w-t.w,(e.clientX-r.left)/p.sc-(t.type==='text'?0:t.w/2)));t.y=Math.max(0,Math.min(p.h-t.h,(e.clientY-r.top)/p.sc-t.h/2));
+    sg.tabs.push(t);sg.sel=sg.tabs.length-1;sg.tool='';document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.classList.remove('on'));$('sg').classList.remove('adding');sgDraw();sgStOpen();
+    if(t.type!=='mysig'){$('sgStTxt').focus();if(t.type==='company'&&!t.text)sgMsg('This lead or client has no company name. Type it in the box.',true)}return}
+  const[w,h]=SG_SZ[sg.tool];
   const who=sgTwo()?+(document.querySelector('#sgWho input:checked')||{value:0}).value:0;
   sg.tabs.push({type:sg.tool,signer:who,...(sg.tool==='check'?{on:true}:{}),page:+wrap.dataset.page,x:Math.max(0,Math.min(p.w-w,(e.clientX-r.left)/p.sc-w/2)),y:Math.max(0,Math.min(p.h-h,(e.clientY-r.top)/p.sc-h/2))});
   sg.tool='';document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.classList.remove('on'));$('sg').classList.remove('adding');sgDraw()});
 $('sgBody').addEventListener('pointerdown',e=>{const el=e.target.closest('.sgBox');if(!el||e.target.closest('[data-sgx]')||!sg)return;e.preventDefault();
-  const t=sg.tabs[+el.dataset.i],p=sg.pages[t.page],sx=e.clientX,sy=e.clientY,ox=t.x,oy=t.y,[w,h]=SG_SZ[t.type];let moved=false;el.setPointerCapture(e.pointerId);
-  const mv=ev=>{const dx=(ev.clientX-sx)/p.sc,dy=(ev.clientY-sy)/p.sc;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;t.x=Math.max(0,Math.min(p.w-w,ox+dx));t.y=Math.max(0,Math.min(p.h-h,oy+dy));el.style.left=t.x*p.sc+'px';el.style.top=t.y*p.sc+'px'};
-  const up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);if(!moved&&t.type==='check'){t.on=!t.on;sgDraw()}else if(!moved&&sgTwo()){t.signer=t.signer?0:1;sgDraw()}};
+  const t=sg.tabs[+el.dataset.i],p=sg.pages[t.page],sx=e.clientX,sy=e.clientY,ox=t.x,oy=t.y,[w,h]=sgWH(t),rs=!!e.target.closest('.rs'),ow=t.w,oh=t.h;let moved=false;el.setPointerCapture(e.pointerId);
+  const mv=rs?ev=>{const dx=(ev.clientX-sx)/p.sc;moved=true;t.w=Math.max(30,Math.min(p.w-t.x,ow+dx));t.h=Math.round(t.w*oh/ow);el.style.width=t.w*p.sc+'px';el.style.height=t.h*p.sc+'px'}:ev=>{const dx=(ev.clientX-sx)/p.sc,dy=(ev.clientY-sy)/p.sc;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;t.x=Math.max(0,Math.min(p.w-w,ox+dx));t.y=Math.max(0,Math.min(p.h-h,oy+dy));el.style.left=t.x*p.sc+'px';el.style.top=t.y*p.sc+'px'};
+  const up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);if(t.stamp){sg.sel=+el.dataset.i;sgDraw();sgStOpen()}else if(!moved&&t.type==='check'){t.on=!t.on;sgDraw()}else if(!moved&&sgTwo()){t.signer=t.signer?0:1;sgDraw()}};
   el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)});
 const u8b64=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)};
 $('sgSend').onclick=async()=>{if(!sg||$('sgSend').disabled)return;sg.err=0;
   const ok=e=>/^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$/.test(e),signers=[{name:$('sgN1').value.trim(),email:$('sgE1').value.trim()}];
   if(sgTwo())signers.push({name:$('sgN2').value.trim(),email:$('sgE2').value.trim()});
   for(const[i,s]of signers.entries()){if(!s.name)return sgMsg(`Type the ${i?'second ':''}signer’s name.`,true);if(!ok(s.email))return sgMsg(`Type a good email for ${s.name}.`,true);
-    if(!sg.tabs.some(t=>t.signer===i&&t.type==='sign'))return sgMsg(`${s.name} has no “Sign here” box yet.`,true)}
+    if(!sg.tabs.some(t=>t.signer===i&&t.type==='sign'&&!t.stamp))return sgMsg(`${s.name} has no “Sign here” box yet.`,true)}
   $('sgSend').disabled=true;sgMsg('Sending to DocuSign…');
-  try{const docs=[];for(const d of sg.docs){let pdf;try{pdf=await flatPdf(d.bytes.slice())}catch(_){pdf=d.bytes} // filled-in boxes become part of the page, so DocuSign shows them as typed
+  try{const docs=[];for(const d of sg.docs){let pdf;try{pdf=await flatPdf(d.bytes.slice())}catch(_){pdf=d.bytes}
+      const st=sg.tabs.filter(t=>t.stamp&&sg.pages[t.page]&&sg.pages[t.page].doc===d).map(t=>({t,pn:sg.pages[t.page].pn}));if(st.length){if(st.some(x=>x.t.type==='mysig'))sgSigUrl=sgSigUrl||await mySig();pdf=await sgStampPdf(pdf,st)} // filled-in boxes become part of the page, so DocuSign shows them as typed
       docs.push({fileId:d.f.id,fileName:d.f.name,pid:d.f.pid||'',pdf:u8b64(new Uint8Array(pdf))})}
     const r=await fetch('/api/sign/send',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({path:sg.path,docs,signers,
-      subject:$('sgSubj').value.trim(),message:$('sgMsgT').value.trim(),tabs:sg.tabs.map(t=>{const p=sg.pages[t.page];return {type:t.type,signer:t.signer,checked:!!t.on,doc:sg.docs.indexOf(p.doc),page:p.pn,x:Math.round(t.x),y:Math.round(t.y)}})})});
+      subject:$('sgSubj').value.trim(),message:$('sgMsgT').value.trim(),tabs:sg.tabs.filter(t=>!t.stamp).map(t=>{const p=sg.pages[t.page];return {type:t.type,signer:t.signer,checked:!!t.on,doc:sg.docs.indexOf(p.doc),page:p.pn,x:Math.round(t.x),y:Math.round(t.y)}})})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){const why={no_sign_box:'Every signer needs a “Sign here” box.',bad_signer:'Check the signer names and emails.',consent:'DocuSign needs a one-time OK first. Close this screen and press Sign again for the link.',bad_pdf:'This file isn’t a PDF DocuSign can take.',sign_off:'DocuSign isn’t set up yet.'}[j.code];
       throw new Error(why||('DocuSign said: '+(j.detail||j.code||r.status)))}
