@@ -795,7 +795,7 @@ def may_delete(u):
 # ---------- company/GA logins ----------
 # siteLinks records hold each company's and GA's portal user name and password; everyone sees them, only owners and people set to Yes change them.
 SITE_COL = "siteLinks"
-SECRET_KEYS = ("user", "pass")
+SECRET_KEYS = ("user", "pass", "webLogins")  # webLogins: the user name and password for each of its websites, by website id
 
 
 def can_secrets(u):
