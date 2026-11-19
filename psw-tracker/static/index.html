@@ -412,7 +412,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
 <div class="ed" id="ed" aria-hidden="true">
   <div class="edh"><span class="nm" id="edName"></span>
     <button id="edAdd" title="Click on the page to type text">+ Add text</button>
-    <button id="edQl" hidden title="Email the customer a link to a web copy of this sheet. Boxes you already filled in go pre-filled for them to check">Email link to customer</button><button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button id="edClose">Save/Close</button></div>
+    <button id="edQl" hidden title="Email the customer a link to a web copy of this sheet. Boxes you already filled in go pre-filled for them to check">Email link to customer</button><button class="pri" id="edSave">Save to lead</button><button id="edDl">Download</button><button class="pri" id="edSaveOnly" title="Save this sheet and keep it open" hidden>Save</button><button id="edClose">Save/Close</button></div>
   <div class="edh" style="padding-top:6px;padding-bottom:6px"><span class="edmsg" id="edMsg"></span></div>
   <div class="edb" id="edBody"></div>
   <div class="edSide" id="edSide" hidden><div class="drop" id="edDrop"><b>Fill from an old ACORD 80</b><p class="small" style="margin:6px 0 8px">Drop the client’s old ACORD 80 here, either the fillable PDF or a printed copy. Its answers go into this sheet; then hit Save to lead.</p>
@@ -2264,6 +2264,8 @@ const LINKS={externalLinkEnabled:true,getDestinationHash:()=>'#',getAnchorUrl:()
 const edInput=id=>$('edBody').querySelector(`[data-annotation-id="${id}"] input,[data-annotation-id="${id}"] textarea,[data-annotation-id="${id}"] select`);
 const edVal=k=>{const f=ed&&ed.fields.find(x=>x.name==='f_'+k);const el=f&&edInput(f.id);return el?el.value:''};
 function closeEditor(){$('ed').classList.remove('on');$('ed').setAttribute('aria-hidden','true');$('edBody').innerHTML='';if(ed&&ed.pdf)ed.pdf.destroy();ed=null}
+// Save (quote sheets): saves the sheet and keeps it open, without copying anything into the lead
+$('edSaveOnly').onclick=async()=>{const b=$('edSaveOnly');if(b.disabled||!ed)return;if(!ed.dirty){edMsg('No changes to save yet.');return}b.disabled=true;try{await saveEd(true)}finally{b.disabled=false}};
 // Save/Close: saves any changes to the lead, then closes (view-only users get the old close-without-saving warning)
 $('edClose').onclick=async()=>{const c=$('edClose');if(c.disabled)return;
   if(ed&&ed.dirty&&assets&&(ed.save||cur&&cur.id)){c.disabled=true;const q=sheetKind(ed.f.name)?sheetVals():null,ok=await saveEd(false);c.disabled=false;if(ok){closeEditor();if(q)await sheetToLead(q)}return}
@@ -2275,7 +2277,7 @@ async function openEditor(f,opt){
   ed={f,kind,notes:[],fields:[],dirty:false,save:opt&&opt.save};$('ed').classList.toggle('top',!!ed.save);
   {const home=assets&&/ personal home quote sheet\.pdf$/i.test(f.name),sup=assets&&/ com quote sheet\.pdf$/i.test(f.name);$('edSide').hidden=!home;$('edQs').hidden=!sup;$('edSup').hidden=!sup;$('ed').classList.toggle('side',home||sup);$('ed').classList.toggle('sideR',sup);$('edDropMsg').textContent='';$('edQsMsg').textContent='';$('edSupMsg').textContent='';$('edQsText').value=''}
   $('edName').textContent=f.name;$('edBody').innerHTML='';$('ed').classList.add('on');$('ed').setAttribute('aria-hidden','false');
-  $('edSave').hidden=!assets;$('edQl').hidden=!(assets&&!ed.save&&cur&&cur.id&&qlKindOf(f.name)&&(cur.files||[]).some(x=>x.id===f.id));$('edSave').textContent=ed.save?'Save to client':'Save to lead';$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=ed.save?'Save this certificate to the client':isQuoteSheet(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
+  $('edSave').hidden=!assets;$('edSaveOnly').hidden=!(assets&&isQuoteSheet(f.name));$('edQl').hidden=!(assets&&!ed.save&&cur&&cur.id&&qlKindOf(f.name)&&(cur.files||[]).some(x=>x.id===f.id));$('edSave').textContent=ed.save?'Save to client':'Save to lead';$('edClose').textContent=assets?'Save/Close':'Close';$('edSave').title=ed.save?'Save this certificate to the client':isQuoteSheet(f.name)?'Save this sheet, and copy its client name, contact, phone, email, lead date and source into the lead':'';$('edDl').hidden=!dl;$('edAdd').hidden=kind==='text'||isQuoteSheet(f.name);$('edAdd').classList.remove('on');$('ed').classList.remove('adding');
   edMsg('Opening…');
   try{
     ed.bytes=await fileBytes(f);
