@@ -1363,10 +1363,13 @@ def agent_cell(c, agent):
     a = str(agent or "").strip().lower()
     if not a:
         return ""
-    for r in c.execute("SELECT name, username, cell FROM users WHERE active=1"):
+    rows = c.execute("SELECT name, username, cell FROM users WHERE active=1").fetchall()
+    for r in rows:
         if a in (str(r["name"] or "").strip().lower(), str(r["username"] or "").strip().lower()) and cell10(r["cell"]):
             return cell10(r["cell"])
-    return ""
+    # "Paul" on the lead for "Paul Smith" in Admin: first name, when only one person has it
+    same = [r for r in rows if (str(r["name"] or "").strip().lower().split() or [""])[0] == a.split()[0]]
+    return cell10(same[0]["cell"]) if len(same) == 1 else ""
 
 
 def quote_done_text(who, kind, cell=""):
@@ -1893,7 +1896,57 @@ async def text_hook(token: str, request: Request):
         last = c.execute("SELECT id,by_user,by_name FROM text_log WHERE phone=? AND dir='out' ORDER BY at DESC LIMIT 1", (ph,)).fetchone()  # the text it answers
         c.execute("INSERT INTO text_log(at,dir,phone,text,ext_id,to_user,to_name,reply_to) VALUES(?,?,?,?,?,?,?,?)",
                   (time.time(), "in", ph, text, mid, last["by_user"] if last else "", last["by_name"] if last else "", last["id"] if last else None))
+        fwd = text_forward(c, ph, text)
+    if fwd:
+        threading.Thread(target=_text_forward_send, args=fwd, daemon=True).start()
     return {"ok": True}
+
+
+# A text from a lead assigned to one of these agents is also texted to that agent's cell (their Admin row), with the lead's name.
+# PSW_TEXT_FORWARD in .env: comma-separated agent names or usernames ("all" for every agent with a cell).
+TEXT_FORWARD = [x.strip().lower() for x in os.environ.get("PSW_TEXT_FORWARD", "paul").split(",") if x.strip()]
+
+
+def text_forward(c, ph, text):
+    """(cell, message) when the texting number belongs to a lead whose agent gets forwarded texts, else None"""
+    if not TEXT_FORWARD:
+        return None
+    for r in c.execute("SELECT data FROM tracker_docs WHERE parent='leads'"):
+        try:
+            d = json.loads(r["data"])
+        except Exception:
+            continue
+        if ph not in {phone10(d.get(k)) for k in ("phone", "homePhone", "workPhone")}:
+            continue
+        agent = str(d.get("assignedTo") or "").strip()
+        if not agent:
+            return None
+        if "all" not in TEXT_FORWARD:
+            names = {agent.lower()}
+            for u in c.execute("SELECT name, username FROM users WHERE active=1"):
+                if agent.lower() in (str(u["name"] or "").strip().lower(), str(u["username"] or "").strip().lower()):
+                    names |= {str(u["name"] or "").strip().lower(), str(u["username"] or "").strip().lower()}
+            if not names & set(TEXT_FORWARD) and not any(n.split()[0] in TEXT_FORWARD for n in names if n):
+                return None
+        cell = agent_cell(c, agent)
+        if not cell or cell == ph:
+            return None
+        who = " ".join(x for x in (d.get("firstName", ""), d.get("lastName", "")) if x).strip() or d.get("company") or "A lead"
+        if d.get("company") and d.get("company") not in who:
+            who = f"{who} ({d['company']})"
+        return cell, f"PSW database: text from your lead {who}, {ph[:3]}-{ph[3:6]}-{ph[6:]}: {text}"[:1500]
+    return None
+
+
+def _text_forward_send(cell, msg):
+    payload = {"contactPhone": cell, "mode": "AUTO", "text": msg}
+    acct = re.sub(r"\D", "", os.environ.get("SIMPLETEXTING_PHONE", ""))[-10:]
+    if acct:
+        payload["accountPhone"] = acct
+    try:
+        simpletexting_post(payload)
+    except Exception as e:
+        print("text forward failed:", e, flush=True)
 
 
 @app.post("/api/text/send")
