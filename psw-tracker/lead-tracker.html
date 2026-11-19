@@ -643,8 +643,24 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div id="cosColGa"><div class="row" style="justify-content:space-between;align-items:center"><h4>General agents</h4><button type="button" class="pri" id="cosAddGa">+ Add GA</button></div><div class="cosList" id="cosGa"></div></div></div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="cosClose" type="button">Close</button></div>
 </div></div>
+<div class="mbg" id="c35Dlg" role="dialog" aria-modal="true" aria-labelledby="c35H" style="z-index:16"><div class="mbox" style="width:min(560px,96vw);max-height:92vh;overflow:auto">
+  <h3 id="c35H" style="margin:0 0 4px">ACORD 35 Cancellation Request / Policy Release</h3>
+  <div class="small" style="margin-bottom:8px">Fills from the policy you pick and this client, dated today and signed by you. It's saved to the client's Files, still fillable; use Send for signature there to get the insured's signature.</div>
+  <div class="mlGrid">
+    <label>Policy<select id="c35Pol"></select></label>
+    <div class="row" style="gap:10px"><label style="flex:1">Cancellation date<input id="c35Date" placeholder="MM/DD/YYYY"></label><label style="width:110px">Time<input id="c35Time" value="12:01"></label><label style="width:90px">AM / PM<select id="c35Ap"><option>AM</option><option>PM</option></select></label></div>
+    <label>This is a<select id="c35Kind"><option value="release">Policy release (the insured signs)</option><option value="request">Cancellation request (policy attached)</option></select></label>
+    <label>Reason<select id="c35Why"><option value="insured">Requested by insured</option><option value="nottaken">Not taken</option><option value="rewritten">Rewritten</option><option value="other">Other</option></select></label>
+    <label id="c35NewL" hidden>Rewritten with (company)<input id="c35New"></label>
+    <label id="c35OtherL" hidden>Other reason<input id="c35Other"></label>
+    <label>Method<select id="c35How"><option value="">(leave blank)</option><option value="flat">Flat</option><option value="pro">Pro rata</option><option value="short">Short rate</option></select></label>
+    <label>Remarks<input id="c35Rem" placeholder="Optional"></label>
+  </div>
+  <p class="msg" id="c35Msg"></p>
+  <div class="row" style="justify-content:flex-end"><button type="button" id="c35Cancel">Cancel</button><button type="button" class="pri" id="c35Go">Make ACORD 35</button></div>
+</div></div>
 <div class="mbg" id="certDlg" role="dialog" aria-modal="true" aria-labelledby="certTitleH" style="z-index:12"><div class="mbox" style="width:min(1400px,98vw);max-height:90vh;overflow:auto">
-  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="certTitleH" style="margin:0">Certificates</h3><span class="row" id="certNewBtns" style="gap:8px"><button class="pri" id="certNew23" type="button" title="New ACORD 23 Vehicle or Equipment Certificate of Insurance">23-Veh EOI</button><button class="pri" id="certNew" type="button" title="New ACORD 25 Certificate of Liability Insurance">25-COI</button><button class="pri" id="certNew27" type="button" title="New ACORD 27 Evidence of Property Insurance">27-Per EOI</button><button class="pri" id="certNew28" type="button" title="New ACORD 28 Evidence of Commercial Property Insurance">28-Com EOI</button></span></div>
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="certTitleH" style="margin:0">Certificates</h3><span class="row" id="certNewBtns" style="gap:8px"><button class="pri" id="certNew23" type="button" title="New ACORD 23 Vehicle or Equipment Certificate of Insurance">23-Veh EOI</button><button class="pri" id="certNew" type="button" title="New ACORD 25 Certificate of Liability Insurance">25-COI</button><button class="pri" id="certNew27" type="button" title="New ACORD 27 Evidence of Property Insurance">27-Per EOI</button><button class="pri" id="certNew28" type="button" title="New ACORD 28 Evidence of Commercial Property Insurance">28-Com EOI</button><button class="pri" id="certNew35" type="button" title="New ACORD 35 Cancellation Request / Policy Release" style="background:#c62828;border-color:#c62828">35-Cancel</button></span></div>
   <div class="small" style="margin:6px 0 10px">23-Veh EOI (ACORD 23 Vehicle or Equipment Certificate) fills from one auto policy and one vehicle for a loss payee, lienholder or additional insured. 25-COI (ACORD 25) fills with this client, the policies you pick, the holder and the description, dated today. 27-Per EOI (ACORD 27 Evidence of Property) and 28-Com EOI (ACORD 28 Evidence of Commercial Property) fill from one property policy for a mortgagee, loss payee or other interest. Copy cert makes a new one from an old one for a different holder.</div>
   <form id="certForm" hidden style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
     <div id="certPolBox"><h4 style="margin:0 0 6px" id="certPolH">Policies on this certificate</h4><div id="certPols" class="certPols"></div></div>
@@ -4719,6 +4735,42 @@ $('clCerts').onclick=()=>{if(!editClient)return;certFormClose();$('certTitleH').
 $('certClose').onclick=()=>{certFormClose();$('certDlg').classList.remove('on')};
 $('certNew').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'25')};
 $('certNew27').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'27')};
+/* ---------- ACORD 35 Cancellation Request / Policy Release: from one of the client's active policies, saved to the client's Files ---------- */
+let tpl35=null;
+async function acord35Tpl(){if(!tpl35){const r=await fetch('tpl35.pdf');if(!r.ok)throw new Error('ACORD 35 template missing');tpl35=new Uint8Array(await r.arrayBuffer())}return tpl35}
+$('certNew35').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');const ps=certPolicies();
+  if(!ps.length)return certSay('Add the policy to this client first (an active one), then make the ACORD 35.','err');
+  $('c35Pol').innerHTML=ps.map((p,i)=>`<option value="${i}">${esc([p.line,p.co,p.num,p.eff&&p.exp?p.eff+' - '+p.exp:''].filter(Boolean).join(' · '))}</option>`).join('');
+  $('c35Date').value=today25();$('c35Time').value='12:01';$('c35Ap').value='AM';$('c35Kind').value='release';$('c35Why').value='insured';$('c35New').value='';$('c35Other').value='';$('c35How').value='';$('c35Rem').value='';
+  $('c35NewL').hidden=true;$('c35OtherL').hidden=true;$('c35Msg').textContent='';$('c35Msg').className='msg';$('c35Go').disabled=false;$('c35Dlg').classList.add('on')};
+$('c35Why').onchange=()=>{$('c35NewL').hidden=$('c35Why').value!=='rewritten';$('c35OtherL').hidden=$('c35Why').value!=='other'};
+const c35Close=()=>$('c35Dlg').classList.remove('on');$('c35Cancel').onclick=c35Close;$('c35Dlg').addEventListener('click',e=>{if(e.target===$('c35Dlg'))c35Close()});
+$('c35Go').onclick=async()=>{const m=$('c35Msg'),p=certPolicies()[+$('c35Pol').value];if(!p){m.className='msg err';m.textContent='Pick the policy.';return}
+  const dt=$('c35Date').value.trim();if(!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dt)){m.className='msg err';m.textContent='Type the cancellation date as MM/DD/YYYY.';return}
+  $('c35Go').disabled=true;m.className='msg';m.textContent='Making the ACORD 35…';
+  try{await acordReady();const doc=await PDFLib.PDFDocument.load(await acord35Tpl(),{ignoreEncryption:true}),helv=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+    const g=id=>$(id).value.trim(),x=p.x||{},nm=g('clCompany')||[g('clFirst'),g('clLast')].filter(Boolean).join(' '),ad=g('clAddress').split(/\n/).map(t=>t.trim()).filter(Boolean),why=$('c35Why').value,how=$('c35How').value;
+    const it=String(x.mtg_int||'').toLowerCase(),mtg=String(x.mtg_name||'').trim();
+    const v={Form_CompletionDate_A:today25(),Producer_FullName_A:'Pacific Southwest Insurance Services',Producer_MailingAddress_LineOne_A:'9036 Reseda Blvd., Suite 105',Producer_MailingAddress_CityName_A:'Northridge',
+      Producer_MailingAddress_StateOrProvinceCode_A:'CA',Producer_MailingAddress_PostalCode_A:'91324',Producer_ContactPerson_PhoneNumber_A:'(818) 701-1033',
+      Insurer_FullName_A:p.co||'',Policy_TypeDescription_A:p.line||'',NamedInsured_FullName_A:nm+(g('clDba')?' DBA '+g('clDba'):''),NamedInsured_MailingAddress_LineOne_A:ad[0]||'',NamedInsured_MailingAddress_LineTwo_A:ad.slice(1).join(', '),
+      NamedInsured_MailingAddress_CityName_A:g('clCity'),NamedInsured_MailingAddress_StateOrProvinceCode_A:g('clState'),NamedInsured_MailingAddress_PostalCode_A:g('clZip'),
+      Policy_PolicyNumberIdentifier_A:p.num||'',CancelNonRenew_CancelNonRenewDate_A:dt,CancelNonRenew_CancelNonRenewTime_A:g('c35Time'),Policy_EffectiveDate_A:p.eff||'',Policy_ExpirationDate_A:p.exp||'',
+      CancelNonRenew_CancelNonRenewTimeMorningIndicator_A:$('c35Ap').value==='AM',CancelNonRenew_CancelNonRenewTimeAfternoonOrEveningIndicator_A:$('c35Ap').value==='PM',
+      CancelNonRenew_PolicyReleaseIndicator_A:$('c35Kind').value==='release',CancelNonRenew_CancellationRequestIndicator_A:$('c35Kind').value==='request',
+      CancelNonRenew_InsuredRequestIndicator_A:why==='insured',CancelNonRenew_NotTakenIndicator_A:why==='nottaken',CancelNonRenew_RewrittenIndicator_A:why==='rewritten',CancelNonRenew_OtherIndicator_A:why==='other',
+      CancelNonRenew_NewInsurer_FullName_A:why==='rewritten'?g('c35New'):'',CancelNonRenew_OtherDescription_A:why==='other'?g('c35Other'):'',
+      CancelNonRenew_PremiumCalculation_FlatIndicator_A:how==='flat',CancelNonRenew_PremiumCalculation_ProRataIndicator_A:how==='pro',CancelNonRenew_PremiumCalculation_ShortRateIndicator_A:how==='short',
+      CancelNonRenew_RemarkText_A:g('c35Rem'),CancelNonRenew_Distribution_InsuredIndicator_A:true,CancelNonRenew_Distribution_CompanyIndicator_A:true,Producer_AuthorizedRepresentative_SignatureDate_A:today25()};
+    if(mtg){Object.assign(v,{AdditionalInterest_FullName_A:[mtg,x.mtg_name2].filter(Boolean).join(' '),AdditionalInterest_MailingAddress_LineOne_A:[x.mtg_addr1,x.mtg_addr2].filter(Boolean).join(', '),
+      AdditionalInterest_MailingAddress_CityName_A:x.mtg_city||'',AdditionalInterest_MailingAddress_StateOrProvinceCode_A:x.mtg_state||'',AdditionalInterest_MailingAddress_PostalCode_A:x.mtg_zip||'',
+      AdditionalInterest_Interest_MortgageeIndicator_A:it.startsWith('mortgagee'),AdditionalInterest_Interest_LossPayeeIndicator_A:it==='loss payee',AdditionalInterest_Interest_LendersLossPayableIndicator_A:it.startsWith('lender'),
+      CancelNonRenew_Distribution_MortgageeIndicator_A:it.startsWith('mortgagee'),CancelNonRenew_Distribution_LossPayeeIndicator_A:it==='loss payee',CancelNonRenew_Distribution_LendersLossPayable_A:it.startsWith('lender')})}
+    fillBoxes(doc,Object.fromEntries(Object.entries(v).filter(([,y])=>y)),helv);await sigDraw(doc,'Producer_Cancellation_Signature_A');
+    const client=fnClean(nm||'Client')||'Client',have=new Set(clFileList().map(f=>f.name.toLowerCase()));let name=`${client} ACORD 35 ${fnClean(p.num||p.line||'')}`.trim().replace(/\s+/g,' ')+'.pdf';
+    for(let k=2;have.has(name.toLowerCase());k++)name=name.replace(/( \d+)?\.pdf$/,` ${k}.pdf`);
+    await addClientFiles([new File([await doc.save()],name,{type:'application/pdf'})]);c35Close();toast(`Saved ${name} under Files.`,6000)}
+  catch(err){m.className='msg err';m.textContent='Couldn’t make it: '+(err&&err.message?err.message:err);$('c35Go').disabled=false}};
 $('certNew28').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'28')};
 $('certNew23').onclick=()=>{if(!editClient)return;if(isLocked('client'))return toast('This client is view-only right now.');certFormOpen('new',null,'23')};
 // picking another policy for a new ACORD 27 brings its property address
