@@ -541,11 +541,21 @@ def invite_accept(t: str = Form(...), password: str = Form(...), password2: str 
     return signed_in(tok)
 
 
+def binders_for(u, request):
+    """The binder logs this person may open: their own first, then any shared with them, as [{username, name}]."""
+    if bearer(request):
+        return []
+    who = ([u["username"]] if u["username"] in BINDER_OWNERS else []) + sorted(o for o, v in BINDER_SHARED.items() if u["username"] in v and o != u["username"])
+    with db() as c:
+        names = {r["username"]: r["name"] for r in c.execute("SELECT username,name FROM users")}
+    return [{"username": o, "name": names.get(o) or o} for o in who if o in names]
+
+
 @app.get("/api/auth/me")
 def me(request: Request):
     u = need_user(request)
     return {"id": u["id"], "name": u["name"], "username": u["username"], "role": u["role"],
-            "binder": u["username"] in BINDER_OWNERS and not bearer(request),
+            "binder": u["username"] in BINDER_OWNERS and not bearer(request), "binders": binders_for(u, request),
             "owner": u["username"] in PANEL_OWNERS and not bearer(request), "secrets": can_secrets(u), "delete": may_delete(u), "pay": can_pay(u), "unlock": can_unlock(u) and not bearer(request)}
 
 
@@ -837,6 +847,12 @@ def hide_keys(data, keys):
 # ---------- tracker module: documents ----------
 # Paths under private/<username>/ belong to that one person: nobody else, no admin and no data key can read or change them.
 BINDER_OWNERS = {x.strip() for x in os.environ.get("PSW_BINDER_OWNERS", "alex").split(",") if x.strip()}
+# binder logs someone else may open too ("owner:viewer|viewer", comma separated): Paul's log is his and Alex's, nobody else's
+BINDER_SHARED = {}
+for x in os.environ.get("PSW_BINDER_SHARED", "paul:alex").split(","):
+    if ":" in x and x.split(":", 1)[0].strip():
+        BINDER_SHARED[x.split(":", 1)[0].strip()] = {v.strip() for v in x.split(":", 1)[1].split("|") if v.strip()}
+BINDER_OWNERS |= set(BINDER_SHARED)
 
 
 # a policy added to a client with one of these producers also goes into that person's binder log ("username:Producer name", comma separated)
@@ -947,6 +963,10 @@ def binder_sync(c, path, old, new, backfill=False):
 def binder_backfill():
     """On startup: every client's policies checked against the binder logs, so the logs match the clients (see binder_sync)."""
     with db() as c:
+        for o in BINDER_OWNERS - set(BINDER_PRODUCERS.values()):  # a log owner without a producer name set goes by their name in Admin ("Paul M")
+            r = c.execute("SELECT name FROM users WHERE username=? AND active=1", (o,)).fetchone()
+            if r and str(r["name"] or "").strip():
+                BINDER_PRODUCERS[str(r["name"]).strip().lower()] = o
         for r in c.execute("SELECT path,data FROM tracker_docs WHERE parent='clients'").fetchall():
             try:
                 d = json.loads(r["data"])
@@ -957,7 +977,8 @@ def binder_backfill():
 
 
 def guard(request: Request, u, segs):
-    if segs[0] == "private" and (len(segs) < 2 or bearer(request) or segs[1] != u["username"]):
+    shared = len(segs) >= 3 and segs[2] == "binder" and u["username"] in BINDER_SHARED.get(segs[1] if len(segs) > 1 else "", ())
+    if segs[0] == "private" and (len(segs) < 2 or bearer(request) or (segs[1] != u["username"] and not shared)):
         err(403, "private")
 
 
