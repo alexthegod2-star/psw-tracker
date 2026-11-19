@@ -132,6 +132,10 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .coGrid{max-width:560px}
 .coGrid [hidden]{display:none!important}
 #coBox{background:#efe6fb}#coBox .coCon input{min-width:0}
+.coWebR{margin-bottom:8px;max-width:820px}.coWebR [hidden]{display:none!important}.coWebR button{padding:4px 10px;font-size:13px}.coWebR input{min-width:0}
+.coWebL{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.5fr) auto 78px auto;gap:6px 8px;align-items:center}
+.coWebLg{display:grid;grid-template-columns:100px minmax(0,1fr) auto;gap:6px 10px;align-items:center;margin:6px 0 0 16px;padding:6px 10px;border-left:3px solid var(--line);max-width:560px}.coWebLg label{margin:0;font-size:13px}.coLgDel{grid-column:2;justify-self:start}
+@media (max-width:620px){.coWebL{grid-template-columns:minmax(0,1fr) auto auto auto}.coWebL [data-w=label]{grid-column:1/-1}.coWebLg{grid-template-columns:72px minmax(0,1fr) auto;margin-left:4px;padding:6px}}
 .coConH{display:flex;align-items:center;gap:8px;margin:14px 0 6px}
 .coCon{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) auto minmax(0,1.25fr) minmax(0,1.25fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:6px 8px;align-items:center;margin-bottom:6px}
 .coCon>span{font-size:12px;font-weight:600;color:var(--muted)}
@@ -591,15 +595,14 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
     <label for="co_code">Agency code</label><input id="co_code"><span></span>
     <label for="co_naic" class="coNaic">NAIC #</label><input id="co_naic" class="coNaic" inputmode="numeric" maxlength="10"><span class="coNaic"></span>
     <label for="co_phone">Phone number</label><input id="co_phone" inputmode="tel"><button type="button" class="coTg" id="coMO" data-opts="M,O" title="Phone type: M = Mobile, O = Office (click to switch)">M</button>
-    <label for="co_url">Website</label><input id="co_url" placeholder="www.example.com"><button type="button" class="pri" id="coWeb">Go ↗</button>
-    <label for="co_user" class="coSec">User name</label><input id="co_user" class="coSec" autocomplete="off"><button type="button" class="coSec" data-copy="co_user">Copy</button>
-    <label for="co_pass" class="coSec">Password</label><div class="coPw coSec"><input id="co_pass" type="password" autocomplete="new-password"><button type="button" id="coShowPass">Show</button></div><button type="button" class="coSec" data-copy="co_pass">Copy</button>
     <label for="co_com" class="coNaic">New com %</label><input id="co_com" class="coNaic" inputmode="decimal" placeholder="Commission on new policies"><span class="coNaic"></span>
     <label for="co_comRen" class="coNaic">Renewal com %</label><input id="co_comRen" class="coNaic" inputmode="decimal" placeholder="Commission on renewals"><span class="coNaic"></span>
     <div class="coMineH"><h4 class="coSub" style="margin:0 auto 0 0">My login <span class="small" style="font-weight:400">only you can see this</span></h4><button type="button" class="pri" id="coMineAdd">+ Add my login</button><button type="button" id="coMineDel" hidden>Remove</button></div>
     <label for="co_myuser" class="coMine">My user name</label><input id="co_myuser" class="coMine" autocomplete="off"><button type="button" class="coMine" data-copy="co_myuser">Copy</button>
     <label for="co_mypass" class="coMine">My password</label><div class="coPw coMine"><input id="co_mypass" type="password" autocomplete="new-password"><button type="button" id="coShowMyPass">Show</button></div><button type="button" class="coMine" data-copy="co_mypass">Copy</button>
   </div>
+  <div class="coConH"><h4 class="coSub" style="margin:0 auto 0 0">Websites</h4><button type="button" class="pri" id="coAddWeb">+ Add website</button></div>
+  <div id="coWebs"></div>
   <div class="coConH"><h4 class="coSub" style="margin:0 auto 0 0">Contacts</h4><button type="button" class="pri" id="coAddCon">+ Add contact</button></div>
   <div class="coCon"><span>Name</span><span>Email</span><span></span><span>Phone</span><span>Phone 2</span><span>Line of business</span><span>Note</span><span></span></div>
   <div id="coCons"></div>
@@ -3333,7 +3336,7 @@ addableList(LEAD_SOURCES,'sourceList','leadSources','clAddSource','clSource','le
 // company / GA info: "Open" (once one is picked) shows a pop-up with agency code, login, phone, website and contact, shared with everyone
 const siteCol=db.collection('siteLinks'),sites=new Map(),siteKey=(kind,n)=>kind+':'+n.trim().toLowerCase();
 const siteFix=u=>{u=u.trim();return !u?'':/^https?:\/\//i.test(u)?u:'https://'+u};
-const CO_FIELDS=['code','naic','com','comRen','user','pass','phone','url'];let coCur=null,canSecrets=false,canPay=false; // canSecrets: Admin's User/Pass Yes lets this person change company/GA user names and passwords (everyone sees them; the server refuses the change too)
+const CO_FIELDS=['code','naic','com','comRen','phone'];let coCur=null,canSecrets=false,canPay=false; // canSecrets: Admin's User/Pass Yes lets this person change company/GA user names and passwords (everyone sees them; the server refuses the change too)
 // contacts: one row each (name, email, phone, line of business); the first one is also kept in contactName/contactEmail/contactPhone
 function coConRow(c={}){const r=document.createElement('div');r.className='coCon';
   r.innerHTML=`<input data-c="name" placeholder="Name" title="Contact name"><input data-c="email" type="email" placeholder="Email" title="Contact email"><button type="button" data-ccopy>Copy</button><div class="coPh"><button type="button" class="coTg" data-ct="phoneType" data-opts="M,O" title="M = Mobile, O = Office (click to switch)">M</button><input data-c="phone" inputmode="tel" placeholder="Phone" title="Contact phone"></div><div class="coPh"><button type="button" class="coTg" data-ct="phone2Type" data-opts="M,O" title="M = Mobile, O = Office (click to switch)">M</button><input data-c="phone2" inputmode="tel" placeholder="Phone 2" title="Contact phone 2"></div><input data-c="line" list="lobList" placeholder="Line of business" title="Line of business"><input data-c="note" placeholder="Note" title="Note"><button type="button" class="danger" data-cdel title="Remove contact">✕</button>`;
@@ -3348,11 +3351,37 @@ function siteBtns(){[['ppCompany','ppCoGo','company'],['ppCarrier','ppGaGo','ga'
 siteCol.onSnapshot(s=>{sites.clear();s.docs.forEach(d=>{const x=d.data();if(x.kind&&x.name)sites.set(siteKey(x.kind,x.name),{id:d.id,...x})});Object.values(LIST_MERGE).forEach(f=>f());siteBtns()},()=>{});
 function openCoInfo(kind,n){const hit=sites.get(siteKey(kind,n))||{};coCur={kind,name:n.trim(),id:hit.id||''};
   $('coTitleH').textContent=n.trim();$('coKind').textContent=kind==='ga'?'General agent':'Company';document.querySelectorAll('#coDlg .coNaic').forEach(el=>el.hidden=kind==='ga');
-  CO_FIELDS.forEach(k=>$('co_'+k).value=hit[k]||'');coMO(hit.phoneType||'');['co_user','co_pass'].forEach(k=>{$(k).readOnly=!canSecrets;$(k).title=canSecrets?'':'Only people set to Yes under User/Pass in Admin can change this'});$('coCons').innerHTML='';{const cs=Array.isArray(hit.contacts)&&hit.contacts.length?hit.contacts:(hit.contactName||hit.contactEmail||hit.contactPhone)?[{name:hit.contactName,email:hit.contactEmail,phone:hit.contactPhone}]:[{}];cs.forEach(c=>coConRow(c))}$('co_pass').type='password';$('coShowPass').textContent='Show';{const m=myLogins.get(siteKey(kind,n));$('co_myuser').value=m&&m.user||'';$('co_mypass').value=m&&m.pass||'';$('co_mypass').type='password';$('coShowMyPass').textContent='Show';coMine(!!m)}coWebBtn();$('coDlg').classList.add('on');setTimeout(()=>$('co_code').focus(),30)}
-const coWebBtn=()=>{$('coWeb').disabled=!$('co_url').value.trim()};
-$('co_url').addEventListener('input',coWebBtn);
+  CO_FIELDS.forEach(k=>$('co_'+k).value=hit[k]||'');coMO(hit.phoneType||'');coWebsFill(hit);$('coCons').innerHTML='';{const cs=Array.isArray(hit.contacts)&&hit.contacts.length?hit.contacts:(hit.contactName||hit.contactEmail||hit.contactPhone)?[{name:hit.contactName,email:hit.contactEmail,phone:hit.contactPhone}]:[{}];cs.forEach(c=>coConRow(c))}{const m=myLogins.get(siteKey(kind,n));$('co_myuser').value=m&&m.user||'';$('co_mypass').value=m&&m.pass||'';$('co_mypass').type='password';$('coShowMyPass').textContent='Show';coMine(!!m)}$('coDlg').classList.add('on');setTimeout(()=>$('co_code').focus(),30)}
 ['co_com','co_comRen'].forEach(id=>$(id).addEventListener('blur',()=>{const n=bPct($(id).value.trim());if(n!=null)$(id).value=n+'%'}));
-$('coWeb').onclick=()=>{const u=siteFix($('co_url').value);if(u)window.open(u,'_blank','noopener')};
+// websites: a company / GA can have several, each with its own optional user name and password. The logins sit in webLogins (by website id),
+// which the server only lets owners and people set to Yes under User/Pass change. url / user / pass still hold the first website and login for older records.
+const webId=()=>'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const coWebLg=(r,on)=>{r.querySelector('.coWebLg').hidden=!on;r.querySelector('[data-wlogin]').style.visibility=on||!canSecrets?'hidden':'';r.querySelector('[data-ldel]').hidden=!canSecrets};
+const coWebGo=r=>{r.querySelector('[data-wgo]').disabled=!r.querySelector('[data-w=url]').value.trim()};
+const coWebHasLg=r=>[...r.querySelectorAll('[data-l]')].some(el=>el.value);
+function coWebRow(w={},lg=null){const r=document.createElement('div');r.className='coWebR';r.dataset.id=w.id||webId();
+  r.innerHTML=`<div class="coWebL"><input data-w="label" placeholder="Name (optional)" title="What this website is for, like Agent portal or Billing"><input data-w="url" placeholder="www.example.com" title="Website"><button type="button" class="pri" data-wgo>Go ↗</button><button type="button" data-wlogin title="Add a user name and password for this website">+ Login</button><button type="button" class="danger" data-wdel title="Remove website">✕</button></div>`+
+    `<div class="coWebLg" hidden><label>User name</label><input data-l="user" autocomplete="off"><button type="button" data-lcopy="user">Copy</button><label>Password</label><div class="coPw"><input data-l="pass" type="password" autocomplete="new-password"><button type="button" data-lshow>Show</button></div><button type="button" data-lcopy="pass">Copy</button><button type="button" class="coLgDel" data-ldel>Remove login</button></div>`;
+  r.querySelectorAll('[data-w]').forEach(el=>el.value=w[el.dataset.w]||'');
+  r.querySelectorAll('[data-l]').forEach(el=>{el.value=lg&&lg[el.dataset.l]||'';el.readOnly=!canSecrets;el.title=canSecrets?'':'Only people set to Yes under User/Pass in Admin can change this'});
+  coWebLg(r,coWebHasLg(r));coWebGo(r);$('coWebs').appendChild(r);return r}
+function coWebsFill(hit){$('coWebs').innerHTML='';let ws=Array.isArray(hit.websites)&&hit.websites.length?hit.websites:hit.url?[{id:'w0',url:hit.url}]:[];
+  let lg=hit.webLogins&&typeof hit.webLogins==='object'?hit.webLogins:null;
+  if(!lg&&(hit.user||hit.pass)){if(!ws.length)ws=[{id:'w0'}];lg={[ws[0].id]:{user:hit.user||'',pass:hit.pass||''}}}
+  (ws.length?ws:[{}]).forEach(w=>coWebRow(w,lg&&w.id?lg[w.id]:null))}
+const coWebVals=()=>{const webs=[],logins={};$('coWebs').querySelectorAll('.coWebR').forEach(r=>{const w={id:r.dataset.id};r.querySelectorAll('[data-w]').forEach(el=>w[el.dataset.w]=el.value.trim());
+  const l={user:r.querySelector('[data-l=user]').value.trim(),pass:r.querySelector('[data-l=pass]').value};if(!w.url&&!w.label&&!l.user&&!l.pass)return;
+  if(w.url)w.url=siteFix(w.url);webs.push(w);if(l.user||l.pass)logins[w.id]=l});return {webs,logins}};
+$('coAddWeb').onclick=()=>coWebRow().querySelector('[data-w=url]').focus();
+$('coWebs').addEventListener('input',e=>{const r=e.target.closest('.coWebR');if(r&&e.target.dataset.w==='url')coWebGo(r)});
+$('coWebs').addEventListener('click',async e=>{const r=e.target.closest('.coWebR'),b=e.target.closest('button');if(!r||!b)return;
+  if(b.hasAttribute('data-wgo')){const u=siteFix(r.querySelector('[data-w=url]').value);if(u)window.open(u,'_blank','noopener');return}
+  if(b.hasAttribute('data-wlogin')){coWebLg(r,true);r.querySelector('[data-l=user]').focus();return}
+  if(b.hasAttribute('data-lshow')){const p=r.querySelector('[data-l=pass]'),sh=p.type==='password';p.type=sh?'text':'password';b.textContent=sh?'Hide':'Show';return}
+  if(b.dataset.lcopy){const v=r.querySelector(`[data-l=${b.dataset.lcopy}]`).value;if(!v)return;try{await navigator.clipboard.writeText(v);toast('Copied')}catch(_){toast('Could not copy')}return}
+  if(b.hasAttribute('data-ldel')){if(!await sure('Remove the user name and password for this website?'))return;r.querySelectorAll('[data-l]').forEach(el=>el.value='');coWebLg(r,false);return}
+  if(b.hasAttribute('data-wdel')){const lg=coWebHasLg(r);if(lg&&!canSecrets){toast('This website has a login. Only people set to Yes under User/Pass in Admin can remove it.');return}
+    const n=r.querySelector('[data-w=label]').value.trim()||r.querySelector('[data-w=url]').value.trim();if(!await sureDel(`Remove ${n||'this website'}${lg?' and its login':''}?`))return;r.remove();if(!$('coWebs').children.length)coWebRow()}});
 // My login: each person's own user name and password for a company or GA, kept under private/<username>/ so nobody else can read it
 // Alex Finance Personal: yearly income/expense sheet saved in private/<username>/finance/<year>, so only that person can read it.
 const FIN_MO=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],FIN_SEC=[['income','INCOME','Due Date'],['expenses','EXPENSES','Next Due Date'],['annual','ANNUAL EXPENSES','Next Due Date']];
@@ -3466,7 +3495,6 @@ $('coMineDel').onclick=async()=>{const x=coCur&&myLogins.get(siteKey(coCur.kind,
 async function saveMine(){if(!myLoginCol||$('co_myuser').hidden)return;const key=siteKey(coCur.kind,coCur.name),x=myLogins.get(key),d={user:$('co_myuser').value.trim(),pass:$('co_mypass').value};
   if(x){if(x.user!==d.user||x.pass!==d.pass){await myLoginCol.doc(x.id).update(d);myLogins.set(key,{...x,...d})}}
   else if(d.user||d.pass){const r=await myLoginCol.add({key,kind:coCur.kind,name:coCur.name,...d});myLogins.set(key,{id:r&&r.id,key,kind:coCur.kind,name:coCur.name,...d})}}
-$('coShowPass').onclick=()=>{const sh=$('co_pass').type==='password';$('co_pass').type=sh?'text':'password';$('coShowPass').textContent=sh?'Hide':'Show'};
 $('coDlg').addEventListener('click',async e=>{const c=e.target.closest('[data-copy]');if(!c)return;const v=$(c.dataset.copy).value;if(!v)return;try{await navigator.clipboard.writeText(v);toast('Copied')}catch(_){toast('Could not copy')}});
 const closeCo=()=>{$('coDlg').classList.remove('on');coCur=null};
 // Edit name: renames the company / GA in its pick list and its info, and (if you say yes) on every client policy that uses the old name
@@ -3493,7 +3521,7 @@ $('coCancel').onclick=closeCo;$('coDlg').addEventListener('click',e=>{if(e.targe
 const tgSet=(b,v)=>{const o=b.dataset.opts.split(',');b.dataset.v=o.includes(v)?v:o[0];b.textContent=b.dataset.v},tgNext=b=>{const o=b.dataset.opts.split(',');tgSet(b,o[(o.indexOf(b.dataset.v)+1)%o.length])};
 const coMO=v=>tgSet($('coMO'),v);
 $('coMO').onclick=()=>tgNext($('coMO'));
-$('coSave').onclick=async()=>{if(!coCur)return;const d={};CO_FIELDS.forEach(k=>{if(canSecrets||!['user','pass'].includes(k))d[k]=$('co_'+k).value.trim()});if(d.url)d.url=siteFix(d.url);['com','comRen'].forEach(k=>{const c=bPct(d[k]);if(c!=null)d[k]=c+'%'});d.phoneType=$('coMO').dataset.v||'';d.contacts=coConVals();{const f=d.contacts[0]||{};d.contactName=f.name||'';d.contactEmail=f.email||'';d.contactPhone=f.phone||''}
+$('coSave').onclick=async()=>{if(!coCur)return;const d={};CO_FIELDS.forEach(k=>d[k]=$('co_'+k).value.trim());{const {webs,logins}=coWebVals();d.websites=webs;d.url=webs.find(w=>w.url)?.url||'';if(canSecrets){d.webLogins=logins;const f=webs.find(w=>logins[w.id]);d.user=f?logins[f.id].user:'';d.pass=f?logins[f.id].pass:''}}['com','comRen'].forEach(k=>{const c=bPct(d[k]);if(c!=null)d[k]=c+'%'});d.phoneType=$('coMO').dataset.v||'';d.contacts=coConVals();{const f=d.contacts[0]||{};d.contactName=f.name||'';d.contactEmail=f.email||'';d.contactPhone=f.phone||''}
   try{if(coCur.id)await siteCol.doc(coCur.id).update(d);else{const r=await siteCol.add({kind:coCur.kind,name:coCur.name,...d,addedAt:new Date().toISOString(),...(me?{addedBy:me}:{})});coCur.id=r&&r.id||''}
     sites.set(siteKey(coCur.kind,coCur.name),{...(sites.get(siteKey(coCur.kind,coCur.name))||{}),id:coCur.id,kind:coCur.kind,name:coCur.name,...d});await saveMine();toast(`Saved ${coCur.name}`);closeCo()}catch(err){toast(errText(err))}};
 [['ppCompany','ppCoGo','company'],['ppCarrier','ppGaGo','ga']].forEach(([box,go,kind])=>{
@@ -3506,7 +3534,7 @@ $('coSave').onclick=async()=>{if(!coCur)return;const d={};CO_FIELDS.forEach(k=>{
   for(const [kind,[L,,el]] of Object.entries(lists)){const names=new Map(L.filter(n=>!/^n\/?a$/i.test(n)).map(n=>[n.toLowerCase(),n]));
     sites.forEach(x=>{if(x.kind===kind&&x.name&&!names.has(x.name.toLowerCase()))names.set(x.name.toLowerCase(),x.name)});
     const rows=[...names.values()].sort((a,b)=>a.localeCompare(b)).filter(n=>!q||n.toLowerCase().includes(q)).map(n=>{const x=sites.get(siteKey(kind,n))||{};
-      const tags=[x.url&&'Website',(x.user||x.pass)&&'Login',x.code&&'Code',(x.contacts&&x.contacts.length||x.contactName)&&'Contacts'].filter(Boolean).map(t=>`<span class="cosTag">${t}</span>`).join('');
+      const nw=Array.isArray(x.websites)?x.websites.filter(w=>w.url).length:x.url?1:0,tags=[nw&&(nw>1?nw+' websites':'Website'),(x.user||x.pass||x.webLogins&&Object.keys(x.webLogins).length)&&'Login',x.code&&'Code',(x.contacts&&x.contacts.length||x.contactName)&&'Contacts'].filter(Boolean).map(t=>`<span class="cosTag">${t}</span>`).join('');
       return `<div class="cosRow"><b>${esc(n)}</b>${tags}<button type="button" data-cos="${kind}" data-n="${esc(n)}">${only?'Open':'Edit'}</button></div>`});
     $(el).innerHTML=rows.join('')||'<div class="cosRow small">None</div>'}};
  let only=null;const open=k=>{only=k;$('cosColCo').hidden=k==='ga';$('cosColGa').hidden=k==='company';$('cosDlg').querySelector('.cosCols').classList.toggle('one',!!k);
