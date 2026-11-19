@@ -11,7 +11,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-ap
 .wrap{max-width:none;margin:0 auto;padding:20px 24px 60px}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
 h1{font-size:22px;margin:0}
-header{display:grid;grid-template-columns:1fr auto 1fr}header>.hdrbtns{justify-self:end;display:flex;flex-direction:column;align-items:stretch;gap:6px}.hdrrow{display:flex;gap:6px;margin-left:auto}.binRow{flex:1 0 100%;display:flex;gap:6px;flex-wrap:wrap}.binRow[hidden]{display:none}.hdrrow>button{flex:1;white-space:nowrap}.hdrrow>button[hidden]{display:none}
+header{display:grid;grid-template-columns:1fr auto 1fr}header>.hdrbtns{justify-self:end;display:flex;flex-direction:column;align-items:stretch;gap:6px}.hdrrow{display:flex;gap:6px;margin-left:auto}.repTop{flex-wrap:wrap}@media print{.repTop{display:none!important}}.binRow{flex:1 0 100%;display:flex;gap:6px;flex-wrap:wrap}.binRow[hidden]{display:none}.hdrrow>button{flex:1;white-space:nowrap}.hdrrow>button[hidden]{display:none}
 .brand{grid-column:2;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0}.brand img{height:52px;width:auto;flex:none}
 .hdrband{margin:-20px -24px 10px;background:linear-gradient(#e9edfd,#dfe5f8);border-bottom:4px solid #1d2a6e;box-shadow:0 3px 0 rgba(29,42,110,.2);line-height:0}.hdrband img{display:block;width:min(820px,100%);height:auto;margin:0 auto;-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 98.5%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 98.5%,transparent)}@media (max-width:1100px){.hdrband{margin-left:-12px;margin-right:-12px}}.brand.banner{text-align:center}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (max-width:900px){header{grid-template-columns:1fr}.brand{grid-column:1}header>.hdrbtns{justify-self:center}}
@@ -669,7 +669,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
   <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px"><span class="msg" id="certMsg"></span><button id="certClose" type="button">Close</button></div>
 </div></div>
 <div class="mbg" id="repDlg" role="dialog" aria-modal="true" aria-labelledby="repTitleH"><div class="mbox" style="width:96vw;max-height:92vh;overflow:auto">
-  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="repTitleH" style="margin:0">Policy report</h3><span class="small" id="repCount"></span></div>
+  <div class="row" style="justify-content:space-between;align-items:center"><h3 id="repTitleH" style="margin:0">Policy report</h3><span class="row" style="align-items:center;gap:8px"><span class="small" id="repCount"></span><span class="row repTop" style="gap:6px"><button class="pri" type="button" data-rep="repCsv">Download for Excel</button><button type="button" data-rep="repPrint">Print</button><button type="button" data-rep="repClose">Close</button></span></span></div>
   <div class="repF" id="repF">
     <label>Date<select id="rDk"><option value="exp">Exp date</option><option value="eff">Eff date</option></select></label><label>From<input id="rFrom" placeholder="MM/DD/YYYY"></label><label>To<input id="rTo" placeholder="MM/DD/YYYY"></label>
     <label>Company<select id="rCo"></select></label><label>GA<select id="rGa"></select></label><label>Line of business<select id="rLine"></select></label>
@@ -5211,6 +5211,7 @@ function renderRep(){const {all,rows}=repRows();repOpts(all);const prem=rows.red
   $('repT').hidden=!rows.length;$('repEmpty').hidden=!!rows.length;repRows.last=rows}
 $('repBtn').onclick=()=>{$('repDlg').classList.add('on');renderRep()};
 $('repClose').onclick=()=>$('repDlg').classList.remove('on');
+document.querySelectorAll('#repDlg [data-rep]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.rep).click())); // the buttons at the top do what the ones at the bottom do
 $('repF').addEventListener('input',renderRep);$('repF').addEventListener('change',renderRep);
 ['rFrom','rTo'].forEach(id=>$(id).addEventListener('blur',()=>{const x=typedISO($(id).value.trim());if(/^\d{4}-\d\d-\d\d$/.test(x))$(id).value=fmtDate(x)}));
 const repNext=n=>{const t=new Date(),e=new Date(t.getFullYear(),t.getMonth(),t.getDate()+n),f=x=>`${String(x.getMonth()+1).padStart(2,'0')}/${String(x.getDate()).padStart(2,'0')}/${x.getFullYear()}`;$('rDk').value='exp';$('rFrom').value=f(t);$('rTo').value=f(e);renderRep()};
