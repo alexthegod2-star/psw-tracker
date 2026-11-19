@@ -4333,7 +4333,7 @@ function sgDraw(){if(!sg)return;sg.pages.forEach(p=>p.wrap.querySelectorAll('.sg
       el.title=(sgEd(t)?'The client can change this box. ':'Printed on the page. ')+'Click to change it. Drag to move.';p.wrap.appendChild(el);return}
     el.className='sgBox s'+t.signer+(t.type==='date'||t.type==='name'?' thin':'')+(t.type==='check'?' chk'+(t.on?'':' off'):'');el.dataset.i=i;
     el.style.cssText=`left:${t.x*p.sc}px;top:${t.y*p.sc}px;width:${w*p.sc}px;height:${h*p.sc}px`;
-    el.innerHTML=`<span>${esc(SG_LBL[t.type])}${two&&t.type!=='check'?' · '+esc(nm(t.signer)):''}</span><button type="button" class="x" data-sgx="${i}" title="Remove this box" aria-label="Remove this box">×</button>`;
+    el.innerHTML=`<span>${t.type==='name'&&$('sgN'+(t.signer+1))&&$('sgN'+(t.signer+1)).value.trim()?esc($('sgN'+(t.signer+1)).value.trim()):esc(SG_LBL[t.type])+(two&&t.type!=='check'?' · '+esc(nm(t.signer)):'')}</span><button type="button" class="x" data-sgx="${i}" title="Remove this box" aria-label="Remove this box">×</button>`;
     el.title=t.type==='check'?`Click to ${t.on?'uncheck':'check'} it (${t.on?'starts checked':'starts empty'}). Drag to move. The signer can still change it.`:two?'Drag to move. Click to switch who signs here.':'Drag to move.';p.wrap.appendChild(el)});
   const n=sg.tabs.filter(t=>t.type==='sign').length;
   if(!sg.err&&sg.sel==null)sgMsg(n?`${n} signature box${n>1?'es':''}. Drag a box to move it, or use the buttons above to add more.`:'No signature box yet. Click “Sign here”, then click on the page where the client signs.')}
@@ -4391,7 +4391,7 @@ $('sgStSize').onchange=()=>sgStSet('size',+$('sgStSize').value);$('sgStCol').add
 $('sgStBar').addEventListener('click',e=>{const c=e.target.closest('[data-sgc]'),f=e.target.closest('[data-sgf]'),t=sg&&sg.tabs[sg.sel];if(!t)return;if(c)sgStSet('color',c.dataset.sgc);if(f)sgStSet(f.dataset.sgf,!t[f.dataset.sgf])});
 $('sgStDone').onclick=()=>{if(!sg)return;const t=sg.tabs[sg.sel];sgCoRemember(t);if(t&&t.type!=='mysig'&&!t.edit&&!String(t.text||'').trim())sg.tabs.splice(sg.sel,1);sg.sel=null;sgDraw();sgStOpen()};
 function sgWhoNames(){['First','Second','Third','Fourth'].forEach((o,i)=>$('sgW'+(i+1)).textContent=$('sgN'+(i+1)).value.trim()||o+' signer')}
-['sgN1','sgN2','sgN3','sgN4'].forEach(i=>$(i).addEventListener('input',()=>{sgWhoNames();if(sgTwo())sgDraw()}));
+['sgN1','sgN2','sgN3','sgN4'].forEach(i=>$(i).addEventListener('input',()=>{sgWhoNames();if(sgTwo()||(sg&&sg.tabs.some(t=>t.type==='name')))sgDraw()}));
 document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.onclick=async()=>{if(!sg)return;const on=sg.tool!==b.dataset.sgt;
   if(on&&b.dataset.sgt==='mysig'&&!(sgSigUrl=await mySig()))return sgMsg('You don’t have a signature saved yet. An owner can add it for you in Admin (Signature).',true);sg.tool=on?b.dataset.sgt:'';document.querySelectorAll('#sg [data-sgt]').forEach(x=>x.classList.toggle('on',x===b&&on));$('sg').classList.toggle('adding',on);if(on){sg.err=0;sgMsg('Now click on the page where it goes.')}});
 // add a box where the page is clicked; drag a box to move it; click a box to switch signer (with two signers); × removes it
