@@ -5329,8 +5329,8 @@ const SUPS={'burns-gl':{file:'tpl-burns-gl.pdf',suffix:'Burns GL sup',fill:(g,to
     const B=[['Applicant Name',255,805,205,g('f_client_name')],['Phone Number',962,1240,205,g('f_phone')],['DBA',502,1240,236,g('f_dba')],
       ['Year Established',386,725,357,/^\d{4}$/.test(yr)?yr:''],['Years of Experience',920,1240,357,g('f_years_experience')],['Email',238,725,422,g('f_email')],['Website',950,1240,426,''],
       ['Mailing Address',250,1240,684,ma[0]],['Mailing City',145,585,712,mc[0]],['Mailing State',650,980,712,mc[1]],['Mailing Zip',1078,1240,716,mc[2]],
-      ['Business Address 1',296,1240,813,pa[0]],['Business City 1',145,585,844,pc[0]],['Business State 1',650,980,844,pc[1]],['Business Zip 1',1078,1240,848,pc[2]],
-      ['LLC',335,358,318,/llc/.test(ent)?'X':''],['Corporation',436,452,318,/corp/.test(ent)?'X':''],['Partnership',600,620,318,/part/.test(ent)?'X':''],['Individual',770,790,318,/indiv|sole/.test(ent)?'X':'']];
+      ['Business Address 1',296,1240,813,pa[0]],['Business City 1',145,585,844,pc[0]],['Business State 1',650,980,844,pc[1]],['Business Zip 1',1078,1240,848,pc[2]]];
+    for(const [n,re] of [['LLC',/llc/],['Corporation',/corp/],['Partnership',/part/],['Individual',/indiv|sole/]])if(re.test(ent))form.getCheckBox('ppib.'+n).check();
     for(const [n,x0,x1,top,v] of B){const f=form.createTextField('ppib.'+n),box=x1-x0<40;
       f.addToPage(pg,{x:x0*k,y:792-(top+(box?20:22))*k,width:(x1-x0)*k,height:box?11:13,borderWidth:0,font:helv});
       if(box)f.setAlignment(PDFLib.TextAlignment.Center);if(v)f.setText(String(v));f.setFontSize(box?9:10)}}}};
