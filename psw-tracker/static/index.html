@@ -372,7 +372,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
     <div class="sec" id="supSec">
       <h3>Supplementals/Forms</h3>
       <div class="small" style="margin-bottom:8px">Fills the form from this lead’s quote sheet and attaches it under Files. It stays fillable for the rest.</div>
-      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button><button class="pri" data-sup="sl2">SL2</button></div>
+      <div class="row"><button class="pri" data-sup="burns-gl">Burns GL sup</button><button class="pri" data-sup="d1">D1</button><button class="pri" data-sup="sl2">SL2</button><button class="pri" data-sup="ppib" title="PPIB Pyrotechnic Insurance Application">PPIB app</button></div>
       <div class="msg" id="supMsg"></div>
     </div>
 
@@ -5319,7 +5319,21 @@ const SUPS={'burns-gl':{file:'tpl-burns-gl.pdf',suffix:'Burns GL sup',fill:(g,to
   'd1':{file:'tpl-d1.pdf',suffix:'D1',noSheet:true,fill:(g,today)=>({'Date':mdy(today),'Insured':g('f_client_name')})},
   // SL-2 diligent search report: Alex's filled form with the insurers, licensee and signature kept; 2A name, 2B = quote sheet item 8, declinations this month
   'sl2':{file:'tpl-sl2.pdf',suffix:'SL2',noSheet:true,fill:(g,today)=>{const my=`${pad(today.getMonth()+1)}/${today.getFullYear()}`;
-    return {'Name of Insured':g('f_client_name'),'Description of Risk':g('f_description'),'Declination 1':my,'Declination 2':my,'Declination 3':my,'Date':mdy(today)}}}};
+    return {'Name of Insured':g('f_client_name'),'Description of Risk':g('f_description'),'Declination 1':my,'Declination 2':my,'Declination 3':my,'Date':mdy(today)}}},
+  // PPIB Pyrotechnic Insurance Application: a scanned (picture) form with no boxes, so page 1's general information gets fill-in boxes added where the lines are
+  'ppib':{file:'tpl-ppib.pdf',suffix:'PPIB app',noSheet:true,build:async(doc,g)=>{const form=doc.getForm(),pg=doc.getPage(0),helv=await doc.embedFont(PDFLib.StandardFonts.Helvetica),k=72/150;
+    const csz=t=>{const m=String(t||'').match(/^(.*?)[,\s]+([A-Za-z]{2})\.?\s+(\d{5}(?:-\d{4})?)$/);return m?[m[1].replace(/,\s*$/,''),m[2].toUpperCase(),m[3]]:[String(t||''),'','']};
+    const ma=splitAddr(g('f_mailing_address')),mc=csz(ma[1]),pa0=g('f_property_address'),pa=splitAddr(/^(same|same as .*|n\/?a)\.?$/i.test(pa0)?'':pa0),pc=csz(pa[1]);
+    const ent=g('f_entity_type').toLowerCase(),yr=g('f_year_started');
+    // [box name, left, right, top of the label] in pixels of the page drawn at 150 dpi
+    const B=[['Applicant Name',255,805,205,g('f_client_name')],['Phone Number',962,1240,205,g('f_phone')],['DBA',502,1240,236,g('f_dba')],
+      ['Year Established',386,725,357,/^\d{4}$/.test(yr)?yr:''],['Years of Experience',920,1240,357,g('f_years_experience')],['Email',238,725,422,g('f_email')],['Website',950,1240,426,''],
+      ['Mailing Address',250,1240,684,ma[0]],['Mailing City',145,585,712,mc[0]],['Mailing State',650,980,712,mc[1]],['Mailing Zip',1078,1240,716,mc[2]],
+      ['Business Address 1',296,1240,813,pa[0]],['Business City 1',145,585,844,pc[0]],['Business State 1',650,980,844,pc[1]],['Business Zip 1',1078,1240,848,pc[2]],
+      ['LLC',335,358,318,/llc/.test(ent)?'X':''],['Corporation',436,452,318,/corp/.test(ent)?'X':''],['Partnership',600,620,318,/part/.test(ent)?'X':''],['Individual',770,790,318,/indiv|sole/.test(ent)?'X':'']];
+    for(const [n,x0,x1,top,v] of B){const f=form.createTextField('ppib.'+n),box=x1-x0<40;
+      f.addToPage(pg,{x:x0*k,y:792-(top+(box?20:22))*k,width:(x1-x0)*k,height:box?11:13,borderWidth:0,font:helv});
+      if(box)f.setAlignment(PDFLib.TextAlignment.Center);if(v)f.setText(String(v));f.setFontSize(box?9:10)}}}};
 $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data-sup]');if(!btn||!(await ensureSaved()))return;const S=SUPS[btn.dataset.sup],m=$('supMsg'),label=btn.textContent;
   const fresh=leads.find(l=>l.id===cur.id)||cur,qs=[...(fresh.files||[])].reverse().find(x=>/ com quote sheet\.pdf$/i.test(x.name));
   if(!qs&&!S.noSheet){m.className='msg err';m.textContent='This lead has no quote sheet yet. Paste the client’s info or drop their quote sheet in the Quick fill box first.';return}
@@ -5330,7 +5344,7 @@ $('supSec').addEventListener('click',async e=>{const btn=e.target.closest('[data
     if(!String(fields.f_client_name||'').trim())fields.f_client_name=fresh.company||[fresh.firstName,fresh.lastName].filter(Boolean).join(' ');
     const g=k=>String(fields[k]||'').replace(/\s+/g,' ').trim(),today=new Date();
     const r=await fetch(S.file);if(!r.ok)throw new Error('the form template is missing');
-    const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.fill(g,today);
+    const doc=await PDFLib.PDFDocument.load(await r.arrayBuffer()),form=doc.getForm(),vals=S.build?(await S.build(doc,g,today),{}):S.fill(g,today);
     for(const [k,v] of Object.entries(vals)){if(!v)continue;try{const fl=form.getField(k);if(fl instanceof PDFLib.PDFDropdown)fl.select(String(v));else fl.setText(String(v))}catch(_){}}
     form.updateFieldAppearances(await doc.embedFont(PDFLib.StandardFonts.Helvetica));
     const client=(g('f_client_name')||'Client').replace(/[^A-Za-z0-9 -]+/g,'').replace(/\s+/g,' ').trim()||'Client',name=`${client} ${S.suffix}.pdf`;
