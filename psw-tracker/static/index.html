@@ -3429,10 +3429,10 @@ const coWebGo=r=>{r.querySelector('[data-wgo]').disabled=!r.querySelector('[data
 const coWebHasLg=r=>[...r.querySelectorAll('[data-l]')].some(el=>el.value);
 function coWebRow(w={},lg=null){const r=document.createElement('div');r.className='coWebR';r.dataset.id=w.id||webId();
   r.innerHTML=`<div class="coWebL"><input data-w="label" placeholder="Name (optional)" title="What this website is for, like Agent portal or Billing"><input data-w="url" placeholder="www.example.com" title="Website"><button type="button" class="pri" data-wgo>Go ↗</button><button type="button" data-wlogin title="Add a user name and password for this website">+ Login</button><button type="button" class="danger" data-wdel title="Remove website">✕</button></div>`+
-    `<div class="coWebLg" hidden><label>User name</label><input data-l="user" autocomplete="off"><button type="button" data-lcopy="user">Copy</button><label>Password</label><div class="coPw"><input data-l="pass" type="password" autocomplete="new-password"><button type="button" data-lshow>Show</button></div><button type="button" data-lcopy="pass">Copy</button><button type="button" class="coLgDel" data-ldel>Remove login</button></div>`;
+    `<div class="coWebLg" hidden><label>User name</label><input data-l="user" autocomplete="off"><button type="button" data-lcopy="user">Copy</button><label>Password</label><div class="coPw"><input data-l="pass" type="password" autocomplete="new-password"><button type="button" data-lshow>Show</button></div><button type="button" data-lcopy="pass">Copy</button><button type="button" class="coLgDel" data-ldel>Clear login</button></div>`;
   r.querySelectorAll('[data-w]').forEach(el=>el.value=w[el.dataset.w]||'');
   r.querySelectorAll('[data-l]').forEach(el=>{el.value=lg&&lg[el.dataset.l]||'';el.readOnly=!canSecrets;el.title=canSecrets?'':'Only people set to Yes under User/Pass in Admin can change this'});
-  coWebLg(r,coWebHasLg(r));coWebGo(r);$('coWebs').appendChild(r);return r}
+  coWebLg(r,coWebHasLg(r)||canSecrets);coWebGo(r);$('coWebs').appendChild(r);return r}
 function coWebsFill(hit){$('coWebs').innerHTML='';let ws=Array.isArray(hit.websites)&&hit.websites.length?hit.websites:hit.url?[{id:'w0',url:hit.url}]:[];
   let lg=hit.webLogins&&typeof hit.webLogins==='object'?hit.webLogins:null;
   if(!lg&&(hit.user||hit.pass)){if(!ws.length)ws=[{id:'w0'}];lg={[ws[0].id]:{user:hit.user||'',pass:hit.pass||''}}}
@@ -3447,7 +3447,7 @@ $('coWebs').addEventListener('click',async e=>{const r=e.target.closest('.coWebR
   if(b.hasAttribute('data-wlogin')){coWebLg(r,true);r.querySelector('[data-l=user]').focus();return}
   if(b.hasAttribute('data-lshow')){const p=r.querySelector('[data-l=pass]'),sh=p.type==='password';p.type=sh?'text':'password';b.textContent=sh?'Hide':'Show';return}
   if(b.dataset.lcopy){const v=r.querySelector(`[data-l=${b.dataset.lcopy}]`).value;if(!v)return;try{await navigator.clipboard.writeText(v);toast('Copied')}catch(_){toast('Could not copy')}return}
-  if(b.hasAttribute('data-ldel')){if(!await sure('Remove the user name and password for this website?'))return;r.querySelectorAll('[data-l]').forEach(el=>el.value='');coWebLg(r,false);return}
+  if(b.hasAttribute('data-ldel')){if(!await sure('Clear the user name and password for this website?'))return;r.querySelectorAll('[data-l]').forEach(el=>el.value='');coWebLg(r,canSecrets);return}
   if(b.hasAttribute('data-wdel')){const lg=coWebHasLg(r);if(lg&&!canSecrets){toast('This website has a login. Only people set to Yes under User/Pass in Admin can remove it.');return}
     const n=r.querySelector('[data-w=label]').value.trim()||r.querySelector('[data-w=url]').value.trim();if(!await sureDel(`Remove ${n||'this website'}${lg?' and its login':''}?`))return;r.remove();if(!$('coWebs').children.length)coWebRow()}});
 // My login: each person's own user name and password for a company or GA, kept under private/<username>/ so nobody else can read it
