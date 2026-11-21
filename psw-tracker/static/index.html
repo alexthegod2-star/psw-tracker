@@ -1081,7 +1081,7 @@ function fmtMoney(v){const m=String(v).trim().match(/^\$?\s*(\d[\d,]*(?:\.\d+)?|
   let n=parseFloat(m[1].replace(/,/g,''));const u=(m[2]||'').toLowerCase();if(u==='k'||u==='thousand')n*=1e3;else if(u)n*=1e6;const rest=m[3].trim();return '$'+Math.round(n).toLocaleString('en-US')+(rest?' '+rest:'')}
 const AGENCY_CONTACT='info@pswinsurance.com   |   (818) 701-1033';
 const PAUTO_LIMITS=['30/60','50/100','100/300'],PAUTO_DEDS=['500','1000'];
-const HOME_LAYOUT='psw-home-layout-10',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-28',QS_LAYOUT='psw-qs-layout-22',FONT_MARK='psw-font-embedded';
+const HOME_LAYOUT='psw-home-layout-11',PAUTO_LAYOUT='psw-pauto-layout-5',AUTO_LAYOUT='psw-auto-layout-28',QS_LAYOUT='psw-qs-layout-22',FONT_MARK='psw-font-embedded';
 // Quote sheets carry their own font (Liberation Sans, Arial-compatible) so every PDF viewer shows the text; without it some show symbols
 let fontBytes=null;
 async function sheetFonts(doc,notesOnly){
@@ -1179,6 +1179,8 @@ async function buildQuotePdf(v,SECS=QS_SECTIONS,TITLE='PACIFIC SOUTHWEST INSURAN
           field('f_'+f.k,v[f.k],L+LW,bw,16);box(f.pc+'_part',L+LW+bw+6);text('Part',L+LW+bw+20,8.5,font,muted);box(f.pc+'_comp',L+LW+bw+48);text('Comp',L+LW+bw+62,8.5,font,muted)}
         else f.opts?combo('f_'+f.k,v[f.k],f.opts,L+LW,w,16):field('f_'+f.k,v[f.k],L+LW,w,16);text(l2,L+LW+w+6,8.5,font,muted);f.opts2?combo('f_'+f.pair,v[f.pair],f.opts2,L+LW+w+6+lw,w,16):field('f_'+f.pair,v[f.pair],L+LW+w+6+lw,w,16);y-=19;continue}
       if(f.pair){need(19);text(label,L+4,8.5,font,muted);const w=(R-L-LW-6)/2;field('f_'+f.k,v[f.k],L+LW,w,16);field('f_'+f.pair,v[f.pair],L+LW+w+6,w,16);y-=19;continue}
+      // a line of check boxes (home sheet Usage Type), drawn like the Part / Comp boxes
+      if(f.checks){need(19);text(label,L+4,8.5,font,muted);let x=L+LW;f.checks.forEach(([k,t])=>{const c=form.createCheckBox(k);c.addToPage(page,{x,y:y-13,width:11,height:11,borderColor:line,borderWidth:0.8,backgroundColor:rgb(1,1,1)});if(/^(yes|true|on|x)$/i.test(String(v[k]||'')))c.check();text(t,x+16,8.5,font,muted);x+=16+font.widthOfTextAtSize(t,8.5)+18});y-=19;continue}
       if(f.radio){need(19);text(label,L+4,8.5,font,muted);radios('f_'+f.k,v[f.k],f.radio,L+LW,R-L-LW);y-=19;continue}
       if(f.opts){need(19);text(label,L+4,8.5,font,muted);combo('f_'+f.k,v[f.k],f.opts,L+LW,R-L-LW,16);y-=19;continue}
       row(label,'f_'+f.k,v[f.k],f.area)}
@@ -1233,6 +1235,8 @@ const PAUTO_SECTIONS=[
 const YN=['No','Yes'],HOME_YN=['earthquake','water_backup','brush','lapse','uw_business','uw_pool','uw_trampoline','uw_wood_stove','uw_dog','uw_bite','uw_flood','uw_rented','uw_construction','uw_foreclosure','uw_cancelled'];
 // siding choices are the ACORD 80's siding boxes
 const HOME_SIDING=[['Aluminum','Aluminium'],['Stucco','Stucco'],['Vinyl / plastic','VinylPlastic'],['Cedar / wood / shingle','CedarWoodShingle'],['EIFS on cinder block','ExteriorInsulationCinderBlock'],['EIFS on studs','ExteriorInsulationStuds']];
+// item 4 Usage Type: one check box each (key, label)
+const HOME_USAGE=[['usage_primary','Primary'],['usage_secondary','Secondary'],['usage_landlord','Landlord'],['usage_str','Short Term Rental']];
 const HOME_DEDS=['$500','$1,000','$2,500','$5,000','$10,000','$25,000'],HOME_ALARM=['None','Local','Central'];
 // home sheet: "same" in the property address copies the mailing address; coverages A to F read $#,### with no cents
 const HOME_MONEY=['dwelling','other_structures','personal_property','loss_of_use','liability','med_pay'];
@@ -1241,7 +1245,7 @@ function homeFix(name,val,get){const k=String(name).replace(/^f_/,''),t=String(v
   return HOME_MONEY.includes(k)&&/\d/.test(t)?fmtMoney(t):val}
 const HOME_SECTIONS=[
  {title:'Lead',fields:[{k:'lead_date',label:'Lead Date'},{k:'lead_source',label:'Lead Source',opts:LEAD_SOURCES}]},
- {title:'Named insured',fields:[{k:'ins_first',n:1,label:'First name',label2:'Last name',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},{k:'occupation',n:1,label:'Occupation',label2:'Employer',pair:'employer'},{k:'employer_address',n:1,label:'Employer address'},
+ {title:'Named insured',fields:[{k:'ins_first',n:1,label:'First name',label2:'Last name',pair:'ins_last'},{k:'ins_dob',n:1,label:'Birthdate',label2:'Marital status',pair:'ins_marital',opts2:['Single','Married','Divorced','Widowed']},{k:'occupation',n:1,label:'Occupation',label2:'Employer',pair:'employer'},{k:'usage',n:1,label:'Usage Type',checks:HOME_USAGE},
    {k:'phone',n:1,label:'Phone Number',label2:'Email',pair:'email'},{k:'mailing_address',n:1,label:'Mailing address'},{k:'property_address',n:1,label:'Property address'},{k:'years_at_address',n:1,label:'Years at address',label2:'Prior address',pair:'prior_address'},{k:'eff_date',n:1,label:'EFF Date',label2:'EXP Date',pair:'exp_date'}]},
  {title:'Second insured',fields:[{k:'co_first',n:1,label:'First name',label2:'Last name',pair:'co_last'},{k:'co_dob',n:1,label:'Birthdate',label2:'Occupation',pair:'co_occupation'},{k:'co_employer',n:1,label:'Employer'},{k:'co_employer_address',n:1,label:'Employer address'}]},
  {title:'Policy',fields:[{k:'form_type',n:1,label:'Policy form',label2:'Occupancy',pair:'occupancy',opts:['HO-3','HO-5','HO-4 (renters)','HO-6 (condo)','DP-1','DP-3'],opts2:['Owner','Tenant','Secondary','Short-term rental','Vacant']},{k:'currently_insured',n:1,label:'Insured now?',label2:'Current carrier',pair:'current_carrier',opts:['Yes','No']},{k:'current_premium',n:1,label:'Current premium',label2:'Policy expires',pair:'current_exp'},{k:'years_insured',n:1,label:'Years with carrier',label2:'Lapse in coverage?',pair:'lapse',opts2:YN}]},
@@ -1369,6 +1373,7 @@ const sheetKind=n=>/ com auto quote sheet\.pdf$/i.test(n)?'auto':/ com quote she
 async function upgradeHome(have){try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const d=await PDFLib.PDFDocument.load(await fileBytes(have));
     if(d.getSubject()!=='psw-home-quote-sheet'||(d.getKeywords()||'').includes(HOME_LAYOUT))return false;
     const hv=sheetValues(d),src=$('leadSource').value.trim();if(src)hv.lead_source=src;if(!hv.heating_type)hv.heating_type='Central gas';if(!hv.siding)hv.siding='Stucco';['smoke','deadbolts'].forEach(k=>{if(!hv[k])hv[k]='Yes'});
+    {const e=String(hv.employer_address||'').trim();if(e&&!String(hv.notes||'').includes(e))hv.notes=[String(hv.notes||'').trim(),'Employer address: '+e].filter(Boolean).join('\n')}
     if(!hv.hydrant_ft)hv.hydrant_ft='100';if(!hv.station_mi)hv.station_mi='1.5';
     return !!await uploadOne(new File([await buildQuotePdf(hv,HOME_SECTIONS,'PACIFIC SOUTHWEST INSURANCE PERSONAL HOME QUOTE SHEET','psw-home-quote-sheet')],have.name,{type:'application/pdf'}))}catch(_){return false}}
 async function upgradeAuto(f){
@@ -1493,7 +1498,8 @@ function qlSheetForm(kind,v){const out=[];let n=0;
   for(const s of QL_SHEETS[kind].secs()){if(s.cont)continue;const letter=String.fromCharCode(65+n++),fs=[];
     const add=(k,label,o)=>{if(!QL_OFFICE.has(k)&&!fs.some(x=>x.k===k))fs.push({k,label:(kind==='com'&&QL_LABEL[k])||label,...(o||{})})},opt=o=>o?{type:'select',opts:o}:{};
     for(const f of s.fields||[]){const fl=/\(first \/ last\)/i.test(f.label||'')&&f.pair;
-      add(f.k,fl?f.label.replace(/\s*\(first \/ last\)/i,' – first name'):f.label,f.radio?{type:'radio',opts:f.radio}:f.opts?{type:'select',opts:f.opts}:f.area?{type:'area'}:{});
+      if(!f.checks)add(f.k,fl?f.label.replace(/\s*\(first \/ last\)/i,' – first name'):f.label,f.radio?{type:'radio',opts:f.radio}:f.opts?{type:'select',opts:f.opts}:f.area?{type:'area'}:{});
+      (f.checks||[]).forEach(([k,t])=>add(k,f.label+' – '+t,{type:'select',opts:['No','Yes']}));
       if(f.pair)add(f.pair,fl?f.label.replace(/\s*\(first \/ last\)/i,' – last name'):(f.label2||f.label+' (2)'),opt(f.opts2));(f.also||[]).forEach(a=>add(a.k,a.label,opt(a.opts)))}
     for(let n=1;n<=3;n++)(s.bldg||[]).forEach(f=>{const lb=(kind==='com'&&QL_LABEL['b1_'+f.k])||f.label;add(`b${n}_${f.k}`,n===1?lb:lb.replace(/^Building\s+(\w)/i,(m,c)=>c.toUpperCase()),n===1?{}:{grp:`Building ${n}`})}); // buildings 2 and 3 open with + Add building on the customer's form
     for(const g of s.rowgrid||[])g.nums.forEach((_,i)=>g.cols.forEach(c=>add(`${g.prefix}${i+1}_${c.k}`,`${g.label} ${i+1} – ${c.label}`,opt(c.opts))));
@@ -2361,6 +2367,7 @@ function from80(a){const v={},g=k=>String(a[k]==null||a[k]===true?'':a[k]).trim(
   put('eff_date',g('Policy_EffectiveDate_A'));put('exp_date',g('Policy_ExpirationDate_A'));
   {const f=g('ResidentialStructure_PolicyForm_FormTypeCode_A').toUpperCase().replace(/[^A-Z0-9]/g,''),m=f.match(/^(HO|DP)?(\d)$/)||f.match(/^(HO|DP)(\d)/);if(m)put('form_type',`${m[1]||'HO'}-${m[2]}`+({'HO-4':' (renters)','HO-6':' (condo)'}[`${m[1]||'HO'}-${m[2]}`]||''))}
   put('occupancy',on('ResidenceOccupancy_OccupancyType_OwnerIndicator_A')?'Owner':on('ResidenceOccupancy_OccupancyType_TenantIndicator_A')?'Tenant':on('ResidenceOccupancy_OccupancyType_VacantIndicator_A')?'Vacant':on('ResidenceOccupancy_Usage_SecondaryIndicator_A')?'Secondary':'');
+  if(on('ResidenceOccupancy_Usage_PrimaryIndicator_A'))v.usage_primary='Yes';if(on('ResidenceOccupancy_Usage_SecondaryIndicator_A'))v.usage_secondary='Yes';
   put('dwelling',money('ResidentialCoverage_Dwelling_LimitAmount_A'));put('other_structures',money('ResidentialCoverage_OtherStructures_LimitAmount_A'));put('personal_property',money('ResidentialCoverage_PersonalProperty_LimitAmount_A'));
   put('loss_of_use',money('ResidentialCoverage_LossofUse_LimitAmount_A'));put('liability',money('ResidentialCoverage_PersonalLiability_EachOccurrenceLimitAmount_A'));put('med_pay',money('ResidentialCoverage_MedicalPayments_EachPersonLimitAmount_A'));
   put('deductible',money('ResidentialCoverage_Deductible_BaseAmount_A'));
@@ -2857,7 +2864,8 @@ function build80(C,h){
   const con=g('construction').toLowerCase();
   if(con==='frame')set('Construction_ConstructionType_FrameIndicator_A',true);else if(con==='masonry')set('Construction_ConstructionType_MasonryIndicator_A',true);else if(con==='masonry veneer')set('Construction_ConstructionType_MasonryVeneerIndicator_A',true);
   else if(con){set('Construction_ConstructionType_OtherIndicator_A',true);set('Construction_ConstructionCode_A',g('construction'))}
-  if(occ==='owner'||occ==='tenant')set('ResidenceOccupancy_Usage_PrimaryIndicator_A',true);else if(occ==='secondary')set('ResidenceOccupancy_Usage_SecondaryIndicator_A',true);
+  if(yes('usage_primary')||yes('usage_secondary')){if(yes('usage_primary'))set('ResidenceOccupancy_Usage_PrimaryIndicator_A',true);if(yes('usage_secondary'))set('ResidenceOccupancy_Usage_SecondaryIndicator_A',true)} // item 4 Usage Type wins over the occupancy guess
+  else if(occ==='owner'||occ==='tenant')set('ResidenceOccupancy_Usage_PrimaryIndicator_A',true);else if(occ==='secondary')set('ResidenceOccupancy_Usage_SecondaryIndicator_A',true);
   if(occ==='tenant')set('ResidenceOccupancy_OccupancyType_TenantIndicator_A',true);else if(occ==='vacant')set('ResidenceOccupancy_OccupancyType_VacantIndicator_A',true);
   if(/HO-6/.test(form))set('ResidenceOccupancy_ResidenceType_CondominiumIndicator_A',true);else if(/HO-4/.test(form)){}else if(form)set('ResidenceOccupancy_ResidenceType_DwellingIndicator_A',true);
   set('Construction_RoofMaterialCode_A',g('roof_type'));set('ResidentialStructure_PurchasePriceAmount_A',money('purchase_price'));set('ResidentialStructure_PurchaseDate_A',g('purchase_date'));
