@@ -776,7 +776,9 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
       <label for="ppFinNum">Number of payments</label><input id="ppFinNum" data-fin="finNum" inputmode="numeric">
       <label for="ppFinFee">PSW Finance fee</label><input id="ppFinFee" data-fin="finFee" data-money="1" placeholder="$" inputmode="decimal">
       <label for="ppFinDue">Due date</label><input id="ppFinDue" data-fin="finDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
-    </div></section>
+    </div>
+    <div class="drop" id="finReadRow" style="margin-top:8px"><span style="font-weight:600">Drop the finance agreement, or</span><input type="file" id="finReadIn" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/*"></div>
+    <div class="msg" id="finReadMsg"></div></section>
   </div>
   <aside class="ppSide">
     <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
@@ -3754,7 +3756,7 @@ const BOP_LOC=[['address','address'],['operations','business / operations'],['bu
 const bopLocHtml=i=>`<div class="full" data-loc="${i}"><label style="font-weight:700;margin-top:6px">Location ${i}</label></div>`+BOP_LOC.map(([k,l])=>`<div${k==='address'||k==='operations'?' class="full"':''}><label>Location ${i} ${esc(l)}</label><input data-x="loc${i}_${k}"></div>`).join('');
 $('bopLoc').onclick=()=>{const i=$('ppExtra').querySelectorAll('[data-loc]').length+2;$('ppExtra').insertAdjacentHTML('beforeend',bopLocHtml(i));const el=$('ppExtra').querySelector(`[data-x="loc${i}_address"]`);el.scrollIntoView({block:'center'});el.focus()};
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
-function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppAlsoCl').checked=false;$('ppReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
+function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppAlsoCl').checked=false;$('ppReadMsg').textContent='';$('finReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
   try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppFin').querySelectorAll('[data-fin]').forEach(el=>{el.value=ppExtraVals[el.dataset.fin]||''});$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
@@ -4177,6 +4179,33 @@ $('ppPasteGo').onclick=async()=>{const t=$('ppPaste').value.trim(),m=$('ppReadMs
   if(!t){m.className='msg err';m.textContent='Paste the text from the quote, dec page or binder first.';$('ppPaste').focus();return}
   await ppFillFrom(t,'',null);await ppAlsoClient(t,'',null)};
 $('ppReadIn').onchange=()=>{const f=$('ppReadIn').files[0];$('ppReadIn').value='';if(f)ppRead(f)};
+// Financing: drop a premium finance agreement and Claude fills the Financing boxes (the file is kept with the policy too)
+async function finRead(f){const m=$('finReadMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
+  if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value);
+  const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
+  try{r=await readScan(f,isImg,x=>m.textContent=x)}catch(e){m.className='msg err';m.textContent=`${f.name}: ${e.message||'couldn’t be read.'}`;return}
+  const boxes=Object.entries(lastFields||{}).filter(([,v])=>String(v??'').trim()&&!/^(off|false)$/i.test(String(v))).map(([k,v])=>`${k}: ${v}`).join('\n');lastFields={};
+  const t=[r.t,boxes&&'Form boxes:\n'+boxes].filter(Boolean).join('\n\n'),img=r.imgs.length?r.imgs:null;
+  if(!t&&!img){m.className='msg err';m.textContent=`No words could be read in ${f.name}.`;return}
+  if(!sample){m.className='msg err';m.textContent='Claude isn’t turned on for this database, so the Financing boxes can’t be read from a document. The file was kept with the policy.';return}
+  const prompt=`You are reading a premium finance agreement (or a finance quote) for an insurance policy, ${img?'in the attached picture(s)':'below'} (file "${f.name}").
+Reply with only a JSON object {"finCo":"","finLoan":"","finDown":"","finNum":"","finAmt":"","finDue":"","finFee":""}:
+finCo = the premium finance company's name (the lender, e.g. GAAC, IPFS, AFCO), not the insurance company or agent; finLoan = loan / account / contract number;
+finDown = down payment; finNum = number of installments (just the number); finAmt = the amount of each installment (monthly payment);
+finDue = the first installment's due date MM/DD/YYYY; finFee = the PSW / agent / broker finance fee if one is shown, otherwise "".
+Money as written (e.g. "$123.45"). Use "" for anything not shown; never guess.`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
+  $('finReadIn').disabled=true;m.textContent='Claude is reading it…';
+  try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});let n=0;
+    if(o&&typeof o==='object')$('ppFin').querySelectorAll('[data-fin]').forEach(el=>{let v=String(o[el.dataset.fin]??'').trim();if(!v)return;
+      if(el.dataset.money){const x=bNum(v);if(x!=null)v=bMoney(x)}if(el.dataset.fin==='finCo'){const hit=FIN_COS.find(c=>c.toLowerCase()===v.toLowerCase()||v.toLowerCase().includes(c.toLowerCase()));if(hit)v=hit}
+      el.value=v;n++});
+    siteBtns();m.className=n?'msg ok':'msg err';m.textContent=n?`Filled ${n} financing box${n===1?'':'es'} from ${f.name}. Check them, then Done.`:`Couldn’t find financing details in ${f.name}.`}
+  catch(e){m.className='msg err';m.textContent=sampleErr(e.code)}
+  $('finReadIn').disabled=false}
+$('finReadIn').onchange=()=>{const f=$('finReadIn').files[0];$('finReadIn').value='';if(f)finRead(f)};
+{const fz=$('finReadRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
+ ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
+ fz.addEventListener('drop',e=>{const f=(e.dataTransfer.files||[])[0];if(f)finRead(f)})}
 {const fz=$('ppReadRow');['dragenter','dragover'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();fz.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>fz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&fz.contains(e.relatedTarget))return;fz.classList.remove('over')}));
  fz.addEventListener('drop',e=>{const f=(e.dataTransfer.files||[])[0];if(f)ppRead(f)})}
