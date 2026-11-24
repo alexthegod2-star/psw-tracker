@@ -190,6 +190,8 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .pg{position:relative;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);flex:none}
 .pg canvas,.pg img{display:block}
 .adding .pg{cursor:crosshair}
+#sg .pgRm{position:absolute;top:6px;right:6px;z-index:3;min-height:0;padding:3px 9px;font-size:12px;background:#c62828;border-color:#c62828;color:#fff;opacity:.85}#sg .pgRm:hover{opacity:1}
+#sg .pg .pgGone{display:none}#sg .pg.gone .pgGone{display:flex;position:absolute;inset:0;z-index:4;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:rgba(255,255,255,.82);font-weight:600;color:#a12020}#sg .pg.gone .sgBox,#sg .pg.gone .pgRm{display:none}
 .edSide{position:absolute;left:16px;top:112px;width:220px;z-index:2}.edSide.right{left:auto;right:16px}.edSide .drop{text-align:center;font-size:13px}.ed.side .edb{padding-left:256px}#edQs{width:420px;display:flex;gap:10px;align-items:stretch}#edQs>.drop{flex:1 1 0;min-width:0}.qsLead{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:6px;cursor:pointer}.qsLead input{margin:0;width:auto;flex:none}.qsPaste .qsLead{margin-top:-2px}.qsPaste{display:flex;flex-direction:column;gap:8px}.qsPaste textarea{flex:1;min-height:150px;width:100%;font:inherit;font-size:13px;resize:vertical}.ed.sideR .edb{padding-left:452px}@media (max-width:1720px){#edQs{width:220px;flex-direction:column}.ed.sideR .edb{padding-left:256px}}.ed.sideR .edb{padding-right:256px}
 .tn{position:absolute;z-index:5;min-width:40px;padding:0 2px;color:#000;background:rgba(255,235,59,.35);border:1px dashed #b58900;font-family:Helvetica,Arial,sans-serif;line-height:1.15;white-space:pre;outline:none}
 .tn:focus{background:rgba(255,235,59,.6)}
@@ -4381,7 +4383,8 @@ async function sgAddDoc(f){const d={f,start:sg.pages.length};sg.docs.push(d);sgD
   for(let i=1;i<=d.pdf.numPages;i++){const page=await d.pdf.getPage(i),base=page.getViewport({scale:1}),sc=W/base.width,vp=page.getViewport({scale:sc});
     const wrap=document.createElement('div');wrap.className='pg';wrap.style.width=vp.width+'px';wrap.style.height=vp.height+'px';wrap.dataset.page=sg.pages.length;
     const cv=document.createElement('canvas'),dpr=window.devicePixelRatio||1;cv.width=Math.floor(vp.width*dpr);cv.height=Math.floor(vp.height*dpr);cv.style.width=vp.width+'px';cv.style.height=vp.height+'px';
-    wrap.appendChild(cv);$('sgBody').appendChild(wrap);sg.pages.push({wrap,sc,w:base.width,h:base.height,doc:d,pn:i});
+    wrap.appendChild(cv);wrap.insertAdjacentHTML('beforeend','<button type="button" class="pgRm" data-pgrm title="Leave this page out of what goes to DocuSign (your saved file isn’t changed)">Remove page</button><div class="pgGone">This page won’t be sent<button type="button" data-pgundo>Put it back</button></div>');
+    $('sgBody').appendChild(wrap);sg.pages.push({wrap,sc,w:base.width,h:base.height,doc:d,pn:i});
     await page.render({canvasContext:cv.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null,annotationMode:pdfjsLib.AnnotationMode.ENABLE}).promise}
   const found=(await signGuess(d.pdf)).map(t=>({...t,page:t.page+d.start}));sg.tabs.push(...found);sgDraw();return found.filter(t=>t.type==='sign').length}
 function sgDropDoc(i){const d=sg.docs[i];if(!d||!i)return;sg.sel=null;$('sgStEd').hidden=true;sg.sel=null;$('sgStEd').hidden=true;const n=sg.pages.filter(p=>p.doc===d).length;
@@ -4461,6 +4464,11 @@ function sgWhoNames(){['First','Second','Third','Fourth'].forEach((o,i)=>$('sgW'
 document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.onclick=async()=>{if(!sg)return;const on=sg.tool!==b.dataset.sgt;
   if(on&&b.dataset.sgt==='mysig'&&!(sgSigUrl=await mySig()))return sgMsg('You don’t have a signature saved yet. An owner can add it for you in Admin (Signature).',true);sg.tool=on?b.dataset.sgt:'';document.querySelectorAll('#sg [data-sgt]').forEach(x=>x.classList.toggle('on',x===b&&on));$('sg').classList.toggle('adding',on);if(on){sg.err=0;sgMsg('Now click on the page where it goes.')}});
 // add a box where the page is clicked; drag a box to move it; click a box to switch signer (with two signers); × removes it
+// Remove page / Put it back: the page stays on screen greyed out, and is left out when sending
+$('sgBody').addEventListener('click',e=>{const b=e.target.closest('[data-pgrm],[data-pgundo]');if(!b||!sg)return;e.stopPropagation();
+  const wrap=b.closest('.pg'),p=wrap&&sg.pages[+wrap.dataset.page];if(!p)return;p.gone=b.hasAttribute('data-pgrm');wrap.classList.toggle('gone',p.gone);
+  if(p.gone&&sg.sel!=null&&sg.tabs[sg.sel]&&sg.tabs[sg.sel].page===+wrap.dataset.page){sg.sel=null;sgStOpen()}
+  const left=sg.pages.filter(q=>!q.gone).length;sgMsg(p.gone?`Page left out. ${left} page${left===1?'':'s'} will be sent.`:'Page put back.')},true);
 $('sgBody').addEventListener('click',e=>{if(!sg)return;const x=e.target.closest('[data-sgx]');if(x){const k=+x.dataset.sgx;sg.tabs.splice(k,1);if(sg.sel!=null)sg.sel=sg.sel===k?null:sg.sel>k?sg.sel-1:sg.sel;sgDraw();sgStOpen();return}
   if(!sg.tool&&!e.target.closest('.sgBox')&&sg.sel!=null){sgCoRemember(sg.tabs[sg.sel]);sg.sel=null;sgDraw();sgStOpen();return}
   if(!sg.tool||e.target.closest('.sgBox'))return;const wrap=e.target.closest('.pg');if(!wrap)return;const p=sg.pages[+wrap.dataset.page],r=wrap.getBoundingClientRect();
@@ -4483,13 +4491,16 @@ $('sgSend').onclick=async()=>{if(!sg||$('sgSend').disabled)return;sg.err=0;
   const ok=e=>/^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$/.test(e),signers=[{name:$('sgN1').value.trim(),email:$('sgE1').value.trim()}];
   for(let k=2;k<=sgCount();k++)signers.push({name:$('sgN'+k).value.trim(),email:$('sgE'+k).value.trim()});
   for(const[i,s]of signers.entries()){if(!s.name)return sgMsg(`Type the ${['','second ','third ','fourth '][i]}signer’s name.`,true);if(!ok(s.email))return sgMsg(`Type a good email for ${s.name}.`,true);
-    if(!sg.tabs.some(t=>t.signer===i&&t.type==='sign'&&!t.stamp))return sgMsg(`${s.name} has no “Sign here” box yet.`,true)}
+    if(!sg.tabs.some(t=>t.signer===i&&t.type==='sign'&&!t.stamp&&!sg.pages[t.page].gone))return sgMsg(`${s.name} has no “Sign here” box yet.`,true)}
   $('sgSend').disabled=true;sgMsg('Sending to DocuSign…');
-  try{const docs=[];for(const d of sg.docs){let pdf;try{pdf=await flatPdf(d.bytes.slice())}catch(_){pdf=d.bytes}
+  const keep=sg.docs.filter(d=>sg.pages.some(p=>p.doc===d&&!p.gone));if(!keep.length){$('sgSend').disabled=false;return sgMsg('Every page is removed. Put at least one back.',true)}
+  const pnNow=p=>p.pn-sg.pages.filter(q=>q.doc===p.doc&&q.gone&&q.pn<p.pn).length; // page number once the removed pages are gone
+  try{const docs=[];for(const d of keep){let pdf;try{pdf=await flatPdf(d.bytes.slice())}catch(_){pdf=d.bytes}
       const st=sg.tabs.filter(t=>t.stamp&&!sgEd(t)&&sg.pages[t.page]&&sg.pages[t.page].doc===d).map(t=>({t,pn:sg.pages[t.page].pn}));if(st.length){if(st.some(x=>x.t.type==='mysig'))sgSigUrl=sgSigUrl||await mySig();pdf=await sgStampPdf(pdf,st)} // filled-in boxes become part of the page, so DocuSign shows them as typed
+      const out=sg.pages.filter(p=>p.doc===d&&p.gone).map(p=>p.pn).sort((a,b)=>b-a);if(out.length){const x=await PDFLib.PDFDocument.load(pdf,{ignoreEncryption:true});out.forEach(n=>x.removePage(n-1));pdf=await x.save()}
       docs.push({fileId:d.f.id,fileName:d.f.name,pid:d.f.pid||'',pdf:u8b64(new Uint8Array(pdf))})}
     const r=await fetch('/api/sign/send',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({path:sg.path,docs,signers,
-      subject:$('sgSubj').value.trim(),message:$('sgMsgT').value.trim(),tabs:sg.tabs.filter(t=>!t.stamp||sgEd(t)).map(t=>{const p=sg.pages[t.page],o={type:t.stamp?'text':t.type,signer:t.signer,checked:!!t.on,doc:sg.docs.indexOf(p.doc),page:p.pn,x:Math.round(t.x),y:Math.round(t.y)};if(t.stamp)Object.assign(o,{value:t.text||'',size:t.size,color:sgDsCol(t.color)[1],bold:!!t.bold,italic:!!t.italic,required:!!t.req,w:Math.round(t.w+(t.text?8:100)),h:Math.round(t.h+2)});return o})})});
+      subject:$('sgSubj').value.trim(),message:$('sgMsgT').value.trim(),tabs:sg.tabs.filter(t=>(!t.stamp||sgEd(t))&&!sg.pages[t.page].gone).map(t=>{const p=sg.pages[t.page],o={type:t.stamp?'text':t.type,signer:t.signer,checked:!!t.on,doc:keep.indexOf(p.doc),page:pnNow(p),x:Math.round(t.x),y:Math.round(t.y)};if(t.stamp)Object.assign(o,{value:t.text||'',size:t.size,color:sgDsCol(t.color)[1],bold:!!t.bold,italic:!!t.italic,required:!!t.req,w:Math.round(t.w+(t.text?8:100)),h:Math.round(t.h+2)});return o})})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){const why={no_sign_box:'Every signer needs a “Sign here” box.',bad_signer:'Check the signer names and emails.',consent:'DocuSign needs a one-time OK first. Close this screen and press Sign again for the link.',bad_pdf:'This file isn’t a PDF DocuSign can take.',sign_off:'DocuSign isn’t set up yet.'}[j.code];
       throw new Error(why||('DocuSign said: '+(j.detail||j.code||r.status)))}
