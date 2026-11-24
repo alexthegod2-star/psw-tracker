@@ -5054,7 +5054,9 @@ async function mhLoad(){const q=$('mhQ').value.trim(),all=$('mhAll').checked?1:0
 // the sent message, cleaned like a signature and drawn in its own shadow root (dark text on white, page styles kept out).
 // It used a sandboxed frame before, which Chrome left blank after the window was closed and opened again until the page was reloaded.
 function mhShow(html,empty,bad){const box=$('mhBody'),root=box.shadowRoot||box.attachShadow({mode:'open'}),body=sigClean(html);
-  root.innerHTML=`<style>:host{all:initial;display:block;color:#111;background:#fff;font:11pt Calibri,Arial,sans-serif;color-scheme:light}.b{padding:10px;margin:0;overflow-wrap:anywhere}.n{font:13px sans-serif;color:${bad?'#b00':'#888'}}a{color:#1f5fa8}</style>`+
+  root.innerHTML=`<style>:host{all:initial;display:block;color:#111;background:#fff;font:11pt Calibri,Arial,sans-serif;color-scheme:light}.b{padding:10px;margin:0;overflow-wrap:anywhere}.n{font:13px sans-serif;color:${bad?'#b00':'#888'}}a{color:#1f5fa8}/* policy screen: shorter Line of business and Policy number boxes */
+#polBox #ppNumber{justify-self:start;width:100%;max-width:170px}#polBox .ppPick:has(#ppLine){justify-self:start}#polBox #ppLine{width:180px;flex:0 0 180px}
+</style>`+
     (new DOMParser().parseFromString(body,'text/html').body.textContent.trim()?`<div class="b">${body}</div>`:`<p class="b n">${esc(empty)}</p>`);box.scrollTop=0}
 function mhOpen(q){$('mhQ').value=q||'';$('mhView').hidden=true;$('mhDlg').classList.add('on');mhLoad()}
 $('mlHist').onclick=()=>mhOpen('');
