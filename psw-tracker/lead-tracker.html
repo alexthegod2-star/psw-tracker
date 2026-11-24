@@ -156,7 +156,7 @@ a.ln{color:var(--acc);cursor:pointer;text-decoration:underline}
 .btab .calc{color:var(--mute)}.btab .tm{font-weight:700}.btab .neg{color:var(--bad)}.btab td.up{text-transform:uppercase;font-size:12px}
 .btab tfoot td{border-top:2px solid var(--line);border-bottom:none;font-weight:700;background:var(--soft)}.btab tfoot tr{cursor:default}
 .btab th:nth-child(2),.btab td:nth-child(2){position:sticky;left:0;background:var(--card);z-index:1}.btab tbody tr:hover td:nth-child(2){background:var(--soft)}.btab tfoot td:nth-child(2){background:var(--soft)}
-.bpaid{width:17px;height:17px;margin:0;cursor:pointer;accent-color:var(--ok)}
+.bpaid{width:17px;height:17px;margin:0;cursor:pointer;accent-color:var(--ok)}.bpaid:disabled{cursor:not-allowed}
 #binBox{width:min(720px,100%);max-height:calc(100vh - 32px);overflow-y:auto}#binBox .grid{grid-template-columns:repeat(3,1fr);margin-top:8px}@media (max-width:560px){#binBox .grid{grid-template-columns:1fr 1fr}}#binBox>.row{justify-content:flex-end;margin-top:14px}
 .bchk{display:flex;gap:8px;align-items:center;padding-top:20px}.bchk input{width:auto;flex:none;margin:0;accent-color:var(--ok)}.bchk label{margin:0;font-size:14px;color:var(--ink);font-weight:400;cursor:pointer}
 .bcalc{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:12px;background:var(--soft);border-radius:10px;padding:10px}.bcalc span{display:block;font-size:11px;color:var(--mute)}.bcalc b{font-variant-numeric:tabular-nums}
@@ -920,7 +920,9 @@ const toast=(t,ms)=>{const e=$('toast');e.textContent=t;e.style.display='block';
 const errText=e=>{const c=e&&e.code;return ({permission_denied:'You only have view access to this tracker.',too_large:'That file is too big (20 MB max).',unsupported_type:'That file type can’t be stored. Use PDF, an image, CSV or text.',rate_limited:'Too many changes at once, try again in a moment.',quota_or_state:'File storage is full.',not_granted:'This view can’t do that.'})[c]||('Something went wrong'+(c?` (${c})`:'')+'. Try again.')};
 
 let db=null,assets=null,dl=null,user=null,me=null;let canUnlock=false; // Admin's Unlock Yes: may take over a lead or client someone else has open
-let binderOn=false,binCol=null,binder=[],editBin=null,binOwner='',binUnsub=null;
+let binderOn=false,binCol=null,binder=[],editBin=null,binOwner='',binUnsub=null,binMe='',binBoss=false;
+// Com paid / BF paid: on your own log you check them; on a log shared with you, so can you; but the log's owner can't on a log shared with the agency owner (Paul's log: only Alex). The server enforces it too.
+const binPaidOk=()=>binBoss||binOwner!==binMe;
 try{db=await window.claude.use('db')}catch(e){}
 try{assets=await window.claude.use('assets')}catch(e){}
 try{dl=await window.claude.use('downloads')}catch(e){}
@@ -5250,7 +5252,7 @@ const MON=['January','February','March','April','May','June','July','August','Se
 function binUse(o){if(!o||o===binOwner)return;binOwner=o;if(binUnsub)try{binUnsub()}catch(_){}binder=[];binCol=db.collection('private').doc(o).collection('binder');
   binUnsub=binCol.onSnapshot(s=>{if(binOwner!==o)return;binder=s.docs.map(d=>({id:d.id,...d.data()}));renderBinder()},e=>{$('bempty').hidden=false;$('bempty').textContent=errText(e)});
   document.querySelectorAll('[data-bown]').forEach(b=>b.classList.toggle('on',view==='binder'&&b.dataset.bown===o));if(view==='binder')renderBinder()}
-try{const r=await fetch('/api/auth/me',{credentials:'same-origin'});if(r.ok){const u=await r.json();
+try{const r=await fetch('/api/auth/me',{credentials:'same-origin'});if(r.ok){const u=await r.json();binMe=u.username||'';binBoss=!!u.owner;
   const logs=(u.binders&&u.binders.length)?u.binders:(u.binder&&u.username?[{username:u.username,name:u.name}]:[]);
   if(logs.length){binderOn=true;$('binRow').hidden=false;const t0=$('binderTab');let prev=t0;
     logs.forEach((l,i)=>{const t=i?t0.cloneNode(false):t0;if(i){t.removeAttribute('id');prev.after(t)}prev=t;t.dataset.bown=l.username;t.hidden=false;
@@ -5295,7 +5297,7 @@ function renderBinder(){if(!binderOn)return;
     const body=list.map((b,i)=>{const c=bCalc(b),pd=v=>v&&/^\d{4}-/.test(v)?` title="Paid ${esc(fmtDate(v))}"`:'';return `<tr data-bin="${esc(b.id)}"><td class="num">${i+1}</td><td class="nm" title="${esc(b.name)}">${binClient(b)?`<a href="#" class="bcl" title="Open ${esc(b.name)}'s policy">${esc(b.name)}</a>`:esc(b.name)}</td><td>${esc(fmtDate(b.eff))}</td><td>${esc(fmtDate(b.exp))}</td><td class="up" title="${esc(b.type)}">${esc(b.type)}</td><td class="up" title="${esc(b.ga)}">${esc(b.ga)}</td><td class="up" title="${esc(b.carrier)}">${esc(b.carrier)}</td>
       <td class="n">${b.premium!=null?esc(b.term||1):''}</td><td class="n">${bMoney(b.premium)}</td><td class="n">${bPctTxt(b.comPct)}</td><td class="n${b.commAmt!=null?'':' calc'}">${bMoney(c.comm)}</td><td class="n${b.yrAmt!=null?'':' calc'}">${bMoney(c.yr)}</td><td class="n${neg(b.bf)}">${bMoney(b.bf)}</td><td>${esc(b.finance)}</td>
       <td class="n">${bPctTxt(b.splitPct)}</td><td class="n calc">${b.splitPct==null?'':bMoney(c.comSplit)}</td><td class="n calc">${b.splitPct==null?'':bMoney(c.bfSplit)}</td><td class="n tm${neg(c.total)}">${bMoney(c.total)}</td>
-      <td class="c"><input type="checkbox" class="bpaid" data-k="comPaid" aria-label="Com paid"${b.comPaid?' checked':''}${pd(b.comPaid)}></td><td class="c"><input type="checkbox" class="bpaid" data-k="bfPaid" aria-label="BF paid"${b.bfPaid?' checked':''}${pd(b.bfPaid)}></td></tr>`}).join('');
+      <td class="c"><input type="checkbox" class="bpaid" data-k="comPaid" aria-label="Com paid"${b.comPaid?' checked':''}${pd(b.comPaid)}${binPaidOk()?'':' disabled'}></td><td class="c"><input type="checkbox" class="bpaid" data-k="bfPaid" aria-label="BF paid"${b.bfPaid?' checked':''}${pd(b.bfPaid)}${binPaidOk()?'':' disabled'}></td></tr>`}).join('');
     const nm=k?MON[+k.slice(5)-1]:'No month',hasSp=list.some(b=>b.splitPct!=null);
     return `<section class="bmon"><div class="bmh"><h3>${esc(monName(k))}</h3><span class="small">${list.length} entr${list.length===1?'y':'ies'}</span><span class="sp"></span><span>Made <b>${bMoney(r2(t.total))}</b></span><button data-badd="${esc(k)}">+ Add to ${esc(nm)}</button></div>
       <div class="bwrap"><table class="btab">${head}<tbody>${body}</tbody><tfoot><tr><td></td><td>${esc(nm)} total</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="n">${bMoney(r2(t.premium))}</td><td></td><td class="n">${bMoney(r2(t.comm))}</td><td class="n">${bMoney(r2(t.yr))}</td><td class="n${neg(t.bf)}">${bMoney(r2(t.bf))}</td><td></td><td></td><td class="n">${hasSp?bMoney(r2(t.comSplit)):''}</td><td class="n">${hasSp?bMoney(r2(t.bfSplit)):''}</td><td class="n">${bMoney(r2(t.total))}</td><td></td><td></td></tr></tfoot></table></div></section>`}).join('');
@@ -5326,7 +5328,7 @@ function openBin(b,preset){editBin=b||null;const v=b||preset||{};
   $('binTitleH').textContent=b?'Edit sale':'Add sale';BF.forEach(([id,k])=>$(id).value=v[k]||'');
   $('bnMo').innerHTML=monOpts(v.month||monKey(new Date()));$('bnEff').value=fmtDate(v.eff||'');$('bnExp').value=fmtDate(v.exp||'');
   $('bnTerm').value=v.term&&v.term!==1?v.term:'';$('bnComm').value=v.commAmt!=null?bMoney(v.commAmt):'';$('bnYrc').value=v.yrAmt!=null?bMoney(v.yrAmt):'';$('bnPrem').value=v.premium!=null?bMoney(v.premium):'';$('bnPct').value=v.comPct!=null?v.comPct+'%':'';
-  $('bnBf').value=v.bf!=null?bMoney(v.bf):'';$('bnSplit').value=v.splitPct!=null?v.splitPct+'%':'';$('bnComPaid').checked=!!v.comPaid;$('bnBfPaid').checked=!!v.bfPaid;
+  $('bnBf').value=v.bf!=null?bMoney(v.bf):'';$('bnSplit').value=v.splitPct!=null?v.splitPct+'%':'';{const ok=binPaidOk();$('bnComPaid').disabled=$('bnBfPaid').disabled=!ok;$('bnComPaid').title=$('bnBfPaid').title=ok?'':'Only Alex can mark these paid'}$('bnComPaid').checked=!!v.comPaid;$('bnBfPaid').checked=!!v.bfPaid;
   $('bnTypes').innerHTML=[...new Set(['GL','WC','Com','Auto','Com auto','DIC','HO','Umbrella',...binder.map(x=>x.type)].filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
   $('bnGas').innerHTML=[...new Set(binder.map(x=>x.ga).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
   $('bnCos').innerHTML=[...new Set(binder.map(x=>x.carrier).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
