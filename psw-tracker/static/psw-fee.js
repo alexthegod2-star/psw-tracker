@@ -712,6 +712,10 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
   }
   /* in the Crum-style tables amounts are bold; elsewhere follow the quote */
   const fbAmt=serif?fBold:fReg;
+  /* a letter the quote's own font doesn't have is written in a standard font: bold where the quote's text there is bold
+     (a bold Total whose font has no "6" got a plain 6) */
+  const isBold=x=>{ try{ const f=x&&x.fontRef&&pdfDoc.context.lookup(x.fontRef); const n=f&&String(f.get(PDFLib.PDFName.of("BaseFont"))||""); return /bold|black|heavy|semibold|demi/i.test(n); }catch(e){ return false; } };
+  const fbFor=x=>isBold(x)?fBold:fbAmt;
 
   /* text drawn inside an old total amount (some PDFs draw each letter on its own) */
   const inAmt=(a,x)=>x>a.x-2 && x<Math.max(a.x+2,a.x+a.w-0.5);
@@ -799,10 +803,10 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     const lx=rightAligned?(last.labelRight-lw):last.labelX;
     INK=inkOf(lblT); drawMixed(page,fLbl,fReg,label,lx,newY,lSize);
     INK=inkOf(feeAmtT); cols.forEach(c=>{ drawMixed(page,fFee,fbAmt,feeStr,place(c,mixedWidth(fFee,fbAmt,feeStr,c.feeSize),false),newY,c.feeSize); });
-    cols.forEach((c,i)=>{ const s=money(c.neu,c.tot), f=fTot[i]||fFee, sz=c.tot.size; INK=inkOf(totAmtT[i]); drawMixed(page,f,fbAmt,s,place(c,mixedWidth(f,fbAmt,s,sz),true),totY,sz); });
-    extra.forEach(e=>{ const s=money(e.neu,e.a), f=e.f||fTot[0]||fFee, sz=e.a.size, w=mixedWidth(f,fbAmt,s,sz); INK=inkOf(e.t);
+    cols.forEach((c,i)=>{ const s=money(c.neu,c.tot), f=fTot[i]||fFee, sz=c.tot.size, fb=fbFor(totAmtT[i]); INK=inkOf(totAmtT[i]); drawMixed(page,f,fb,s,place(c,mixedWidth(f,fb,s,sz),true),totY,sz); });
+    extra.forEach(e=>{ const s=money(e.neu,e.a), f=e.f||fTot[0]||fFee, sz=e.a.size, fb=fbFor(e.t), w=mixedWidth(f,fb,s,sz); INK=inkOf(e.t);
       const x=e.c.align==="left"?e.a.x:e.c.align==="center"?e.a.x+e.a.w/2-w/2:e.a.x+e.a.w-w;
-      drawMixed(page,f,fbAmt,s,x,e.a.y-(moved(e.a.y)?shift:0),sz); });
+      drawMixed(page,f,fb,s,x,e.a.y-(moved(e.a.y)?shift:0),sz); });
     INK=[0,0,0];
   };
   return {pi,cols,ok,newY,totY,shift,chain,draw,extra};
