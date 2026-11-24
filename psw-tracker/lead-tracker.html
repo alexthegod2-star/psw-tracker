@@ -232,6 +232,12 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
 /* Fill from a document: the paste box stays white on the client and policy screens */
 #clientBox #clPaste,#polBox #ppPaste{background:#fff;border-color:var(--line)}
+/* policy screen: shorter boxes from Policy state to Cancel status, so there isn't so much empty space */
+#polBox #ppState,#polBox #ppUser,#polBox #ppProducer,#polBox #ppTerm,#polBox #ppEff,#polBox #ppExp,#polBox #ppNb,#polBox #ppCDate,#polBox #ppCStatus{justify-self:start;width:100%}#polBox #ppState{max-width:70px}#polBox #ppTerm,#polBox #ppNb{max-width:140px}#polBox #ppEff,#polBox #ppExp,#polBox #ppCDate{max-width:130px}#polBox #ppUser,#polBox #ppProducer,#polBox #ppCStatus{max-width:220px}
+/* policy screen: shorter Line of business and Policy number boxes */
+#polBox #ppNumber{justify-self:start;width:100%;max-width:170px}#polBox .ppPick:has(#ppLine){justify-self:start}#polBox #ppLine{width:180px;flex:0 0 180px}
+/* policy screen: GA and Company boxes long enough for the longest name; their buttons are compact */
+#polBox .ppPick:has(#ppCarrier),#polBox .ppPick:has(#ppCompany){gap:4px}#polBox #ppCarrier,#polBox #ppCompany{flex:1 1 195px;min-width:195px;padding-left:8px;padding-right:8px}#polBox #ppAddGa,#polBox #ppAddCo{padding:1px 8px;font-size:15px;line-height:1.2}#polBox #ppGaGo,#polBox #ppCoGo{padding:1px 7px;font-size:11px}#polBox #ppGaWeb,#polBox #ppCoWeb{padding:1px 7px}
 </style>
 
 <div class="wrap">
@@ -744,8 +750,8 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
       <label>Policy status</label><div><input type="hidden" id="ppStatus" data-pp="status"><button type="button" class="stbtn" id="ppStatusBtn" title="Click to change"></button></div>
       <label for="ppLine">Line of business</label><div class="ppPick"><input id="ppLine" data-pp="line" list="lobList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddLine">+ Add line</button></div>
       <label for="ppNumber">Policy number</label><input id="ppNumber" data-pp="number">
-      <label for="ppCarrier">GA</label><div class="ppPick"><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddGa" title="Add a general agent to the list">+ Add</button><button type="button" class="siteGo" id="ppGaGo" hidden title="Agency code, login, phone, website and contact">Open</button><button type="button" class="siteGo pri" id="ppGaWeb" hidden>Go ↗</button></div>
-      <label for="ppCompany">Company</label><div class="ppPick"><input id="ppCompany" data-pp="company" list="coList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddCo" title="Add a company to the list">+ Add</button><button type="button" class="siteGo" id="ppCoGo" hidden title="Agency code, login, phone, website and contact">Open</button><button type="button" class="siteGo pri" id="ppCoWeb" hidden>Go ↗</button></div>
+      <label for="ppCarrier">GA</label><div class="ppPick"><input id="ppCarrier" data-pp="carrier" list="gaList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddGa" title="Add a general agent to the list" aria-label="Add a general agent to the list">+</button><button type="button" class="siteGo" id="ppGaGo" hidden title="Agency code, login, phone, website and contact">Open</button><button type="button" class="siteGo pri" id="ppGaWeb" hidden aria-label="Go to website">↗</button></div>
+      <label for="ppCompany">Company</label><div class="ppPick"><input id="ppCompany" data-pp="company" list="coList" autocomplete="off" placeholder="Type or pick"><button type="button" class="pri" id="ppAddCo" title="Add a company to the list" aria-label="Add a company to the list">+</button><button type="button" class="siteGo" id="ppCoGo" hidden title="Agency code, login, phone, website and contact">Open</button><button type="button" class="siteGo pri" id="ppCoWeb" hidden aria-label="Go to website">↗</button></div>
       <label for="ppState">Policy state</label><input id="ppState" data-pp="state" list="stList" autocomplete="off" maxlength="20" placeholder="CA">
       <label for="ppUser">User</label><input id="ppUser" readonly tabindex="-1" title="Who entered this policy (filled in automatically)" placeholder="Not recorded (entered before this was added)">
       <label for="ppProducer">Producer</label><select id="ppProducer" data-pp="producer"></select>
@@ -3865,9 +3871,7 @@ table.l{width:100%;border-collapse:collapse;margin-top:28px}table.l th{text-alig
 .paidl{text-align:right;margin-top:8px;color:#166534;font-weight:600}
 .pay{margin-top:30px}.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}.opt{border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px}.opt.wide{grid-column:1/-1}.ol{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#3b5bdb;font-weight:700}.ov{font-weight:600;font-size:15px;margin-top:2px}.on{font-size:12px;color:#6b7280;margin-top:4px}
 .ft{margin-top:36px;padding-top:14px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:12px;color:#6b7280}
-@page{margin:12mm}@media print{.wrap{padding:24px 8px}}/* policy screen: shorter boxes from Policy state to Cancel status, so there isn't so much empty space */
-#polBox #ppState,#polBox #ppUser,#polBox #ppProducer,#polBox #ppTerm,#polBox #ppEff,#polBox #ppExp,#polBox #ppNb,#polBox #ppCDate,#polBox #ppCStatus{justify-self:start;width:100%}#polBox #ppState{max-width:70px}#polBox #ppTerm,#polBox #ppNb{max-width:140px}#polBox #ppEff,#polBox #ppExp,#polBox #ppCDate{max-width:130px}#polBox #ppUser,#polBox #ppProducer,#polBox #ppCStatus{max-width:220px}
-</style></head><body><div class="band"></div><div class="wrap">
+@page{margin:12mm}@media print{.wrap{padding:24px 8px}}</style></head><body><div class="band"></div><div class="wrap">
 <div class="top"><div class="brand"><img src="${logo}" alt="" onerror="this.remove()"><div><b>Pacific Southwest Insurance Services</b><span>9036 Reseda Blvd., Suite 105, Northridge, CA 91324<br>(818)701-1033 · info@pswinsurance.com · CA Lic # 0F41718</span></div></div>
 <div class="ttl"><h1>INVOICE</h1>${isPaid?'<div class="badge p">PAID</div>':g('ppInvPaid')==='Partly paid'?'<div class="badge u">PARTLY PAID</div>':''}</div></div>
 ${meta?`<div class="meta">${meta}</div>`:''}
@@ -5056,9 +5060,7 @@ async function mhLoad(){const q=$('mhQ').value.trim(),all=$('mhAll').checked?1:0
 // the sent message, cleaned like a signature and drawn in its own shadow root (dark text on white, page styles kept out).
 // It used a sandboxed frame before, which Chrome left blank after the window was closed and opened again until the page was reloaded.
 function mhShow(html,empty,bad){const box=$('mhBody'),root=box.shadowRoot||box.attachShadow({mode:'open'}),body=sigClean(html);
-  root.innerHTML=`<style>:host{all:initial;display:block;color:#111;background:#fff;font:11pt Calibri,Arial,sans-serif;color-scheme:light}.b{padding:10px;margin:0;overflow-wrap:anywhere}.n{font:13px sans-serif;color:${bad?'#b00':'#888'}}a{color:#1f5fa8}/* policy screen: shorter Line of business and Policy number boxes */
-#polBox #ppNumber{justify-self:start;width:100%;max-width:170px}#polBox .ppPick:has(#ppLine){justify-self:start}#polBox #ppLine{width:180px;flex:0 0 180px}
-</style>`+
+  root.innerHTML=`<style>:host{all:initial;display:block;color:#111;background:#fff;font:11pt Calibri,Arial,sans-serif;color-scheme:light}.b{padding:10px;margin:0;overflow-wrap:anywhere}.n{font:13px sans-serif;color:${bad?'#b00':'#888'}}a{color:#1f5fa8}</style>`+
     (new DOMParser().parseFromString(body,'text/html').body.textContent.trim()?`<div class="b">${body}</div>`:`<p class="b n">${esc(empty)}</p>`);box.scrollTop=0}
 function mhOpen(q){$('mhQ').value=q||'';$('mhView').hidden=true;$('mhDlg').classList.add('on');mhLoad()}
 $('mlHist').onclick=()=>mhOpen('');
