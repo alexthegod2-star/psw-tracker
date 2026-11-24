@@ -92,6 +92,31 @@ async function readLines(bytes,ocr,pdfDoc){
   return {doc,pages,usedOcr};
 }
 
+/* some quotes print an amount and its label as one piece of text ("250.00 Company Fee", "$ 5,840.99 Total"):
+   split those into the amount and the label, and leave a lone "$" out of the label, so the fee rows can be found */
+function splitMoneyText(pages){
+  let n=0; const cv=typeof document!=="undefined"?document.createElement("canvas").getContext("2d"):null;
+  const width=(s,it)=>{ if(!cv) return s.length; cv.font="10px "+(/serif/i.test(it.family)&&!/sans/i.test(it.family)?"Times New Roman":"Arial"); return cv.measureText(s).width; };
+  pages.forEach(P=>P.lines.forEach(L=>{
+    const out=[];
+    L.items.forEach(it=>{
+      const m=/^(\s*\$?\s*[\d,]+\.\d{2})(\s+)(\S.*)$/.exec(it.str);
+      if(!m){ out.push(it); return; }
+      const all=width(it.str,it)||1, k=it.w/all, aw=width(m[1],it)*k, lx=it.x+width(m[1]+m[2],it)*k;
+      out.push({...it,str:m[1].trim(),w:aw},{...it,str:m[3],x:lx,w:Math.max(1,it.x+it.w-lx)}); n++;
+    });
+    if(out.length===L.items.length&&!L.items.some(i=>i.str.trim()==="$")) return;
+    L.items=out.sort((a,b)=>a.x-b.x);
+    const amts=L.items.filter(i=>MONEY.test(i.str.trim()));
+    L.amounts=amts; L.amount=amts.length?amts[amts.length-1]:null;
+    const words=L.items.filter(i=>i.str.trim()&&i.str.trim()!=="$"&&!amts.includes(i));
+    L.labelX=words.length?Math.min(...words.map(w=>w.x)):null;
+    L.labelRight=words.length?Math.max(...words.map(w=>w.x+w.w)):null;
+    L.label=words.map(w=>w.str).join(" ").replace(/\s+/g," ").trim();
+  }));
+  return n;
+}
+
 function findField(pages,re){
   for(const pg of pages) for(const L of pg.lines){ const m=L.text.match(re); if(m) return m[1].trim(); }
   return "";
@@ -103,7 +128,9 @@ function decodeStream(st){
   if(!f) return st.contents;
   const fs=String(f).replace(/^\[|\]$/g,"").trim();
   if(fs!=="/FlateDecode") return null;
-  try{ return pako.inflate(st.contents); }catch(e){ return null; }
+  try{ return pako.inflate(st.contents); }catch(e){}
+  /* some PDF makers write a zlib header with too small a window size; the deflate data after the 2-byte header still reads fine */
+  try{ return pako.inflateRaw(st.contents.subarray(2)); }catch(e){ return null; }
 }
 const bytesToStr=b=>{ let s=""; for(let k=0;k<b.length;k++) s+=String.fromCharCode(b[k]); return s; };
 const strToBytes=s=>{ const b=new Uint8Array(s.length); for(let k=0;k<s.length;k++) b[k]=s.charCodeAt(k)&255; return b; };
@@ -727,7 +754,26 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
     for(let j=k+1;j<below.length;j++){ if(lowest-below[j].y>pitch*3) break; lowest=below[j].y; }
     const next=below.find(l=>l.y<lowest-pitch*3);
     const floor=next?next.y+next.items.reduce((m,i)=>Math.max(m,i.size),0):36;
-    if(lowest-pitch*0.6-shift<floor){
+    /* not enough room under the Total's block: take a row from further away, nearest first:
+       a blank line below the Total (or the margin under the footer), else a blank line above the fee rows (or the margin over the header);
+       only when none of those has room are the fee rows squeezed together */
+    const H=pdfDoc.getPage(pi).getHeight(), tall=L=>Math.max(8,...L.items.map(i=>i.size||0));
+    const gapBelow=()=>{ const rows=below.slice(k);
+      for(let j=0;j<rows.length-1;j++) if(rows[j].y-rows[j+1].y>=pitch*1.9) return rows[j];
+      const A=rows[rows.length-1]; return A&&A.y-pitch-tall(A)*0.3>=6?A:null; };
+    const gapAbove=()=>{ const rows=loc.lines.filter(l=>l.text&&l.y>=last.y-0.5).sort((a,b)=>a.y-b.y);
+      for(let j=0;j<rows.length-1;j++) if(rows[j+1].y-rows[j].y>=pitch*1.9) return rows[j];
+      const A=rows[rows.length-1]; return A&&H-(A.y+tall(A))>=pitch+6?A:null; };
+    let up=null, A=null;
+    if(lowest-pitch*0.6-shift<floor){ A=gapBelow(); if(A) lowest=A.y; else up=gapAbove(); }
+    if(up){
+      /* move the fee rows, and everything above them up to that blank line, up one row: the new line goes where the last fee row was */
+      shift=0; totY=T.y; newY=last.y;
+      const yLo=last.y-tall(last)*0.3, yHi=up.y+pitch*0.8;
+      ok=walkPage(pdfDoc,pi,{region:(y,x)=>isOld(x,y),shapeRegion:()=>false}).ok;
+      const r=walkPage(pdfDoc,pi,{region:y=>y>yLo&&y<yHi,shapeRegion:(lo,hi)=>lo>=yLo&&hi<=yHi+0.01,shift:-pitch,copy:true});
+      ok=ok&&r.ok; if(r.copies.length) appendRaw(pdfDoc,pi,r.copies.join("\n"));
+    }else if(lowest-pitch*0.6-shift<floor&&!A){
       const t=tighten(); if(!t) return {err:"no room",pi};
       shift=0; totY=T.y; newY=t.y;
       ok=walkPage(pdfDoc,pi,{region:(y,x)=>isOld(x,y),shapeRegion:()=>false}).ok;
@@ -746,13 +792,15 @@ function addFeeAt(pdfDoc,loc,fee,label,fReg,fBold,serif){
   /* drawing waits until every page edit is done: rewriting a page's drawing drops text pdf-lib already added */
   const draw=()=>{
     const page=pdfDoc.getPage(pi);
-    const feeStr=fmt(fee);
+    /* write the $ only where the quote does: a quote with its $ in a column of its own prints bare amounts ("9.93", "5,840.99") */
+    const money=(v,like)=>!like||/^\s*\$/.test(like.str)?fmt(v):fmt(v).replace(/^\$/,"");
+    const feeStr=money(fee,last.amounts[0]);
     const lw=mixedWidth(fLbl,fReg,label,lSize);
     const lx=rightAligned?(last.labelRight-lw):last.labelX;
     INK=inkOf(lblT); drawMixed(page,fLbl,fReg,label,lx,newY,lSize);
     INK=inkOf(feeAmtT); cols.forEach(c=>{ drawMixed(page,fFee,fbAmt,feeStr,place(c,mixedWidth(fFee,fbAmt,feeStr,c.feeSize),false),newY,c.feeSize); });
-    cols.forEach((c,i)=>{ const s=fmt(c.neu), f=fTot[i]||fFee, sz=c.tot.size; INK=inkOf(totAmtT[i]); drawMixed(page,f,fbAmt,s,place(c,mixedWidth(f,fbAmt,s,sz),true),totY,sz); });
-    extra.forEach(e=>{ const s=fmt(e.neu), f=e.f||fTot[0]||fFee, sz=e.a.size, w=mixedWidth(f,fbAmt,s,sz); INK=inkOf(e.t);
+    cols.forEach((c,i)=>{ const s=money(c.neu,c.tot), f=fTot[i]||fFee, sz=c.tot.size; INK=inkOf(totAmtT[i]); drawMixed(page,f,fbAmt,s,place(c,mixedWidth(f,fbAmt,s,sz),true),totY,sz); });
+    extra.forEach(e=>{ const s=money(e.neu,e.a), f=e.f||fTot[0]||fFee, sz=e.a.size, w=mixedWidth(f,fbAmt,s,sz); INK=inkOf(e.t);
       const x=e.c.align==="left"?e.a.x:e.c.align==="center"?e.a.x+e.a.w/2-w/2:e.a.x+e.a.w-w;
       drawMixed(page,f,fbAmt,s,x,e.a.y-(moved(e.a.y)?shift:0),sz); });
     INK=[0,0,0];
@@ -815,6 +863,7 @@ async function add(srcBytes,fee,label,opts){
   const pdfDoc=await PDFLib.PDFDocument.load(srcBytes);
   const {pages,usedOcr}=await readLines(srcBytes,opts.ocr,pdfDoc);
   let locs=locateAll(pages), ai=null;
+  if(!locs.length && splitMoneyText(pages)) locs=locateAll(pages);
   if(!locs.length && opts.ask){ if(opts.onAi) opts.onAi(); ai=await aiLocate(pages,opts.ask); locs=ai.locs; }
   if(!locs.length) throw new Error("Couldn't find the premium totals in this PDF (a column of fees and taxes followed by a Total line).");
   if(locs.some(L=>L.chain.some(f=>f.label.toLowerCase()===label.toLowerCase()))) throw new Error("This quote already has a \""+label+"\" line. Start from the original carrier PDF.");
