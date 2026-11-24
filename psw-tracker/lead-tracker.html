@@ -228,6 +228,8 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
 #sg #sgBody{min-width:0}
 @media (max-width:760px){#sg .sgMain{flex-direction:column}#sg .sgSide{flex:0 0 auto;width:auto;max-height:45vh;border-right:0;border-bottom:1px solid #c5e3ca}}.sgDoc{position:relative;font-size:13px;padding:3px 22px 3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card)}.sgDoc .x{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:16px;height:16px;min-height:0;padding:0;border:0;border-radius:50%;background:#c00;color:#fff;font:700 11px/16px Arial,sans-serif;cursor:pointer}.sgDocH{width:min(900px,100%);font-weight:600;font-size:14px;margin-top:8px}.sgBadge{font-size:12px;padding:1px 8px;border-radius:999px;background:#fff3cd;color:#7a5a00;border:1px solid #f0d27a;cursor:pointer;white-space:nowrap}.sgBadge.ok{background:#e6f4ea;color:#1e6b34;border-color:#a6d8b4;cursor:default}.sgBadge.bad{background:#fdeaea;color:#a12020;border-color:#f0b8b8;cursor:default}.sgVoid{font-size:12px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
+/* Fill from a document: the paste box stays white on the client and policy screens */
+#clientBox #clPaste,#polBox #ppPaste{background:#fff;border-color:var(--line)}
 </style>
 
 <div class="wrap">
