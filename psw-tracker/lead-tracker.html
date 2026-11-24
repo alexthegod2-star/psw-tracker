@@ -4255,9 +4255,31 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
     signLoad(path,kind,true)}},true);
 
 // where a form asks the client to sign: "Applicant's Signature", "Signature of Insured", "Signature:" ... (not the producer's or agent's line)
-const SG_SIG=/^(?:x\s*)?(?:(?:(?:first\s+)?named\s+insured|applicant|insured|owner|policy\s*holder|customer|client|borrower|lessee|signer|member|principal|officer|authorized\s+signer|account\s*holder|cardholder)['’]?s?\s*)?signature(?:\s+of\s+(?:the\s+)?(?:(?:first\s+)?named\s+insured|applicant|insured|owner|policy\s*holder|principal|officer|cardholder|account\s*holder))?\s*[:_\-\s]*$/i;
+const SG_SIG=/^(?:x\s*)?(?:(?:(?:first\s+)?named\s+insured|policy\s*holder\s*\/\s*applicant|applicant|insured|owner|policy\s*holder|customer|client|borrower|lessee|signer|member|principal|officer|authorized\s+signer|account\s*holder|cardholder)['’]?s?\s*)?signature(?:\s+of\s+(?:the\s+)?(?:(?:first\s+)?named\s+insured|applicant|insured|owner|policy\s*holder|principal|officer|cardholder|account\s*holder))?\s*[:_\-\s]*$/i;
 const SG_NOT=/producer|agent|broker|representative|witness|underwriter|notary|insurer|company|countersign|licensee|spouse/i;
 const SG_DATE=/^date(?:\s+signed)?\s*[:_\-\s]*$/i;
+const SG_PNAME=/^(?:print(?:ed)?\s+name|name\s*\(print(?:ed)?\))\s*[:_\-\s]*$/i;
+// e-sign text tags some carriers put in their PDFs (Blitz, Dropbox Sign style): [sig|req|signer1], [date|req|signer1], [text|req|signer1] ...
+const SG_TAG=/^\[\s*(sig|signature|initial|initials|date|text|check)\s*\|([^\]]*)/i;
+const sgToday=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return `${z(d.getMonth()+1)}/${z(d.getDate())}/${d.getFullYear()}`};
+function sgTags(items,p){const out=[],tags=[];
+  for(const it of items){const m=it.s.match(SG_TAG);if(!m)continue;const k=m[1].toLowerCase(),opts=m[2];
+    let n=(opts.match(/signer\s*(\d+)/i)||[])[1];if(!n&&/signer\s*$/i.test(opts)){const nx=items.find(o=>o!==it&&Math.abs(o.y-it.y)<3&&o.x>it.x&&o.x-(it.x+it.w)<12&&/^\d/.test(o.s));if(nx)n=nx.s[0]}
+    tags.push({it,opts,n:+(n||1),type:k.startsWith('sig')?'sign':k.startsWith('init')?'initial':k==='date'?'date':k==='check'?'check':'text'})}
+  // a signer whose signature line is captioned Producer / Agent / Broker is you: those spots get your signature, name, today's date and title printed in
+  const prod=new Set(tags.filter(g=>g.type==='sign'&&g.n!==1&&items.some(o=>/^(producer|agent|broker)\b/i.test(o.s)&&o.x<g.it.x&&o.y<=g.it.y+10&&g.it.y-o.y<24)).map(g=>g.n));
+  const label=it=>{const l=items.filter(o=>o!==it&&!SG_TAG.test(o.s)&&o.x<it.x&&it.x-(o.x+o.w)<120&&Math.abs(o.y-it.y)<14).sort((a,b)=>b.x-a.x)[0];return l?l.s:''};
+  const isName=s=>SG_PNAME.test(s)||/^name\s*[:]?$/i.test(s);
+  for(const{it,opts,n,type}of tags){
+    if(prod.has(n)){const lab=label(it),txt=type==='date'?sgToday():type==='text'?(isName(lab)?sgSigName():/^title\b/i.test(lab)?'Producer':''):'';
+      if(type==='sign'){out.push({type:'mysig',stamp:1,signer:0,page:p-1,w:110,h:30,x:it.x,y:it.y-26});continue}
+      if(txt){const tb={type:'text',stamp:1,signer:0,page:p-1,...sgStDef,color:'#000000',bold:false,italic:false,size:10,text:txt,edit:false};sgFit(tb);tb.x=it.x;tb.y=it.y-tb.h+2;out.push(tb)}continue}
+    if(n!==1)continue; // only the main signer (another signer's spots are left for you to add if there is one)
+    if(type==='text'){ // the label to its left says what goes in it: a printed name becomes DocuSign's name box, anything else (Title...) a box the signer types in
+      if(isName(label(it))){out.push({type:'name',signer:0,page:p-1,x:it.x,y:it.y-12});continue}
+      const tb={type:'text',stamp:1,signer:0,page:p-1,...sgStDef,color:'#000000',text:'',edit:true,req:/\breq/i.test(opts)};sgFit(tb);tb.w=Math.max(tb.w,120);tb.x=it.x;tb.y=it.y-tb.h+2;out.push(tb);continue}
+    const[w,h]=SG_SZ[type];out.push({type,signer:0,page:p-1,x:it.x,y:it.y-h+(type==='sign'?4:2),...(type==='check'?{on:false}:{})})}
+  return out}
 // the page's drawn horizontal lines (signature lines, box edges), in the same top-down points as the text
 async function sgLines(page,vp){const ops=await page.getOperatorList(),O=pdfjsLib.OPS,U=pdfjsLib.Util,out=[],st=[];let ctm=[1,0,0,1,0,0];
   const add=(m,ax,ay,bx,by)=>{const p=U.applyTransform([ax,ay],m),q=U.applyTransform([bx,by],m);if(Math.abs(p[1]-q[1])<2.5&&Math.abs(p[0]-q[0])>40)out.push({x1:Math.min(p[0],q[0]),x2:Math.max(p[0],q[0]),y:(p[1]+q[1])/2})};
@@ -4271,6 +4293,7 @@ async function sgLines(page,vp){const ops=await page.getOperatorList(),O=pdfjsLi
 async function signGuess(pdf){const out=[];
   for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),vp=page.getViewport({scale:1}),tc=await page.getTextContent();let lines=[];try{lines=await sgLines(page,vp)}catch(_){}
     const items=tc.items.filter(it=>it.str&&it.str.trim()).map(it=>{const t=pdfjsLib.Util.transform(vp.transform,it.transform),h=Math.hypot(t[2],t[3])||8;return {s:it.str.trim(),x:t[4],y:t[5],h,w:it.width||it.str.length*h*.5}});
+    const tagged=sgTags(items,p);if(tagged.length){out.push(...tagged);continue} // the form says exactly where, so use that
     // "Signature: ____" (a line to the right) -> on that line; a caption under a signature line with room above it -> above the line; a label at the top of a box (ACORD) -> under the label
     const spot=(it,kind)=>{const[w,h]=SG_SZ[kind];
       if(/[:]\s*$/.test(it.s)||/_{3,}\s*$/.test(it.s))return {x:it.x+it.w+6,y:it.y-h+2};
@@ -4280,13 +4303,20 @@ async function signGuess(pdf){const out=[];
       if(ab&&it.h>=7){const roomy=!lines.some(l=>l!==ab&&l.y<ab.y-1&&l.y>ab.y-40&&l.x2>it.x&&l.x1<it.x+w)&&!items.some(o=>o!==it&&o.y<ab.y-1&&o.y>ab.y-34&&o.x<it.x+w&&o.x+o.w>it.x);
         if(roomy)return {x:it.x,y:ab.y-h-1,how:'line'}}
       return {x:it.x,y:it.y+3,how:'under'}};
+    // California D-1 surplus lines notice: the insured signs on the "Insured:" line and dates the "Date:" line
+    if(items.some(o=>/^D-1\b/.test(o.s))){const ins=items.find(o=>/^insured\s*:\s*$/i.test(o.s)),dt=items.find(o=>SG_DATE.test(o.s));
+      if(ins){const{how,...a}=spot(ins,'sign');out.push({type:'sign',signer:0,page:p-1,...a});if(dt){const{how:h2,...b}=spot(dt,'date');out.push({type:'date',signer:0,page:p-1,...b})}continue}}
     for(const it of items){if(it.s.length>70||!SG_SIG.test(it.s)||SG_NOT.test(it.s))continue;
       const at=spot(it,'sign');if(at.how==='under'&&/^signature$/i.test(it.s))continue; // a bare SIGNATURE heading, not a place to sign
       delete at.how;if(out.some(o=>o.page===p-1&&Math.abs(o.x-at.x)<20&&Math.abs(o.y-at.y)<20))continue;
       out.push({type:'sign',signer:0,page:p-1,...at});
       // the date that goes with it: on the same line, to the right
       const d=items.filter(o=>SG_DATE.test(o.s)&&Math.abs(o.y-it.y)<4&&o.x>it.x&&o.x-it.x<420).sort((a,b)=>a.x-b.x)[0];
-      if(d){const{how,...dt}=spot(d,'date');out.push({type:'date',signer:0,page:p-1,...dt})}}}
+      if(d){const{how,...dt}=spot(d,'date');out.push({type:'date',signer:0,page:p-1,...dt})}
+      // a "Print name" / "Printed name" label on the same line or just below it
+      const pn=items.filter(o=>SG_PNAME.test(o.s)&&o.y>it.y-4&&o.y-it.y<60&&Math.abs(o.x-it.x)<420).sort((a,b)=>(a.y-b.y)||(a.x-b.x))[0];
+      if(pn){const{how,...nt}=spot(pn,'name');out.push({type:'name',signer:0,page:p-1,...nt})}}}
+  if(out.some(o=>o.type==='mysig')&&!(sgSigUrl=sgSigUrl||await mySig()))return out.filter(o=>o.type!=='mysig');
   return out}
 const SG_SZ={sign:[110,26],initial:[46,30],date:[80,14],name:[140,14],check:[14,14]},SG_LBL={sign:'Sign here',initial:'Initials',date:'Date signed',name:'Printed name',check:'✓'};
 // boxes we fill in ourselves (text, company name, my signature): printed onto the PDF before it goes to DocuSign
@@ -4295,7 +4325,7 @@ const SG_DSCOL=[['#000000','Black'],['#000080','NavyBlue'],['#0000ff','BrightBlu
 const sgDsCol=h=>{const n=x=>{const v=parseInt(String(x).replace('#',''),16)||0;return[v>>16&255,v>>8&255,v&255]},a=n(h);let best=SG_DSCOL[0],bd=1e9;for(const c of SG_DSCOL){const b=n(c[0]),d=(a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2;if(d<bd){bd=d;best=c}}return best};
 const sgEd=t=>t.type!=='mysig'&&!!t.edit;
 // the printed name that goes under "My signature" (a normal text box, so it can be moved, changed or removed)
-const SIG_FULL_NAMES={'Alex K':'Alex Koutsobuas'};const sgSigName=()=>SIG_FULL_NAMES[myName]||myFullName||myName||'';let sgSigUrl='';
+const SIG_FULL_NAMES={'Alex K':'Alex Koutsoubas'};const sgSigName=()=>SIG_FULL_NAMES[myName]||myFullName||myName||'';let sgSigUrl='';
 const sgFont=t=>`${t.italic?'italic ':''}${t.bold?'bold ':''}${t.size}px Helvetica, Arial, sans-serif`;
 function sgFit(t){if(t.type==='mysig')return;const c=sgFit.c||(sgFit.c=document.createElement('canvas').getContext('2d'));c.font=sgFont(t);
   const ls=String(t.text||' ').split('\n');t.w=Math.max(20,Math.ceil(Math.max(...ls.map(l=>c.measureText(l||' ').width))+2));t.h=Math.ceil(ls.length*t.size*1.2)}
