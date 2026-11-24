@@ -4341,7 +4341,8 @@ function sgDocsUi(){if(!sg)return;const inIt=new Set(sg.docs.map(d=>d.f.id)),mor
     (sg.docs.length>1?sg.docs.map((d,i)=>`<span class="sgDoc" draggable="true" data-sgi="${i}" title="Drag to change the order"><span class="sgGrip" aria-hidden="true">⠿</span>${i+1}. ${esc(d.f.name)}${i?`<button type="button" class="x" data-sgdrop="${i}" title="Take this file out" aria-label="Take this file out">×</button>`:''}</span>`).join(''):'')}
 // render one PDF's pages at the end and guess its signature boxes
 async function sgAddDoc(f){const d={f,start:sg.pages.length};sg.docs.push(d);sgDocsUi();
-  d.bytes=await fileBytes(f);await loadPdfJs();d.pdf=await pdfjsLib.getDocument({data:d.bytes.slice(),...PDF_FONTS}).promise;
+  d.bytes=await fileBytes(f);await loadPdfJs();// show the pages as they will be sent: filled-in form boxes printed into the page (the same flattening Send does)
+  let view;try{view=await flatPdf(d.bytes.slice())}catch(_){view=d.bytes.slice()}d.pdf=await pdfjsLib.getDocument({data:view,...PDF_FONTS}).promise;
   const W=Math.min(900,$('sgBody').clientWidth-32),di=sg.docs.indexOf(d);
   if(sg.docs.length===2&&sg.pages[0]){const h=document.createElement('div');h.className='sgDocH';h.textContent=`1. ${sg.docs[0].f.name}`;sg.pages[0].wrap.before(h)}
   if(sg.docs.length>1){const h=document.createElement('div');h.className='sgDocH';h.dataset.doc=di;h.textContent=`${di+1}. ${f.name}`;$('sgBody').appendChild(h)}
@@ -4349,7 +4350,7 @@ async function sgAddDoc(f){const d={f,start:sg.pages.length};sg.docs.push(d);sgD
     const wrap=document.createElement('div');wrap.className='pg';wrap.style.width=vp.width+'px';wrap.style.height=vp.height+'px';wrap.dataset.page=sg.pages.length;
     const cv=document.createElement('canvas'),dpr=window.devicePixelRatio||1;cv.width=Math.floor(vp.width*dpr);cv.height=Math.floor(vp.height*dpr);cv.style.width=vp.width+'px';cv.style.height=vp.height+'px';
     wrap.appendChild(cv);$('sgBody').appendChild(wrap);sg.pages.push({wrap,sc,w:base.width,h:base.height,doc:d,pn:i});
-    await page.render({canvasContext:cv.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null,annotationMode:pdfjsLib.AnnotationMode.ENABLE_FORMS}).promise}
+    await page.render({canvasContext:cv.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null,annotationMode:pdfjsLib.AnnotationMode.ENABLE}).promise}
   const found=(await signGuess(d.pdf)).map(t=>({...t,page:t.page+d.start}));sg.tabs.push(...found);sgDraw();return found.filter(t=>t.type==='sign').length}
 function sgDropDoc(i){const d=sg.docs[i];if(!d||!i)return;sg.sel=null;$('sgStEd').hidden=true;sg.sel=null;$('sgStEd').hidden=true;const n=sg.pages.filter(p=>p.doc===d).length;
   sg.pages.filter(p=>p.doc===d).forEach(p=>p.wrap.remove());$('sgBody').querySelectorAll('.sgDocH').forEach(h=>h.remove());
