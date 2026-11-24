@@ -4325,7 +4325,7 @@ const SG_DSCOL=[['#000000','Black'],['#000080','NavyBlue'],['#0000ff','BrightBlu
 const sgDsCol=h=>{const n=x=>{const v=parseInt(String(x).replace('#',''),16)||0;return[v>>16&255,v>>8&255,v&255]},a=n(h);let best=SG_DSCOL[0],bd=1e9;for(const c of SG_DSCOL){const b=n(c[0]),d=(a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2;if(d<bd){bd=d;best=c}}return best};
 const sgEd=t=>t.type!=='mysig'&&!!t.edit;
 // the printed name that goes under "My signature" (a normal text box, so it can be moved, changed or removed)
-const SIG_FULL_NAMES={'Alex K':'Alex Koutsobuas'};const sgSigName=()=>SIG_FULL_NAMES[myName]||myFullName||myName||'';let sgSigUrl='';
+const SIG_FULL_NAMES={'Alex K':'Alex Koutsoubas'};const sgSigName=()=>SIG_FULL_NAMES[myName]||myFullName||myName||'';let sgSigUrl='';
 const sgFont=t=>`${t.italic?'italic ':''}${t.bold?'bold ':''}${t.size}px Helvetica, Arial, sans-serif`;
 function sgFit(t){if(t.type==='mysig')return;const c=sgFit.c||(sgFit.c=document.createElement('canvas').getContext('2d'));c.font=sgFont(t);
   const ls=String(t.text||' ').split('\n');t.w=Math.max(20,Math.ceil(Math.max(...ls.map(l=>c.measureText(l||' ').width))+2));t.h=Math.ceil(ls.length*t.size*1.2)}
