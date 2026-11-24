@@ -4124,7 +4124,8 @@ function ppBasic(t){ // no Claude: pick out the usual labels
   o.eff=g(/effective(?:\s*date)?\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);o.exp=g(/expir\w*(?:\s*date)?\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
   o.premium=g(/premium\s*:?\s*\$?\s*([\d,]+(?:\.\d\d)?)/i);
   o.company=COMPANIES.find(c=>t.toLowerCase().includes(c.split('/')[0].toLowerCase()))||'';
-  o.line=LOBS.find(l=>t.toLowerCase().includes(l.split('/')[0].toLowerCase()))||'';return o}
+  o.line=LOBS.find(l=>t.toLowerCase().includes(l.split('/')[0].toLowerCase()))||'';
+  const lic=g(/(?:CSLB|contractor'?s?\s+(?:state\s+)?licen[cs]e)\s*(?:lic(?:ense)?\.?\s*)?(?:no\.?|number|#)?\s*:?\s*#?\s*(\d{5,8})\b/i);if(lic)o.extra={cslb:lic};return o}
 async function ppRead(f){const m=$('ppReadMsg');m.className='msg';m.textContent=`Reading ${f.name}…`;
   if(polTr&&assets&&EXT[(f.name.split('.').pop()||'').toLowerCase()])addClientFiles([f],polTr.querySelector('[data-p=pid]').value); // keep the document with the policy too
   const isImg=/^image\/(png|jpe?g|gif|webp)$/.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);let r;
@@ -4148,7 +4149,8 @@ Keys: ${Object.entries(PP_MAIN).map(([k,l])=>k+' = '+l).join('; ')}.
 Money as written (e.g. "$1,234.00"). Leave out or use "" for anything not stated; never guess.
 "extra" holds details for the line of business, using only that line's keys:
 ${(cur?[cur]:LOBS).map(l=>`${l}: `+ppDetailKeys(l).map(([k,lb])=>k+' = '+lb).join('; ')).join('\n')}
-Limits as written (e.g. "100/300", "$1,000,000"). For keys with listed choices use one of them.${(cur||'')==='Commercial Auto'||!cur?`
+Limits as written (e.g. "100/300", "$1,000,000"). For keys with listed choices use one of them.${(cur||'')==='General Liability'||!cur?`
+For General Liability, "cslb" is the insured contractor's California contractor license number (CSLB; may be labeled "License #", "Contractor's License No.", "Lic. No.", "CSLB #"), just the number. It is never an insurance license (agent, broker, surplus lines agent or wholesaler, e.g. 0F41718 or a "License #" printed under an agency's name and address); if no contractor license is shown, leave it out.`:''}${(cur||'')==='Commercial Auto'||!cur?`
 For Commercial Auto, put a split limit in extra as "bi" (bodily injury, sometimes labeled Liability, e.g. "100/300") and "pd" (property damage, e.g. "100") instead of "csl"; use "csl" only for a single combined limit.`:''}`+(t?'\n\nDocument:\n<<<\n'+t.slice(0,40000)+'\n>>>':'');
   $('ppReadIn').disabled=$('ppPasteGo').disabled=true;m.className='msg';m.textContent='Claude is reading it…';
   try{const o=await sample.json(prompt,{modelTier:'quick',...(img?{images:img}:{})});const ex=o&&o.extra;if(ex&&typeof ex==='object'&&(ex.bi||ex.pd||ex.liability)){const v=biPd(ex.bi||ex.liability||ex.csl,ex.pd);if(v)ex.csl=v;delete ex.bi;delete ex.pd;delete ex.liability}const n=o&&typeof o==='object'?ppApply(o):0;
