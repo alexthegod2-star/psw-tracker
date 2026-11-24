@@ -4241,10 +4241,12 @@ const FILL_SITES={GAAC:{url:'https://gaacwebeq.com/GAAC/QuoteWizardClear.aspx',b
 const GAAC_TYPES={'general liability':'CGL','commercial auto':'Caut','commercial property':'PROP','workers comp':'W/C','umbrella/excess':'UMB','umbrella':'UMB','excess':'EXLB','cslb bond':'BOND','bond':'BOND','bop':'BOP','earthquake':'EAR','dic':'DIC','inland marine':'IM','builders risk':'Bldrs Risk','professional liability':'PL','e&o':'E&O','errors & omissions':'E&O','cyber':'Cyber Liab','d&o':'D&O','epli':'EPLI','garage':'GAR','liquor liability':'LLL','package':'PKG','crime':'CRIM','flood':'Flood','trucking':'TRUK','ocp':'OCP','product liability':'Prod Lia','pollution':'POLL'};
 function gaacPolicy(){const v=id=>($(id)&&$(id).value||'').trim(),m=x=>{const n=bNum(x);return n!=null?n.toFixed(2):''};
   const line=v('ppLine').toLowerCase(),type=GAAC_TYPES[line]||Object.entries(GAAC_TYPES).find(([k])=>line.includes(k))?.[1]||'';
-  const prem=bNum(v('ppPremium')),fees=[...$('ppFees').querySelectorAll('[data-f]')].filter(el=>el.dataset.f!=='pswFee'&&!/Label$/.test(el.dataset.f)).reduce((s,el)=>s+(bNum(el.value)||0),0);
+  // financed: tax and stamping; fully earned: company policy fee, GA broker fee, filing fee and any other fee (the PSW fee is GAAC's Broker Fee on Part 1)
+  const prem=bNum(v('ppPremium')),fee=k=>bNum($('ppFees').querySelector(`[data-f="${k}"]`)?.value)||0,
+    financed=fee('tax')+fee('stamping'),earned=fee('policyFee')+fee('gaFee')+fee('filingFee')+fee('other1')+fee('other2');
   const term=+v('ppTerm'),ga=v('ppCarrier');
   return{txtPolicy:v('ppNumber')||'TBI',txtEffectiveDate:v('ppEff'),ddlType:type,ddlCompany:v('ppCompany'),ddlGeneralAgent:/^n\/?a$/i.test(ga)?'':ga,ddlTerm:term===6||term===12?String(term):'',
-    txtPremium:prem!=null?prem.toFixed(2):'',txtCommissionPerc:m(v('ppCom')),txtFinancedTaxes:fees?fees.toFixed(2):''}} // GAAC works out the down payment itself
+    txtPremium:prem!=null?prem.toFixed(2):'',txtCommissionPerc:m(v('ppCom')),txtFinancedTaxes:financed?financed.toFixed(2):'',txtEarnedTaxesFees:earned?earned.toFixed(2):''}} // GAAC works out the down payment itself
 const fillSite=()=>{const n=$('ppFinCo').value.trim().toLowerCase();return Object.keys(FILL_SITES).find(k=>n===k.toLowerCase()||n.startsWith(k.toLowerCase()+' '))};
 function fillBtn(){const s=fillSite();$('ppFinFill').hidden=!s;if(s)$('ppFinFill').textContent=`Fill ${s} ↗`}
 $('ppFinCo').addEventListener('input',fillBtn);
