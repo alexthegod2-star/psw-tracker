@@ -833,10 +833,17 @@ def hidden_keys(u, col):
     return ()
 
 
+BINDER_PAID_KEYS = ("comPaid", "bfPaid")
+
+
 def locked_keys(u, col):
     """Fields of records in collection `col` that this person may not change."""
     if col == SITE_COL and not can_secrets(u):
         return SECRET_KEYS
+    # a shared binder log (Paul's, shared with Alex): only the people it's shared with mark Com paid / BF paid, not its owner
+    m = re.fullmatch(r"private/([^/]+)/binder", col or "")
+    if m and m[1] in BINDER_SHARED and u["username"] not in BINDER_SHARED[m[1]] and u["username"] not in PANEL_OWNERS:
+        return BINDER_PAID_KEYS
     return hidden_keys(u, col)
 
 
