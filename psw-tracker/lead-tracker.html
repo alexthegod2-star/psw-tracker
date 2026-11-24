@@ -769,6 +769,14 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
       <label for="ppCom">Commission %</label><input id="ppCom" placeholder="%" inputmode="decimal">
       <label for="ppComAmt">Commission</label><input id="ppComAmt" readonly tabindex="-1" placeholder="Premium x Com %">
     </div></section>
+    <section class="ppCard"><div class="ppCardH"><h4>Financing</h4></div><div class="fees" id="ppFin">
+      <label for="ppFinLoan">Loan #</label><input id="ppFinLoan" data-fin="finLoan">
+      <label for="ppFinDown">Down payment</label><input id="ppFinDown" data-fin="finDown" data-money="1" placeholder="$" inputmode="decimal">
+      <label for="ppFinNum">Number of payments</label><input id="ppFinNum" data-fin="finNum" inputmode="numeric">
+      <label for="ppFinAmt">Amount of payments</label><input id="ppFinAmt" data-fin="finAmt" data-money="1" placeholder="$" inputmode="decimal">
+      <label for="ppFinDue">Due date</label><input id="ppFinDue" data-fin="finDue" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
+      <label for="ppFinFee">PSW Finance fee</label><input id="ppFinFee" data-fin="finFee" data-money="1" placeholder="$" inputmode="decimal">
+    </div></section>
   </div>
   <aside class="ppSide">
     <section class="ppCard"><div class="ppCardH"><h4>Fill from a document</h4></div>
@@ -3741,7 +3749,7 @@ const bopLocHtml=i=>`<div class="full" data-loc="${i}"><label style="font-weight
 $('bopLoc').onclick=()=>{const i=$('ppExtra').querySelectorAll('[data-loc]').length+2;$('ppExtra').insertAdjacentHTML('beforeend',bopLocHtml(i));const el=$('ppExtra').querySelector(`[data-x="loc${i}_address"]`);el.scrollIntoView({block:'center'});el.focus()};
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppAlsoCl').checked=false;$('ppReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
-  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppFin').querySelectorAll('[data-fin]').forEach(el=>{el.value=ppExtraVals[el.dataset.fin]||''});$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   siteBtns();$('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
@@ -3766,6 +3774,7 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
   const ex={};$('ppExtra').querySelectorAll('[data-x]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.x]=v});
   $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee||ex.other1||ex.other2)ex.total=$('ppTotal').value;{const t=$('ppTerm').value,u=$('ppUser').value.trim(),o1=$('ppOther1L').value.trim(),o2=$('ppOther2L').value.trim();if(t&&t!=='12')ex.term=t;if(u)ex.enteredBy=u;if(o1)ex.other1Label=o1;if(o2)ex.other2Label=o2;{const c=bPct($('ppCom').value.trim());if(c!=null)ex.comPct=c+'%'}}
   $('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.inv]=v});
+  $('ppFin').querySelectorAll('[data-fin]').forEach(el=>{const v=el.value.trim();if(!v)return;const n=el.dataset.money?bNum(v):null;ex[el.dataset.fin]=n!=null?bMoney(n):v});
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';showStatus(polTr.querySelector('[data-pstat]'),g('status'));
   if(ppStay)polNew=false;else closePolicy(true);renderClInv();reClFiles();savePolicies()};
 // Total = premium + every fee box, kept up to date as you type
@@ -3787,6 +3796,7 @@ async function renewPolicy(tr){const g=k=>tr.querySelector(`[data-p=${k}]`).valu
   tr.querySelector('[data-p=status]').value='Prior term';showStatus(tr.querySelector('[data-pstat]'),'Prior term');
   openPolicy($('polRows').lastElementChild,false);toast('Renewal made. Add the new premium and fees, then Save client.')}
 $('ppEff').addEventListener('input',()=>setTimeout(()=>{if($('ppEff').value.length===10)ppAutoExp()},0));$('ppEff').addEventListener('change',ppAutoExp);$('ppTerm').addEventListener('change',ppAutoExp);$('ppFees').addEventListener('focusout',e=>{if(e.target.dataset.f&&e.target.value.trim()){const n=bNum(e.target.value);if(n!=null)e.target.value=bMoney(n)}});
+$('ppFin').addEventListener('focusout',e=>{if(e.target.dataset.money&&e.target.value.trim()){const n=bNum(e.target.value);if(n!=null)e.target.value=bMoney(n)}});
 $('ppStatusBtn').onclick=()=>{$('ppStatus').value=nextStatus($('ppStatus').value);showStatus($('ppStatusBtn'),$('ppStatus').value)};
 $('ppCancel').onclick=()=>closePolicy(false);$('ppCancelTop').onclick=()=>$('ppCancel').click();$('ppDoneTop').onclick=()=>$('ppDone').click();$('ppSaveStayTop').onclick=()=>$('ppSaveStay').click(); // top-right copies of the bottom buttons
 
