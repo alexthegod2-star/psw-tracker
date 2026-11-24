@@ -4261,14 +4261,22 @@ const SG_DATE=/^date(?:\s+signed)?\s*[:_\-\s]*$/i;
 const SG_PNAME=/^(?:print(?:ed)?\s+name|name\s*\(print(?:ed)?\))\s*[:_\-\s]*$/i;
 // e-sign text tags some carriers put in their PDFs (Blitz, Dropbox Sign style): [sig|req|signer1], [date|req|signer1], [text|req|signer1] ...
 const SG_TAG=/^\[\s*(sig|signature|initial|initials|date|text|check)\s*\|([^\]]*)/i;
-function sgTags(items,p){const out=[];
+const sgToday=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return `${z(d.getMonth()+1)}/${z(d.getDate())}/${d.getFullYear()}`};
+function sgTags(items,p){const out=[],tags=[];
   for(const it of items){const m=it.s.match(SG_TAG);if(!m)continue;const k=m[1].toLowerCase(),opts=m[2];
     let n=(opts.match(/signer\s*(\d+)/i)||[])[1];if(!n&&/signer\s*$/i.test(opts)){const nx=items.find(o=>o!==it&&Math.abs(o.y-it.y)<3&&o.x>it.x&&o.x-(it.x+it.w)<12&&/^\d/.test(o.s));if(nx)n=nx.s[0]}
-    if(+(n||1)!==1)continue; // only the main signer (a second signer's spots are left for you to add if there is one)
-    const type=k.startsWith('sig')?'sign':k.startsWith('init')?'initial':k==='date'?'date':k==='check'?'check':'text';
+    tags.push({it,opts,n:+(n||1),type:k.startsWith('sig')?'sign':k.startsWith('init')?'initial':k==='date'?'date':k==='check'?'check':'text'})}
+  // a signer whose signature line is captioned Producer / Agent / Broker is you: those spots get your signature, name, today's date and title printed in
+  const prod=new Set(tags.filter(g=>g.type==='sign'&&g.n!==1&&items.some(o=>/^(producer|agent|broker)\b/i.test(o.s)&&o.x<g.it.x&&o.y<=g.it.y+10&&g.it.y-o.y<24)).map(g=>g.n));
+  const label=it=>{const l=items.filter(o=>o!==it&&!SG_TAG.test(o.s)&&o.x<it.x&&it.x-(o.x+o.w)<120&&Math.abs(o.y-it.y)<14).sort((a,b)=>b.x-a.x)[0];return l?l.s:''};
+  const isName=s=>SG_PNAME.test(s)||/^name\s*[:]?$/i.test(s);
+  for(const{it,opts,n,type}of tags){
+    if(prod.has(n)){const lab=label(it),txt=type==='date'?sgToday():type==='text'?(isName(lab)?sgSigName():/^title\b/i.test(lab)?'Producer':''):'';
+      if(type==='sign'){out.push({type:'mysig',stamp:1,signer:0,page:p-1,w:110,h:30,x:it.x,y:it.y-26});continue}
+      if(txt){const tb={type:'text',stamp:1,signer:0,page:p-1,...sgStDef,color:'#000000',bold:false,italic:false,size:10,text:txt,edit:false};sgFit(tb);tb.x=it.x;tb.y=it.y-tb.h+2;out.push(tb)}continue}
+    if(n!==1)continue; // only the main signer (another signer's spots are left for you to add if there is one)
     if(type==='text'){ // the label to its left says what goes in it: a printed name becomes DocuSign's name box, anything else (Title...) a box the signer types in
-      const lab=items.filter(o=>o!==it&&!SG_TAG.test(o.s)&&o.x<it.x&&it.x-(o.x+o.w)<120&&Math.abs(o.y-it.y)<14).sort((a,b)=>b.x-a.x)[0];
-      if(lab&&(SG_PNAME.test(lab.s)||/^name\s*[:]?$/i.test(lab.s))){out.push({type:'name',signer:0,page:p-1,x:it.x,y:it.y-12});continue}
+      if(isName(label(it))){out.push({type:'name',signer:0,page:p-1,x:it.x,y:it.y-12});continue}
       const tb={type:'text',stamp:1,signer:0,page:p-1,...sgStDef,color:'#000000',text:'',edit:true,req:/\breq/i.test(opts)};sgFit(tb);tb.w=Math.max(tb.w,120);tb.x=it.x;tb.y=it.y-tb.h+2;out.push(tb);continue}
     const[w,h]=SG_SZ[type];out.push({type,signer:0,page:p-1,x:it.x,y:it.y-h+(type==='sign'?4:2),...(type==='check'?{on:false}:{})})}
   return out}
@@ -4308,6 +4316,7 @@ async function signGuess(pdf){const out=[];
       // a "Print name" / "Printed name" label on the same line or just below it
       const pn=items.filter(o=>SG_PNAME.test(o.s)&&o.y>it.y-4&&o.y-it.y<60&&Math.abs(o.x-it.x)<420).sort((a,b)=>(a.y-b.y)||(a.x-b.x))[0];
       if(pn){const{how,...nt}=spot(pn,'name');out.push({type:'name',signer:0,page:p-1,...nt})}}}
+  if(out.some(o=>o.type==='mysig')&&!(sgSigUrl=sgSigUrl||await mySig()))return out.filter(o=>o.type!=='mysig');
   return out}
 const SG_SZ={sign:[110,26],initial:[46,30],date:[80,14],name:[140,14],check:[14,14]},SG_LBL={sign:'Sign here',initial:'Initials',date:'Date signed',name:'Printed name',check:'✓'};
 // boxes we fill in ourselves (text, company name, my signature): printed onto the PDF before it goes to DocuSign
