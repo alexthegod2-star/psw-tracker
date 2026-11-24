@@ -3192,13 +3192,13 @@ function setView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classL
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 // the header button makes a task while the Tasks tab is showing
 // "Current Open Tasks For Alex K: 3" in the middle of the tab line, for whoever is signed in
-let myName='';const sameAgent=(a,b)=>{const n=s=>String(s||'').toLowerCase().replace(/[^a-z ]/g,' ').trim().split(/\s+/).filter(Boolean),x=n(a),y=n(b);
+let myName='',myFullName='';const sameAgent=(a,b)=>{const n=s=>String(s||'').toLowerCase().replace(/[^a-z ]/g,' ').trim().split(/\s+/).filter(Boolean),x=n(a),y=n(b);
   return !!x.length&&!!y.length&&x[0]===y[0]&&(x.length<2||y.length<2||x[1][0]===y[1][0])};
 function renderMyTasks(){const el=$('myTasks');if(!myName){el.hidden=true;return}
   const n=tasks.filter(t=>!t.done&&sameAgent(t.assignedTo,myName)).length;el.hidden=false;el.innerHTML=`Current Open Tasks For ${esc(myName)}: <b>${n}</b>`}
 $('myTasks').onclick=()=>{setView('tasks');const o=[...$('tfAssign').options].find(x=>x.value&&sameAgent(x.value,myName));if(o)$('tfAssign').value=o.value;$('tfStatus').value='open';renderTasks()};
 fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(u=>{if(!u)return;const nm=String(u.name||u.username||'').trim();
-  myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets;canPay=!!u.pay;canUnlock=!!u.unlock;$('clPaySec').hidden=!canPay;isOwner=!!u.owner;canDelete=u.delete!==false}).catch(()=>{});
+  myFullName=nm;myName=[...AGENTS,...TASK_AGENTS].find(a=>sameAgent(a,nm))||nm;renderMyTasks();$('adminBtn').hidden=!u.owner;canSecrets=!!u.secrets;canPay=!!u.pay;canUnlock=!!u.unlock;$('clPaySec').hidden=!canPay;isOwner=!!u.owner;canDelete=u.delete!==false}).catch(()=>{});
 
 /* ---------- admin panel (owner only; the server checks too) ---------- */
 {const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -4293,7 +4293,9 @@ const SG_SZ={sign:[110,26],initial:[46,30],date:[80,14],name:[140,14],check:[14,
 const SG_STAMP={text:1,company:1,mysig:1},sgStDef={color:'#000000',size:11,bold:false,italic:false};
 const SG_DSCOL=[['#000000','Black'],['#000080','NavyBlue'],['#0000ff','BrightBlue'],['#800080','Purple'],['#ff0000','BrightRed'],['#8b0000','DarkRed'],['#008000','Green'],['#006400','DarkGreen'],['#d4a017','Gold']];
 const sgDsCol=h=>{const n=x=>{const v=parseInt(String(x).replace('#',''),16)||0;return[v>>16&255,v>>8&255,v&255]},a=n(h);let best=SG_DSCOL[0],bd=1e9;for(const c of SG_DSCOL){const b=n(c[0]),d=(a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2;if(d<bd){bd=d;best=c}}return best};
-const sgEd=t=>t.type!=='mysig'&&!!t.edit;let sgSigUrl='';
+const sgEd=t=>t.type!=='mysig'&&!!t.edit;
+// the printed name that goes under "My signature" (a normal text box, so it can be moved, changed or removed)
+const SIG_FULL_NAMES={'Alex K':'Alex Koutsobuas'};const sgSigName=()=>SIG_FULL_NAMES[myName]||myFullName||myName||'';let sgSigUrl='';
 const sgFont=t=>`${t.italic?'italic ':''}${t.bold?'bold ':''}${t.size}px Helvetica, Arial, sans-serif`;
 function sgFit(t){if(t.type==='mysig')return;const c=sgFit.c||(sgFit.c=document.createElement('canvas').getContext('2d'));c.font=sgFont(t);
   const ls=String(t.text||' ').split('\n');t.w=Math.max(20,Math.ceil(Math.max(...ls.map(l=>c.measureText(l||' ').width))+2));t.h=Math.ceil(ls.length*t.size*1.2)}
@@ -4433,7 +4435,7 @@ $('sgBody').addEventListener('click',e=>{if(!sg)return;const x=e.target.closest(
   if(SG_STAMP[sg.tool]){const t={type:sg.tool,stamp:1,signer:0,page:+wrap.dataset.page,...sgStDef};
     if(t.type==='mysig'){t.w=130;t.h=36}else{t.text=t.type==='company'?sgCompany():'';t.edit=true;t.signer=who;t.color=sgDsCol(t.color)[0];sgFit(t)}
     t.x=Math.max(0,Math.min(p.w-t.w,(e.clientX-r.left)/p.sc-(t.type==='text'?0:t.w/2)));t.y=Math.max(0,Math.min(p.h-t.h,(e.clientY-r.top)/p.sc-t.h/2));
-    sg.tabs.push(t);sg.sel=sg.tabs.length-1;sg.tool='';document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.classList.remove('on'));$('sg').classList.remove('adding');sgDraw();sgStOpen();
+    sg.tabs.push(t);sg.sel=sg.tabs.length-1;if(t.type==='mysig'){const nm=sgSigName();if(nm){const n={type:'text',stamp:1,signer:0,page:t.page,color:'#000000',size:10,bold:false,italic:false,text:nm,edit:false};sgFit(n);n.x=Math.max(0,Math.min(p.w-n.w,t.x+(t.w-n.w)/2));n.y=Math.min(p.h-n.h,t.y+t.h+1);sg.tabs.push(n)}}sg.tool='';document.querySelectorAll('#sg [data-sgt]').forEach(b=>b.classList.remove('on'));$('sg').classList.remove('adding');sgDraw();sgStOpen();
     if(t.type!=='mysig'){$('sgStTxt').focus();if(t.type==='company'&&!t.text)sgMsg('This lead or client has no company name. Type it in the box.',true)}return}
   const[w,h]=SG_SZ[sg.tool];
   sg.tabs.push({type:sg.tool,signer:who,...(sg.tool==='check'?{on:true}:{}),page:+wrap.dataset.page,x:Math.max(0,Math.min(p.w-w,(e.clientX-r.left)/p.sc-w/2)),y:Math.max(0,Math.min(p.h-h,(e.clientY-r.top)/p.sc-h/2))});
