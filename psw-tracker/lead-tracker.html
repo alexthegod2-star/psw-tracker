@@ -2132,6 +2132,8 @@ $('cmbGo').onclick=async()=>{if(!cmb)return;const m=$('cmbMsg'),ids=[...$('cmbLi
   try{await loadJs(CDN+'pdf-lib/1.17.1/pdf-lib.min.js');const out=await PDFLib.PDFDocument.create();
     for(const [i,f] of pick.entries()){m.className='msg';m.textContent=`Adding ${f.name} (${i+1} of ${pick.length})…`;const bytes=await fileBytes(f);
       if(isPdfFile(f)){let src;try{src=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true})}catch(_){throw new Error(`${f.name} couldn’t be opened as a PDF`)}
+        // a filled-in form (SL2, D1, ACORDs…): print its boxes into the page first, or the typed-in info is lost when its pages are copied
+        try{if(src.getForm().getFields().length)src=await PDFLib.PDFDocument.load(await flatPdf(bytes),{ignoreEncryption:true})}catch(_){}
         (await out.copyPages(src,src.getPageIndices())).forEach(p=>out.addPage(p))}
       else await cmbImg(out,f,bytes)}
     m.textContent='Saving…';const file=new File([await out.save()],name+'.pdf',{type:'application/pdf'});
