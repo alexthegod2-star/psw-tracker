@@ -886,6 +886,15 @@ def binder_prem(p, key="premium"):
     return float(x) if re.fullmatch(r"\d+(\.\d+)?", x) else None
 
 
+def binder_fin(p):
+    """The binder's Finance column: the policy's PSW Finance fee (Financing box), as money ("$50.00"), or "" (none, or Financing set to None)."""
+    ex = p.get("extra") if isinstance(p.get("extra"), dict) else {}
+    if str(ex.get("finNone") or "").lower() == "yes":
+        return ""
+    v = binder_prem(p, "finFee")
+    return f"${v:,.2f}" if v is not None else ""
+
+
 def binder_month(p):
     """The binder month a policy goes in: its effective date's month (2026-09-15 or 09/15/2026), else this month."""
     e = str(p.get("eff") or "")
@@ -930,7 +939,7 @@ def binder_sync(c, path, old, new, backfill=False):
         if r:  # already in the log: it follows the policy's premium, com %, dates, ... unless that box was changed in the log by hand
             d = json.loads(r["data"])
             fields = lambda q: {"eff": str(q.get("eff") or ""), "exp": str(q.get("exp") or ""), "type": q.get("line") or "", "carrier": q.get("company") or "",
-                                "ga": q.get("carrier") or "", "premium": binder_prem(q), "comPct": com_pct(c, q), "bf": binder_prem(q, "pswFee"), "month": binder_month(q) if q.get("eff") else ""}
+                                "ga": q.get("carrier") or "", "premium": binder_prem(q), "comPct": com_pct(c, q), "bf": binder_prem(q, "pswFee"), "finance": binder_fin(q), "month": binder_month(q) if q.get("eff") else ""}
             now, before = fields(p), fields(prev.get(p["pid"]) or {})
             add = {k: v for k, v in now.items() if v not in (None, "") and v != d.get(k) and d.get(k) in (None, "", before[k])}
             if now["month"] and now["month"] != d.get("month") and d.get("month") == str(d.get("createdAt") or "")[:7]:
@@ -945,7 +954,7 @@ def binder_sync(c, path, old, new, backfill=False):
         note = ", ".join(x for x in ("Policy # " + p["number"] if p.get("number") else "", p.get("nb") or "") if x)
         d = {"name": name or "Client", "month": binder_month(p), "eff": eff, "exp": exp, "type": p.get("line") or "", "carrier": p.get("company") or "",
              "ga": p.get("carrier") or "", "term": term, "premium": prem, "comPct": com_pct(c, p), "commAmt": None, "yrAmt": None,
-             "bf": binder_prem(p, "pswFee"), "finance": "", "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
+             "bf": binder_prem(p, "pswFee"), "finance": binder_fin(p), "splitPct": None, "notes": note, "comPaid": "", "bfPaid": "", "pid": p["pid"], "clientId": segs[1],
              "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())}
         i = new_id()
         c.execute("INSERT INTO tracker_docs(path,parent,id,data,updated,updated_by) VALUES(?,?,?,?,?,?)",
