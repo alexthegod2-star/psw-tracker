@@ -5019,7 +5019,7 @@ $('mlFrom').addEventListener('click',e=>{if(e.target.id!=='mlChange')return;$('m
 // Open in Outlook instead: the old way (subject only, so Outlook adds its signature; the message is copied to paste in)
 $('mlOutlook').onclick=()=>{const to=$('mlTo').value.trim();$('mlOutlook').href=`mailto:${to}?subject=${encodeURIComponent($('mlSubj').value)}`;if(edText('mlBody'))copyText(edText('mlBody').replace(REVIEW_BTN,'Leave a review here: '+REVIEW_URL));mlClose()};
 // quick Cc buttons: click adds the person (separated by "; "), click again takes them off
-const CC_QUICK=[['Alex','alexk@pswinsurance.com'],['Joel','joel@brosautoca.com'],['Patricia','patriciag@pswinsurance.com'],['Anna','anna.pswinsurance@gmail.com'],['Paul','paulm@pswinsurance.com'],['Service','service@pswinsurance.com']];
+const CC_QUICK=[['Alex','alexk@pswinsurance.com'],['Joel','joel@brosautoca.com'],['Brandon','brandon@brosautoca.com'],['Patricia','patriciag@pswinsurance.com'],['Anna','anna.pswinsurance@gmail.com'],['Paul','paulm@pswinsurance.com'],['Service','service@pswinsurance.com']];
 const ccList=()=>$('mlCc').value.split(/[;,]/).map(x=>x.trim()).filter(Boolean);
 const ccMark=()=>{const on=new Set(ccList().map(x=>x.toLowerCase()));for(const b of $('mlCcQuick').querySelectorAll('button'))b.classList.toggle('pri',on.has(b.dataset.cc))};
 $('mlCcQuick').insertAdjacentHTML('beforeend',CC_QUICK.map(([n,a])=>`<button type="button" data-cc="${a}" title="${a}">${n}</button>`).join(''));
