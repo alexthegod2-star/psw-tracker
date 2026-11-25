@@ -817,6 +817,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
 </div></div>
 <div class="mbg" id="invDlg" role="dialog" aria-modal="true" aria-labelledby="invTitleH" style="z-index:12"><div class="mbox" style="width:min(520px,96vw);max-height:90vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px"><h3 id="invTitleH" style="margin:0">Invoice</h3><button type="button" class="pri" id="ppInvPrint">Print invoice</button></div>
+  <div class="row" id="invPick" style="gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><select id="invSel" aria-label="Which invoice" style="flex:1 1 100%;min-width:0"></select><button type="button" id="invNew">+ New invoice</button><button type="button" class="danger" id="invDel">Delete invoice</button></div>
   <section class="ppCard" id="ppInv">
     <label for="ppInvNo">Invoice #</label><input id="ppInvNo" data-inv="invNo">
     <label for="ppInvDate">Invoice date</label><input id="ppInvDate" data-inv="invDate" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY">
@@ -3777,7 +3778,7 @@ const bopLocHtml=i=>`<div class="full" data-loc="${i}"><label style="font-weight
 $('bopLoc').onclick=()=>{const i=$('ppExtra').querySelectorAll('[data-loc]').length+2;$('ppExtra').insertAdjacentHTML('beforeend',bopLocHtml(i));const el=$('ppExtra').querySelector(`[data-x="loc${i}_address"]`);el.scrollIntoView({block:'center'});el.focus()};
 $('ppLine').addEventListener('input',()=>renderPpExtra());$('ppLine').addEventListener('change',()=>setTimeout(()=>renderPpExtra(),0));
 function openPolicy(tr,isNew){polTr=tr;polNew=!!isNew;$('ppPaste').value='';$('ppAlsoCl').checked=false;$('ppReadMsg').textContent='';$('finReadMsg').textContent='';{const cur=tr.querySelector('[data-p=producer]').value,ag=[...new Set([...AGENTS,...clients.map(x=>(x.agent||'').trim()),...leads.map(x=>(x.assignedTo||'').trim()),cur].filter(Boolean))];$('ppProducer').innerHTML='<option value=""></option>'+ag.map(a=>`<option>${esc(a)}</option>`).join('')}for(const k of PP){const v=tr.querySelector(`[data-p=${k}]`).value;if(k==='line')setLob($('ppLine'),v);else document.querySelector(`#polBox [data-pp=${k}]`).value=v}
-  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});$('ppFin').querySelectorAll('[data-fin]').forEach(el=>{el.value=ppExtraVals[el.dataset.fin]||''});$('ppFinNone').checked=ppExtraVals.finNone==='Yes';finNoneShow();fillBtn();$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
+  try{ppExtraVals=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){ppExtraVals={}}$('ppExtra').innerHTML='';renderPpExtra(true);if(!$('ppStatus').value)$('ppStatus').value='Active';showStatus($('ppStatusBtn'),$('ppStatus').value);$('ppFees').querySelectorAll('[data-f]').forEach(el=>{el.value=ppExtraVals[el.dataset.f]||''});$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=ppExtraVals[el.dataset.inv]||''});invList=[invRead(),...(Array.isArray(ppExtraVals.invMore)?ppExtraVals.invMore:[])];invCur=0;$('ppFin').querySelectorAll('[data-fin]').forEach(el=>{el.value=ppExtraVals[el.dataset.fin]||''});$('ppFinNone').checked=ppExtraVals.finNone==='Yes';finNoneShow();fillBtn();$('invDlg').classList.remove('on');$('ppTerm').value=ppExtraVals.term||'12';$('ppCom').value=ppExtraVals.comPct||'';delete $('ppCom').dataset.auto;ppComDef();$('ppUser').value=ppExtraVals.enteredBy||(isNew?myName:'');$('ppOther1L').value=ppExtraVals.other1Label||'';$('ppOther2L').value=ppExtraVals.other2Label||'';ppTotal();$('ppMsg').textContent='';$('ppReadMsg').textContent='';renderPpFiles();renderPpTasks();invNote();
   const t=[tr.querySelector('[data-p=line]').value.trim(),(tr.querySelector('[data-p=company]').value.trim()||tr.querySelector('[data-p=carrier]').value.trim())].filter(Boolean).join(' · ');
   $('polTitleH').textContent=isNew?'New policy':(t||'Policy');$('ppDel').textContent='Remove policy';delete $('ppDel').dataset.arm;
   siteBtns();$('polDlg').classList.add('on');setTimeout(()=>$('ppLine').focus(),30)}
@@ -3801,7 +3802,7 @@ $('ppDone').onclick=()=>{if(!polTr)return;const g=k=>document.querySelector(`#po
   for(const k of PP){let v=g(k);if(k==='state'&&/^[a-z]{2}$/i.test(v))v=v.toUpperCase();if((k==='eff'||k==='exp'||k==='cdate')&&v){const x=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(x))v=fmtDate(x)}if(k==='premium'&&v)v=fmtMoney(v);if(k==='line')setLob(polTr.querySelector('[data-p=line]'),v);else polTr.querySelector(`[data-p=${k}]`).value=v}
   const ex={};$('ppExtra').querySelectorAll('[data-x]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.x]=v});
   $('ppFees').querySelectorAll('[data-f]').forEach(el=>{const v=el.value.trim();if(v){const n=bNum(v);ex[el.dataset.f]=n!=null?bMoney(n):v}});if(ex.policyFee||ex.gaFee||ex.tax||ex.stamping||ex.filingFee||ex.pswFee||ex.other1||ex.other2)ex.total=$('ppTotal').value;{const t=$('ppTerm').value,u=$('ppUser').value.trim(),o1=$('ppOther1L').value.trim(),o2=$('ppOther2L').value.trim();if(t&&t!=='12')ex.term=t;if(u)ex.enteredBy=u;if(o1)ex.other1Label=o1;if(o2)ex.other2Label=o2;{const c=bPct($('ppCom').value.trim());if(c!=null)ex.comPct=c+'%'}}
-  $('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)ex[el.dataset.inv]=v});
+  {invList[invCur]=invRead();const all=invList.filter(o=>Object.keys(o).length);Object.assign(ex,all[0]||{});if(all.length>1)ex.invMore=all.slice(1)} // first invoice in the usual boxes, any others in invMore
   if($('ppFinNone').checked)ex.finNone='Yes';
   $('ppFin').querySelectorAll('[data-fin]').forEach(el=>{const v=el.value.trim();if(!v)return;const n=el.dataset.money?bNum(v):null;ex[el.dataset.fin]=n!=null?bMoney(n):v});
   polTr.querySelector('[data-p=extra]').value=Object.keys(ex).length?JSON.stringify(ex):'';showStatus(polTr.querySelector('[data-pstat]'),g('status'));
@@ -3843,14 +3844,26 @@ $('ppInv').addEventListener('focusout',e=>{const el=e.target,v=el.value.trim();i
   if(/Date|Due$/.test(el.id)){const iso=typedISO(v);if(/^\d{4}-\d\d-\d\d$/.test(iso))el.value=fmtDate(iso)}});
 $('ppInvPaid').addEventListener('change',()=>{if($('ppInvPaid').value==='Paid'&&!$('ppInvPaidDate').value.trim())$('ppInvPaidDate').value=fmtDate(todayISO())});
 // the invoice opens on its own screen, like Certificates; its boxes are kept with the policy when it's saved
-function invNote(){const g=id=>$(id).value.trim(),bits=[g('ppInvNo')&&'#'+g('ppInvNo'),g('ppInvDate'),g('ppInvPaid'),g('ppInvAmt')||g('ppTotal')].filter(Boolean);
-  $('ppInvNote').textContent=g('ppInvNo')||g('ppInvDate')||g('ppInvPaid')?bits.join(' · '):'No invoice yet.'}
+// a policy can have several invoices (a new one for an endorsement, a second installment…); the one showing is edited in the boxes
+let invList=[{}],invCur=0;
+const invRead=()=>{const o={};$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{const v=el.value.trim();if(v)o[el.dataset.inv]=v});return o};
+const invWrite=o=>{$('ppInv').querySelectorAll('[data-inv]').forEach(el=>{el.value=(o||{})[el.dataset.inv]||''});invPayShow()};
+const invLabel=(o,i)=>[o.invNo?'#'+o.invNo:'Invoice '+(i+1),o.invDate,o.invAmt,o.invPaid].filter(Boolean).join(' · ');
+function invPickShow(){invList[invCur]=invRead();$('invSel').innerHTML=invList.map((o,i)=>`<option value="${i}"${i===invCur?' selected':''}>${esc(invLabel(o,i))}</option>`).join('');
+  $('invSel').hidden=invList.length<2;$('invDel').hidden=invList.length<2&&!Object.keys(invList[0]).length}
+$('invSel').onchange=()=>{invList[invCur]=invRead();invCur=+$('invSel').value;invWrite(invList[invCur]);invPickShow()};
+$('invNew').onclick=()=>{invList[invCur]=invRead();invList.push({invDate:fmtDate(todayISO()),invPaid:'Unpaid'});invCur=invList.length-1;invWrite(invList[invCur]);invPickShow();$('ppInvNo').focus()};
+$('invDel').onclick=async()=>{const o=invRead();if(!await sure(`Delete ${invLabel(o,invCur)}? It's removed when you save the policy.`))return;
+  invList.splice(invCur,1);if(!invList.length)invList=[{}];invCur=Math.max(0,Math.min(invCur,invList.length-1));invWrite(invList[invCur]);invPickShow()};
+$('ppInv').addEventListener('change',()=>{const o=$('invSel').options[invCur];if(o)o.textContent=invLabel(invRead(),invCur)});
+function invNote(){const all=invList.map((o,i)=>i===invCur?invRead():o).filter(o=>Object.keys(o).length);
+  $('ppInvNote').textContent=all.length?all.map((o,i)=>invLabel({...o,invAmt:o.invAmt||(all.length===1?$('ppTotal').value.trim():'')},i)).join('  |  '):'No invoice yet.'}
 function closeInv(){$('invDlg').classList.remove('on');invNote()}
 const PSW_PAY='Pacific Southwest Insurance Services',isPswPay=v=>!v.trim()||/pacific\s*southwest|^psw\b/i.test(v.trim());
 function invPayShow(){const psw=isPswPay($('ppInvPayTo').value);$('ppInvPayHow').hidden=$('ppInvPayHowL').hidden=psw;
   $('ppInvPayNote').textContent=psw?'The invoice shows Zelle or a check by email to info@pswinsurance.com, a check by mail to the office, and pay by phone at (818)701-1033.':''}
 $('ppInvPayTo').addEventListener('input',invPayShow);
-$('ppInvOpen').onclick=()=>{$('payToList').innerHTML=[...new Set([PSW_PAY,$('ppCompany').value.trim(),$('ppCarrier').value.trim()].filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');invPayShow();$('invTitleH').textContent='Invoice'+($('ppNumber').value.trim()?' · Policy '+$('ppNumber').value.trim():'');ppTotal();$('invDlg').classList.add('on');$('ppInvNo').focus()};
+$('ppInvOpen').onclick=()=>{$('payToList').innerHTML=[...new Set([PSW_PAY,$('ppCompany').value.trim(),$('ppCarrier').value.trim()].filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');invPayShow();$('invTitleH').textContent='Invoice'+($('ppNumber').value.trim()?' · Policy '+$('ppNumber').value.trim():'');ppTotal();invPickShow();$('invDlg').classList.add('on');$('ppInvNo').focus()};
 $('invClose').onclick=closeInv;$('invDlg').addEventListener('mousedown',e=>{if(e.target===$('invDlg'))closeInv()});
 $('ppInvPrint').onclick=()=>{const g=id=>$(id).value.trim(),h=esc,name=[g('clFirst'),g('clLast')].filter(Boolean).join(' '),co=g('clCompany');
   if(!g('ppInvDate'))$('ppInvDate').value=fmtDate(todayISO());
@@ -3971,9 +3984,10 @@ function renderClTasks(){if(!$('clientDlg').classList.contains('on')&&!editClien
   $('clTasks').innerHTML=rows.map(t=>`<li class="tli${t.done?' isdone':''}" data-task="${esc(t.id)}"><input type="checkbox" class="tdone" data-done="${esc(t.id)}"${t.done?' checked':''} aria-label="Done"><span class="tt">${esc(t.title||'(untitled)')}</span><span class="small ${dueCls(t)}">${esc(dueTxt(t))}</span></li>`).join('')}
 $('clTaskAdd').onclick=()=>{if(!editClient){$('clientMsg').className='msg err';$('clientMsg').textContent='Save the client first, then add tasks.';return}
   openTask(null,{clientId:editClient.id,firstName:$('clFirst').value.trim(),lastName:$('clLast').value.trim(),company:$('clCompany').value.trim(),assignedTo:$('clAgent').value})};
-function renderClInv(){const rows=[...$('polRows').rows].map(tr=>{let x={};try{x=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){}return {tr,x,line:tr.querySelector('[data-p=line]').value.trim()}}).filter(r=>r.x.invNo||r.x.invAmt||r.x.invPaid);
+function renderClInv(){const rows=[...$('polRows').rows].flatMap(tr=>{let x={};try{x=JSON.parse(tr.querySelector('[data-p=extra]').value||'{}')}catch(_){}const line=tr.querySelector('[data-p=line]').value.trim();
+    return [x,...(Array.isArray(x.invMore)?x.invMore:[])].map((o,k)=>({tr,x:k?o:x,line}))}).filter(r=>r.x.invNo||r.x.invAmt||r.x.invPaid);
   $('clInvNone').hidden=rows.length>0;
-  $('clInv').innerHTML=rows.map((r,i)=>`<li class="tli" data-inv="${[...$('polRows').rows].indexOf(r.tr)}"><span class="tt">${esc(r.x.invNo?'#'+r.x.invNo:'Invoice')}${r.line?' · '+esc(r.line):''}</span><span class="small">${esc(r.x.invAmt||r.x.total||'')}</span><span class="chip">${esc(r.x.invPaid||'Unpaid')}</span></li>`).join('')}
+  $('clInv').innerHTML=rows.map((r,i)=>`<li class="tli" data-inv="${[...$('polRows').rows].indexOf(r.tr)}"><span class="tt">${esc(r.x.invNo?'#'+r.x.invNo:'Invoice')}${r.line?' · '+esc(r.line):''}</span><span class="small">${esc(r.x.invAmt||(r.x.invMore?'':r.x.total)||'')}</span><span class="chip">${esc(r.x.invPaid||'Unpaid')}</span></li>`).join('')}
 $('clInv').addEventListener('click',e=>{const li=e.target.closest('[data-inv]');if(!li)return;const tr=$('polRows').rows[+li.dataset.inv];if(tr)openPolicy(tr,false)});
 function closeClient(){$('clientDlg').classList.remove('on');lockStop('client');editClient=null;if(assets)clPending.forEach(f=>assets.delete(f.id).catch(()=>{}));clPending=[]} // files dropped into a new client you cancel are thrown away
 // client notes: "+ Add note" opens a pop-up; each note is kept with its date and time (newest first), saved to the client right away
