@@ -507,7 +507,7 @@ button.signBtn{background:#2e9d3e;border-color:#2e9d3e;color:#fff;font-weight:60
 <div class="mbg" id="smDlg" role="dialog" aria-modal="true" aria-labelledby="smTitle" style="z-index:20"><div class="mbox" style="width:min(760px,96vw);max-height:92vh;overflow:auto">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="smTitle" style="margin:0">Send multiple emails</h3><span class="small" id="smFrom"></span></div>
   <div class="small" style="margin:4px 0 8px">Each person you tick gets their own email; nobody sees who else got it. Each one starts with Hi and their name.</div>
-  <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:13px">Send to</b><span class="row" style="gap:6px"><button type="button" id="smAll" style="padding:2px 10px;font-size:12px">Tick all</button><button type="button" id="smNone" style="padding:2px 10px;font-size:12px">Clear</button></span></div>
+  <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:13px">Send to</b><span class="row" style="gap:6px"><button type="button" id="smAll" style="padding:2px 10px;font-size:12px" title="Ticks everyone not sent yet">Tick all</button><button type="button" id="smNone" style="padding:2px 10px;font-size:12px">Clear</button></span></div>
   <div id="smList" class="smList"></div>
   <div class="mlGrid" style="margin-top:10px"><label>Subject<input id="smSubj" autocomplete="off"></label>
     <label>Message<span class="small" id="smHi" style="font-weight:normal"></span></label><div class="sigBar fmtBar" data-for="smBody"></div><div id="smBody" class="sigEd mlBodyEd" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Message"></div>
@@ -2065,13 +2065,14 @@ const smGreet=r=>{const f=smFirst(r);return `Hi${f?' '+f:''},\n\n`};
 async function smOpen(){if(!cur)return;if(isLocked('lead'))return toast('This lead is view-only right now.');if(!(await ensureSaved()))return;
   await mailStatus(true);if(!(mailSt&&mailSt.connected)){const m=$('mailMsg');m.className='msg err';m.textContent='Connect your email first: click any underwriter button, connect at the top of that window, then use Send multiple emails.';return}
   const sent=cur.mailSent||{},{nm,co}=mailClient();
-  $('smList').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<label title="${esc(mailTo(r))}"><input type="checkbox" data-smi="${i}"> ${esc(r.label)}${d?`<span class="small">sent ${esc(fmtDate(String(d).slice(0,10)))}</span>`:''}</label>`}).join('');
+  $('smList').innerHTML=mailList.map((r,i)=>{const d=sent[r.key];return `<label title="${esc(mailTo(r))}"><input type="checkbox" data-smi="${i}"${d?' data-sent="1"':''}> ${esc(r.label)}${d?`<span class="small">sent ${esc(fmtDate(String(d).slice(0,10)))}</span>`:''}</label>`}).join('');
   $('smSubj').value=`QUOTE ${co||nm}`.trim();edSet('smBody','Please quote');$('smHi').textContent=' (Hi and the name are added at the top of each)';
   const fs=cur.files||[];$('smAtt').innerHTML=fs.length?fs.map(f=>`<label><input type="checkbox" data-smf="${esc(f.id)}"${mailSel.has(f.id)?' checked':''}> ${esc(f.name)}</label>`).join(''):'<span class="small">No files on this lead.</span>';
   $('smFrom').textContent=mailSt.email?`From ${mailSt.email}`:'';$('smMsg').textContent='';$('smMsg').className='msg';$('smSend').disabled=false;
   $('smDlg').classList.add('on')}
 const smClose=()=>$('smDlg').classList.remove('on');
-$('smAll').onclick=()=>$('smList').querySelectorAll('input').forEach(x=>x.checked=true);
+// Tick all leaves out the people already sent this lead (their box can still be ticked by hand to send again)
+$('smAll').onclick=()=>$('smList').querySelectorAll('input').forEach(x=>x.checked=!x.dataset.sent);
 $('smNone').onclick=()=>$('smList').querySelectorAll('input').forEach(x=>x.checked=false);
 $('smCancel').onclick=smClose;$('smDlg').addEventListener('click',e=>{if(e.target===$('smDlg'))smClose()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('smDlg').classList.contains('on')&&!$('sureDlg').classList.contains('on')){e.stopImmediatePropagation();smClose()}},true);
